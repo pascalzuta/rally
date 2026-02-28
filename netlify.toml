@@ -1,0 +1,9 @@
+[build]
+  command = "npm install && npm run build --workspace=apps/tennis-web-v2"
+  publish = "apps/tennis-web-v2/dist"
+
+# SPA client-side routing fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
