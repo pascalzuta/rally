@@ -1,0 +1,2097 @@
+/* ============================================================
+   Rally Tennis App v2 - Main Stylesheet
+   Dark-themed, mobile-first tennis tournament scheduling app
+   ============================================================ */
+
+/* ---------------------------------------------------------
+   1. Reset & Base
+   --------------------------------------------------------- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #060e1e;
+  --surface: #0c1a2e;
+  --card: #122240;
+  --card-border: #1a2d4a;
+  --red-primary: #D50A0A;
+  --blue-secondary: #1A5BB5;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --text: #f0f2f5;
+  --text-muted: #8b95a5;
+  --text-dim: #5a6577;
+  --font-heading: 'Oswald', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------
+   2. App Layout
+   --------------------------------------------------------- */
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: 140px; /* room for nav + test bar */
+}
+
+.app-content {
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.app-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--card-border);
+  border-top-color: var(--red-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------
+   3. Bottom Nav (4 tabs)
+   --------------------------------------------------------- */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 48px; /* above test bar */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--card-border);
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0;
+  font-size: 10px;
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+  border: none;
+  background: none;
+}
+
+.nav-tab--active {
+  color: var(--red-primary);
+}
+
+.nav-tab .nav-icon {
+  font-size: 20px;
+}
+
+.nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 50%;
+  transform: translateX(14px);
+  background: var(--red-primary);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ---------------------------------------------------------
+   4. Bottom Sheet
+   --------------------------------------------------------- */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  animation: fadeIn 0.2s ease;
+}
+
+.sheet-container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  z-index: 201;
+  animation: slideUp 0.3s ease;
+  overflow-y: auto;
+  padding: 0 20px 24px;
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--card-border);
+  border-radius: 2px;
+  margin: 12px auto 16px;
+}
+
+.sheet-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.sheet-content {
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(100%); }
+  to { transform: translateX(-50%) translateY(0); }
+}
+
+/* ---------------------------------------------------------
+   5. Action Cards
+   --------------------------------------------------------- */
+
+.action-section {
+  margin-bottom: 24px;
+}
+
+.action-section h3 {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.action-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.action-card {
+  flex-shrink: 0;
+  width: 260px;
+  scroll-snap-align: start;
+  padding: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--card);
+  border-color: var(--card-border);
+}
+
+.action-card:active {
+  transform: scale(0.97);
+}
+
+.action-card--red {
+  background: rgba(213, 10, 10, 0.1);
+  border-color: rgba(213, 10, 10, 0.3);
+}
+
+.action-card--amber {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.action-card--blue {
+  background: rgba(26, 91, 181, 0.1);
+  border-color: rgba(26, 91, 181, 0.3);
+}
+
+.action-card .action-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.action-card .action-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--amber);
+}
+
+.action-card .action-opponent {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.action-card .action-tourney {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.action-card .action-type {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.action-card--red .action-type,
+.action-card--red .action-label {
+  color: var(--red-primary);
+}
+
+.action-card--amber .action-type,
+.action-card--amber .action-label {
+  color: var(--amber);
+}
+
+.action-card--blue .action-type,
+.action-card--blue .action-label {
+  color: var(--blue-secondary);
+}
+
+.action-card .action-context {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.action-card .action-cta {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.action-card--red .action-cta {
+  background: var(--red-primary);
+}
+
+.action-card--amber .action-cta {
+  background: var(--amber);
+  color: #000;
+}
+
+.action-card--blue .action-cta {
+  background: var(--blue-secondary);
+}
+
+/* ---------------------------------------------------------
+   6. Login Screen
+   --------------------------------------------------------- */
+
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+}
+
+.login-header h1 {
+  font-family: var(--font-heading);
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.login-header p {
+  color: var(--text-muted);
+  font-size: 16px;
+  margin-bottom: 40px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--red-primary);
+}
+
+.login-form button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--red-primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.login-form button:disabled {
+  opacity: 0.5;
+}
+
+.login-error {
+  color: var(--red-primary);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* ---------------------------------------------------------
+   7. Setup Screen
+   --------------------------------------------------------- */
+
+.setup-screen {
+  padding-top: 60px;
+}
+
+.setup-progress {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.setup-progress .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--card-border);
+}
+
+.setup-progress .dot--active {
+  background: var(--red-primary);
+}
+
+.setup-step h2 {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.setup-step input,
+.setup-step select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.setup-step input:focus,
+.setup-step select:focus {
+  outline: none;
+  border-color: var(--red-primary);
+}
+
+.setup-step .city-results {
+  margin-bottom: 12px;
+  list-style: none;
+}
+
+.setup-step .city-result,
+.setup-step .city-result-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.setup-step .city-result:hover,
+.setup-step .city-result-item:hover {
+  border-color: var(--blue-secondary);
+}
+
+.setup-hint {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.setup-selected {
+  font-size: 14px;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.setup-error {
+  color: var(--red-primary);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--card-border);
+  display: inline-block;
+}
+
+.progress-dot--active {
+  background: var(--red-primary);
+}
+
+.progress-dot--done {
+  background: var(--green);
+}
+
+.setup-step .city-result--selected {
+  border-color: var(--red-primary);
+  background: rgba(213, 10, 10, 0.1);
+}
+
+.setup-step .level-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.setup-step .level-option {
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  cursor: pointer;
+}
+
+.setup-step .level-option--selected {
+  border-color: var(--red-primary);
+  background: rgba(213, 10, 10, 0.1);
+}
+
+.setup-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--red-primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.setup-btn:disabled {
+  opacity: 0.5;
+}
+
+/* ---------------------------------------------------------
+   8. Home Screen
+   --------------------------------------------------------- */
+
+.home-screen {
+  padding-top: 16px;
+}
+
+.home-header {
+  margin-bottom: 24px;
+}
+
+.home-header h1 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.home-header .greeting,
+.home-greeting {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.home-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.action-badge {
+  background: var(--red-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.next-match-card--empty {
+  background: var(--card);
+  border-color: var(--card-border);
+}
+
+.empty-text {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.empty-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.next-match-opponent {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.next-match-time {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.next-match-countdown {
+  font-size: 14px;
+  color: var(--amber);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.next-match-tourney {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.tournament-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--card);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+}
+
+.tournament-row:hover {
+  border-color: var(--blue-secondary);
+}
+
+.tournament-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tournament-row-name {
+  font-weight: 500;
+  font-size: 14px;
+  display: block;
+  line-height: 1.3;
+}
+
+.tournament-row-progress {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.mini-progress-bar {
+  height: 4px;
+  background: var(--card-border);
+  border-radius: 2px;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.section-header {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header .count-badge {
+  background: var(--red-primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.next-match-card {
+  background: linear-gradient(135deg, var(--card) 0%, rgba(26, 91, 181, 0.2) 100%);
+  border: 1px solid var(--blue-secondary);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.next-match-card .nmc-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.next-match-card .nmc-opponent {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.next-match-card .nmc-time {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.next-match-card .nmc-countdown {
+  font-size: 14px;
+  color: var(--amber);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.next-match-card .nmc-tournament {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.my-tournaments {
+  margin-bottom: 24px;
+}
+
+.my-tournament-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--card);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+}
+
+.my-tournament-row:hover {
+  border-color: var(--blue-secondary);
+}
+
+.my-tournament-row .mtr-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.my-tournament-row .mtr-progress {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mini-progress {
+  height: 4px;
+  background: var(--card-border);
+  border-radius: 2px;
+  margin-top: 4px;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.nearby-section {
+  margin-bottom: 24px;
+}
+
+.nearby-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.nearby-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nearby-name {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nearby-details {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nearby-join-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  background: var(--red-primary);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.quick-stats {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid var(--card-border);
+}
+
+.stat-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-item .stat-value {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  display: block;
+}
+
+.stat-item .stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+  display: block;
+}
+
+.stat-divider {
+  width: 1px;
+  background: var(--card-border);
+}
+
+.no-data {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------
+   9. Tournament Card
+   --------------------------------------------------------- */
+
+.tournament-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.tournament-card:hover {
+  border-color: var(--blue-secondary);
+}
+
+.tc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.tc-name {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tc-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge--registration {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+}
+
+.status-badge--active {
+  background: rgba(26, 91, 181, 0.15);
+  color: var(--blue-secondary);
+}
+
+.status-badge--finals {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--amber);
+}
+
+.status-badge--completed {
+  background: rgba(139, 149, 165, 0.15);
+  color: var(--text-muted);
+}
+
+.tc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tc-players {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.tc-join-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--red-primary);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.tc-joined {
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 3px;
+  background: var(--card-border);
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--green);
+}
+
+/* ---------------------------------------------------------
+   10. Tourney Screen (segmented control + matches + standings)
+   --------------------------------------------------------- */
+
+.tourney-screen {
+  padding-top: 16px;
+}
+
+.tournament-selector select {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.tournament-selector option {
+  background: var(--surface);
+}
+
+.segment-control {
+  display: flex;
+  background: var(--card);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 20px;
+  border: 1px solid var(--card-border);
+}
+
+.segment-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.segment-btn--active {
+  background: var(--red-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.round-header {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 8px 0 4px;
+  border-bottom: 1px solid var(--card-border);
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+.round-header:first-of-type {
+  margin-top: 0;
+}
+
+.match-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  color: var(--text);
+  width: 100%;
+}
+
+.match-card:hover {
+  border-color: var(--text-dim);
+}
+
+.match-card--me,
+.match-card--mine {
+  border-left: 3px solid var(--red-primary);
+}
+
+.match-players {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.match-vs {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.match-player--me {
+  font-weight: 700;
+  color: var(--red-primary);
+}
+
+.match-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.match-tier {
+  font-weight: 600;
+}
+
+.match-status {
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.match-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.match-score {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Legacy class names */
+.match-card .mc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.match-card .mc-players {
+  font-size: 14px;
+}
+
+.match-card .mc-players .me {
+  font-weight: 700;
+}
+
+.match-card .mc-status {
+  font-size: 12px;
+}
+
+.match-card .mc-detail {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.match-card .mc-score {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.match-card .mc-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.match-card .mc-tier {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.match-card .mc-cta {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.match-card--expanded {
+  border-color: var(--blue-secondary);
+}
+
+.match-card .mc-expanded {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-border);
+  font-size: 13px;
+}
+
+.scheduling-banner {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.scheduling-banner--green {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.scheduling-banner--amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.standings-table th {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.standings-table th:not(:first-child):not(:nth-child(2)) {
+  text-align: center;
+}
+
+.standings-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid rgba(26, 45, 74, 0.5);
+}
+
+.standings-table td:not(:first-child):not(:nth-child(2)) {
+  text-align: center;
+}
+
+.standings-row--me {
+  background: rgba(213, 10, 10, 0.08);
+}
+
+.standings-medal {
+  margin-right: 4px;
+}
+
+.tourney-info {
+  padding: 8px 0;
+}
+
+.tourney-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 14px;
+}
+
+.tourney-info .info-label {
+  color: var(--text-muted);
+}
+
+.tourney-info .player-list {
+  margin-top: 16px;
+}
+
+.tourney-info .player-chip {
+  display: inline-block;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+}
+
+.tourney-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.tourney-empty h2 {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.tourney-empty p {
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------
+   11. Activity Screen
+   --------------------------------------------------------- */
+
+.activity-screen {
+  padding-top: 16px;
+}
+
+.activity-screen h1 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.activity-section {
+  margin-bottom: 24px;
+}
+
+.activity-section h3 {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+
+.upcoming-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  width: 100%;
+}
+
+.upcoming-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.upcoming-opponent {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.upcoming-countdown {
+  font-size: 12px;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.upcoming-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.upcoming-time {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.upcoming-tourney {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  border-left: 3px solid;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  width: 100%;
+}
+
+.result-card.result-win {
+  border-left-color: var(--green);
+}
+
+.result-card.result-loss {
+  border-left-color: var(--red-primary);
+}
+
+.result-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-indicator--w {
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.result-indicator--l {
+  color: var(--red-primary);
+  background: rgba(213, 10, 10, 0.15);
+}
+
+.result-opponent {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.result-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-score {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.result-tourney {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.match-tourney-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------
+   12. Profile Screen
+   --------------------------------------------------------- */
+
+.profile-screen {
+  padding-top: 16px;
+}
+
+.player-card {
+  text-align: center;
+  padding: 24px 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--red-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 auto 12px;
+}
+
+.player-card .pc-name {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.player-card .pc-location {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.player-card .pc-badges {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.player-card .badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge--rating {
+  background: rgba(26, 91, 181, 0.2);
+  color: var(--blue-secondary);
+}
+
+.badge--level {
+  background: rgba(139, 149, 165, 0.15);
+  color: var(--text-muted);
+}
+
+.player-card .pc-record {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.availability-section {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.availability-section h3 {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.slot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.slot-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  font-size: 12px;
+}
+
+.slot-chip .remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.slot-chip .remove-btn:hover {
+  color: var(--red-primary);
+}
+
+.add-slot-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-slot-row select,
+.add-slot-row input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.add-slot-row select {
+  flex: 1;
+  min-width: 80px;
+}
+
+.add-slot-row input[type="time"] {
+  width: 100px;
+}
+
+.add-slot-row .add-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--blue-secondary);
+  color: white;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-avail-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--green);
+  color: white;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.impact-hint {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--amber);
+}
+
+.settings-section {
+}
+
+.settings-section button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.settings-section button:hover {
+  border-color: var(--text-dim);
+}
+
+.settings-section .signout-btn {
+  color: var(--red-primary);
+  border-color: rgba(213, 10, 10, 0.3);
+}
+
+.settings-section .app-version {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 12px;
+}
+
+/* ---------------------------------------------------------
+   13. Score Entry Sheet
+   --------------------------------------------------------- */
+
+.score-entry-sheet {
+}
+
+.score-match-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.score-match-header .opponent-name {
+  font-family: var(--font-heading);
+  font-size: 18px;
+}
+
+.score-match-header .match-context {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.winner-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.winner-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.winner-btn--selected {
+  border-color: var(--red-primary);
+  background: rgba(213, 10, 10, 0.1);
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.set-row .set-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  width: 48px;
+}
+
+.set-row input[type="number"] {
+  width: 56px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 18px;
+  text-align: center;
+  font-family: var(--font-heading);
+  -moz-appearance: textfield;
+}
+
+.set-row input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.set-row .set-dash {
+  color: var(--text-dim);
+}
+
+.tiebreak-row {
+  padding-left: 48px;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tiebreak-row input {
+  width: 48px;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid var(--card-border);
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  font-size: 14px;
+}
+
+.score-preview {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--card);
+  border-radius: 8px;
+  min-height: 48px;
+}
+
+.submit-score-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--red-primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.submit-score-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------
+   14. Scheduling / Flex / Propose Sheets
+   --------------------------------------------------------- */
+
+.scheduling-sheet .opponent-label {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.scheduling-sheet .time-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.time-option-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s;
+}
+
+.time-option-btn:hover {
+  border-color: var(--blue-secondary);
+}
+
+.time-option-btn:active {
+  background: rgba(26, 91, 181, 0.15);
+}
+
+.flex-sheet {
+  text-align: center;
+}
+
+.flex-sheet .flex-visual {
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.flex-sheet .flex-slots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.flex-sheet .flex-slot {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  font-size: 13px;
+}
+
+.flex-sheet .flex-gap {
+  font-size: 13px;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+
+.flex-sheet .flex-suggestion {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.flex-sheet .flex-result {
+  font-size: 13px;
+  color: var(--green);
+}
+
+.flex-accept-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--amber);
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.propose-sheet .slot-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.propose-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.propose-option:hover {
+  border-color: var(--text-dim);
+}
+
+.propose-option--selected {
+  border-color: var(--green);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.propose-option .check-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.propose-option--selected .check-box {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+  font-size: 12px;
+}
+
+.propose-option .option-label {
+  font-size: 14px;
+}
+
+.propose-send-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--blue-secondary);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.propose-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------
+   15. Confirm Score Sheet
+   --------------------------------------------------------- */
+
+.confirm-sheet {
+  text-align: center;
+}
+
+.confirm-sheet .reported-by {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.confirm-sheet .reported-score {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.confirm-sheet .reported-winner {
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm-btn--yes {
+  background: var(--green);
+  color: white;
+}
+
+.confirm-btn--no {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+}
+
+/* ---------------------------------------------------------
+   16. Test Bar
+   --------------------------------------------------------- */
+
+.test-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: #0a0a0a;
+  border-top: 1px solid #222;
+  padding: 6px 8px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  z-index: 150;
+  font-size: 11px;
+}
+
+.test-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.test-bar button {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #aaa;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.test-bar button:hover {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.test-bar .seed-btn {
+  border-color: rgba(34, 197, 94, 0.4);
+  color: var(--green);
+}
+
+.test-bar .sim-btn {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--amber);
+}
+
+/* ---------------------------------------------------------
+   17. Utility Classes
+   --------------------------------------------------------- */
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+}
+
+.empty-state h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}

@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6F3DFF"/>
+      <stop offset="1" stop-color="#35187F"/>
+    </linearGradient>
+    <linearGradient id="pGreen" x1="140" y1="128" x2="360" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DFF8A"/>
+      <stop offset="1" stop-color="#1DBE5B"/>
+    </linearGradient>
+    <filter id="softGlow" x="88" y="92" width="336" height="332" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="36" y="36" width="440" height="440" rx="108" fill="url(#bg)"/>
+
+  <g filter="url(#softGlow)">
+    <path d="M164 148C164 136.954 172.954 128 184 128H252C302.81 128 344 169.19 344 220C344 270.81 302.81 312 252 312H222V352C222 363.046 213.046 372 202 372H184C172.954 372 164 363.046 164 352V148Z" fill="url(#pGreen)"/>
+    <path d="M222 192H252C267.464 192 280 204.536 280 220C280 235.464 267.464 248 252 248H222V192Z" fill="#2A145D"/>
+    <rect x="196" y="112" width="20" height="292" rx="10" fill="#9CFFAD" opacity="0.95"/>
+  </g>
+</svg>

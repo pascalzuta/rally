@@ -1,0 +1,35 @@
+{
+  "name": "daily-priorities",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @daily-priorities/web",
+    "dev:server": "npm run dev -w @painful-dollar/server",
+    "build:web": "npm run build -w @daily-priorities/web",
+    "build:server": "npm run build -w @painful-dollar/server",
+    "dev:tennis-web": "npm run dev -w @rally/web",
+    "dev:tennis-server": "npm run dev -w @rally/server",
+    "build:tennis-web": "npm run build -w @rally/web",
+    "build:tennis-server": "npm run build -w @rally/server",
+    "dev:tennis-web-v2": "npm run dev -w @rally/web-v2",
+    "build:tennis-web-v2": "npm run build -w @rally/web-v2",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "audit": "npm audit --workspaces --audit-level=high"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@types/node": "^22.13.4",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

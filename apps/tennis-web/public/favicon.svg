@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="28%" r="80%">
+      <stop offset="0%"   stop-color="#1c3358"/>
+      <stop offset="100%" stop-color="#04090f"/>
+    </radialGradient>
+    <linearGradient id="red" x1="5%" y1="5%" x2="95%" y2="95%">
+      <stop offset="0%"   stop-color="#FF4242"/>
+      <stop offset="100%" stop-color="#7A0000"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#34B85A"/>
+      <stop offset="100%" stop-color="#0D5C22"/>
+    </linearGradient>
+    <clipPath id="c"><rect width="512" height="512" rx="80" ry="80"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="80" ry="80" fill="url(#bg)"/>
+  <!-- Green shadow R -->
+  <g transform="translate(-14 -50)" clip-path="url(#c)">
+    <path d="M156 176C156 164.954 164.954 156 176 156H254C306.81 156 348 197.19 348 250C348 302.81 306.81 344 254 344H220V382C220 393.046 211.046 402 200 402H176C164.954 402 156 393.046 156 382V176Z" fill="url(#green)"/>
+    <path d="M220 340L260 334L358 404C363 418 352 428 338 428H312C298 428 289 418 294 404L220 362Z" fill="url(#green)"/>
+    <path d="M220 216H254C271.673 216 286 230.327 286 248C286 265.673 271.673 280 254 280H220V216Z" fill="#04090f"/>
+  </g>
+  <!-- Red main R -->
+  <g transform="translate(0 -64)" clip-path="url(#c)">
+    <path d="M156 176C156 164.954 164.954 156 176 156H254C306.81 156 348 197.19 348 250C348 302.81 306.81 344 254 344H220V382C220 393.046 211.046 402 200 402H176C164.954 402 156 393.046 156 382V176Z" fill="url(#red)"/>
+    <path d="M220 340L260 334L358 404C363 418 352 428 338 428H312C298 428 289 418 294 404L220 362Z" fill="url(#red)"/>
+    <path d="M220 216H254C271.673 216 286 230.327 286 248C286 265.673 271.673 280 254 280H220V216Z" fill="#04090f"/>
+  </g>
+</svg>
