@@ -207,8 +207,14 @@ export function createRoutes(deps: RouteDeps): Router {
     try {
       const result = await seedRichData(deps.auth, deps.players, deps.availability, deps.tournaments, deps.matches);
       res.json({ ok: true, ...result });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : "failed" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error
+        ? e.message
+        : typeof e === "object" && e !== null
+          ? JSON.stringify(e)
+          : String(e);
+      console.error("seed-rich error:", e);
+      res.status(500).json({ error: msg });
     }
   });
 

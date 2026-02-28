@@ -194,6 +194,13 @@ export async function seedRichData(
 
     // Create a tournament in this county with 7 of the 20 players pre-registered
     // (so user joining as 8th triggers activation)
+    // Idempotent: skip if a tournament already exists for this county/band/month
+    const existingTournament = await tournaments.findByCountyBandMonth(county, "3.5", thisMonth);
+    if (existingTournament) {
+      totalTournaments++;
+      continue;
+    }
+
     const tournamentId = randomUUID();
     const registeredPlayerIds = countyPlayerIds.slice(0, 7);
 
