@@ -106,7 +106,7 @@ export default function App() {
     for (const t of activeTournaments) {
       getTournamentDetail(token, t.id);
     }
-  }, [token, tournaments.length]);
+  }, [token, tournaments.map(t => `${t.id}:${t.status}`).join(",")]);
 
   // Load availability impact when matches change
   useEffect(() => {
