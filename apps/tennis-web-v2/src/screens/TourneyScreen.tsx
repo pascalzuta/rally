@@ -30,11 +30,20 @@ function MatchCard({
   const isMyMatch = m.homePlayerId === player.id || m.awayPlayerId === player.id;
   const homeName = playerNames[m.homePlayerId] || "Player";
   const awayName = playerNames[m.awayPlayerId] || "Player";
+  const isCompleted = m.status === "completed";
+  const isWin = isMyMatch && isCompleted && m.result?.winnerId === player.id;
+  const isLoss = isMyMatch && isCompleted && m.result?.winnerId && m.result.winnerId !== player.id;
+
+  let cls = "match-card";
+  if (isMyMatch) cls += " match-card--mine";
+  if (m.finalsType) cls += ` match-card--${m.finalsType}`;
+  if (isWin) cls += " match-card--win";
+  if (isLoss) cls += " match-card--loss";
 
   return (
     <button
       key={m.id}
-      className={`match-card${isMyMatch ? " match-card--mine" : ""}${m.finalsType ? ` match-card--${m.finalsType}` : ""}`}
+      className={cls}
       onClick={() => onMatchAction(m)}
     >
       <div className="match-players">
@@ -329,7 +338,9 @@ function TourneyScreen({
                       key={entry.playerId}
                       className={isMe ? "standings-row--me" : ""}
                     >
-                      <td>{ordinal(idx + 1)}</td>
+                      <td>
+                        {idx === 0 ? "\u{1F3C6}" : idx === 1 ? "\u{1F948}" : idx === 2 ? "\u{1F949}" : ordinal(idx + 1)}
+                      </td>
                       <td>{playerNames[entry.playerId] || "Player"}</td>
                       <td>{entry.wins}</td>
                       <td>{entry.losses}</td>

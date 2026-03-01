@@ -16,10 +16,11 @@
 :root {
   --bg: #060e1e;
   --surface: #0c1a2e;
-  --card: #122240;
-  --card-border: #1a2d4a;
+  --card: #162a4a;
+  --card-border: #234068;
   --red-primary: #D50A0A;
   --blue-secondary: #1A5BB5;
+  --nav-active: #e8634a;
   --green: #22c55e;
   --amber: #f59e0b;
   --text: #f0f2f5;
@@ -125,7 +126,7 @@ html {
 }
 
 .nav-tab--active {
-  color: var(--red-primary);
+  color: var(--nav-active);
 }
 
 .nav-tab .nav-icon {
@@ -367,8 +368,18 @@ html {
   font-family: var(--font-heading);
   font-size: 48px;
   font-weight: 700;
+  font-style: italic;
   letter-spacing: 0.04em;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.login-ball {
+  width: 44px;
+  height: 44px;
 }
 
 .login-header p {
@@ -601,8 +612,11 @@ html {
 
 .section-title {
   font-family: var(--font-heading);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
   margin-bottom: 12px;
 }
 
@@ -860,6 +874,92 @@ html {
   cursor: pointer;
   flex-shrink: 0;
   margin-left: 12px;
+}
+
+/* ---------------------------------------------------------
+   Completed Tournament Summary Card
+   --------------------------------------------------------- */
+
+.completed-summary-section {
+  margin-bottom: var(--space-lg);
+}
+
+.completed-summary-card {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-left: 4px solid var(--gold);
+  border-radius: 12px;
+  padding: var(--space-md);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.completed-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.completed-summary-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.completed-summary-rank {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.completed-medal {
+  font-size: 24px;
+}
+
+.completed-placement {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.completed-summary-stats {
+  display: flex;
+  gap: var(--space-md);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.completed-summary-cta {
+  color: var(--nav-active);
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: var(--space-xs);
+}
+
+/* ---------------------------------------------------------
+   Empty State CTA
+   --------------------------------------------------------- */
+
+.empty-cta {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--nav-active);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.empty-cta:hover {
+  opacity: 0.9;
 }
 
 .quick-stats {
@@ -2260,12 +2360,22 @@ html {
   color: var(--bronze);
 }
 
+.match-card--win {
+  border-left: 3px solid var(--green);
+}
+
+.match-card--loss {
+  opacity: 0.65;
+}
+
 .match-card--championship {
-  border-left: 3px solid var(--gold);
+  border-left: 4px solid var(--gold);
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.08) 0%, transparent 40%);
 }
 
 .match-card--third-place {
-  border-left: 3px solid var(--bronze);
+  border-left: 4px solid var(--bronze);
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.06) 0%, transparent 40%);
 }
 
 /* ---------------------------------------------------------
@@ -2300,6 +2410,12 @@ html {
 .status-badge--amber {
   background: rgba(245, 158, 11, 0.15);
   color: var(--amber);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 8px 2px rgba(245, 158, 11, 0.15); }
 }
 
 .status-badge--gray {

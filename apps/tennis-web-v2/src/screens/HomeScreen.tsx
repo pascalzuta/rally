@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import type { Player, ActionItem, Tournament, TournamentMatch } from "../types";
-import { formatDate, matchCountdown, shortTournamentName } from "../helpers";
+import type { Player, ActionItem, Tournament, TournamentMatch, Tab } from "../types";
+import { formatDate, matchCountdown, shortTournamentName, ordinal } from "../helpers";
 
 interface Props {
   player: Player;
@@ -11,6 +11,7 @@ interface Props {
   onAction: (action: ActionItem) => void;
   onJoinTournament: (id: string) => void;
   onViewTournament: (id: string) => void;
+  onTabChange: (tab: Tab) => void;
 }
 
 const ACTION_LABELS: Record<string, string> = {
@@ -46,6 +47,7 @@ function HomeScreen({
   onAction,
   onJoinTournament,
   onViewTournament,
+  onTabChange,
 }: Props) {
   const firstName = (player.name || player.email.split("@")[0] || "Player").split(" ")[0];
 
@@ -88,6 +90,13 @@ function HomeScreen({
         !t.playerIds.includes(player.id)
     );
   }, [tournaments, player.county, player.id]);
+
+  // Recently completed tournaments
+  const completedTournaments = useMemo(() => {
+    return tournaments.filter(
+      (t) => t.status === "completed" && t.playerIds.includes(player.id)
+    );
+  }, [tournaments, player.id]);
 
   // Match stats per tournament
   const tournamentProgress = useMemo(() => {
@@ -146,6 +155,39 @@ function HomeScreen({
         </section>
       )}
 
+      {/* Completed Tournament Summary */}
+      {completedTournaments.length > 0 && (
+        <section className="completed-summary-section">
+          {completedTournaments.slice(0, 1).map((t) => {
+            const myRank = t.standings.findIndex((s) => s.playerId === player.id);
+            const myEntry = t.standings[myRank];
+            const placement = myRank >= 0 ? myRank + 1 : null;
+            const medal = placement === 1 ? "\u{1F3C6}" : placement === 2 ? "\u{1F948}" : placement === 3 ? "\u{1F949}" : null;
+            return (
+              <button key={t.id} className="completed-summary-card" onClick={() => onViewTournament(t.id)}>
+                <div className="completed-summary-header">
+                  <span className="completed-summary-title">{shortTournamentName(t.name)}</span>
+                  <span className="status-badge status-badge--gray">Completed</span>
+                </div>
+                {placement && (
+                  <div className="completed-summary-rank">
+                    {medal && <span className="completed-medal">{medal}</span>}
+                    <span className="completed-placement">{ordinal(placement)} Place</span>
+                  </div>
+                )}
+                {myEntry && (
+                  <div className="completed-summary-stats">
+                    <span>{myEntry.wins}W &ndash; {myEntry.losses}L</span>
+                    <span className="completed-summary-sets">{myEntry.setsWon}-{myEntry.setsLost} sets</span>
+                  </div>
+                )}
+                <span className="completed-summary-cta">View Standings &rarr;</span>
+              </button>
+            );
+          })}
+        </section>
+      )}
+
       {/* Next Match */}
       <section className="next-match-section">
         <h2 className="section-title">Next Match</h2>
@@ -170,10 +212,17 @@ function HomeScreen({
           <div className="next-match-card next-match-card--empty">
             <p className="empty-text">No upcoming matches</p>
             <p className="empty-hint">
-              {myTournaments.length === 0
-                ? "Join a tournament below to get started"
+              {myTournaments.length === 0 && completedTournaments.length > 0
+                ? "Your tournament is complete!"
+                : myTournaments.length === 0
+                ? "Join a tournament to get started"
                 : "Schedule your pending matches to see them here"}
             </p>
+            {myTournaments.length === 0 && (
+              <button className="empty-cta" onClick={() => onTabChange("tourney")}>
+                Find Tournaments &rarr;
+              </button>
+            )}
           </div>
         )}
       </section>

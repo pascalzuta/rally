@@ -98,13 +98,13 @@ export default function App() {
   // Load player names for tournaments
   useEffect(() => {
     if (!token || tournaments.length === 0) return;
-    // Load details for active tournaments to populate playerNames
-    const activeTournaments = tournaments.filter(
+    // Load details for player's tournaments to populate playerNames/playerRatings
+    const myTournaments = tournaments.filter(
       (t) =>
-        (t.status === "active" || t.status === "finals") &&
+        (t.status === "active" || t.status === "finals" || t.status === "completed") &&
         t.playerIds.includes(player?.id ?? ""),
     );
-    for (const t of activeTournaments) {
+    for (const t of myTournaments) {
       getTournamentDetail(token, t.id);
     }
   }, [token, tournaments.map(t => `${t.id}:${t.status}`).join(",")]);
@@ -120,7 +120,7 @@ export default function App() {
     if (!selectedTournamentId && player) {
       const myActive = tournaments.find(
         (t) =>
-          (t.status === "active" || t.status === "finals") &&
+          (t.status === "active" || t.status === "finals" || t.status === "completed") &&
           t.playerIds.includes(player.id),
       );
       if (myActive) setSelectedTournamentId(myActive.id);
@@ -484,6 +484,7 @@ export default function App() {
             onAction={handleAction}
             onJoinTournament={handleJoinTournament}
             onViewTournament={handleViewTournament}
+            onTabChange={setActiveTab}
           />
         )}
         {activeTab === "tourney" && (

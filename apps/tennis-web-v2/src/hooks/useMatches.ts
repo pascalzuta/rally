@@ -19,7 +19,7 @@ export function useMatches() {
     try {
       const newMap = new Map<string, TournamentMatch[]>();
       const activeTournaments = tournaments.filter(
-        t => (t.status === "active" || t.status === "finals") && t.playerIds.includes(playerId)
+        t => (t.status === "active" || t.status === "finals" || t.status === "completed") && t.playerIds.includes(playerId)
       );
 
       await Promise.all(
