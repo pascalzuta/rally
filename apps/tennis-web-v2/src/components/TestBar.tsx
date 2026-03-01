@@ -1,23 +1,70 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 interface Props {
   onLogin: (email: string) => void;
-  onSeedRich: () => void;
-  onSimulate: () => void;
-  onAcceptProposals?: () => void;
-  onSubmitScores?: () => void;
+  onStep: (step: 1 | 2 | 3 | 4) => Promise<string>;
+  isLoggedIn: boolean;
+  onReset: () => void;
 }
 
 const TEST_ACCOUNTS = [
-  { email: "test1@rally.test", name: "Test1" },
-  { email: "test2@rally.test", name: "Test2" },
-  { email: "test3@rally.test", name: "Test3" },
-  { email: "test4@rally.test", name: "Test4" },
-  { email: "test5@rally.test", name: "Test5" },
-  { email: "test6@rally.test", name: "Test6" },
+  { email: "test1@rally.test", name: "T1" },
+  { email: "test2@rally.test", name: "T2" },
+  { email: "test3@rally.test", name: "T3" },
+  { email: "test4@rally.test", name: "T4" },
+  { email: "test5@rally.test", name: "T5" },
+  { email: "test6@rally.test", name: "T6" },
 ];
 
-export default function TestBar({ onLogin, onSeedRich, onSimulate, onAcceptProposals, onSubmitScores }: Props) {
+const STEPS = [
+  { num: 1 as const, label: "Seed", needsLogin: false },
+  { num: 2 as const, label: "Simulate", needsLogin: false },
+  { num: 3 as const, label: "Schedule", needsLogin: true },
+  { num: 4 as const, label: "Scores", needsLogin: true },
+];
+
+type StepState = "locked" | "ready" | "running" | "done" | "error";
+
+export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props) {
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [runningStep, setRunningStep] = useState<number | null>(null);
+  const [lastMessage, setLastMessage] = useState<string | null>(null);
+
+  const getStepState = (stepNum: number, needsLogin: boolean): StepState => {
+    if (runningStep === stepNum) return "running";
+    if (completedSteps.has(stepNum)) return "done";
+
+    // Check prerequisites
+    if (stepNum > 1 && !completedSteps.has(stepNum - 1)) return "locked";
+    if (needsLogin && !isLoggedIn) return "locked";
+
+    return "ready";
+  };
+
+  const handleStep = useCallback(
+    async (stepNum: 1 | 2 | 3 | 4) => {
+      setRunningStep(stepNum);
+      setLastMessage(null);
+      try {
+        const msg = await onStep(stepNum);
+        setCompletedSteps((prev) => new Set([...prev, stepNum]));
+        setLastMessage(msg);
+      } catch (e) {
+        setLastMessage(e instanceof Error ? e.message : "Failed");
+      } finally {
+        setRunningStep(null);
+      }
+    },
+    [onStep],
+  );
+
+  const handleReset = useCallback(() => {
+    setCompletedSteps(new Set());
+    setRunningStep(null);
+    setLastMessage(null);
+    onReset();
+  }, [onReset]);
+
   const handleLogin = useCallback(
     (email: string) => {
       onLogin(email);
@@ -27,33 +74,51 @@ export default function TestBar({ onLogin, onSeedRich, onSimulate, onAcceptPropo
 
   return (
     <div className="test-bar">
-      <div className="test-bar-scroll">
-        {TEST_ACCOUNTS.map((account) => (
+      {/* Login buttons */}
+      {TEST_ACCOUNTS.map((account) => (
+        <button
+          key={account.email}
+          className="test-bar-btn"
+          onClick={() => handleLogin(account.email)}
+        >
+          {account.name}
+        </button>
+      ))}
+
+      <span className="test-bar-divider">|</span>
+
+      {/* Step buttons */}
+      {STEPS.map((step) => {
+        const state = getStepState(step.num, step.needsLogin);
+        const isDisabled = state === "locked" || state === "running";
+        return (
           <button
-            key={account.email}
-            className="test-bar-btn"
-            onClick={() => handleLogin(account.email)}
+            key={step.num}
+            className={`test-step test-step--${state}`}
+            disabled={isDisabled}
+            onClick={() => handleStep(step.num)}
           >
-            {account.name}
+            <span className="test-step-num">{step.num}</span>
+            <span className="test-step-label">
+              {state === "running"
+                ? "..."
+                : state === "done"
+                  ? "\u2713"
+                  : step.label}
+            </span>
           </button>
-        ))}
-        <button className="test-bar-btn test-bar-btn--seed" onClick={onSeedRich}>
-          Seed Rich
-        </button>
-        <button className="test-bar-btn test-bar-btn--sim" onClick={onSimulate}>
-          Simulate
-        </button>
-        {onAcceptProposals && (
-          <button className="test-bar-btn test-bar-btn--seed" onClick={onAcceptProposals}>
-            Accept All
-          </button>
-        )}
-        {onSubmitScores && (
-          <button className="test-bar-btn test-bar-btn--sim" onClick={onSubmitScores}>
-            Submit Scores
-          </button>
-        )}
-      </div>
+        );
+      })}
+
+      {/* Reset */}
+      <button className="test-bar-btn test-bar-reset" onClick={handleReset}>
+        Reset
+      </button>
+
+      {/* Status message */}
+      {lastMessage && (
+        <span className="test-bar-msg">{lastMessage}</span>
+      )}
     </div>
   );
 }

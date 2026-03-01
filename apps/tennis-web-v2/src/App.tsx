@@ -355,43 +355,29 @@ export default function App() {
     [login],
   );
 
-  const handleSeedRich = useCallback(async () => {
-    try {
-      await apiSeedRich();
-      if (token) await reloadAll();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to seed");
-    }
-  }, [token, reloadAll]);
-
-  const handleSimulate = useCallback(async () => {
-    try {
-      await apiSimulateTournament();
-      if (token) await reloadAll();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to simulate");
-    }
-  }, [token, reloadAll]);
-
-  const handleAcceptProposals = useCallback(async () => {
-    if (!player) return;
-    try {
-      const result = await apiAcceptProposals(player.id);
-      if (token) await reloadAll();
-      alert(`${result.accepted} proposal(s) accepted`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to accept proposals");
-    }
-  }, [player, token, reloadAll]);
-
-  const handleSubmitScores = useCallback(async () => {
-    if (!player) return;
-    try {
-      const result = await apiSubmitScores(player.id);
-      if (token) await reloadAll();
-      alert(`${result.submitted} score(s) submitted`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to submit scores");
+  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4): Promise<string> => {
+    switch (step) {
+      case 1: {
+        const r = await apiSeedRich();
+        return `Seeded ${r.players} players, ${r.tournaments} tournaments`;
+      }
+      case 2: {
+        const r = await apiSimulateTournament();
+        if (token) await reloadAll();
+        return "Tournament created";
+      }
+      case 3: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiAcceptProposals(player.id);
+        if (token) await reloadAll();
+        return `${r.accepted} proposal(s) accepted`;
+      }
+      case 4: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiSubmitScores(player.id);
+        if (token) await reloadAll();
+        return `${r.submitted} score(s) submitted`;
+      }
     }
   }, [player, token, reloadAll]);
 
@@ -448,8 +434,9 @@ export default function App() {
         <LoginScreen onLogin={login} loading={authLoading} />
         <TestBar
           onLogin={handleTestLogin}
-          onSeedRich={handleSeedRich}
-          onSimulate={handleSimulate}
+          onStep={handleTestStep}
+          isLoggedIn={false}
+          onReset={() => {}}
         />
       </div>
     );
@@ -462,8 +449,9 @@ export default function App() {
         <SetupScreen player={player} onComplete={handleSetupComplete} />
         <TestBar
           onLogin={handleTestLogin}
-          onSeedRich={handleSeedRich}
-          onSimulate={handleSimulate}
+          onStep={handleTestStep}
+          isLoggedIn={!!player}
+          onReset={() => {}}
         />
       </div>
     );
@@ -601,10 +589,9 @@ export default function App() {
 
       <TestBar
         onLogin={handleTestLogin}
-        onSeedRich={handleSeedRich}
-        onSimulate={handleSimulate}
-        onAcceptProposals={handleAcceptProposals}
-        onSubmitScores={handleSubmitScores}
+        onStep={handleTestStep}
+        isLoggedIn={!!player}
+        onReset={() => {}}
       />
     </div>
   );
