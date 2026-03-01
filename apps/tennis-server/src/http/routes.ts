@@ -339,6 +339,73 @@ export function createRoutes(deps: RouteDeps): Router {
     }
   });
 
+  router.post("/debug/confirm-scores", async (req, res) => {
+    try {
+      const { playerId } = req.body as { playerId?: string };
+      if (!playerId) {
+        res.status(400).json({ error: "playerId required" });
+        return;
+      }
+      const allTournaments = await deps.tournaments.listAll();
+      let confirmed = 0;
+      for (const tournament of allTournaments) {
+        if (!tournament.playerIds.includes(playerId)) continue;
+        if (tournament.status !== "active" && tournament.status !== "finals") continue;
+        const pendingKeys = Object.keys(tournament.pendingResults);
+        if (pendingKeys.length === 0) continue;
+        let tournamentUpdated = false;
+        for (const matchId of pendingKeys) {
+          const report = tournament.pendingResults[matchId]!;
+          // Only confirm scores reported by the opponent (not by us)
+          if (report.reportedBy === playerId) continue;
+          const match = await deps.matches.findById(matchId);
+          if (!match || match.status === "completed") continue;
+          // Confirm: set match to completed
+          const now = new Date().toISOString();
+          const updatedMatch: Match = {
+            ...match,
+            status: "completed",
+            result: {
+              winnerId: report.winnerId,
+              sets: report.sets,
+              reportedBy: report.reportedBy,
+              reportedAt: report.reportedAt,
+              confirmedBy: playerId,
+              confirmedAt: now,
+            },
+            updatedAt: now,
+          };
+          await deps.matches.save(updatedMatch);
+          // Update player ratings
+          const loserId = report.winnerId === match.challengerId ? match.opponentId : match.challengerId;
+          const winner = await deps.players.findById(report.winnerId);
+          const loser = await deps.players.findById(loserId);
+          if (winner && loser) {
+            const { updatedWinner, updatedLoser } = applyEnhancedMatchResult(winner, loser, report.sets);
+            await deps.players.upsert(updatedWinner);
+            await deps.players.upsert(updatedLoser);
+          }
+          // Remove from pending
+          delete tournament.pendingResults[matchId];
+          tournamentUpdated = true;
+          confirmed++;
+        }
+        if (tournamentUpdated) {
+          // Recompute standings
+          const allMatches = await deps.matches.findByTournament(tournament.id);
+          const completedMatches = allMatches.filter(m => m.status === "completed");
+          tournament.standings = computeStandings(tournament.playerIds, completedMatches);
+          await deps.tournaments.save(tournament);
+        }
+      }
+      res.json({ ok: true, confirmed });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("confirm-scores error:", e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
   router.post("/debug/seed-rich", async (_req, res) => {
     try {
       const result = await seedRichData(deps.auth, deps.players, deps.availability, deps.tournaments, deps.matches);

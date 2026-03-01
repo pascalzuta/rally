@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 
 interface Props {
   onLogin: (email: string) => void;
-  onStep: (step: 1 | 2 | 3 | 4) => Promise<string>;
+  onStep: (step: 1 | 2 | 3 | 4 | 5) => Promise<string>;
   isLoggedIn: boolean;
   onReset: () => void;
 }
@@ -21,6 +21,7 @@ const STEPS = [
   { num: 2 as const, label: "Simulate", needsLogin: false },
   { num: 3 as const, label: "Schedule", needsLogin: true },
   { num: 4 as const, label: "Scores", needsLogin: true },
+  { num: 5 as const, label: "Confirm", needsLogin: true },
 ];
 
 type StepState = "locked" | "ready" | "running" | "done" | "error";
@@ -41,7 +42,7 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
   };
 
   const handleStep = useCallback(
-    async (stepNum: 1 | 2 | 3 | 4) => {
+    async (stepNum: 1 | 2 | 3 | 4 | 5) => {
       setRunningStep(stepNum);
       setLastMessage(null);
       try {

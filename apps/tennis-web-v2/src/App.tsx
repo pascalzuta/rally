@@ -7,7 +7,7 @@ import { useMatches } from "./hooks/useMatches";
 import { useActionItems } from "./hooks/useActionItems";
 import { useAvailability } from "./hooks/useAvailability";
 import { useBottomSheet } from "./hooks/useBottomSheet";
-import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiSubmitScores, apiGetSchedulingInfo } from "./api";
+import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiSubmitScores, apiConfirmScores, apiGetSchedulingInfo } from "./api";
 import BottomNav from "./components/BottomNav";
 import BottomSheet from "./components/BottomSheet";
 import ScoreEntrySheet from "./components/ScoreEntrySheet";
@@ -355,7 +355,7 @@ export default function App() {
     [login],
   );
 
-  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4): Promise<string> => {
+  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4 | 5): Promise<string> => {
     switch (step) {
       case 1: {
         const r = await apiSeedRich();
@@ -377,6 +377,12 @@ export default function App() {
         const r = await apiSubmitScores(player.id);
         if (token) await reloadAll();
         return `${r.submitted} score(s) submitted`;
+      }
+      case 5: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiConfirmScores(player.id);
+        if (token) await reloadAll();
+        return `${r.confirmed} score(s) confirmed`;
       }
     }
   }, [player, token, reloadAll]);
