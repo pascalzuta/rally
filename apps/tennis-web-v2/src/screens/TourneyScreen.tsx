@@ -315,6 +315,7 @@ function TourneyScreen({
           {selectedTournament.standings.length === 0 ? (
             <p className="empty-text">Standings not yet available.</p>
           ) : (
+            <div className="standings-card">
             <table className="standings-table">
               <thead>
                 <tr>
@@ -360,6 +361,7 @@ function TourneyScreen({
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

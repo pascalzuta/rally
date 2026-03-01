@@ -28,12 +28,8 @@ function LoginScreen({ onLogin, loading }: Props) {
     <div className="login-screen">
       <div className="login-header">
         <h1 className="login-title">
-          <svg className="login-ball" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#c8e64a" stroke="#a8c43a" strokeWidth="2"/>
-            <path d="M8 8c4 6 4 18 0 24" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-            <path d="M32 8c-4 6-4 18 0 24" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-          </svg>
-          {" "}Rally
+          <img src="/favicon.svg" alt="Rally" className="login-logo" />
+          Rally
         </h1>
         <p className="login-subtitle">Effortless tournament scheduling</p>
       </div>

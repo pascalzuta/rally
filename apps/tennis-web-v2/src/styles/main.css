@@ -20,7 +20,7 @@
   --card-border: #234068;
   --red-primary: #D50A0A;
   --blue-secondary: #1A5BB5;
-  --nav-active: #e8634a;
+  --nav-active: #D50A0A;
   --green: #22c55e;
   --amber: #f59e0b;
   --text: #f0f2f5;
@@ -377,9 +377,10 @@ html {
   gap: 12px;
 }
 
-.login-ball {
-  width: 44px;
-  height: 44px;
+.login-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
 }
 
 .login-header p {
@@ -1121,6 +1122,17 @@ html {
   padding-top: 16px;
 }
 
+.tournament-selector {
+  margin-bottom: 4px;
+}
+
+.tournament-single-name {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .tournament-selector select {
   width: 100%;
   padding: 12px 16px;
@@ -1129,7 +1141,7 @@ html {
   border: 1px solid var(--card-border);
   color: var(--text);
   font-size: 15px;
-  margin-bottom: 16px;
+  font-family: var(--font-body);
 }
 
 .tournament-selector option {
@@ -1329,6 +1341,17 @@ html {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+.standings-section {
+  margin-top: 4px;
+}
+
+.standings-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .standings-table {
   width: 100%;
   border-collapse: collapse;
@@ -1338,12 +1361,14 @@ html {
 .standings-table th {
   font-family: var(--font-heading);
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-dim);
   text-align: left;
-  padding: 8px 6px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--card-border);
   font-size: 11px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .standings-table th:not(:first-child):not(:nth-child(2)) {
@@ -1351,22 +1376,163 @@ html {
 }
 
 .standings-table td {
-  padding: 10px 6px;
-  border-bottom: 1px solid rgba(26, 45, 74, 0.5);
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(26, 45, 74, 0.3);
+  transition: background 0.15s;
 }
 
 .standings-table td:not(:first-child):not(:nth-child(2)) {
   text-align: center;
 }
 
+.standings-table tr:last-child td {
+  border-bottom: none;
+}
+
+.standings-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
 .standings-row--me {
-  background: rgba(213, 10, 10, 0.08);
+  background: rgba(213, 10, 10, 0.06);
+}
+
+.standings-row--me td {
+  font-weight: 500;
+}
+
+.standings-row--me td:nth-child(2) {
+  color: var(--red-primary);
+  font-weight: 600;
 }
 
 .standings-medal {
   margin-right: 4px;
 }
 
+/* Info Tab — Tournament Details */
+.info-section {
+  margin-top: 4px;
+}
+
+.info-grid {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(26, 45, 74, 0.3);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: right;
+}
+
+.info-players {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-players h3 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.player-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.player-list-item {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.player-list-item--me {
+  border-color: var(--red-primary);
+  background: rgba(213, 10, 10, 0.08);
+  font-weight: 600;
+}
+
+.info-rules {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-rules h3 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.rules-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rules-list li {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.4;
+}
+
+.rules-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--card-border);
+}
+
+/* Legacy tourney-info styles */
 .tourney-info {
   padding: 8px 0;
 }
@@ -1596,46 +1762,55 @@ html {
   margin: 0 auto 12px;
 }
 
-.player-card .pc-name {
+.player-card-info {
+  margin-top: 4px;
+}
+
+.player-card-name {
   font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 600;
 }
 
-.player-card .pc-location {
+.player-card-location {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 2px;
 }
 
-.player-card .pc-badges {
+.player-card-badges {
   display: flex;
   gap: 8px;
   justify-content: center;
   margin-top: 12px;
 }
 
-.player-card .badge {
+.player-card .badge,
+.badge {
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
 }
 
-.badge--rating {
+.badge-rating {
   background: rgba(26, 91, 181, 0.2);
   color: var(--blue-secondary);
 }
 
-.badge--level {
+.badge-level {
   background: rgba(139, 149, 165, 0.15);
   color: var(--text-muted);
 }
 
-.player-card .pc-record {
+.player-card-record {
   margin-top: 12px;
   font-size: 14px;
   color: var(--text-muted);
+}
+
+.player-card-winrate {
+  color: var(--text-dim);
 }
 
 .availability-section {
@@ -1660,27 +1835,35 @@ html {
 }
 
 .slot-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 8px 14px;
   background: var(--surface);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
-  font-size: 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--text);
 }
 
-.slot-chip .remove-btn {
+.slot-chip-remove {
   background: none;
   border: none;
   color: var(--text-dim);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
 }
 
-.slot-chip .remove-btn:hover {
+.slot-chip-remove:hover {
   color: var(--red-primary);
+}
+
+.add-slot-separator {
+  color: var(--text-dim);
+  font-size: 14px;
 }
 
 .add-slot-row {
@@ -1688,41 +1871,55 @@ html {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+  margin-top: 12px;
 }
 
 .add-slot-row select,
 .add-slot-row input {
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
   border: 1px solid var(--card-border);
   background: var(--surface);
   color: var(--text);
   font-size: 13px;
+  font-family: var(--font-body);
+  -webkit-appearance: none;
 }
 
-.add-slot-row select {
+.add-slot-row select:focus,
+.add-slot-row input:focus {
+  outline: none;
+  border-color: var(--blue-secondary);
+}
+
+.add-slot-day {
   flex: 1;
-  min-width: 80px;
+  min-width: 90px;
 }
 
-.add-slot-row input[type="time"] {
-  width: 100px;
+.add-slot-time {
+  width: 105px;
 }
 
-.add-slot-row .add-btn {
-  padding: 8px 14px;
-  border-radius: 6px;
+.add-slot-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
   background: var(--blue-secondary);
   color: white;
   border: none;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.15s;
 }
 
-.save-avail-btn {
+.add-slot-btn:hover {
+  opacity: 0.9;
+}
+
+.save-availability-btn {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   background: var(--green);
   color: white;
@@ -1730,23 +1927,41 @@ html {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  margin-top: 12px;
+  margin-top: 16px;
+  transition: opacity 0.15s;
+}
+
+.save-availability-btn:hover {
+  opacity: 0.9;
 }
 
 .impact-hint {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(26, 91, 181, 0.08);
+  border: 1px solid rgba(26, 91, 181, 0.2);
   border-radius: 8px;
   padding: 12px;
-  margin-top: 12px;
+  margin-top: 16px;
   font-size: 13px;
-  color: var(--amber);
+  color: var(--text-muted);
+}
+
+.impact-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.impact-text {
+  line-height: 1.4;
 }
 
 .settings-section {
+  margin-top: 8px;
 }
 
-.settings-section button {
+.settings-btn {
   width: 100%;
   padding: 14px;
   border-radius: 8px;
@@ -1754,20 +1969,26 @@ html {
   background: var(--card);
   color: var(--text);
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   margin-bottom: 8px;
+  transition: border-color 0.15s;
 }
 
-.settings-section button:hover {
+.settings-btn:hover {
   border-color: var(--text-dim);
 }
 
-.settings-section .signout-btn {
+.settings-btn--signout {
   color: var(--red-primary);
   border-color: rgba(213, 10, 10, 0.3);
 }
 
-.settings-section .app-version {
+.settings-btn--signout:hover {
+  border-color: rgba(213, 10, 10, 0.5);
+}
+
+.app-version {
   text-align: center;
   color: var(--text-dim);
   font-size: 11px;
