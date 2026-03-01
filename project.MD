@@ -361,3 +361,104 @@ Background process (`tournamentEngine.ts`) runs on a 30-second tick interval:
 5. **3-tier scheduling**: Maximizes auto-scheduled matches while providing graceful fallbacks
 6. **Service role auth**: Backend uses Supabase service role key (no RLS policies needed)
 7. **Monorepo with shared core**: Business logic (rating, round-robin, standings) shared between server and potential future clients
+
+---
+
+## Design Guidelines (v2 Frontend)
+
+### Brand & Color System
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--bg` | `#060e1e` | Page background (deep navy) |
+| `--surface` | `#0c1a2e` | Sheet/modal backgrounds |
+| `--card` | `#162a4a` | Card backgrounds, form inputs |
+| `--card-border` | `#234068` | Card borders, dividers |
+| `--red-primary` | `#D50A0A` | Brand accent, CTAs, nav active, primary buttons |
+| `--blue-secondary` | `#1A5BB5` | Secondary accents, focus states |
+| `--green` | `#22c55e` | Wins, success, confirmations |
+| `--amber` | `#f59e0b` | Warnings, running states |
+| `--gold` | `#FFD700` | Championship finals accent |
+| `--bronze` | `#CD7F32` | 3rd-place finals accent |
+| `--text` | `#f0f2f5` | Primary text |
+| `--text-muted` | `#8b95a5` | Secondary text, labels |
+| `--text-dim` | `#5a6577` | Tertiary text, hints |
+
+**No orange anywhere.** Red (`#D50A0A`) is the brand color. Orange is explicitly banned.
+
+### Typography
+
+- **Headings**: Oswald (`--font-heading`) — bold, uppercase section headers with `letter-spacing: 0.08em`
+- **Body**: Inter (`--font-body`) — clean, readable body text
+- **Rally logo text**: Oswald italic (`.home-title { font-style: italic }`)
+- **Section headers**: 14px uppercase tracked Oswald (`.section-title`)
+- **Stat numbers**: Oswald for large numerical displays (ratings, scores, etc.)
+
+### Spacing
+
+Spacing tokens: `--space-xs` (4px), `--space-sm` (8px), `--space-md` (16px), `--space-lg` (24px), `--space-xl` (32px).
+
+### Card Pattern
+
+Cards use `background: var(--card)`, `border: 1px solid var(--card-border)`, `border-radius: 12px`, and subtle depth with optional `box-shadow`. Nested containers (e.g., standings) use `border-radius: 12px` with `overflow: hidden` for contained elements.
+
+### Bottom Sheet Pattern
+
+All modal interactions use the `<BottomSheet>` component:
+- Dark `--surface` background with `border-radius: 16px 16px 0 0`
+- Drag handle, no duplicate titles (each sheet provides its own styled header)
+- Content components: ScoreEntrySheet, ConfirmScoreSheet, SchedulingSheet, FlexSheet, ProposeSheet
+- Action rows use `btn-primary` (red) and `btn-secondary` (card-colored) buttons
+
+### Button Styles
+
+| Class | Style | Usage |
+|-------|-------|-------|
+| `btn-primary` | Red background, white text, rounded | Submit, Confirm, primary CTA |
+| `btn-secondary` | Card background, muted text, bordered | Cancel, Dispute, secondary actions |
+| `.login-btn` | Red gradient background | Sign In button |
+| `.action-card` | Card with blue border | Tappable action items |
+
+### Status Badges
+
+Tournament status badges use pill-shaped `border-radius: 12px` with transparent color backgrounds:
+- Green: Active tournaments
+- Blue: Registration
+- Amber: Finals (with pulse animation)
+- Gray: Completed
+
+### Logo & Icons
+
+- **Rally R logo**: `/favicon.svg` — compact R icon with red/green gradient on navy
+- **Full logo**: `/logo.svg` — R icon with "RALLY" italic wordmark
+- **Nav icons**: Inline SVGs (house, trophy, calendar, person), 20px stroke
+- **Action card icons**: Emoji (contextual per action type)
+
+---
+
+## Recent Updates
+
+### Design Polish (Commit 157dfa2)
+- Reverted nav active color from orange to red (`#D50A0A`)
+- Copied Rally R logo assets from v1 (`favicon.svg`, `logo.svg`, `r.png`)
+- Fixed Profile screen CSS class mismatches (player-card-name, badge-rating, etc.)
+- Restyled availability section with proper form controls and slot chips
+- Standings table wrapped in card container with dark header row and current-player highlight
+- Info tab redesign: structured cards for tournament details, player pills, rules list
+
+### Bottom Sheet Styling (Latest)
+- Rewrote all bottom sheet CSS to match actual TSX component class names
+- Added `btn-primary` and `btn-secondary` shared button classes used by all sheets
+- Added shared sheet header pattern (centered Oswald title + context subtitle)
+- Added shared sheet actions row pattern (flex gap-12 layout)
+- Styled ScoreEntrySheet: winner toggle with active state glow, score inputs, preview card
+- Styled ConfirmScoreSheet: report card with score display, dispute/confirm buttons
+- Styled SchedulingSheet: option list with hover states, proposal heading, empty state
+- Styled FlexSheet: slot comparison visual, gap info, adjusted window highlight
+- Styled ProposeSheet: checkbox option list with scrollable container, selected state
+- Removed duplicate titles (BottomSheet title prop removed; each sheet has own header)
+
+### TestBar Verification
+- All 6 steps verified working: Seed → Simulate → Schedule → Scores → Confirm → Finals
+- Reset button verified: resets all step states to "ready"
+- Full tournament lifecycle confirmed end-to-end including finals advancement

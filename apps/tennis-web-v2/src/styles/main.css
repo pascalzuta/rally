@@ -1996,344 +1996,463 @@ html {
 }
 
 /* ---------------------------------------------------------
-   13. Score Entry Sheet
+   13. Shared Sheet Buttons (btn-primary, btn-secondary)
    --------------------------------------------------------- */
 
-.score-entry-sheet {
+.btn-primary {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--red-primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
 
-.score-match-header {
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+/* Shared sheet header pattern */
+.score-entry-header,
+.confirm-score-header,
+.scheduling-sheet-header,
+.flex-sheet-header,
+.propose-sheet-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-lg);
 }
 
-.score-match-header .opponent-name {
+.score-entry-header h3,
+.confirm-score-header h3,
+.scheduling-sheet-header h3,
+.flex-sheet-header h3,
+.propose-sheet-header h3 {
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
 }
 
-.score-match-header .match-context {
-  font-size: 12px;
+.score-entry-header p,
+.confirm-score-header p,
+.scheduling-sheet-header p,
+.flex-sheet-header p,
+.propose-sheet-header p {
+  font-size: 13px;
   color: var(--text-muted);
 }
 
-.winner-toggle {
+/* Shared sheet actions row */
+.score-entry-actions,
+.confirm-score-actions,
+.scheduling-sheet-actions,
+.flex-sheet-actions,
+.propose-sheet-actions {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-top: var(--space-lg);
+}
+
+/* ---------------------------------------------------------
+   14. Score Entry Sheet
+   --------------------------------------------------------- */
+
+.score-entry-sheet {}
+
+.score-winner-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: var(--space-lg);
 }
 
 .winner-btn {
   flex: 1;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 10px;
   border: 1px solid var(--card-border);
   background: var(--card);
   color: var(--text);
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
+  transition: all 0.15s;
 }
 
-.winner-btn--selected {
+.winner-btn:hover {
+  border-color: var(--text-dim);
+}
+
+.winner-btn--active {
   border-color: var(--red-primary);
-  background: rgba(213, 10, 10, 0.1);
+  background: rgba(213, 10, 10, 0.12);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--red-primary);
 }
 
-.set-row {
+.score-sets {
+  margin-bottom: var(--space-md);
+}
+
+.score-set-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
-.set-row .set-label {
+.score-set-label {
   font-size: 13px;
   color: var(--text-muted);
-  width: 48px;
+  width: 44px;
+  flex-shrink: 0;
 }
 
-.set-row input[type="number"] {
+.score-input {
   width: 56px;
-  padding: 10px;
-  border-radius: 6px;
+  padding: 10px 4px;
+  border-radius: 8px;
   border: 1px solid var(--card-border);
-  background: var(--surface);
+  background: var(--card);
   color: var(--text);
-  font-size: 18px;
+  font-size: 20px;
   text-align: center;
   font-family: var(--font-heading);
   -moz-appearance: textfield;
+  transition: border-color 0.15s;
 }
 
-.set-row input[type="number"]::-webkit-inner-spin-button {
+.score-input:focus {
+  outline: none;
+  border-color: var(--blue-secondary);
+}
+
+.score-input::-webkit-inner-spin-button,
+.score-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
+  margin: 0;
 }
 
-.set-row .set-dash {
-  color: var(--text-dim);
-}
-
-.tiebreak-row {
-  padding-left: 48px;
-  margin-top: -8px;
-  margin-bottom: 12px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.tiebreak-row input {
+.score-input--tb {
   width: 48px;
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid var(--card-border);
-  background: var(--surface);
-  color: var(--text);
-  text-align: center;
-  font-size: 14px;
+  padding: 8px 4px;
+  font-size: 16px;
+}
+
+.score-dash {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+.score-tb-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-left: 6px;
 }
 
 .score-preview {
   text-align: center;
   font-family: var(--font-heading);
-  font-size: 20px;
-  margin: 16px 0;
-  padding: 12px;
-  background: var(--card);
-  border-radius: 8px;
-  min-height: 48px;
-}
-
-.submit-score-btn {
-  width: 100%;
+  font-size: 22px;
+  margin: var(--space-md) 0;
   padding: 14px;
-  border-radius: 8px;
-  background: var(--red-primary);
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.submit-score-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* ---------------------------------------------------------
-   14. Scheduling / Flex / Propose Sheets
-   --------------------------------------------------------- */
-
-.scheduling-sheet .opponent-label {
-  text-align: center;
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-}
-
-.scheduling-sheet .time-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.time-option-btn {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--card-border);
   background: var(--card);
-  color: var(--text);
-  font-size: 15px;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.2s;
-}
-
-.time-option-btn:hover {
-  border-color: var(--blue-secondary);
-}
-
-.time-option-btn:active {
-  background: rgba(26, 91, 181, 0.15);
-}
-
-.flex-sheet {
-  text-align: center;
-}
-
-.flex-sheet .flex-visual {
-  padding: 20px;
-  background: var(--card);
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-
-.flex-sheet .flex-slots {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.flex-sheet .flex-slot {
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: var(--surface);
   border: 1px solid var(--card-border);
-  font-size: 13px;
-}
-
-.flex-sheet .flex-gap {
-  font-size: 13px;
-  color: var(--amber);
-  margin-bottom: 8px;
-}
-
-.flex-sheet .flex-suggestion {
-  font-size: 14px;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.flex-sheet .flex-result {
-  font-size: 13px;
-  color: var(--green);
-}
-
-.flex-accept-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 8px;
-  background: var(--amber);
-  color: #000;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.propose-sheet .slot-options {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-
-.propose-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--card-border);
-  background: var(--card);
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.propose-option:hover {
-  border-color: var(--text-dim);
-}
-
-.propose-option--selected {
-  border-color: var(--green);
-  background: rgba(34, 197, 94, 0.08);
-}
-
-.propose-option .check-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 2px solid var(--card-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.propose-option--selected .check-box {
-  border-color: var(--green);
-  background: var(--green);
-  color: white;
-  font-size: 12px;
-}
-
-.propose-option .option-label {
-  font-size: 14px;
-}
-
-.propose-send-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 8px;
-  background: var(--blue-secondary);
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.propose-send-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  border-radius: 10px;
+  min-height: 50px;
+  letter-spacing: 1px;
 }
 
 /* ---------------------------------------------------------
    15. Confirm Score Sheet
    --------------------------------------------------------- */
 
-.confirm-sheet {
+.confirm-score-sheet {
   text-align: center;
 }
 
-.confirm-sheet .reported-by {
+.confirm-score-report {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: var(--space-lg) var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.confirm-score-reporter {
   font-size: 13px;
   color: var(--text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
-.confirm-sheet .reported-score {
+.confirm-score-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.confirm-score-winner {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.confirm-score-value {
   font-family: var(--font-heading);
   font-size: 28px;
-  margin-bottom: 8px;
-}
-
-.confirm-sheet .reported-winner {
-  font-size: 14px;
-  margin-bottom: 24px;
-}
-
-.confirm-btns {
-  display: flex;
-  gap: 12px;
-}
-
-.confirm-btn {
-  flex: 1;
-  padding: 14px;
-  border-radius: 8px;
-  font-size: 16px;
   font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.confirm-btn--yes {
-  background: var(--green);
-  color: white;
-}
-
-.confirm-btn--no {
-  background: var(--card);
+  letter-spacing: 2px;
   color: var(--text);
-  border: 1px solid var(--card-border);
 }
 
 /* ---------------------------------------------------------
-   16. Test Bar
+   16. Scheduling Sheet
+   --------------------------------------------------------- */
+
+.scheduling-sheet {}
+
+.scheduling-sheet-options {
+  margin-bottom: var(--space-md);
+}
+
+.scheduling-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scheduling-option-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.scheduling-option-btn:hover {
+  border-color: var(--blue-secondary);
+  background: rgba(26, 91, 181, 0.08);
+}
+
+.scheduling-option-btn:active {
+  background: rgba(26, 91, 181, 0.15);
+}
+
+.scheduling-proposal-list {
+  margin-top: var(--space-md);
+}
+
+.scheduling-proposal-heading {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-heading);
+  margin-bottom: var(--space-sm);
+}
+
+.scheduling-empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: var(--space-lg) 0;
+}
+
+/* ---------------------------------------------------------
+   17. Flex Sheet
+   --------------------------------------------------------- */
+
+.flex-sheet {}
+
+.flex-sheet-visual {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: var(--space-lg) var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.flex-slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.flex-slot-row + .flex-slot-row {
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.flex-slot-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.flex-slot-time {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--text);
+}
+
+.flex-gap-info {
+  text-align: center;
+  font-size: 13px;
+  color: var(--amber);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px dashed rgba(245, 158, 11, 0.3);
+}
+
+.flex-suggestion {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: var(--space-sm);
+  line-height: 1.5;
+}
+
+.flex-adjusted {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  padding: 12px var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.flex-adjusted-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.flex-adjusted-time {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+/* ---------------------------------------------------------
+   18. Propose Sheet
+   --------------------------------------------------------- */
+
+.propose-sheet {}
+
+.propose-sheet-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.propose-sheet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--space-md);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.propose-empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: var(--space-lg) 0;
+}
+
+.propose-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.propose-option-btn:hover {
+  border-color: var(--text-dim);
+}
+
+.propose-option-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.propose-option-btn--selected {
+  border-color: var(--green);
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: 0 0 0 1px var(--green);
+}
+
+.propose-option-check {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.propose-option-btn--selected .propose-option-check {
+  color: var(--green);
+}
+
+.propose-option-label {
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------
+   19. Test Bar
    --------------------------------------------------------- */
 
 .test-bar {
@@ -2496,7 +2615,7 @@ html {
 }
 
 /* ---------------------------------------------------------
-   17. Utility Classes
+   20. Utility Classes
    --------------------------------------------------------- */
 
 .empty-state {

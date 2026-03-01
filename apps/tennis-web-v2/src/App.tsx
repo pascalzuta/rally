@@ -530,19 +530,6 @@ export default function App() {
       <BottomSheet
         isOpen={sheet.isOpen}
         onClose={sheet.close}
-        title={
-          sheet.content?.type === "score-entry"
-            ? "Enter Score"
-            : sheet.content?.type === "confirm-score"
-              ? "Confirm Score"
-              : sheet.content?.type === "scheduling"
-                ? "Pick a Time"
-                : sheet.content?.type === "flex"
-                  ? "Almost There!"
-                  : sheet.content?.type === "propose"
-                    ? "Propose Times"
-                    : undefined
-        }
       >
         {sheet.content?.type === "score-entry" && (
           <ScoreEntrySheet
