@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   registration_opened_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   finals_matches          JSONB,
   scheduling_result       JSONB,
+  rating_snapshot         JSONB,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

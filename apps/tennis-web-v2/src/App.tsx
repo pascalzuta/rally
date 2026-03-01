@@ -7,7 +7,7 @@ import { useMatches } from "./hooks/useMatches";
 import { useActionItems } from "./hooks/useActionItems";
 import { useAvailability } from "./hooks/useAvailability";
 import { useBottomSheet } from "./hooks/useBottomSheet";
-import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiSubmitScores, apiConfirmScores, apiGetSchedulingInfo } from "./api";
+import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiSubmitScores, apiConfirmScores, apiAdvanceToFinals, apiGetSchedulingInfo } from "./api";
 import BottomNav from "./components/BottomNav";
 import BottomSheet from "./components/BottomSheet";
 import ScoreEntrySheet from "./components/ScoreEntrySheet";
@@ -39,6 +39,7 @@ export default function App() {
   const {
     tournaments,
     playerNames,
+    playerRatings,
     loading: tourneysLoading,
     loadTournaments,
     joinTournament,
@@ -355,7 +356,7 @@ export default function App() {
     [login],
   );
 
-  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4 | 5): Promise<string> => {
+  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4 | 5 | 6): Promise<string> => {
     switch (step) {
       case 1: {
         const r = await apiSeedRich();
@@ -383,6 +384,12 @@ export default function App() {
         const r = await apiConfirmScores(player.id);
         if (token) await reloadAll();
         return `${r.confirmed} score(s) confirmed`;
+      }
+      case 6: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiAdvanceToFinals(player.id);
+        if (token) await reloadAll();
+        return r.champMatchId ? "Advanced to finals" : "Not ready for finals";
       }
     }
   }, [player, token, reloadAll]);
@@ -485,9 +492,11 @@ export default function App() {
             tournaments={tournaments}
             allMatches={allMatches}
             playerNames={playerNames}
+            playerRatings={playerRatings}
             selectedTournamentId={selectedTournamentId}
             onSelectTournament={setSelectedTournamentId}
             onMatchAction={handleMatchAction}
+            onJoinTournament={handleJoinTournament}
           />
         )}
         {activeTab === "activity" && (

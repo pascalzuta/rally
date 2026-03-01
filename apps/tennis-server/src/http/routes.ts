@@ -177,6 +177,13 @@ export function createRoutes(deps: RouteDeps): Router {
         }
       }
 
+      // Snapshot pre-tournament ratings
+      const ratingSnapshot: Record<string, number> = {};
+      for (const pid of playerIds) {
+        const p = await deps.players.findById(pid);
+        if (p) ratingSnapshot[pid] = p.rating;
+      }
+
       // Remove ALL existing SF County 3.5 test tournaments
       const allTournaments = await deps.tournaments.listAll();
       for (const old of allTournaments) {
@@ -243,6 +250,7 @@ export function createRoutes(deps: RouteDeps): Router {
         rounds: updatedRounds,
         standings,
         pendingResults: {},
+        ratingSnapshot,
         registrationOpenedAt: new Date(now.getTime() - 8 * 86400000).toISOString(),
         createdAt: new Date(now.getTime() - 8 * 86400000).toISOString()
       };
@@ -309,6 +317,7 @@ export function createRoutes(deps: RouteDeps): Router {
         if (tournament.status !== "active" && tournament.status !== "finals") continue;
         const matches = await deps.matches.findByTournament(tournament.id);
         let tournamentUpdated = false;
+        let matchIndex = 0;
         for (const match of matches) {
           if (match.status !== "scheduled") continue;
           const isChallenger = match.challengerId === playerId;
@@ -317,15 +326,21 @@ export function createRoutes(deps: RouteDeps): Router {
           // Skip if already has pending result
           if (tournament.pendingResults[match.id]) continue;
           const opponentId = isChallenger ? match.opponentId : match.challengerId;
-          // Opponent reports a win: 6-4, 6-3
+          // Player wins most matches (all except the last one) so they rank in top 4
+          const playerWins = matchIndex < 4; // Win first 4, lose 5th
+          const winnerId = playerWins ? playerId : opponentId;
+          const sets = playerWins
+            ? [{ aGames: 6, bGames: 3 }, { aGames: 6, bGames: 4 }]
+            : [{ aGames: 4, bGames: 6 }, { aGames: 3, bGames: 6 }];
           tournament.pendingResults[match.id] = {
-            winnerId: opponentId,
-            sets: [{ aGames: 6, bGames: 4 }, { aGames: 6, bGames: 3 }],
+            winnerId,
+            sets,
             reportedBy: opponentId,
             reportedAt: new Date().toISOString(),
           };
           tournamentUpdated = true;
           submitted++;
+          matchIndex++;
         }
         if (tournamentUpdated) {
           await deps.tournaments.save(tournament);
@@ -390,11 +405,51 @@ export function createRoutes(deps: RouteDeps): Router {
           tournamentUpdated = true;
           confirmed++;
         }
+        // Auto-complete NPC-only finals matches
+        if (tournament.status === "finals" && tournament.finalsMatches) {
+          for (const fmId of [tournament.finalsMatches.champMatchId, tournament.finalsMatches.thirdMatchId]) {
+            if (!fmId) continue;
+            const fm = await deps.matches.findById(fmId);
+            if (!fm || fm.status === "completed") continue;
+            // Skip if it involves the player (already handled above)
+            if (fm.challengerId === playerId || fm.opponentId === playerId) continue;
+            const now3 = new Date().toISOString();
+            fm.status = "completed";
+            fm.result = {
+              winnerId: fm.challengerId,
+              sets: [{ aGames: 6, bGames: 4 }, { aGames: 7, bGames: 5 }],
+              reportedBy: fm.challengerId,
+              reportedAt: now3,
+              confirmedBy: fm.opponentId,
+              confirmedAt: now3,
+            };
+            fm.updatedAt = now3;
+            await deps.matches.save(fm);
+            const w = await deps.players.findById(fm.challengerId);
+            const l = await deps.players.findById(fm.opponentId);
+            if (w && l) {
+              const { updatedWinner, updatedLoser } = applyEnhancedMatchResult(w, l, fm.result.sets!);
+              await deps.players.upsert(updatedWinner);
+              await deps.players.upsert(updatedLoser);
+            }
+            tournamentUpdated = true;
+            confirmed++;
+          }
+        }
+
         if (tournamentUpdated) {
           // Recompute standings
           const allMatches = await deps.matches.findByTournament(tournament.id);
           const completedMatches = allMatches.filter(m => m.status === "completed");
           tournament.standings = computeStandings(tournament.playerIds, completedMatches);
+          // Check if tournament is now completed (both finals done)
+          if (tournament.finalsMatches?.champMatchId && tournament.finalsMatches?.thirdMatchId) {
+            const cMatch = await deps.matches.findById(tournament.finalsMatches.champMatchId);
+            const tMatch = await deps.matches.findById(tournament.finalsMatches.thirdMatchId);
+            if (cMatch?.status === "completed" && tMatch?.status === "completed") {
+              tournament.status = "completed";
+            }
+          }
           await deps.tournaments.save(tournament);
         }
       }
@@ -402,6 +457,98 @@ export function createRoutes(deps: RouteDeps): Router {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("confirm-scores error:", e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  router.post("/debug/advance-to-finals", async (req, res) => {
+    try {
+      const { playerId } = req.body as { playerId?: string };
+      if (!playerId) { res.status(400).json({ error: "playerId required" }); return; }
+      const allTournaments = await deps.tournaments.listAll();
+      for (const tournament of allTournaments) {
+        if (!tournament.playerIds.includes(playerId)) continue;
+        if (tournament.status !== "active") continue;
+        // Check all round-robin matches completed
+        const matches = await deps.matches.findByTournament(tournament.id);
+        const roundRobinMatchIds = new Set<string>();
+        for (const round of tournament.rounds) {
+          for (const pairing of round.pairings) {
+            if (pairing.matchId) roundRobinMatchIds.add(pairing.matchId);
+          }
+        }
+        const roundRobinMatches = matches.filter(m => roundRobinMatchIds.has(m.id));
+
+        // Auto-complete any unfinished NPC-vs-NPC matches
+        for (const m of roundRobinMatches) {
+          if (m.status === "completed") continue;
+          const now2 = new Date().toISOString();
+          // NPC wins with 6-4, 6-3
+          m.status = "completed";
+          m.result = {
+            winnerId: m.challengerId,
+            sets: [{ aGames: 6, bGames: 4 }, { aGames: 6, bGames: 3 }],
+            reportedBy: m.challengerId,
+            reportedAt: now2,
+            confirmedBy: m.opponentId,
+            confirmedAt: now2,
+          };
+          m.updatedAt = now2;
+          await deps.matches.save(m);
+          // Update player ratings
+          const winner = await deps.players.findById(m.challengerId);
+          const loser = await deps.players.findById(m.opponentId);
+          if (winner && loser) {
+            const { updatedWinner, updatedLoser } = applyEnhancedMatchResult(winner, loser, m.result.sets!);
+            await deps.players.upsert(updatedWinner);
+            await deps.players.upsert(updatedLoser);
+          }
+        }
+
+        const allCompleted = roundRobinMatches.length > 0 && roundRobinMatches.every(m => m.status === "completed");
+        if (!allCompleted) continue;
+
+        // Recompute standings
+        tournament.standings = computeStandings(tournament.playerIds, roundRobinMatches);
+        if (tournament.standings.length < 4) continue;
+
+        const first = tournament.standings[0]!;
+        const second = tournament.standings[1]!;
+        const third = tournament.standings[2]!;
+        const fourth = tournament.standings[3]!;
+        const now = new Date().toISOString();
+
+        // Create championship match: #1 vs #2 (scheduled so step 4 works)
+        const champMatchId = randomUUID();
+        const champMatch: Match = {
+          id: champMatchId, challengerId: first.playerId, opponentId: second.playerId,
+          tournamentId: tournament.id, status: "scheduled", proposals: [],
+          scheduledAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+          createdAt: now, updatedAt: now,
+        };
+        await deps.matches.save(champMatch);
+
+        // Create 3rd-place match: #3 vs #4
+        const thirdMatchId = randomUUID();
+        const thirdMatch: Match = {
+          id: thirdMatchId, challengerId: third.playerId, opponentId: fourth.playerId,
+          tournamentId: tournament.id, status: "scheduled", proposals: [],
+          scheduledAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+          createdAt: now, updatedAt: now,
+        };
+        await deps.matches.save(thirdMatch);
+
+        tournament.finalsMatches = { champMatchId, thirdMatchId };
+        tournament.status = "finals";
+        await deps.tournaments.save(tournament);
+
+        res.json({ ok: true, champMatchId, thirdMatchId });
+        return;
+      }
+      res.json({ ok: false, error: "No active tournament with all matches completed" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("advance-to-finals error:", e);
       res.status(500).json({ error: msg });
     }
   });
@@ -1077,8 +1224,9 @@ export function createRoutes(deps: RouteDeps): Router {
     const tournament = await deps.tournaments.findById(req.params["id"] ?? "");
     if (!tournament) { res.status(404).json({ error: "tournament_not_found" }); return; }
     const playerNames: Record<string, string> = {};
-    for (const pid of tournament.playerIds) { const p = await deps.players.findById(pid); if (p) playerNames[pid] = p.name || p.email; }
-    res.json({ tournament, playerNames });
+    const playerRatings: Record<string, number> = {};
+    for (const pid of tournament.playerIds) { const p = await deps.players.findById(pid); if (p) { playerNames[pid] = p.name || p.email; playerRatings[pid] = p.rating; } }
+    res.json({ tournament, playerNames, playerRatings });
   });
 
   router.get("/tournaments/:id/matches", async (req, res) => {
@@ -1106,12 +1254,17 @@ export function createRoutes(deps: RouteDeps): Router {
     // Transform matches for frontend TournamentMatch shape
     const transformed = matches.map(m => {
       const pendingReport = tournament.pendingResults[m.id];
+      // Determine if this is a finals match
+      let finalsType: "championship" | "third-place" | undefined;
+      if (tournament.finalsMatches?.champMatchId === m.id) finalsType = "championship";
+      else if (tournament.finalsMatches?.thirdMatchId === m.id) finalsType = "third-place";
       return {
         id: m.id,
         tournamentId: m.tournamentId,
         homePlayerId: m.challengerId,
         awayPlayerId: m.opponentId,
         round: matchRoundMap[m.id] ?? 0,
+        finalsType,
         status: m.status,
         proposals: m.proposals,
         scheduledAt: m.scheduledAt,

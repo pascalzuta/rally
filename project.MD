@@ -145,7 +145,7 @@ Rally is a tournament and match scheduling platform for recreational tennis play
 `id, challengerId, opponentId, tournamentId?, status (pending|scheduling|scheduled|completed|cancelled), proposals[], scheduledAt?, venue?, result?, schedulingTier (1|2|3), nearMiss?, createdAt, updatedAt`
 
 ### Tournament
-`id, month, name, county, band, status (registration|active|finals|completed), playerIds[], minPlayers, maxPlayers, rounds[], standings[], pendingResults{}, finalsMatches?, schedulingResult?, createdAt`
+`id, month, name, county, band, status (registration|active|finals|completed), playerIds[], minPlayers, maxPlayers, rounds[], standings[], pendingResults{}, finalsMatches?, schedulingResult?, ratingSnapshot?, createdAt`
 
 ### AvailabilitySlot
 `id, playerId, dayOfWeek (0-6), startTime, endTime`
@@ -182,7 +182,7 @@ Rally is a tournament and match scheduling platform for recreational tennis play
 | POST | /matches/:id/propose-times | Yes | Propose 3 times (Tier 3) |
 | POST | /matches/:id/result | Yes | Report casual match result |
 | GET | /tournaments | Yes | List tournaments |
-| GET | /tournaments/:id | Yes | Tournament detail + player names |
+| GET | /tournaments/:id | Yes | Tournament detail + player names + ratings |
 | GET | /tournaments/:id/matches | Yes | Tournament matches |
 | POST | /tournaments/:id/join | Yes | Join tournament |
 | DELETE | /tournaments/:id/leave | Yes | Leave tournament |
@@ -195,6 +195,10 @@ Rally is a tournament and match scheduling platform for recreational tennis play
 | GET | /subscription/status | Yes | Subscription status |
 | POST | /debug/seed-rich | No | Seed 200 players + 10 tournaments |
 | POST | /debug/simulate-tournament | No | Simulate a tournament |
+| POST | /debug/accept-proposals | No | Accept all pending proposals for player |
+| POST | /debug/submit-scores | No | Opponents submit scores for player's matches |
+| POST | /debug/confirm-scores | No | Confirm all pending scores for player |
+| POST | /debug/advance-to-finals | No | Advance tournament to finals phase |
 
 ---
 
@@ -204,7 +208,7 @@ Rally is a tournament and match scheduling platform for recreational tennis play
 1. **LoginScreen** — Email authentication
 2. **SetupScreen** — Profile setup (name, city search, county, level)
 3. **HomeScreen** — Action items, next match, my tournaments, quick stats
-4. **TourneyScreen** — Matches/Standings/Info tabs for selected tournament
+4. **TourneyScreen** — Matches/Standings/Info tabs, finals UI, rating deltas, tournament discovery
 5. **ActivityScreen** — All matches (upcoming, awaiting confirmation, completed)
 6. **ProfileScreen** — Profile info, availability editor, impact suggestions, sign out
 
@@ -218,7 +222,7 @@ Rally is a tournament and match scheduling platform for recreational tennis play
 - **FlexSheet** — Accept Tier 2 near-miss with flex suggestion
 - **ProposeSheet** — Propose 3 custom times (Tier 3)
 - **StandingsTable** — Ranked table with W/L, sets, games
-- **TestBar** — Dev-only bar for test login, seed data, simulate
+- **TestBar** — Dev-only bar with 6-step test flow: Seed → Simulate → Schedule → Scores → Confirm → Finals
 
 ### Hooks
 - `useAuth` — Login, logout, token/player state, profile updates
@@ -319,6 +323,19 @@ The `POST /v1/debug/seed-rich` endpoint creates:
 - 7 availability patterns designed to produce all 3 scheduling tiers
 - 10 tournaments (one per county) in registration status with 7/8 players
 - Joining as the 8th player triggers tournament activation + auto-scheduling
+
+### TestBar — Full Lifecycle Test Flow
+The TestBar provides a 6-step sequence to test the entire tournament lifecycle:
+
+1. **Seed** — Seeds 200 players + 10 tournaments
+2. **Simulate** — Creates a test tournament with 7 NPC players + logged-in user
+3. **Schedule** — Accepts all pending match proposals → matches become scheduled
+4. **Scores** — Opponents submit scores for all scheduled matches → pending confirmation
+5. **Confirm** — User confirms all pending scores → matches completed, ratings updated
+6. **Finals** — Advances to finals → creates Championship (#1v#2) and 3rd Place (#3v#4) matches
+
+After step 6, run steps 4→5 again to complete the finals and finish the tournament.
+Each step's `ratingSnapshot` captures pre-tournament ratings for delta display in standings.
 
 ---
 

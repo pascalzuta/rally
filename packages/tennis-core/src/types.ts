@@ -184,6 +184,8 @@ export interface Tournament {
   registrationOpenedAt: string;
   finalsMatches?: { champMatchId?: string; thirdMatchId?: string };
   schedulingResult?: SchedulingResult;
+  /** Pre-tournament ratings for computing deltas */
+  ratingSnapshot?: Record<string, number>;
   createdAt: string;
 }
 

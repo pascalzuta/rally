@@ -72,7 +72,7 @@ export const apiSetAvailability = (token: string, slots: Array<{ dayOfWeek: numb
 
 // Tournaments
 export const apiGetTournaments = (token: string) => get<{ tournaments: Tournament[] }>("/tournaments", token);
-export const apiGetTournament = (token: string, id: string) => get<{ tournament: Tournament; playerNames: Record<string, string> }>(`/tournaments/${id}`, token);
+export const apiGetTournament = (token: string, id: string) => get<{ tournament: Tournament; playerNames: Record<string, string>; playerRatings: Record<string, number> }>(`/tournaments/${id}`, token);
 export const apiJoinTournament = (token: string, id: string) => post<{ tournament: Tournament; activated?: boolean; schedulingResult?: SchedulingResult }>(`/tournaments/${id}/join`, {}, token);
 export const apiLeaveTournament = (token: string, id: string) => del<{ tournament: Tournament }>(`/tournaments/${id}/leave`, token);
 export const apiGetTournamentMatches = (token: string, id: string) => get<{ matches: TournamentMatch[] }>(`/tournaments/${id}/matches`, token);
@@ -102,6 +102,7 @@ export const apiSimulateTournament = (playerId?: string) => post<{ ok: boolean; 
 export const apiAcceptProposals = (playerId: string) => post<{ ok: boolean; accepted: number }>("/debug/accept-proposals", { playerId });
 export const apiSubmitScores = (playerId: string) => post<{ ok: boolean; submitted: number }>("/debug/submit-scores", { playerId });
 export const apiConfirmScores = (playerId: string) => post<{ ok: boolean; confirmed: number }>("/debug/confirm-scores", { playerId });
+export const apiAdvanceToFinals = (playerId: string) => post<{ ok: boolean; champMatchId?: string; thirdMatchId?: string }>("/debug/advance-to-finals", { playerId });
 
 // City search
 export const apiSearchCities = async (q: string): Promise<CitySearchResult[]> => {

@@ -5,6 +5,7 @@ import { apiGetTournaments, apiGetTournament, apiJoinTournament, apiLeaveTournam
 export function useTournaments() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [playerNames, setPlayerNames] = useState<Record<string, string>>({});
+  const [playerRatings, setPlayerRatings] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
 
   const loadTournaments = useCallback(async (token: string) => {
@@ -29,14 +30,15 @@ export function useTournaments() {
     setTournaments(prev => prev.map(t => t.id === id ? tournament : t));
   }, []);
 
-  const getTournamentDetail = useCallback(async (token: string, id: string): Promise<{ tournament: Tournament; playerNames: Record<string, string> }> => {
+  const getTournamentDetail = useCallback(async (token: string, id: string): Promise<{ tournament: Tournament; playerNames: Record<string, string>; playerRatings: Record<string, number> }> => {
     const result = await apiGetTournament(token, id);
-    // Merge player names into the global map
+    // Merge player names and ratings into global maps
     setPlayerNames(prev => ({ ...prev, ...result.playerNames }));
+    if (result.playerRatings) setPlayerRatings(prev => ({ ...prev, ...result.playerRatings }));
     // Update local tournament list with the fresh data
     setTournaments(prev => prev.map(t => t.id === id ? result.tournament : t));
     return result;
   }, []);
 
-  return { tournaments, playerNames, loading, loadTournaments, joinTournament, leaveTournament, getTournamentDetail };
+  return { tournaments, playerNames, playerRatings, loading, loadTournaments, joinTournament, leaveTournament, getTournamentDetail };
 }

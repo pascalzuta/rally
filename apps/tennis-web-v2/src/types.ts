@@ -82,6 +82,7 @@ export interface Tournament {
   registrationOpenedAt: string;
   finalsMatches?: { champMatchId?: string; thirdMatchId?: string };
   schedulingResult?: SchedulingResult;
+  ratingSnapshot?: Record<string, number>;
   createdAt: string;
   city?: string; level?: string;
 }
@@ -90,6 +91,7 @@ export interface TournamentMatch {
   id: string; tournamentId: string;
   homePlayerId: string; awayPlayerId: string;
   round: number; status: string;
+  finalsType?: "championship" | "third-place";
   proposals?: TimeProposal[];
   scheduledAt?: string;
   schedulingTier?: 1 | 2 | 3;
