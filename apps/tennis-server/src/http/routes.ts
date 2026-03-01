@@ -110,11 +110,20 @@ export function createRoutes(deps: RouteDeps): Router {
 
   router.post("/debug/simulate-tournament", async (_req, res) => {
     try {
+      const { playerId } = _req.body as { playerId?: string };
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-      // Look up or create player IDs and reset their stats to seed values
+      // If a playerId was provided, include that player first
       const playerIds: string[] = [];
+      if (playerId) {
+        const p = await deps.players.findById(playerId);
+        if (p) {
+          playerIds.push(playerId);
+        }
+      }
+
+      // Look up or create test player IDs and reset their stats to seed values
       for (const spec of TOURNEY_TEST_PLAYERS) {
         let authUser = await deps.auth.findByEmail(spec.email);
         if (!authUser) {

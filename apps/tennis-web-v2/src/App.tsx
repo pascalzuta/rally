@@ -362,7 +362,7 @@ export default function App() {
         return `Seeded ${r.players} players, ${r.tournaments} tournaments`;
       }
       case 2: {
-        const r = await apiSimulateTournament();
+        const r = await apiSimulateTournament(player?.id);
         if (token) await reloadAll();
         return "Tournament created";
       }

@@ -98,7 +98,7 @@ export const apiLeavePool = (token: string) => del<{ ok: boolean }>("/pool/leave
 
 // Debug
 export const apiSeedRich = () => post<{ ok: boolean; counties: number; players: number; tournaments: number }>("/debug/seed-rich", {});
-export const apiSimulateTournament = () => post<{ ok: boolean; tournamentId: string }>("/debug/simulate-tournament", {});
+export const apiSimulateTournament = (playerId?: string) => post<{ ok: boolean; tournamentId: string }>("/debug/simulate-tournament", playerId ? { playerId } : {});
 export const apiAcceptProposals = (playerId: string) => post<{ ok: boolean; accepted: number }>("/debug/accept-proposals", { playerId });
 export const apiSubmitScores = (playerId: string) => post<{ ok: boolean; submitted: number }>("/debug/submit-scores", { playerId });
 
