@@ -34,8 +34,7 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
     if (runningStep === stepNum) return "running";
     if (completedSteps.has(stepNum)) return "done";
 
-    // Check prerequisites
-    if (stepNum > 1 && !completedSteps.has(stepNum - 1)) return "locked";
+    // Only lock if login is required and user isn't logged in
     if (needsLogin && !isLoggedIn) return "locked";
 
     return "ready";
