@@ -234,6 +234,51 @@ export function createRoutes(deps: RouteDeps): Router {
     }
   });
 
+  router.post("/debug/submit-scores", async (req, res) => {
+    try {
+      const { playerId } = req.body as { playerId?: string };
+      if (!playerId) {
+        res.status(400).json({ error: "playerId required" });
+        return;
+      }
+      // Find all tournaments the player is in
+      const allTournaments = await deps.tournaments.listAll();
+      let submitted = 0;
+      for (const tournament of allTournaments) {
+        if (!tournament.playerIds.includes(playerId)) continue;
+        if (tournament.status !== "active" && tournament.status !== "finals") continue;
+        const matches = await deps.matches.findByTournament(tournament.id);
+        let tournamentUpdated = false;
+        for (const match of matches) {
+          if (match.status !== "scheduled") continue;
+          const isChallenger = match.challengerId === playerId;
+          const isOpponent = match.opponentId === playerId;
+          if (!isChallenger && !isOpponent) continue;
+          // Skip if already has pending result
+          if (tournament.pendingResults[match.id]) continue;
+          const opponentId = isChallenger ? match.opponentId : match.challengerId;
+          // Opponent reports a win: 6-4, 6-3
+          tournament.pendingResults[match.id] = {
+            winnerId: opponentId,
+            sets: [{ aGames: 6, bGames: 4 }, { aGames: 6, bGames: 3 }],
+            reportedBy: opponentId,
+            reportedAt: new Date().toISOString(),
+          };
+          tournamentUpdated = true;
+          submitted++;
+        }
+        if (tournamentUpdated) {
+          await deps.tournaments.save(tournament);
+        }
+      }
+      res.json({ ok: true, submitted });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("submit-scores error:", e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
   router.post("/debug/seed-rich", async (_req, res) => {
     try {
       const result = await seedRichData(deps.auth, deps.players, deps.availability, deps.tournaments, deps.matches);

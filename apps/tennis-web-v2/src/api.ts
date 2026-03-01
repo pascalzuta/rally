@@ -100,6 +100,7 @@ export const apiLeavePool = (token: string) => del<{ ok: boolean }>("/pool/leave
 export const apiSeedRich = () => post<{ ok: boolean; counties: number; players: number; tournaments: number }>("/debug/seed-rich", {});
 export const apiSimulateTournament = () => post<{ ok: boolean; tournamentId: string }>("/debug/simulate-tournament", {});
 export const apiAcceptProposals = (playerId: string) => post<{ ok: boolean; accepted: number }>("/debug/accept-proposals", { playerId });
+export const apiSubmitScores = (playerId: string) => post<{ ok: boolean; submitted: number }>("/debug/submit-scores", { playerId });
 
 // City search
 export const apiSearchCities = async (q: string): Promise<CitySearchResult[]> => {

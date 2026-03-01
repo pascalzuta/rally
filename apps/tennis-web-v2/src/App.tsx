@@ -7,7 +7,7 @@ import { useMatches } from "./hooks/useMatches";
 import { useActionItems } from "./hooks/useActionItems";
 import { useAvailability } from "./hooks/useAvailability";
 import { useBottomSheet } from "./hooks/useBottomSheet";
-import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiGetSchedulingInfo } from "./api";
+import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiSubmitScores, apiGetSchedulingInfo } from "./api";
 import BottomNav from "./components/BottomNav";
 import BottomSheet from "./components/BottomSheet";
 import ScoreEntrySheet from "./components/ScoreEntrySheet";
@@ -384,6 +384,17 @@ export default function App() {
     }
   }, [player, token, reloadAll]);
 
+  const handleSubmitScores = useCallback(async () => {
+    if (!player) return;
+    try {
+      const result = await apiSubmitScores(player.id);
+      if (token) await reloadAll();
+      alert(`${result.submitted} score(s) submitted`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to submit scores");
+    }
+  }, [player, token, reloadAll]);
+
   // Availability save handler
   const handleSaveAvailability = useCallback(
     async (
@@ -593,6 +604,7 @@ export default function App() {
         onSeedRich={handleSeedRich}
         onSimulate={handleSimulate}
         onAcceptProposals={handleAcceptProposals}
+        onSubmitScores={handleSubmitScores}
       />
     </div>
   );
