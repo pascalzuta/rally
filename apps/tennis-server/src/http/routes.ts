@@ -114,20 +114,13 @@ export function createRoutes(deps: RouteDeps): Router {
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-      // If a playerId was provided, include that player first
+      // Collect test player IDs (create if missing) and reset stats
       const playerIds: string[] = [];
-      if (playerId) {
-        const p = await deps.players.findById(playerId);
-        if (p) {
-          playerIds.push(playerId);
-        }
-      }
+      const playerInfo: Array<{ email: string; name: string; id: string }> = [];
 
-      // Look up or create test player IDs and reset their stats (skip if already added via playerId)
       for (const spec of TOURNEY_TEST_PLAYERS) {
         let authUser = await deps.auth.findByEmail(spec.email);
         if (!authUser) {
-          // Auto-create the test player
           const id = randomUUID();
           authUser = { id, email: spec.email, createdAt: now.toISOString() };
           await deps.auth.upsert(authUser);
@@ -149,7 +142,6 @@ export function createRoutes(deps: RouteDeps): Router {
             updatedAt: now.toISOString()
           };
           await deps.players.upsert(player);
-          // Set availability
           const slots = spec.availability.map((s) => ({
             id: randomUUID(),
             playerId: id,
@@ -157,11 +149,11 @@ export function createRoutes(deps: RouteDeps): Router {
           }));
           await deps.availability.setForPlayer(id, slots);
         }
-        // Skip if this player was already added (logged-in user IS a test player)
-        if (playerIds.includes(authUser.id)) continue;
-        playerIds.push(authUser.id);
+        const pid = String(authUser.id);
+        playerIds.push(pid);
+        playerInfo.push({ email: spec.email, name: spec.name, id: pid });
         // Reset player stats to seed values
-        const p = await deps.players.findById(authUser.id);
+        const p = await deps.players.findById(pid);
         if (p) {
           p.rating = spec.rating;
           p.ratingConfidence = 0.5;
@@ -170,6 +162,18 @@ export function createRoutes(deps: RouteDeps): Router {
           p.losses = spec.losses;
           p.updatedAt = now.toISOString();
           await deps.players.upsert(p);
+        }
+      }
+
+      // If a logged-in player was provided and isn't already a test player, add them
+      if (playerId) {
+        const pid = String(playerId);
+        if (!playerIds.includes(pid)) {
+          const p = await deps.players.findById(pid);
+          if (p) {
+            playerIds.push(pid);
+            playerInfo.push({ email: p.email, name: p.name, id: pid });
+          }
         }
       }
 
@@ -187,19 +191,34 @@ export function createRoutes(deps: RouteDeps): Router {
       const matchNow = now.toISOString();
 
       // Create match entities for every pairing
+      // Matches involving the logged-in player get "scheduling" status with a
+      // proposal the user has accepted, so step 3 (accept-proposals) can finish them.
+      // Other matches are created directly as "scheduled".
+      const userPid = playerId ? String(playerId) : null;
       const updatedRounds = [];
       for (const round of rounds) {
         const updatedPairings = [];
         for (const pairing of round.pairings) {
           if (pairing.homeIndex === -1 || pairing.awayIndex === -1) continue;
           const matchId = randomUUID();
+          const cId = playerIds[pairing.homeIndex]!;
+          const oId = playerIds[pairing.awayIndex]!;
+          const involvesUser = userPid && (cId === userPid || oId === userPid);
+
           const m: Match = {
             id: matchId,
-            challengerId: playerIds[pairing.homeIndex]!,
-            opponentId: playerIds[pairing.awayIndex]!,
+            challengerId: cId,
+            opponentId: oId,
             tournamentId,
-            status: "scheduled",
-            proposals: [],
+            status: involvesUser ? "scheduling" : "scheduled",
+            proposals: involvesUser
+              ? [{
+                  id: randomUUID(),
+                  datetime: new Date(now.getTime() + 3 * 86400000).toISOString(),
+                  label: "Sat - 10:00am",
+                  acceptedBy: [userPid],
+                }]
+              : [],
             createdAt: matchNow,
             updatedAt: matchNow
           };
@@ -235,7 +254,7 @@ export function createRoutes(deps: RouteDeps): Router {
         tournamentId,
         playerCount: playerIds.length,
         matchCount: updatedRounds.reduce((sum, r) => sum + r.pairings.length, 0),
-        players: TOURNEY_TEST_PLAYERS.map((p, i) => ({ email: p.email, name: p.name, id: playerIds[i] }))
+        players: playerInfo
       });
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : "failed" });
