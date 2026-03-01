@@ -113,11 +113,41 @@ export function createRoutes(deps: RouteDeps): Router {
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-      // Look up player IDs and reset their stats to seed values
+      // Look up or create player IDs and reset their stats to seed values
       const playerIds: string[] = [];
       for (const spec of TOURNEY_TEST_PLAYERS) {
-        const authUser = await deps.auth.findByEmail(spec.email);
-        if (!authUser) { res.status(500).json({ error: `Player ${spec.email} not found — restart server to seed` }); return; }
+        let authUser = await deps.auth.findByEmail(spec.email);
+        if (!authUser) {
+          // Auto-create the test player
+          const id = randomUUID();
+          authUser = { id, email: spec.email, createdAt: now.toISOString() };
+          await deps.auth.upsert(authUser);
+          const player: Player = {
+            id,
+            email: spec.email,
+            name: spec.name,
+            city: spec.city,
+            county: spec.county,
+            level: spec.level,
+            ntrp: spec.ntrp,
+            rating: spec.rating,
+            ratingConfidence: 0.5,
+            provisionalRemaining: 3,
+            subscription: "active",
+            wins: spec.wins,
+            losses: spec.losses,
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString()
+          };
+          await deps.players.upsert(player);
+          // Set availability
+          const slots = spec.availability.map((s) => ({
+            id: randomUUID(),
+            playerId: id,
+            ...s
+          }));
+          await deps.availability.setForPlayer(id, slots);
+        }
         playerIds.push(authUser.id);
         // Reset player stats to seed values
         const p = await deps.players.findById(authUser.id);
