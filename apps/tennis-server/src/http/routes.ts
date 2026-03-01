@@ -203,6 +203,37 @@ export function createRoutes(deps: RouteDeps): Router {
 
   // ── Debug: seed rich data (200 players + 10 tournaments) ──────────────────
 
+  router.post("/debug/accept-proposals", async (req, res) => {
+    try {
+      const { playerId } = req.body as { playerId?: string };
+      if (!playerId) {
+        res.status(400).json({ error: "playerId required" });
+        return;
+      }
+      const matches = await deps.matches.findByPlayer(playerId);
+      let accepted = 0;
+      for (const match of matches) {
+        if (match.status !== "scheduling" || !match.proposals?.length) continue;
+        const opponentId = match.challengerId === playerId ? match.opponentId : match.challengerId;
+        // Find first proposal the user accepted but opponent hasn't
+        const proposal = match.proposals.find(
+          (p) => p.acceptedBy.includes(playerId) && !p.acceptedBy.includes(opponentId),
+        );
+        if (!proposal) continue;
+        proposal.acceptedBy.push(opponentId);
+        match.status = "scheduled";
+        match.scheduledAt = proposal.datetime;
+        await deps.matches.save(match);
+        accepted++;
+      }
+      res.json({ ok: true, accepted });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("accept-proposals error:", e);
+      res.status(500).json({ error: msg });
+    }
+  });
+
   router.post("/debug/seed-rich", async (_req, res) => {
     try {
       const result = await seedRichData(deps.auth, deps.players, deps.availability, deps.tournaments, deps.matches);

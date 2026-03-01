@@ -4,6 +4,7 @@ interface Props {
   onLogin: (email: string) => void;
   onSeedRich: () => void;
   onSimulate: () => void;
+  onAcceptProposals?: () => void;
 }
 
 const TEST_ACCOUNTS = [
@@ -15,7 +16,7 @@ const TEST_ACCOUNTS = [
   { email: "test6@rally.test", name: "Test6" },
 ];
 
-export default function TestBar({ onLogin, onSeedRich, onSimulate }: Props) {
+export default function TestBar({ onLogin, onSeedRich, onSimulate, onAcceptProposals }: Props) {
   const handleLogin = useCallback(
     (email: string) => {
       onLogin(email);
@@ -41,6 +42,11 @@ export default function TestBar({ onLogin, onSeedRich, onSimulate }: Props) {
         <button className="test-bar-btn test-bar-btn--sim" onClick={onSimulate}>
           Simulate
         </button>
+        {onAcceptProposals && (
+          <button className="test-bar-btn test-bar-btn--seed" onClick={onAcceptProposals}>
+            Accept All
+          </button>
+        )}
       </div>
     </div>
   );

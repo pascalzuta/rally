@@ -7,7 +7,7 @@ import { useMatches } from "./hooks/useMatches";
 import { useActionItems } from "./hooks/useActionItems";
 import { useAvailability } from "./hooks/useAvailability";
 import { useBottomSheet } from "./hooks/useBottomSheet";
-import { apiSeedRich, apiSimulateTournament, apiGetSchedulingInfo } from "./api";
+import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiGetSchedulingInfo } from "./api";
 import BottomNav from "./components/BottomNav";
 import BottomSheet from "./components/BottomSheet";
 import ScoreEntrySheet from "./components/ScoreEntrySheet";
@@ -373,6 +373,17 @@ export default function App() {
     }
   }, [token, reloadAll]);
 
+  const handleAcceptProposals = useCallback(async () => {
+    if (!player) return;
+    try {
+      const result = await apiAcceptProposals(player.id);
+      if (token) await reloadAll();
+      alert(`${result.accepted} proposal(s) accepted`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to accept proposals");
+    }
+  }, [player, token, reloadAll]);
+
   // Availability save handler
   const handleSaveAvailability = useCallback(
     async (
@@ -581,6 +592,7 @@ export default function App() {
         onLogin={handleTestLogin}
         onSeedRich={handleSeedRich}
         onSimulate={handleSimulate}
+        onAcceptProposals={handleAcceptProposals}
       />
     </div>
   );
