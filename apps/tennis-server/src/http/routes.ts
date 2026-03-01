@@ -999,6 +999,7 @@ export function createRoutes(deps: RouteDeps): Router {
         } : undefined,
         pendingResult: pendingReport ? {
           winnerId: pendingReport.winnerId,
+          sets: pendingReport.sets,
           reportedBy: pendingReport.reportedBy,
           reportedAt: pendingReport.reportedAt,
         } : undefined,
