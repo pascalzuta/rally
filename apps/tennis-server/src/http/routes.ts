@@ -123,7 +123,7 @@ export function createRoutes(deps: RouteDeps): Router {
         }
       }
 
-      // Look up or create test player IDs and reset their stats to seed values
+      // Look up or create test player IDs and reset their stats (skip if already added via playerId)
       for (const spec of TOURNEY_TEST_PLAYERS) {
         let authUser = await deps.auth.findByEmail(spec.email);
         if (!authUser) {
@@ -157,6 +157,8 @@ export function createRoutes(deps: RouteDeps): Router {
           }));
           await deps.availability.setForPlayer(id, slots);
         }
+        // Skip if this player was already added (logged-in user IS a test player)
+        if (playerIds.includes(authUser.id)) continue;
         playerIds.push(authUser.id);
         // Reset player stats to seed values
         const p = await deps.players.findById(authUser.id);

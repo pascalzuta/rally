@@ -8,12 +8,12 @@ interface Props {
 }
 
 const TEST_ACCOUNTS = [
-  { email: "test1@rally.test", name: "T1" },
-  { email: "test2@rally.test", name: "T2" },
-  { email: "test3@rally.test", name: "T3" },
-  { email: "test4@rally.test", name: "T4" },
-  { email: "test5@rally.test", name: "T5" },
-  { email: "test6@rally.test", name: "T6" },
+  { email: "t1-alex@rally.test", name: "T1" },
+  { email: "t2-beth@rally.test", name: "T2" },
+  { email: "t3-chris@rally.test", name: "T3" },
+  { email: "t4-dana@rally.test", name: "T4" },
+  { email: "t5-eli@rally.test", name: "T5" },
+  { email: "t6-faye@rally.test", name: "T6" },
 ];
 
 const STEPS = [
