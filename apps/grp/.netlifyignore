@@ -1,0 +1,8 @@
+tests/
+coverage/
+serve.json
+vitest.config.js
+lib/
+assets/optimized/
+assets/originals/
+*.md

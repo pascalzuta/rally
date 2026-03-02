@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://images.pexels.com https://img1.wsimg.com data:; frame-src https://www.google.com; connect-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Green Room Partners | Contact</title>
+    <meta name="description" content="Contact Green Room Partners LLC in San Francisco." />
+    <link rel="stylesheet" href="./styles.css?v=20260225m" />
+  </head>
+  <body>
+    <a class="skip-nav" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <div class="container header-shell">
+        <a class="wordmark" href="./index.html"><img class="wordmark-image" src="./assets/logo-wordmark-v5.svg" alt="Green Room Partners" /></a>
+        <button class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu"><span aria-hidden="true"></span></button>
+        <nav class="main-nav" id="site-nav" data-nav>
+          <a href="./index.html">Home</a>
+          <a href="./structure.html">Structure</a>
+          <a href="./investment-approach.html">Investment Approach</a>
+          <a href="./team.html">Team</a>
+          <a href="./news.html">News</a>
+          <a href="./contact.html">Contact</a>
+          <button class="login-nav-button" data-login-trigger type="button">Partner Login</button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero hero-contact">
+      <div class="container">
+        <p class="eyebrow">Contact</p>
+        <h1>Let’s connect on long-term investment partnerships.</h1>
+        <p>We welcome inquiries from investors, company leaders, and strategic partners. Our team aims to respond within two business days.</p>
+      </div>
+    </section>
+
+    <main class="institutional-main" id="main-content">
+      <div class="container stack">
+        <section class="section-card">
+          <div class="page-intro">
+            <h2>Reach Green Room Partners</h2>
+            <p>Our office is located in San Francisco. Use the channels below based on your inquiry type.</p>
+          </div>
+
+          <div class="contact-layout">
+            <div class="contact-info-stack">
+              <article class="contact-card">
+                <h3>General Inquiries</h3>
+                <p>Email: <a href="mailto:info@greenroompartners.com">info@greenroompartners.com</a></p>
+                <p>Phone: <a href="tel:+14159964204">+1 415 996 4204</a></p>
+              </article>
+
+              <article class="contact-card">
+                <h3>Address</h3>
+                <p>WeWork, 415 Mission Street (Salesforce Tower), 37FL</p>
+                <p>San Francisco, California 94105, United States</p>
+              </article>
+
+              <article class="contact-card">
+                <h3>Office Hours</h3>
+                <p>Monday to Friday: 9:00 AM to 6:00 PM PT</p>
+                <p>Closed on U.S. federal holidays</p>
+              </article>
+            </div>
+
+            <div class="map-shell" aria-label="Map showing Green Room Partners office location">
+              <iframe
+                title="Green Room Partners office map"
+                src="https://www.google.com/maps?q=415+Mission+Street,+San+Francisco,+CA+94105&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen
+                sandbox="allow-scripts allow-same-origin"
+              ></iframe>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="page-intro">
+            <h2>Send us a message</h2>
+            <p>Share your details and context. This form opens your email client with a prefilled message for quick submission.</p>
+          </div>
+
+          <form class="contact-form" data-contact-form>
+            <div class="contact-grid">
+              <label>
+                First Name *
+                <input type="text" name="firstName" autocomplete="given-name" required />
+              </label>
+              <label>
+                Last Name *
+                <input type="text" name="lastName" autocomplete="family-name" required />
+              </label>
+              <label>
+                Email *
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label>
+                Phone
+                <input type="tel" name="phone" autocomplete="tel" />
+              </label>
+              <label>
+                Company
+                <input type="text" name="company" autocomplete="organization" />
+              </label>
+              <label>
+                Inquiry Type *
+                <select name="inquiryType" required>
+                  <option value="">Select one</option>
+                  <option value="Investor Relations">Investor Relations</option>
+                  <option value="Partnership Opportunity">Partnership Opportunity</option>
+                  <option value="Media Inquiry">Media Inquiry</option>
+                  <option value="General Question">General Question</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Message *
+              <textarea name="message" rows="7" required placeholder="How can we help?"></textarea>
+            </label>
+
+            <label class="consent-line">
+              <input type="checkbox" name="consent" required />
+              <span>I agree to be contacted by Green Room Partners regarding this inquiry.</span>
+            </label>
+
+            <input type="text" name="website" class="hidden-trap" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+            <div class="contact-actions">
+              <button type="submit" class="btn-primary">Open Email Draft</button>
+              <p class="contact-note">Required fields are marked with an asterisk.</p>
+            </div>
+
+            <p class="form-feedback" data-contact-feedback hidden></p>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-shell">
+        <div>© <span data-year></span> Green Room Partners. All rights reserved.</div>
+        <div><a href="mailto:info@greenroompartners.com">info@greenroompartners.com</a></div>
+      </div>
+    </footer>
+    <script src="./app.js?v=20260225n" defer></script>
+    <script src="./cms.js?v=20260227a" defer></script>
+  </body>
+</html>
