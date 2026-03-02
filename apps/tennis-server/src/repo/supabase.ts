@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AuthUser, AvailabilitySlot, Match, Player, PoolEntry, Tournament } from "@rally/core";
-import type { AuthRepo, AvailabilityRepo, MatchRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
+import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
+import type { AuthRepo, AvailabilityRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
 // ── Helpers: camelCase ↔ snake_case ─────────────────────────────────────────────
 
@@ -91,35 +91,44 @@ function matchToRow(m: Match): Record<string, unknown> {
     proposals: JSON.stringify(m.proposals),
     result: m.result ? JSON.stringify(m.result) : null,
     near_miss: m.nearMiss ? JSON.stringify(m.nearMiss) : null,
+    deadline_started_at: m.deadlineStartedAt ?? null,
+    proposals_created_at: m.proposalsCreatedAt ?? null,
+    auto_actions: m.autoActions ? JSON.stringify(m.autoActions) : JSON.stringify([]),
+    player_activity: m.playerActivity ? JSON.stringify(m.playerActivity) : JSON.stringify({}),
     created_at: m.createdAt,
     updated_at: m.updatedAt,
   };
 }
 
 function rowToMatch(row: Record<string, unknown>): Match {
-  return {
+  const m: Match = {
     id: row.id as string,
     challengerId: row.challenger_id as string,
     opponentId: row.opponent_id as string,
-    tournamentId: (row.tournament_id as string) || undefined,
     status: row.status as Match["status"],
     proposals: (typeof row.proposals === "string" ? JSON.parse(row.proposals) : row.proposals) || [],
-    scheduledAt: row.scheduled_at ? String(row.scheduled_at) : undefined,
-    venue: (row.venue as string) || undefined,
-    result: row.result
-      ? typeof row.result === "string"
-        ? JSON.parse(row.result)
-        : row.result
-      : undefined,
-    schedulingTier: (row.scheduling_tier as Match["schedulingTier"]) || undefined,
-    nearMiss: row.near_miss
-      ? typeof row.near_miss === "string"
-        ? JSON.parse(row.near_miss)
-        : row.near_miss
-      : undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
+  if (row.tournament_id) m.tournamentId = row.tournament_id as string;
+  if (row.scheduled_at) m.scheduledAt = String(row.scheduled_at);
+  if (row.venue) m.venue = row.venue as string;
+  if (row.result) m.result = typeof row.result === "string" ? JSON.parse(row.result) : row.result;
+  if (row.scheduling_tier) m.schedulingTier = row.scheduling_tier as NonNullable<Match["schedulingTier"]>;
+  if (row.near_miss) m.nearMiss = typeof row.near_miss === "string" ? JSON.parse(row.near_miss) : row.near_miss;
+  if (row.deadline_started_at) m.deadlineStartedAt = String(row.deadline_started_at);
+  if (row.proposals_created_at) m.proposalsCreatedAt = String(row.proposals_created_at);
+  if (row.auto_actions) {
+    const parsed = typeof row.auto_actions === "string" ? JSON.parse(row.auto_actions) : row.auto_actions;
+    if (Array.isArray(parsed) && parsed.length > 0) m.autoActions = parsed as NonNullable<Match["autoActions"]>;
+  }
+  if (row.player_activity) {
+    const parsed = typeof row.player_activity === "string" ? JSON.parse(row.player_activity) : row.player_activity;
+    if (parsed && typeof parsed === "object" && Object.keys(parsed as object).length > 0) {
+      m.playerActivity = parsed as NonNullable<Match["playerActivity"]>;
+    }
+  }
+  return m;
 }
 
 // ── Tournament mapping ──────────────────────────────────────────────────────────
@@ -141,6 +150,9 @@ function tournamentToRow(t: Tournament): Record<string, unknown> {
     registration_opened_at: t.registrationOpenedAt,
     finals_matches: t.finalsMatches ? JSON.stringify(t.finalsMatches) : null,
     scheduling_result: t.schedulingResult ? JSON.stringify(t.schedulingResult) : null,
+    activated_at: t.activatedAt ?? null,
+    hard_deadline: t.hardDeadline ?? null,
+    round_robin_deadline: t.roundRobinDeadline ?? null,
     created_at: t.createdAt,
   };
 }
@@ -150,7 +162,7 @@ function rowToTournament(row: Record<string, unknown>): Tournament {
     if (typeof v === "string") return JSON.parse(v);
     return v;
   };
-  return {
+  const t: Tournament = {
     id: row.id as string,
     month: row.month as string,
     name: row.name as string,
@@ -164,14 +176,14 @@ function rowToTournament(row: Record<string, unknown>): Tournament {
     standings: (parseJson(row.standings) as Tournament["standings"]) || [],
     pendingResults: (parseJson(row.pending_results) as Tournament["pendingResults"]) || {},
     registrationOpenedAt: String(row.registration_opened_at),
-    finalsMatches: row.finals_matches
-      ? (parseJson(row.finals_matches) as Tournament["finalsMatches"])
-      : undefined,
-    schedulingResult: row.scheduling_result
-      ? (parseJson(row.scheduling_result) as Tournament["schedulingResult"])
-      : undefined,
     createdAt: String(row.created_at),
   };
+  if (row.finals_matches) t.finalsMatches = parseJson(row.finals_matches) as NonNullable<Tournament["finalsMatches"]>;
+  if (row.scheduling_result) t.schedulingResult = parseJson(row.scheduling_result) as NonNullable<Tournament["schedulingResult"]>;
+  if (row.activated_at) t.activatedAt = String(row.activated_at);
+  if (row.hard_deadline) t.hardDeadline = String(row.hard_deadline);
+  if (row.round_robin_deadline) t.roundRobinDeadline = String(row.round_robin_deadline);
+  return t;
 }
 
 // ── Pool mapping ────────────────────────────────────────────────────────────────
@@ -477,5 +489,108 @@ export class SupabasePoolRepo implements PoolRepo {
       .delete()
       .in("player_id", playerIds);
     if (error) throw error;
+  }
+}
+
+// ── Notification mapping ─────────────────────────────────────────────────────
+
+function notificationToRow(n: Notification): Record<string, unknown> {
+  return {
+    id: n.id,
+    player_id: n.playerId,
+    match_id: n.matchId ?? null,
+    tournament_id: n.tournamentId ?? null,
+    type: n.type,
+    subject: n.subject,
+    body: n.body,
+    channel: n.channel,
+    status: n.status,
+    scheduled_for: n.scheduledFor,
+    sent_at: n.sentAt ?? null,
+    created_at: n.createdAt,
+    metadata: n.metadata ? JSON.stringify(n.metadata) : JSON.stringify({}),
+  };
+}
+
+function rowToNotification(row: Record<string, unknown>): Notification {
+  const n: Notification = {
+    id: row.id as string,
+    playerId: row.player_id as string,
+    type: row.type as string,
+    subject: row.subject as string,
+    body: row.body as string,
+    channel: (row.channel as Notification["channel"]) || "email",
+    status: (row.status as Notification["status"]) || "queued",
+    scheduledFor: String(row.scheduled_for),
+    createdAt: String(row.created_at),
+  };
+  if (row.match_id) n.matchId = row.match_id as string;
+  if (row.tournament_id) n.tournamentId = row.tournament_id as string;
+  if (row.sent_at) n.sentAt = String(row.sent_at);
+  if (row.metadata) {
+    const parsed = typeof row.metadata === "string" ? JSON.parse(row.metadata) : row.metadata;
+    if (parsed && typeof parsed === "object" && Object.keys(parsed as object).length > 0) {
+      n.metadata = parsed as Record<string, unknown>;
+    }
+  }
+  return n;
+}
+
+export class SupabaseNotificationRepo implements NotificationRepo {
+  constructor(private readonly db: SupabaseClient) {}
+
+  async queue(notification: Notification): Promise<void> {
+    const { error } = await this.db
+      .from("notifications")
+      .insert(notificationToRow(notification));
+    if (error) throw error;
+  }
+
+  async findPending(limit = 50): Promise<Notification[]> {
+    const { data, error } = await this.db
+      .from("notifications")
+      .select("*")
+      .eq("status", "queued")
+      .lte("scheduled_for", new Date().toISOString())
+      .order("scheduled_for", { ascending: true })
+      .limit(limit);
+    if (error) throw error;
+    return (data || []).map(rowToNotification);
+  }
+
+  async markSent(id: string): Promise<void> {
+    const { error } = await this.db
+      .from("notifications")
+      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  async markFailed(id: string): Promise<void> {
+    const { error } = await this.db
+      .from("notifications")
+      .update({ status: "failed" })
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  async findByMatchAndType(matchId: string, type: string): Promise<Notification[]> {
+    const { data, error } = await this.db
+      .from("notifications")
+      .select("*")
+      .eq("match_id", matchId)
+      .eq("type", type);
+    if (error) throw error;
+    return (data || []).map(rowToNotification);
+  }
+
+  async findByPlayerSince(playerId: string, since: string): Promise<Notification[]> {
+    const { data, error } = await this.db
+      .from("notifications")
+      .select("*")
+      .eq("player_id", playerId)
+      .gte("created_at", since);
+    if (error) throw error;
+    return (data || []).map(rowToNotification);
   }
 }

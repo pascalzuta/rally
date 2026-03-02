@@ -1,4 +1,4 @@
-import type { AuthUser, AvailabilitySlot, Match, Player, PoolEntry, Tournament } from "@rally/core";
+import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
 
 export interface AuthRepo {
   findByEmail(email: string): Promise<AuthUser | null>;
@@ -42,4 +42,13 @@ export interface PoolRepo {
   findByCountyAndBand(county: string, band: string): Promise<PoolEntry[]>;
   findByCounty(county: string): Promise<PoolEntry[]>;
   removeMany(playerIds: string[]): Promise<void>;
+}
+
+export interface NotificationRepo {
+  queue(notification: Notification): Promise<void>;
+  findPending(limit?: number): Promise<Notification[]>;
+  markSent(id: string): Promise<void>;
+  markFailed(id: string): Promise<void>;
+  findByMatchAndType(matchId: string, type: string): Promise<Notification[]>;
+  findByPlayerSince(playerId: string, since: string): Promise<Notification[]>;
 }

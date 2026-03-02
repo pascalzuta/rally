@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import type { Player, ActionItem, Tournament, TournamentMatch, Tab } from "../types";
 import { formatDate, matchCountdown, shortTournamentName, ordinal } from "../helpers";
+import ActionCard from "../components/ActionCard";
 
 interface Props {
   player: Player;
@@ -13,30 +14,6 @@ interface Props {
   onViewTournament: (id: string) => void;
   onTabChange: (tab: Tab) => void;
 }
-
-const ACTION_LABELS: Record<string, string> = {
-  "confirm-score": "Confirm Score",
-  "flex-schedule": "Flex Schedule",
-  "propose-times": "Propose Times",
-  "pick-time": "Pick a Time",
-  "enter-score": "Enter Score",
-};
-
-const ACTION_ICONS: Record<string, string> = {
-  "confirm-score": "\u2705",
-  "flex-schedule": "\u{1F504}",
-  "propose-times": "\u{1F4C5}",
-  "pick-time": "\u23F0",
-  "enter-score": "\u{1F4DD}",
-};
-
-const ACTION_COLORS: Record<string, string> = {
-  "confirm-score": "red",
-  "flex-schedule": "amber",
-  "propose-times": "amber",
-  "pick-time": "blue",
-  "enter-score": "blue",
-};
 
 function HomeScreen({
   player,
@@ -132,25 +109,13 @@ function HomeScreen({
             <span className="action-badge">{actionItems.length}</span>
           </div>
           <div className="action-scroll">
-            {actionItems.map((item) => {
-              const color = ACTION_COLORS[item.type] || "blue";
-              return (
-                <button
-                  key={item.matchId}
-                  className={`action-card action-card--${color}`}
-                  onClick={() => onAction(item)}
-                >
-                  <span className="action-icon">
-                    {ACTION_ICONS[item.type] || "\u26A0\uFE0F"}
-                  </span>
-                  <span className="action-label">
-                    {ACTION_LABELS[item.type] || item.type}
-                  </span>
-                  <span className="action-opponent">{item.opponentName}</span>
-                  <span className="action-tourney">{item.tournamentName}</span>
-                </button>
-              );
-            })}
+            {actionItems.map((item) => (
+              <ActionCard
+                key={item.matchId}
+                action={item}
+                onAction={onAction}
+              />
+            ))}
           </div>
         </section>
       )}

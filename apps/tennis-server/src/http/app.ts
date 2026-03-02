@@ -8,6 +8,7 @@ import {
   InMemoryAuthRepo,
   InMemoryAvailabilityRepo,
   InMemoryMatchRepo,
+  InMemoryNotificationRepo,
   InMemoryPlayerRepo,
   InMemoryPoolRepo,
   InMemoryTournamentRepo
@@ -16,11 +17,12 @@ import {
   SupabaseAuthRepo,
   SupabaseAvailabilityRepo,
   SupabaseMatchRepo,
+  SupabaseNotificationRepo,
   SupabasePlayerRepo,
   SupabasePoolRepo,
   SupabaseTournamentRepo
 } from "../repo/supabase.js";
-import type { AuthRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
+import type { AuthRepo, NotificationRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
 import { TournamentEngine } from "../services/tournamentEngine.js";
 import { createRoutes } from "./routes.js";
 import { seedDemoPlayers, seedDemoTournaments } from "./seed.js";
@@ -50,6 +52,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   let matches: MatchRepo;
   let tournaments: TournamentRepo;
   let pool: PoolRepo;
+  let notifications: NotificationRepo;
 
   const useSupabase = config.SUPABASE_URL && config.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -64,6 +67,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     matches = new SupabaseMatchRepo(supabase);
     tournaments = new SupabaseTournamentRepo(supabase);
     pool = new SupabasePoolRepo(supabase);
+    notifications = new SupabaseNotificationRepo(supabase);
   } else {
     logger.info("Using in-memory database (no SUPABASE_URL set)");
 
@@ -80,6 +84,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     matches = memMatches;
     tournaments = memTournaments;
     pool = memPool;
+    notifications = new InMemoryNotificationRepo();
 
     // Seed demo data (in-memory only)
     void seedDemoPlayers(memAuth, memPlayers, memAvailability).then(() => {
@@ -88,7 +93,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   }
 
   // Tournament engine (created before routes so routes can trigger activation)
-  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability });
+  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, logger });
   engine.start();
   process.on("SIGTERM", () => engine.stop());
   process.on("SIGINT", () => engine.stop());
@@ -98,9 +103,23 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine })
   );
 
+  // Global error handler — catches sync errors and, with express-async-errors,
+  // also catches unhandled promise rejections from async route handlers.
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    // If headers already sent, delegate to Express default handler
+    if (res.headersSent) {
+      _next(err);
+      return;
+    }
+
     logger.error({ err }, "unhandled_error");
-    res.status(500).json({ error: "internal_error" });
+
+    const status = typeof (err as { status?: unknown }).status === "number"
+      ? (err as { status: number }).status
+      : 500;
+    const message = status < 500 && err instanceof Error ? err.message : "internal_error";
+
+    res.status(status).json({ error: message });
   });
 
   return app;

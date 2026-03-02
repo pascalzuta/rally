@@ -1,13 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
-import type { Tab, ActionItem, TournamentMatch, SheetContent, SchedulingInfo } from "./types";
-import { TOKEN_KEY } from "./constants";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import type { Tab, ActionItem, TournamentMatch } from "./types";
 import { useAuth } from "./hooks/useAuth";
 import { useTournaments } from "./hooks/useTournaments";
 import { useMatches } from "./hooks/useMatches";
 import { useActionItems } from "./hooks/useActionItems";
 import { useAvailability } from "./hooks/useAvailability";
 import { useBottomSheet } from "./hooks/useBottomSheet";
-import { apiSeedRich, apiSimulateTournament, apiAcceptProposals, apiSubmitScores, apiConfirmScores, apiAdvanceToFinals, apiGetSchedulingInfo } from "./api";
+import {
+  apiSeedRich,
+  apiSimulateTournament,
+  apiAcceptProposals,
+  apiSubmitScores,
+  apiConfirmScores,
+  apiAdvanceToFinals,
+} from "./api";
 import BottomNav from "./components/BottomNav";
 import BottomSheet from "./components/BottomSheet";
 import ScoreEntrySheet from "./components/ScoreEntrySheet";
@@ -16,6 +22,7 @@ import SchedulingSheet from "./components/SchedulingSheet";
 import FlexSheet from "./components/FlexSheet";
 import ProposeSheet from "./components/ProposeSheet";
 import TestBar from "./components/TestBar";
+import GateScreen, { isGateUnlocked } from "./screens/GateScreen";
 import LoginScreen from "./screens/LoginScreen";
 import SetupScreen from "./screens/SetupScreen";
 import HomeScreen from "./screens/HomeScreen";
@@ -23,7 +30,12 @@ import TourneyScreen from "./screens/TourneyScreen";
 import ActivityScreen from "./screens/ActivityScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 
+const isDev = import.meta.env.DEV;
+
 export default function App() {
+  // Password gate
+  const [gateUnlocked, setGateUnlocked] = useState(isGateUnlocked);
+
   // Auth
   const {
     token,
@@ -40,17 +52,14 @@ export default function App() {
     tournaments,
     playerNames,
     playerRatings,
-    loading: tourneysLoading,
     loadTournaments,
     joinTournament,
-    leaveTournament,
     getTournamentDetail,
   } = useTournaments();
 
   // Matches
   const {
     allMatches,
-    loading: matchesLoading,
     loadMatchesForTournaments,
     submitScore,
     scheduleMatch,
@@ -82,23 +91,28 @@ export default function App() {
   // Needs setup: player exists but has no name or county
   const needsSetup = player && (!player.name || !player.county);
 
+  // Stable tournament key for dependency tracking
+  const tournamentKey = useMemo(
+    () => tournaments.map(t => `${t.id}:${t.status}`).join(","),
+    [tournaments]
+  );
+
   // Load data when authenticated
   useEffect(() => {
     if (!token || !player) return;
     loadTournaments(token);
     loadSlots(token);
-  }, [token, player?.id]);
+  }, [token, player?.id, loadTournaments, loadSlots]);
 
   // Load matches when tournaments change
   useEffect(() => {
     if (!token || !player || tournaments.length === 0) return;
     loadMatchesForTournaments(token, tournaments, player.id);
-  }, [token, player?.id, tournaments]);
+  }, [token, player?.id, tournamentKey, loadMatchesForTournaments]);
 
   // Load player names for tournaments
   useEffect(() => {
     if (!token || tournaments.length === 0) return;
-    // Load details for player's tournaments to populate playerNames/playerRatings
     const myTournaments = tournaments.filter(
       (t) =>
         (t.status === "active" || t.status === "finals" || t.status === "completed") &&
@@ -107,13 +121,13 @@ export default function App() {
     for (const t of myTournaments) {
       getTournamentDetail(token, t.id);
     }
-  }, [token, tournaments.map(t => `${t.id}:${t.status}`).join(",")]);
+  }, [token, tournamentKey, player?.id, getTournamentDetail]);
 
   // Load availability impact when matches change
   useEffect(() => {
     if (!token || !player) return;
     loadImpact(token, player.id);
-  }, [token, player?.id, allMatches]);
+  }, [token, player?.id, allMatches, loadImpact]);
 
   // Auto-select first tournament
   useEffect(() => {
@@ -125,14 +139,14 @@ export default function App() {
       );
       if (myActive) setSelectedTournamentId(myActive.id);
     }
-  }, [tournaments, player?.id]);
+  }, [tournaments, player?.id, selectedTournamentId]);
 
   // Reload all data
   const reloadAll = useCallback(async () => {
     if (!token || !player) return;
     await loadTournaments(token);
     await loadSlots(token);
-  }, [token, player?.id]);
+  }, [token, player?.id, loadTournaments, loadSlots]);
 
   // Handle action card taps
   const handleAction = useCallback(
@@ -161,8 +175,8 @@ export default function App() {
           try {
             const info = await getSchedulingInfo(token, match.id);
             sheet.open({ type: "propose", match, mySlots: info.mySlots });
-          } catch {
-            /* ignore */
+          } catch (e) {
+            console.error("Failed to load scheduling info:", e);
           }
           break;
         }
@@ -170,14 +184,14 @@ export default function App() {
           try {
             const info = await getSchedulingInfo(token, match.id);
             sheet.open({ type: "scheduling", match, schedulingInfo: info });
-          } catch {
-            /* ignore */
+          } catch (e) {
+            console.error("Failed to load scheduling info:", e);
           }
           break;
         }
       }
     },
-    [token, player, tournaments, allMatches, sheet],
+    [token, player, tournaments, allMatches, sheet, getSchedulingInfo],
   );
 
   // Handle match action from tourney/activity screens
@@ -209,19 +223,19 @@ export default function App() {
           } else {
             sheet.open({ type: "propose", match, mySlots: info.mySlots });
           }
-        } catch {
-          /* ignore */
+        } catch (e) {
+          console.error("Failed to load scheduling info:", e);
         }
       } else if (match.status === "scheduling" && match.proposals?.length) {
         try {
           const info = await getSchedulingInfo(token, match.id);
           sheet.open({ type: "scheduling", match, schedulingInfo: info });
-        } catch {
-          /* ignore */
+        } catch (e) {
+          console.error("Failed to load scheduling info:", e);
         }
       }
     },
-    [token, player, tournaments, sheet],
+    [token, player, tournaments, sheet, getSchedulingInfo],
   );
 
   // Score submission handler
@@ -245,7 +259,7 @@ export default function App() {
         alert(e instanceof Error ? e.message : "Failed to submit score");
       }
     },
-    [token, sheet, reloadAll],
+    [token, sheet, reloadAll, submitScore],
   );
 
   // Schedule handlers
@@ -260,7 +274,7 @@ export default function App() {
         alert(e instanceof Error ? e.message : "Failed to schedule");
       }
     },
-    [token, sheet, reloadAll],
+    [token, sheet, reloadAll, scheduleMatch],
   );
 
   const handleFlexAccept = useCallback(
@@ -274,7 +288,7 @@ export default function App() {
         alert(e instanceof Error ? e.message : "Failed to flex schedule");
       }
     },
-    [token, sheet, reloadAll],
+    [token, sheet, reloadAll, flexAccept],
   );
 
   const handlePropose = useCallback(
@@ -291,7 +305,7 @@ export default function App() {
         alert(e instanceof Error ? e.message : "Failed to propose times");
       }
     },
-    [token, sheet, reloadAll],
+    [token, sheet, reloadAll, proposeTimes],
   );
 
   const handleAcceptProposal = useCallback(
@@ -305,7 +319,7 @@ export default function App() {
         alert(e instanceof Error ? e.message : "Failed to accept time");
       }
     },
-    [token, sheet, reloadAll],
+    [token, sheet, reloadAll, acceptTime],
   );
 
   // Join tournament handler
@@ -344,56 +358,6 @@ export default function App() {
     setActiveTab("tourney");
   }, []);
 
-  // Test bar handlers
-  const handleTestLogin = useCallback(
-    async (email: string) => {
-      try {
-        await login(email);
-      } catch {
-        /* ignore */
-      }
-    },
-    [login],
-  );
-
-  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4 | 5 | 6): Promise<string> => {
-    switch (step) {
-      case 1: {
-        const r = await apiSeedRich();
-        return `Seeded ${r.players} players, ${r.tournaments} tournaments`;
-      }
-      case 2: {
-        const r = await apiSimulateTournament(player?.id);
-        if (token) await reloadAll();
-        return "Tournament created";
-      }
-      case 3: {
-        if (!player) throw new Error("Not logged in");
-        const r = await apiAcceptProposals(player.id);
-        if (token) await reloadAll();
-        return `${r.accepted} proposal(s) accepted`;
-      }
-      case 4: {
-        if (!player) throw new Error("Not logged in");
-        const r = await apiSubmitScores(player.id);
-        if (token) await reloadAll();
-        return `${r.submitted} score(s) submitted`;
-      }
-      case 5: {
-        if (!player) throw new Error("Not logged in");
-        const r = await apiConfirmScores(player.id);
-        if (token) await reloadAll();
-        return `${r.confirmed} score(s) confirmed`;
-      }
-      case 6: {
-        if (!player) throw new Error("Not logged in");
-        const r = await apiAdvanceToFinals(player.id);
-        if (token) await reloadAll();
-        return r.champMatchId ? "Advanced to finals" : "Not ready for finals";
-      }
-    }
-  }, [player, token, reloadAll]);
-
   // Availability save handler
   const handleSaveAvailability = useCallback(
     async (
@@ -428,7 +392,20 @@ export default function App() {
     return "";
   };
 
+  // ---- Dev-only: TestBar (lazy-loaded) ------------------------------------
+
+  const testBarElement = isDev ? <DevTestBar token={token} player={player} login={login} reloadAll={reloadAll} /> : null;
+
   // ---- Render ----------------------------------------------------------------
+
+  // Password gate
+  if (!gateUnlocked) {
+    return (
+      <div className="app">
+        <GateScreen onUnlock={() => setGateUnlocked(true)} />
+      </div>
+    );
+  }
 
   // Loading state
   if (authLoading) {
@@ -445,12 +422,7 @@ export default function App() {
     return (
       <div className="app">
         <LoginScreen onLogin={login} loading={authLoading} />
-        <TestBar
-          onLogin={handleTestLogin}
-          onStep={handleTestStep}
-          isLoggedIn={false}
-          onReset={() => {}}
-        />
+        {testBarElement}
       </div>
     );
   }
@@ -460,12 +432,7 @@ export default function App() {
     return (
       <div className="app">
         <SetupScreen player={player} onComplete={handleSetupComplete} />
-        <TestBar
-          onLogin={handleTestLogin}
-          onStep={handleTestStep}
-          isLoggedIn={!!player}
-          onReset={() => {}}
-        />
+        {testBarElement}
       </div>
     );
   }
@@ -590,12 +557,74 @@ export default function App() {
         )}
       </BottomSheet>
 
-      <TestBar
-        onLogin={handleTestLogin}
-        onStep={handleTestStep}
-        isLoggedIn={!!player}
-        onReset={() => {}}
-      />
+      {testBarElement}
     </div>
+  );
+}
+
+// ── Dev-only TestBar wrapper ──────────────────────────────────────────────────
+
+function DevTestBar({ token, player, login, reloadAll }: {
+  token: string | null;
+  player: { id: string } | null;
+  login: (email: string) => Promise<void>;
+  reloadAll: () => Promise<void>;
+}) {
+  const handleTestLogin = useCallback(
+    async (email: string) => {
+      try {
+        await login(email);
+      } catch {
+        /* test login failure ok */
+      }
+    },
+    [login],
+  );
+
+  const handleTestStep = useCallback(async (step: 1 | 2 | 3 | 4 | 5 | 6): Promise<string> => {
+    switch (step) {
+      case 1: {
+        const r = await apiSeedRich();
+        return `Seeded ${r.players} players, ${r.tournaments} tournaments`;
+      }
+      case 2: {
+        const r = await apiSimulateTournament(player?.id);
+        if (token) await reloadAll();
+        return "Tournament created";
+      }
+      case 3: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiAcceptProposals(player.id);
+        if (token) await reloadAll();
+        return `${r.accepted} proposal(s) accepted`;
+      }
+      case 4: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiSubmitScores(player.id);
+        if (token) await reloadAll();
+        return `${r.submitted} score(s) submitted`;
+      }
+      case 5: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiConfirmScores(player.id);
+        if (token) await reloadAll();
+        return `${r.confirmed} score(s) confirmed`;
+      }
+      case 6: {
+        if (!player) throw new Error("Not logged in");
+        const r = await apiAdvanceToFinals(player.id);
+        if (token) await reloadAll();
+        return r.champMatchId ? "Advanced to finals" : "Not ready for finals";
+      }
+    }
+  }, [player, token, reloadAll]);
+
+  return (
+    <TestBar
+      onLogin={handleTestLogin}
+      onStep={handleTestStep}
+      isLoggedIn={!!player}
+      onReset={() => {}}
+    />
   );
 }

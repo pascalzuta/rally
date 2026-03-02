@@ -56,11 +56,19 @@ export function computeStandings(
     const opponentEntry = entryMap.get(opponentId);
     if (!challengerEntry || !opponentEntry) continue;
 
+    // Mutual no-show forfeits have no winner — count as played but no W/L impact
+    if (!result.winnerId) {
+      challengerEntry.played++;
+      opponentEntry.played++;
+      continue;
+    }
+
     // Determine winner/loser
     const winnerId = result.winnerId;
     const loserId = winnerId === challengerId ? opponentId : challengerId;
-    const winnerEntry = entryMap.get(winnerId)!;
-    const loserEntry = entryMap.get(loserId)!;
+    const winnerEntry = entryMap.get(winnerId);
+    const loserEntry = entryMap.get(loserId);
+    if (!winnerEntry || !loserEntry) continue;
 
     // Increment played
     winnerEntry.played++;
@@ -84,7 +92,7 @@ export function computeStandings(
         if (set.aGames > set.bGames) {
           challengerEntry.setsWon++;
           opponentEntry.setsLost++;
-        } else {
+        } else if (set.bGames > set.aGames) {
           challengerEntry.setsLost++;
           opponentEntry.setsWon++;
         }

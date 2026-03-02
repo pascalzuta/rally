@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Player, CitySearchResult } from "../types";
 import { LEVEL_OPTIONS } from "../constants";
 import { apiSearchCities } from "../api";

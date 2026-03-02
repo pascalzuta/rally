@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { Player, AvailabilitySlot, AvailabilityImpactSuggestion } from "../types";
 import { DAY_NAMES, SHORT_DAYS } from "../constants";
 import { formatDayTime } from "../helpers";

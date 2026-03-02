@@ -1,5 +1,5 @@
-import type { AuthUser, AvailabilitySlot, Match, Player, PoolEntry, Tournament } from "@rally/core";
-import type { AuthRepo, AvailabilityRepo, MatchRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
+import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
+import type { AuthRepo, AvailabilityRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
 export class InMemoryAuthRepo implements AuthRepo {
   private readonly byId = new Map<string, AuthUser>();
@@ -153,5 +153,46 @@ export class InMemoryPoolRepo implements PoolRepo {
     for (const id of playerIds) {
       this.byPlayerId.delete(id);
     }
+  }
+}
+
+export class InMemoryNotificationRepo implements NotificationRepo {
+  private readonly byId = new Map<string, Notification>();
+
+  async queue(notification: Notification): Promise<void> {
+    this.byId.set(notification.id, notification);
+  }
+
+  async findPending(limit = 50): Promise<Notification[]> {
+    const now = new Date().toISOString();
+    return [...this.byId.values()]
+      .filter((n) => n.status === "queued" && n.scheduledFor <= now)
+      .sort((a, b) => a.scheduledFor.localeCompare(b.scheduledFor))
+      .slice(0, limit);
+  }
+
+  async markSent(id: string): Promise<void> {
+    const n = this.byId.get(id);
+    if (n) {
+      n.status = "sent";
+      n.sentAt = new Date().toISOString();
+    }
+  }
+
+  async markFailed(id: string): Promise<void> {
+    const n = this.byId.get(id);
+    if (n) n.status = "failed";
+  }
+
+  async findByMatchAndType(matchId: string, type: string): Promise<Notification[]> {
+    return [...this.byId.values()].filter(
+      (n) => n.matchId === matchId && n.type === type
+    );
+  }
+
+  async findByPlayerSince(playerId: string, since: string): Promise<Notification[]> {
+    return [...this.byId.values()].filter(
+      (n) => n.playerId === playerId && n.createdAt >= since
+    );
   }
 }

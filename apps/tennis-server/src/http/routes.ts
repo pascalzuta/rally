@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import express, { Router } from "express";
+import rateLimit from "express-rate-limit";
 import type { Match, Player } from "@rally/core";
 import type { Tournament } from "@rally/core";
 import {
@@ -30,6 +31,7 @@ import { TOURNEY_TEST_PLAYERS } from "./seed.js";
 import { seedRichData } from "./seedRich.js";
 import { findNearMisses, findOverlaps, formatProposalLabel } from "../services/scheduler.js";
 import type { TournamentEngine } from "../services/tournamentEngine.js";
+import { recordPlayerActivity } from "../services/paceRules.js";
 
 interface RouteDeps {
   config: AppConfig;
@@ -46,15 +48,52 @@ export function createRoutes(deps: RouteDeps): Router {
   const router = Router();
   const { config } = deps;
 
+  // ── Rate limiters ───────────────────────────────────────────────────────────
+
+  const authLimiter = rateLimit({
+    windowMs: 60_000, // 1 minute
+    max: 10,          // 10 requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "too_many_requests", retryAfterMs: 60_000 },
+  });
+
+  const debugLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "too_many_requests", retryAfterMs: 60_000 },
+  });
+
+  const generalLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "too_many_requests", retryAfterMs: 60_000 },
+  });
+
+  // Apply general rate limit to all routes on this router
+  router.use(generalLimiter);
+
   // ── Health ─────────────────────────────────────────────────────────────────
 
   router.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
 
+  // ── Gate (password check — no auth required) ────────────────────────────────
+
+  router.post("/auth/gate", authLimiter, (req, res) => {
+    const { password } = req.body as { password?: string };
+    const ok = typeof password === "string" && password === config.GATE_PASSWORD;
+    res.json({ ok });
+  });
+
   // ── Auth ───────────────────────────────────────────────────────────────────
 
-  router.post("/auth/login", async (req, res) => {
+  router.post("/auth/login", authLimiter, async (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "invalid_payload", details: parsed.error.flatten() });
@@ -101,14 +140,16 @@ export function createRoutes(deps: RouteDeps): Router {
     // Handle subscription events
     if (event.type === "checkout.session.completed" || event.type === "customer.subscription.updated") {
       // In production, update player subscription status based on event.data
-      console.log(`Stripe webhook: ${event.type}`);
+      req.log?.info({ eventType: event.type }, "Stripe webhook received");
     }
     res.json({ received: true });
   });
 
-  // ── Debug: simulate tournament start (no auth) ─────────────────────────────
+  // ── Debug routes (development only) ──────────────────────────────────────────
 
-  router.post("/debug/simulate-tournament", async (_req, res) => {
+  if (config.NODE_ENV !== "production") {
+
+  router.post("/debug/simulate-tournament", debugLimiter, async (_req, res) => {
     try {
       const { playerId } = _req.body as { playerId?: string };
       const now = new Date();
@@ -265,17 +306,17 @@ export function createRoutes(deps: RouteDeps): Router {
         players: playerInfo
       });
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : "failed" });
+      res.status(500).json({ error: "simulation_failed" });
     }
   });
 
   // ── Debug: seed rich data (200 players + 10 tournaments) ──────────────────
 
-  router.post("/debug/accept-proposals", async (req, res) => {
+  router.post("/debug/accept-proposals", debugLimiter, async (req, res) => {
     try {
       const { playerId } = req.body as { playerId?: string };
       if (!playerId) {
-        res.status(400).json({ error: "playerId required" });
+        res.status(400).json({ error: "player_id_required" });
         return;
       }
       const matches = await deps.matches.findByPlayer(playerId);
@@ -297,16 +338,16 @@ export function createRoutes(deps: RouteDeps): Router {
       res.json({ ok: true, accepted });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("accept-proposals error:", e);
-      res.status(500).json({ error: msg });
+      req.log?.error({ err: e }, "accept-proposals error");
+      res.status(500).json({ error: "internal_error", message: msg });
     }
   });
 
-  router.post("/debug/submit-scores", async (req, res) => {
+  router.post("/debug/submit-scores", debugLimiter, async (req, res) => {
     try {
       const { playerId } = req.body as { playerId?: string };
       if (!playerId) {
-        res.status(400).json({ error: "playerId required" });
+        res.status(400).json({ error: "player_id_required" });
         return;
       }
       // Find all tournaments the player is in
@@ -349,16 +390,16 @@ export function createRoutes(deps: RouteDeps): Router {
       res.json({ ok: true, submitted });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("submit-scores error:", e);
-      res.status(500).json({ error: msg });
+      req.log?.error({ err: e }, "submit-scores error");
+      res.status(500).json({ error: "internal_error", message: msg });
     }
   });
 
-  router.post("/debug/confirm-scores", async (req, res) => {
+  router.post("/debug/confirm-scores", debugLimiter, async (req, res) => {
     try {
       const { playerId } = req.body as { playerId?: string };
       if (!playerId) {
-        res.status(400).json({ error: "playerId required" });
+        res.status(400).json({ error: "player_id_required" });
         return;
       }
       const allTournaments = await deps.tournaments.listAll();
@@ -456,15 +497,15 @@ export function createRoutes(deps: RouteDeps): Router {
       res.json({ ok: true, confirmed });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("confirm-scores error:", e);
-      res.status(500).json({ error: msg });
+      req.log?.error({ err: e }, "confirm-scores error");
+      res.status(500).json({ error: "internal_error", message: msg });
     }
   });
 
-  router.post("/debug/advance-to-finals", async (req, res) => {
+  router.post("/debug/advance-to-finals", debugLimiter, async (req, res) => {
     try {
       const { playerId } = req.body as { playerId?: string };
-      if (!playerId) { res.status(400).json({ error: "playerId required" }); return; }
+      if (!playerId) { res.status(400).json({ error: "player_id_required" }); return; }
       const allTournaments = await deps.tournaments.listAll();
       for (const tournament of allTournaments) {
         if (!tournament.playerIds.includes(playerId)) continue;
@@ -545,15 +586,15 @@ export function createRoutes(deps: RouteDeps): Router {
         res.json({ ok: true, champMatchId, thirdMatchId });
         return;
       }
-      res.json({ ok: false, error: "No active tournament with all matches completed" });
+      res.json({ ok: false, error: "no_eligible_tournament" });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("advance-to-finals error:", e);
-      res.status(500).json({ error: msg });
+      req.log?.error({ err: e }, "advance-to-finals error");
+      res.status(500).json({ error: "internal_error", message: msg });
     }
   });
 
-  router.post("/debug/seed-rich", async (_req, res) => {
+  router.post("/debug/seed-rich", debugLimiter, async (_req, res) => {
     try {
       const result = await seedRichData(deps.auth, deps.players, deps.availability, deps.tournaments, deps.matches);
       res.json({ ok: true, ...result });
@@ -563,10 +604,12 @@ export function createRoutes(deps: RouteDeps): Router {
         : typeof e === "object" && e !== null
           ? JSON.stringify(e)
           : String(e);
-      console.error("seed-rich error:", e);
-      res.status(500).json({ error: msg });
+      _req.log?.error({ err: e }, "seed-rich error");
+      res.status(500).json({ error: "internal_error", message: msg });
     }
   });
+
+  } // end debug routes (development only)
 
   // ── All routes below require auth ──────────────────────────────────────────
 
@@ -767,6 +810,7 @@ export function createRoutes(deps: RouteDeps): Router {
       ...(bothAccepted && updatedProposal?.datetime ? { scheduledAt: updatedProposal.datetime } : {}),
       updatedAt: new Date().toISOString()
     };
+    recordPlayerActivity(updated, req.player.id, "accepted");
 
     await deps.matches.save(updated);
     res.json({ match: updated, scheduled: bothAccepted });
@@ -842,6 +886,8 @@ export function createRoutes(deps: RouteDeps): Router {
       scheduledAt: datetime,
       updatedAt: new Date().toISOString(),
     };
+    recordPlayerActivity(updated, match.challengerId, "accepted");
+    recordPlayerActivity(updated, match.opponentId, "accepted");
     await deps.matches.save(updated);
     res.json({ match: updated, scheduled: true });
   });
@@ -918,6 +964,7 @@ export function createRoutes(deps: RouteDeps): Router {
       scheduledAt: datetime,
       updatedAt: new Date().toISOString(),
     };
+    recordPlayerActivity(updated, req.player.id, "flex-accepted");
     await deps.matches.save(updated);
     res.json({ match: updated, scheduled: true });
   });
@@ -945,13 +992,17 @@ export function createRoutes(deps: RouteDeps): Router {
       acceptedBy: [req.player.id], // proposer auto-accepts
     }));
 
+    const now = new Date().toISOString();
     const updated: Match = {
       ...match,
       status: "scheduling",
       schedulingTier: match.schedulingTier ?? 3,
       proposals,
-      updatedAt: new Date().toISOString(),
+      proposalsCreatedAt: now,
+      deadlineStartedAt: now,
+      updatedAt: now,
     };
+    recordPlayerActivity(updated, req.player.id, "proposed");
     await deps.matches.save(updated);
     res.json({ match: updated });
   });
@@ -1147,6 +1198,11 @@ export function createRoutes(deps: RouteDeps): Router {
       return;
     }
 
+    if (tournament.status !== "registration") {
+      res.status(400).json({ error: "cannot_leave_active_tournament" });
+      return;
+    }
+
     const updated = {
       ...tournament,
       playerIds: tournament.playerIds.filter((id) => id !== req.player.id)
@@ -1307,6 +1363,8 @@ export function createRoutes(deps: RouteDeps): Router {
     const existingReport = tournament.pendingResults[pendingKey];
     if (!existingReport) {
       const report = { winnerId, sets, reportedBy: req.player.id, reportedAt: new Date().toISOString() };
+      recordPlayerActivity(match, req.player.id, "scored");
+      await deps.matches.save(match);
       await deps.tournaments.save({ ...tournament, pendingResults: { ...tournament.pendingResults, [pendingKey]: report } });
       res.json({ status: "awaiting_confirmation", match }); return;
     }
@@ -1314,12 +1372,13 @@ export function createRoutes(deps: RouteDeps): Router {
     const reportsMatch = existingReport.winnerId === winnerId && JSON.stringify(existingReport.sets) === JSON.stringify(sets);
     if (reportsMatch) {
       const now = new Date().toISOString();
+      recordPlayerActivity(match, req.player.id, "confirmed");
       const updatedMatch: Match = { ...match, status: "completed", result: { winnerId, sets, reportedBy: existingReport.reportedBy, reportedAt: existingReport.reportedAt, confirmedBy: req.player.id, confirmedAt: now }, updatedAt: now };
       await deps.matches.save(updatedMatch);
       const loserId = winnerId === match.challengerId ? match.opponentId : match.challengerId;
       const winner = await deps.players.findById(winnerId);
       const loser = await deps.players.findById(loserId);
-      if (winner && loser) { const { updatedWinner, updatedLoser } = applyEnhancedMatchResult(winner, loser, sets); await deps.players.upsert(updatedWinner); await deps.players.upsert(updatedLoser); }
+      if (winner && loser && !updatedMatch.result?.forfeit) { const { updatedWinner, updatedLoser } = applyEnhancedMatchResult(winner, loser, sets); await deps.players.upsert(updatedWinner); await deps.players.upsert(updatedLoser); }
       const { [pendingKey]: _, ...remainingPending } = tournament.pendingResults;
       const allMatches = await deps.matches.findByTournament(tournament.id);
       const completedMatches = allMatches.filter(m => m.status === "completed");

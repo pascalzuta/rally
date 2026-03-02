@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import type { Player, Tournament, TournamentMatch } from "../types";
 import { formatDate, matchCountdown, formatScore, friendlyMatchStatus } from "../helpers";
 

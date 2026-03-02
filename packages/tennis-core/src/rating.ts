@@ -13,14 +13,26 @@ const K_NEW = 32;   // < 20 games
 const K_EST = 16;   // 20+ games
 const SCALE = 400;
 
+/** Returns the default starting ELO rating for new players (1000). */
 export function startingRating(): number {
   return STARTING_RATING;
 }
 
+/**
+ * Calculate the expected score (win probability) for a player against an opponent.
+ * @param playerRating - The player's current ELO rating
+ * @param opponentRating - The opponent's current ELO rating
+ * @returns A value between 0 and 1 representing expected win probability
+ */
 export function expectedScore(playerRating: number, opponentRating: number): number {
   return 1 / (1 + Math.pow(10, (opponentRating - playerRating) / SCALE));
 }
 
+/**
+ * Determine the K-factor based on number of games played.
+ * @param gamesPlayed - Total games the player has completed
+ * @returns K=32 for fewer than 20 games (new), K=16 for 20+ games (established)
+ */
 export function kFactor(gamesPlayed: number): number {
   return gamesPlayed < 20 ? K_NEW : K_EST;
 }
@@ -30,6 +42,14 @@ export interface RatingUpdate {
   delta: number;
 }
 
+/**
+ * Compute a standard ELO rating update after a match.
+ * @param playerRating - The player's current rating
+ * @param opponentRating - The opponent's current rating
+ * @param gamesPlayed - Number of games the player has completed (affects K-factor)
+ * @param won - Whether the player won the match
+ * @returns The new rating and the delta (change) applied
+ */
 export function computeRatingUpdate(
   playerRating: number,
   opponentRating: number,
@@ -46,6 +66,11 @@ export function computeRatingUpdate(
   };
 }
 
+/**
+ * Map an ELO rating to a human-readable skill level label.
+ * @param rating - The player's current ELO rating
+ * @returns "Beginner" (< 1050), "Intermediate" (< 1200), or "Advanced"
+ */
 export function levelFromRating(rating: number): string {
   if (rating < 1050) return "Beginner";
   if (rating < 1200) return "Intermediate";
@@ -84,7 +109,7 @@ export function kFactorWithConfidence(
   provisionalRemaining: number
 ): number {
   const base = provisionalRemaining > 0 ? 48 : 32;
-  return Math.round(base * (1.1 - confidence * 0.5));
+  return Math.max(1, Math.round(base * (1.1 - Math.min(1, confidence) * 0.5)));
 }
 
 /**

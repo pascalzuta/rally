@@ -12,6 +12,24 @@ export interface SchedulerConfig {
 }
 
 /** Format a date as "Sat 15 Feb · 10:00am" */
+/** Number of days ahead to look for scheduling windows */
+const SCHEDULING_HORIZON_DAYS = 14;
+
+/** Minimum match duration in minutes for auto-scheduling */
+const MIN_MATCH_MINUTES = 75;
+
+/** Maximum gap in minutes between slots to consider a near-miss */
+const MAX_NEAR_MISS_GAP_MINUTES = 60;
+
+/** Maximum flex minutes a player can reasonably adjust */
+const MAX_FLEX_MINUTES = 90;
+
+/** Maximum number of AI overlap candidates to send */
+const MAX_AI_OVERLAP_CANDIDATES = 6;
+
+/** Maximum proposals to return */
+const MAX_PROPOSALS = 3;
+
 export function formatProposalLabel(date: Date, startTime: string): string {
   const day = SHORT_DAY[date.getDay()] ?? "";
   const month = MONTH_NAMES[date.getMonth()] ?? "";
@@ -32,7 +50,7 @@ export function findOverlaps(
 ): Array<{ date: Date; startTime: string; endTime: string }> {
   const overlaps: Array<{ date: Date; startTime: string; endTime: string }> = [];
 
-  for (let i = 1; i <= 14; i++) {
+  for (let i = 1; i <= SCHEDULING_HORIZON_DAYS; i++) {
     const candidate = new Date(fromDate);
     candidate.setDate(candidate.getDate() + i);
     const dow = candidate.getDay();
@@ -52,7 +70,7 @@ export function findOverlaps(
         const startMins = (sh ?? 0) * 60 + (sm ?? 0);
         const endMins = (eh ?? 0) * 60 + (em ?? 0);
 
-        if (endMins - startMins >= 75) {
+        if (endMins - startMins >= MIN_MATCH_MINUTES) {
           overlaps.push({ date: new Date(candidate), startTime: start, endTime: end });
         }
       }
@@ -61,9 +79,6 @@ export function findOverlaps(
 
   return overlaps;
 }
-
-/** Minimum match duration in minutes for auto-scheduling */
-const MIN_MATCH_MINUTES = 75;
 
 /**
  * Find near-miss scheduling windows: slots that almost overlap but need a small
@@ -81,7 +96,7 @@ export function findNearMisses(
 ): NearMiss[] {
   const nearMisses: NearMiss[] = [];
 
-  for (let i = 1; i <= 14; i++) {
+  for (let i = 1; i <= SCHEDULING_HORIZON_DAYS; i++) {
     const candidate = new Date(fromDate);
     candidate.setDate(candidate.getDate() + i);
     const dow = candidate.getDay();
@@ -119,13 +134,13 @@ export function findNearMisses(
 
         // Only report if gap is small enough to be worth flexing (≤ 60 min gap)
         // or there IS some overlap (just not enough)
-        if (gapMinutes > 60 && overlapMinutes === 0) continue;
+        if (gapMinutes > MAX_NEAR_MISS_GAP_MINUTES && overlapMinutes === 0) continue;
 
         // Compute the flex needed to reach MIN_MATCH_MINUTES
         const flexNeeded = MIN_MATCH_MINUTES - overlapMinutes + gapMinutes;
 
         // Skip if flex is too large (> 90 min = unreasonable)
-        if (flexNeeded > 90) continue;
+        if (flexNeeded > MAX_FLEX_MINUTES) continue;
 
         // Compute the resulting window if flex is accepted
         // Strategy: split the flex evenly, or one player extends toward the other
@@ -175,10 +190,10 @@ export function findNearMisses(
   return nearMisses;
 }
 
-function buildProposalsFromOverlaps(
+export function buildProposalsFromOverlaps(
   overlaps: Array<{ date: Date; startTime: string; endTime: string }>
 ): TimeProposal[] {
-  return overlaps.slice(0, 3).map(({ date, startTime }) => {
+  return overlaps.slice(0, MAX_PROPOSALS).map(({ date, startTime }) => {
     const [hh, mm] = startTime.split(":").map(Number);
     const d = new Date(date);
     d.setHours(hh ?? 0, mm ?? 0, 0, 0);
@@ -228,7 +243,7 @@ export async function generateMatchProposals(
   const availA = buildAvailabilitySummary(req.slotsA);
   const availB = buildAvailabilitySummary(req.slotsB);
   const overlapLines = overlaps
-    .slice(0, 6)
+    .slice(0, MAX_AI_OVERLAP_CANDIDATES)
     .map(({ date, startTime }) => {
       const [hh, mm] = startTime.split(":").map(Number);
       const d = new Date(date);
@@ -288,7 +303,7 @@ Pick the 3 best options (prefer weekends and morning slots). Return ONLY a JSON 
 
     if (!Array.isArray(arr)) return buildProposalsFromOverlaps(overlaps);
 
-    const proposals: TimeProposal[] = arr.slice(0, 3).map((item: unknown) => {
+    const proposals: TimeProposal[] = arr.slice(0, MAX_PROPOSALS).map((item: unknown) => {
       const obj = item as Record<string, string>;
       return {
         id: randomUUID(),

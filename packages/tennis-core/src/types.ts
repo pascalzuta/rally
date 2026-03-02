@@ -79,7 +79,8 @@ export interface SetScore {
 }
 
 export interface MatchResult {
-  winnerId: string;
+  /** Null for mutual no-show forfeits */
+  winnerId: string | null;
   /** Legacy string format for casual matches, e.g. "6-4, 7-5" */
   score?: string;
   /** Structured scoring for tournament matches */
@@ -89,6 +90,10 @@ export interface MatchResult {
   /** Second player confirmation */
   confirmedBy?: string;
   confirmedAt?: string;
+  /** True if this result is from a forfeit (W/O), not a real match */
+  forfeit?: boolean;
+  /** Human-readable reason for the forfeit */
+  forfeitReason?: string;
 }
 
 export interface Match {
@@ -108,6 +113,24 @@ export interface Match {
   nearMiss?: NearMiss;
   createdAt: string;
   updatedAt: string;
+
+  // ── Pace-rule deadline tracking ──────────────────────────────────────────
+
+  /** ISO datetime when the current deadline phase started */
+  deadlineStartedAt?: string;
+  /** ISO datetime when proposals were created (for scheduling deadline) */
+  proposalsCreatedAt?: string;
+  /** Auto-actions the system has taken on this match */
+  autoActions?: Array<{
+    action: "auto-flex" | "auto-propose" | "auto-accept" | "auto-forfeit";
+    timestamp: string;
+    details?: string;
+  }>;
+  /** Which players have been active on this match (for forfeit fault) */
+  playerActivity?: Record<string, {
+    lastActionAt: string;
+    actions: Array<"proposed" | "accepted" | "flex-accepted" | "scored" | "confirmed">;
+  }>;
 }
 
 // ─── Tournament ───────────────────────────────────────────────────────────────
@@ -187,6 +210,36 @@ export interface Tournament {
   /** Pre-tournament ratings for computing deltas */
   ratingSnapshot?: Record<string, number>;
   createdAt: string;
+
+  // ── Pace-rule timeline ───────────────────────────────────────────────────
+
+  /** ISO datetime when tournament moved from registration → active */
+  activatedAt?: string;
+  /** ISO datetime: activatedAt + 32 days — absolute completion backstop */
+  hardDeadline?: string;
+  /** ISO datetime: activatedAt + 18 days — round-robin must finish */
+  roundRobinDeadline?: string;
+}
+
+// ─── Notification ─────────────────────────────────────────────────────────────
+
+export type NotificationChannel = "email" | "push";
+export type NotificationStatus = "queued" | "sent" | "failed";
+
+export interface Notification {
+  id: string;
+  playerId: string;
+  matchId?: string;
+  tournamentId?: string;
+  type: string;
+  subject: string;
+  body: string;
+  channel: NotificationChannel;
+  status: NotificationStatus;
+  scheduledFor: string;
+  sentAt?: string;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
