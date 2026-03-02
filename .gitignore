@@ -14,3 +14,18 @@ dist/
 
 # Claude
 .claude/
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+db/dev.db
+
+# Allow encrypted backups
+!db/backups/*.db.enc
+
+# Optimized assets (regenerated from originals)
+apps/grp/assets/optimized/*.webp
+apps/grp/assets/optimized/*.jpg
+apps/grp/assets/manifest.json
