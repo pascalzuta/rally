@@ -343,10 +343,10 @@ describe('trapFocusGetBounds', () => {
 // Site gate password validation logic
 // ---------------------------------------------------------------------------
 describe('site gate password validation', () => {
-  const SITE_PASSWORD = 'wimbledon';
+  const SITE_PASSWORD = 'forbidden';
 
-  it('accepts the correct password "wimbledon"', () => {
-    const input = 'wimbledon';
+  it('accepts the correct password "forbidden"', () => {
+    const input = 'forbidden';
     expect(input === SITE_PASSWORD).toBe(true);
   });
 
@@ -356,8 +356,8 @@ describe('site gate password validation', () => {
   });
 
   it('is case-sensitive', () => {
-    expect('Wimbledon' === SITE_PASSWORD).toBe(false);
-    expect('WIMBLEDON' === SITE_PASSWORD).toBe(false);
+    expect('Forbidden' === SITE_PASSWORD).toBe(false);
+    expect('FORBIDDEN' === SITE_PASSWORD).toBe(false);
   });
 
   it('rejects empty string', () => {

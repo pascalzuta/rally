@@ -1,6 +1,6 @@
 (function () {
   const SITE_GATE_KEY = "grp-site-gate-auth-v1";
-  const SITE_PASSWORD = "wimbledon";
+  const SITE_PASSWORD = "forbidden";
   const AUTH_KEY = "grp-owner-auth-v1";
   const OWNER_USERNAME = "christian";
   const OWNER_PASSWORD = "Schmuck";
