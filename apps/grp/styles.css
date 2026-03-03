@@ -1307,3 +1307,108 @@ main {
     max-height: min(72vh, 760px);
   }
 }
+
+/* Footer disclaimer */
+.footer-disclaimer {
+  max-width: 100%;
+}
+
+.footer-disclaimer p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: #4e607b;
+}
+
+.footer-disclaimer a {
+  color: #214876;
+  text-decoration: underline;
+}
+
+/* Sector cards */
+.sector-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.sector-card {
+  border: 1px solid #d4deec;
+  background: #fff;
+  padding: 1.25rem;
+}
+
+.sector-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: #466084;
+  margin-bottom: 0.45rem;
+}
+
+.sector-card h3 {
+  margin: 0 0 0.6rem;
+  color: var(--ink-900);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.sector-card p {
+  margin: 0;
+  color: #334a68;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Convergence section */
+.convergence-section {
+  border-top: 2px solid var(--ink-700);
+}
+
+.convergence-text p {
+  margin: 0;
+  color: #1f3756;
+  font-size: 1.03rem;
+  line-height: 1.7;
+  max-width: 840px;
+}
+
+/* Disclosure sections */
+.disclosure-text p {
+  margin: 0 0 0.85rem;
+  color: #3d5578;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.disclosure-text p:last-child {
+  margin-bottom: 0;
+}
+
+.disclosure-text a {
+  color: #1e4b7d;
+}
+
+/* Factsheet sources */
+.factsheet-sources {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #d4deec;
+}
+
+.source-line {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #4e607b;
+  font-style: italic;
+}
+
+/* Responsive: sector grid */
+@media (max-width: 960px) {
+  .sector-grid {
+    grid-template-columns: 1fr;
+  }
+}
