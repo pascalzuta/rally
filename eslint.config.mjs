@@ -31,7 +31,7 @@ export default [
   },
   // GRP static site files (browser IIFEs)
   {
-    files: ["apps/grp/app.js", "apps/grp/cms.js", "apps/grp/news.js", "apps/grp/news-data.js"],
+    files: ["apps/grp/app.js", "apps/grp/cms.js", "apps/grp/news.js", "apps/grp/news-data.js", "apps/grp-v2/app.js", "apps/grp-v2/cms.js", "apps/grp-v2/news.js", "apps/grp-v2/news-data.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "script",
@@ -62,7 +62,7 @@ export default [
   },
   // GRP test files and helper library
   {
-    files: ["apps/grp/tests/**/*.js", "apps/grp/lib/**/*.js"],
+    files: ["apps/grp/tests/**/*.js", "apps/grp/lib/**/*.js", "apps/grp-v2/tests/**/*.js", "apps/grp-v2/lib/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
