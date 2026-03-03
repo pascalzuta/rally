@@ -111,7 +111,7 @@
   const navPath = navRaw || "index";
   document.querySelectorAll(".main-nav a[href]").forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return;
-    const hrefPath = (link.getAttribute("href") || "").replace("./", "").toLowerCase().replace(/\.html$/, "") || "index";
+    const hrefPath = (link.getAttribute("href") || "").replace("./", "").replace(/^\//, "").toLowerCase().replace(/\.html$/, "") || "index";
     const isHomeMatch = navPath === "index" && hrefPath === "index";
     const isDirectMatch = hrefPath !== "" && hrefPath === navPath;
     link.classList.toggle("active", isHomeMatch || isDirectMatch);
