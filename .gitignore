@@ -25,7 +25,7 @@ db/dev.db
 # Allow encrypted backups
 !db/backups/*.db.enc
 
-# Optimized assets (regenerated from originals)
-apps/grp/assets/optimized/*.webp
-apps/grp/assets/optimized/*.jpg
-apps/grp/assets/manifest.json
+# Source images (large, not committed)
+apps/grp/assets/originals/*.jpeg
+apps/grp/assets/originals/*.jpg
+apps/grp/assets/originals/*.png

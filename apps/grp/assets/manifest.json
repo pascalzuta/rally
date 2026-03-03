@@ -1,0 +1,200 @@
+{
+  "hero-contact-sf.png": {
+    "thumbnail": {
+      "webp": "hero-contact-sf-71ea468f-320.webp",
+      "jpeg": "hero-contact-sf-71ea468f-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-contact-sf-71ea468f-800.webp",
+      "jpeg": "hero-contact-sf-71ea468f-800.jpg"
+    },
+    "large": {
+      "webp": "hero-contact-sf-71ea468f-1600.webp",
+      "jpeg": "hero-contact-sf-71ea468f-1600.jpg"
+    },
+    "original": {
+      "webp": "hero-contact-sf-71ea468f-full.webp",
+      "jpeg": "hero-contact-sf-71ea468f-full.jpg"
+    }
+  },
+  "hero-home-ocean.jpeg": {
+    "thumbnail": {
+      "webp": "hero-home-ocean-176bfb9c-320.webp",
+      "jpeg": "hero-home-ocean-176bfb9c-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-home-ocean-176bfb9c-800.webp",
+      "jpeg": "hero-home-ocean-176bfb9c-800.jpg"
+    },
+    "large": {
+      "webp": "hero-home-ocean-176bfb9c-1600.webp",
+      "jpeg": "hero-home-ocean-176bfb9c-1600.jpg"
+    },
+    "original": {
+      "webp": "hero-home-ocean-176bfb9c-full.webp",
+      "jpeg": "hero-home-ocean-176bfb9c-full.jpg"
+    }
+  },
+  "hero-investment-climbing.jpeg": {
+    "thumbnail": {
+      "webp": "hero-investment-climbing-ef6eb1c2-320.webp",
+      "jpeg": "hero-investment-climbing-ef6eb1c2-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-investment-climbing-ef6eb1c2-800.webp",
+      "jpeg": "hero-investment-climbing-ef6eb1c2-800.jpg"
+    },
+    "large": {
+      "webp": "hero-investment-climbing-ef6eb1c2-1600.webp",
+      "jpeg": "hero-investment-climbing-ef6eb1c2-1600.jpg"
+    },
+    "original": {
+      "webp": "hero-investment-climbing-ef6eb1c2-full.webp",
+      "jpeg": "hero-investment-climbing-ef6eb1c2-full.jpg"
+    }
+  },
+  "hero-news-newspaper.jpeg": {
+    "thumbnail": {
+      "webp": "hero-news-newspaper-efbadb2f-320.webp",
+      "jpeg": "hero-news-newspaper-efbadb2f-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-news-newspaper-efbadb2f-800.webp",
+      "jpeg": "hero-news-newspaper-efbadb2f-800.jpg"
+    },
+    "large": {
+      "webp": "hero-news-newspaper-efbadb2f-1600.webp",
+      "jpeg": "hero-news-newspaper-efbadb2f-1600.jpg"
+    },
+    "original": {
+      "webp": "hero-news-newspaper-efbadb2f-full.webp",
+      "jpeg": "hero-news-newspaper-efbadb2f-full.jpg"
+    }
+  },
+  "hero-structure-forest.jpeg": {
+    "thumbnail": {
+      "webp": "hero-structure-forest-a16edf34-320.webp",
+      "jpeg": "hero-structure-forest-a16edf34-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-structure-forest-a16edf34-800.webp",
+      "jpeg": "hero-structure-forest-a16edf34-800.jpg"
+    },
+    "large": {
+      "webp": "hero-structure-forest-a16edf34-1600.webp",
+      "jpeg": "hero-structure-forest-a16edf34-1600.jpg"
+    },
+    "original": {
+      "webp": "hero-structure-forest-a16edf34-full.webp",
+      "jpeg": "hero-structure-forest-a16edf34-full.jpg"
+    }
+  },
+  "hero-team-bridge.jpeg": {
+    "thumbnail": {
+      "webp": "hero-team-bridge-914fa7aa-320.webp",
+      "jpeg": "hero-team-bridge-914fa7aa-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-team-bridge-914fa7aa-800.webp",
+      "jpeg": "hero-team-bridge-914fa7aa-800.jpg"
+    },
+    "large": {
+      "webp": "hero-team-bridge-914fa7aa-1600.webp",
+      "jpeg": "hero-team-bridge-914fa7aa-1600.jpg"
+    },
+    "original": {
+      "webp": "hero-team-bridge-914fa7aa-full.webp",
+      "jpeg": "hero-team-bridge-914fa7aa-full.jpg"
+    }
+  },
+  "inline-container-shipping.jpeg": {
+    "thumbnail": {
+      "webp": "inline-container-shipping-96ee96e2-320.webp",
+      "jpeg": "inline-container-shipping-96ee96e2-320.jpg"
+    },
+    "medium": {
+      "webp": "inline-container-shipping-96ee96e2-800.webp",
+      "jpeg": "inline-container-shipping-96ee96e2-800.jpg"
+    },
+    "large": {
+      "webp": "inline-container-shipping-96ee96e2-1600.webp",
+      "jpeg": "inline-container-shipping-96ee96e2-1600.jpg"
+    },
+    "original": {
+      "webp": "inline-container-shipping-96ee96e2-full.webp",
+      "jpeg": "inline-container-shipping-96ee96e2-full.jpg"
+    }
+  },
+  "inline-financial-dashboard.jpeg": {
+    "thumbnail": {
+      "webp": "inline-financial-dashboard-3d98c37b-320.webp",
+      "jpeg": "inline-financial-dashboard-3d98c37b-320.jpg"
+    },
+    "medium": {
+      "webp": "inline-financial-dashboard-3d98c37b-800.webp",
+      "jpeg": "inline-financial-dashboard-3d98c37b-800.jpg"
+    },
+    "large": {
+      "webp": "inline-financial-dashboard-3d98c37b-1600.webp",
+      "jpeg": "inline-financial-dashboard-3d98c37b-1600.jpg"
+    },
+    "original": {
+      "webp": "inline-financial-dashboard-3d98c37b-full.webp",
+      "jpeg": "inline-financial-dashboard-3d98c37b-full.jpg"
+    }
+  },
+  "inline-forest-perspective.jpeg": {
+    "thumbnail": {
+      "webp": "inline-forest-perspective-7306b8de-320.webp",
+      "jpeg": "inline-forest-perspective-7306b8de-320.jpg"
+    },
+    "medium": {
+      "webp": "inline-forest-perspective-7306b8de-800.webp",
+      "jpeg": "inline-forest-perspective-7306b8de-800.jpg"
+    },
+    "large": {
+      "webp": "inline-forest-perspective-7306b8de-1600.webp",
+      "jpeg": "inline-forest-perspective-7306b8de-1600.jpg"
+    },
+    "original": {
+      "webp": "inline-forest-perspective-7306b8de-full.webp",
+      "jpeg": "inline-forest-perspective-7306b8de-full.jpg"
+    }
+  },
+  "inline-laboratory.jpeg": {
+    "thumbnail": {
+      "webp": "inline-laboratory-11dd7aaa-320.webp",
+      "jpeg": "inline-laboratory-11dd7aaa-320.jpg"
+    },
+    "medium": {
+      "webp": "inline-laboratory-11dd7aaa-800.webp",
+      "jpeg": "inline-laboratory-11dd7aaa-800.jpg"
+    },
+    "large": {
+      "webp": "inline-laboratory-11dd7aaa-1600.webp",
+      "jpeg": "inline-laboratory-11dd7aaa-1600.jpg"
+    },
+    "original": {
+      "webp": "inline-laboratory-11dd7aaa-full.webp",
+      "jpeg": "inline-laboratory-11dd7aaa-full.jpg"
+    }
+  },
+  "inline-rock-climber.jpeg": {
+    "thumbnail": {
+      "webp": "inline-rock-climber-fa216a94-320.webp",
+      "jpeg": "inline-rock-climber-fa216a94-320.jpg"
+    },
+    "medium": {
+      "webp": "inline-rock-climber-fa216a94-800.webp",
+      "jpeg": "inline-rock-climber-fa216a94-800.jpg"
+    },
+    "large": {
+      "webp": "inline-rock-climber-fa216a94-1600.webp",
+      "jpeg": "inline-rock-climber-fa216a94-1600.jpg"
+    },
+    "original": {
+      "webp": "inline-rock-climber-fa216a94-full.webp",
+      "jpeg": "inline-rock-climber-fa216a94-full.jpg"
+    }
+  }
+}

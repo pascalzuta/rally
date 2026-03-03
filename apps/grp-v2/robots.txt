@@ -1,0 +1,102 @@
+# Block all search engine crawlers from indexing this site
+
+# Catch-all: block all user agents
+User-agent: *
+Disallow: /
+
+# Google
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Googlebot-Image
+Disallow: /
+
+User-agent: Googlebot-News
+Disallow: /
+
+User-agent: Googlebot-Video
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+# Bing
+User-agent: Bingbot
+Disallow: /
+
+User-agent: BingPreview
+Disallow: /
+
+# Yahoo
+User-agent: Slurp
+Disallow: /
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Disallow: /
+
+# Baidu
+User-agent: Baiduspider
+Disallow: /
+
+# Yandex
+User-agent: Yandex
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+# Sogou
+User-agent: Sogou
+Disallow: /
+
+# Apple
+User-agent: Applebot
+Disallow: /
+
+# Facebook
+User-agent: facebookexternalhit
+Disallow: /
+
+# Twitter
+User-agent: Twitterbot
+Disallow: /
+
+# LinkedIn
+User-agent: LinkedInBot
+Disallow: /
+
+# Common AI/LLM crawlers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+# Other crawlers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
