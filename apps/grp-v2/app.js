@@ -232,10 +232,10 @@
     }
   }
 
-  // CMS URL – uses port 3000 in local dev, same origin in production
+  // CMS URL – uses port 3000 in local dev, Netlify CMS in production
   const CMS_URL = window.location.hostname === "localhost"
     ? "http://localhost:3000/admin"
-    : "/admin";
+    : "https://grp-cms.netlify.app/admin";
 
   document.querySelectorAll("[data-login-trigger]").forEach((button) => {
     button.addEventListener("click", function () {
