@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromCookies, isAuthenticated } from '@/lib/auth'
+import { getSessionFromCookies, isFullyAuthenticated } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function GET() {
-  // Public - no auth required for GET (news page needs it)
+  const session = await getSessionFromCookies()
+  if (!isFullyAuthenticated(session)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const posts = await prisma.linkedInPost.findMany({
     where: { active: true },
     orderBy: [{ order: 'asc' }, { postDate: 'desc' }],
@@ -13,7 +17,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import clsx from 'clsx'
@@ -44,6 +45,7 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Login and change-password pages get a clean centered layout
   if (noSidebarPaths.includes(pathname)) {
@@ -89,61 +91,111 @@ export default function AdminLayout({
     )
   }
 
+  const sidebarContent = (
+    <>
+      {/* Logo / title */}
+      <div className="flex h-16 items-center justify-between px-5">
+        <h1 className="text-lg font-bold tracking-tight text-white">
+          GRP Admin
+        </h1>
+        {/* Close button - visible only on mobile */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white md:hidden"
+          aria-label="Close sidebar"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Scrollable navigation */}
+      <nav
+        className="flex flex-1 flex-col overflow-y-auto px-3 pb-4"
+        aria-label="Admin navigation"
+      >
+        {/* CONTENT section */}
+        <p className="mb-2 mt-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Content
+        </p>
+        <ul className="space-y-0.5">
+          {contentItems.map(renderNavItem)}
+        </ul>
+
+        {/* MANAGE section */}
+        <p className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Manage
+        </p>
+        <ul className="space-y-0.5">
+          {manageItems.map(renderNavItem)}
+        </ul>
+
+        {/* ACCOUNT section */}
+        <p className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Account
+        </p>
+        <ul className="space-y-0.5">
+          {accountItems.map(renderNavItem)}
+
+          {/* Logout button */}
+          <li>
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+            >
+              <LogoutIcon className="h-5 w-5 flex-shrink-0 text-slate-400" />
+              Logout
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </>
+  )
+
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="flex w-64 flex-col bg-slate-900 text-white">
-        {/* Logo / title */}
-        <div className="flex h-16 items-center px-5">
-          <h1 className="text-lg font-bold tracking-tight text-white">
-            GRP Admin
-          </h1>
-        </div>
-
-        {/* Scrollable navigation */}
-        <nav
-          className="flex flex-1 flex-col overflow-y-auto px-3 pb-4"
-          aria-label="Admin navigation"
+      {/* Mobile top bar */}
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-slate-900 px-4 md:hidden">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="rounded p-1.5 text-slate-300 hover:bg-slate-800 hover:text-white"
+          aria-label="Open sidebar"
         >
-          {/* CONTENT section */}
-          <p className="mb-2 mt-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Content
-          </p>
-          <ul className="space-y-0.5">
-            {contentItems.map(renderNavItem)}
-          </ul>
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 className="text-base font-bold tracking-tight text-white">
+          GRP Admin
+        </h1>
+      </div>
 
-          {/* MANAGE section */}
-          <p className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Manage
-          </p>
-          <ul className="space-y-0.5">
-            {manageItems.map(renderNavItem)}
-          </ul>
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-          {/* ACCOUNT section */}
-          <p className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Account
-          </p>
-          <ul className="space-y-0.5">
-            {accountItems.map(renderNavItem)}
+      {/* Mobile sidebar drawer */}
+      <aside
+        className={clsx(
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 text-white transition-transform duration-200 ease-in-out md:hidden',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        {sidebarContent}
+      </aside>
 
-            {/* Logout button */}
-            <li>
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-              >
-                <LogoutIcon className="h-5 w-5 flex-shrink-0 text-slate-400" />
-                Logout
-              </button>
-            </li>
-          </ul>
-        </nav>
+      {/* Desktop sidebar */}
+      <aside className="hidden w-64 flex-col bg-slate-900 text-white md:flex">
+        {sidebarContent}
       </aside>
 
       {/* Main content area */}
-      <main className="flex-1 overflow-y-auto bg-white">
+      <main className="flex-1 overflow-y-auto bg-white pt-14 md:pt-0">
         <div className="p-8">{children}</div>
       </main>
     </div>

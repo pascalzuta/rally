@@ -11,7 +11,7 @@ const corsHeaders = {
 export async function GET(request: Request) {
   const forwarded = request.headers.get('x-forwarded-for')
   const ip = forwarded?.split(',')[0]?.trim() || 'unknown'
-  const { success } = rateLimit(`public-team:${ip}`, 60, 60 * 1000)
+  const { success } = rateLimit(`public-linkedin:${ip}`, 60, 60 * 1000)
   if (!success) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
@@ -20,25 +20,23 @@ export async function GET(request: Request) {
   }
 
   try {
-    const members = await prisma.teamMember.findMany({
+    const posts = await prisma.linkedInPost.findMany({
+      where: { active: true },
+      orderBy: [{ order: 'asc' }, { postDate: 'desc' }],
       select: {
-        firstName: true,
-        lastName: true,
-        role: true,
-        bio: true,
-        type: true,
+        embedHtml: true,
+        caption: true,
+        postDate: true,
+        active: true,
         order: true,
-        imageUrl: true,
-        linkedinUrl: true,
       },
-      orderBy: [{ type: 'asc' }, { order: 'asc' }],
     })
 
-    return NextResponse.json(members, { headers: corsHeaders })
+    return NextResponse.json(posts, { headers: corsHeaders })
   } catch (error) {
-    console.error('Public team GET error:', error)
+    console.error('Public linkedin-posts GET error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch team members' },
+      { error: 'Failed to fetch LinkedIn posts' },
       { status: 500, headers: corsHeaders }
     )
   }

@@ -1,22 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getSessionFromCookies, isAuthenticated } from '@/lib/auth'
+import { getSessionFromCookies, isFullyAuthenticated } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { contentBulkSchema } from '@/lib/validation'
+import { getPageDef, PAGE_SLUGS } from '@/lib/content-fields'
 
-const VALID_PAGES = [
-  'home',
-  'structure',
-  'investment',
-  'sectors',
-  'team',
-  'contact',
-  'news',
-] as const
-
-type ValidPage = (typeof VALID_PAGES)[number]
-
-function isValidPage(page: string): page is ValidPage {
-  return (VALID_PAGES as readonly string[]).includes(page)
+function isValidPage(page: string): boolean {
+  return PAGE_SLUGS.includes(page)
 }
 
 export async function GET(
@@ -24,7 +13,7 @@ export async function GET(
   { params }: { params: { page: string } }
 ) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -32,7 +21,7 @@ export async function GET(
 
   if (!isValidPage(page)) {
     return NextResponse.json(
-      { error: `Invalid page: "${page}". Must be one of: ${VALID_PAGES.join(', ')}` },
+      { error: `Invalid page: "${page}". Must be one of: ${PAGE_SLUGS.join(', ')}` },
       { status: 400 }
     )
   }
@@ -62,7 +51,7 @@ export async function PUT(
   { params }: { params: { page: string } }
 ) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -70,7 +59,7 @@ export async function PUT(
 
   if (!isValidPage(page)) {
     return NextResponse.json(
-      { error: `Invalid page: "${page}". Must be one of: ${VALID_PAGES.join(', ')}` },
+      { error: `Invalid page: "${page}". Must be one of: ${PAGE_SLUGS.join(', ')}` },
       { status: 400 }
     )
   }
@@ -86,7 +75,10 @@ export async function PUT(
       )
     }
 
-    const entries = Object.entries(parsed.data)
+    // Filter to only accept keys defined in the page's field definitions
+    const pageDef = getPageDef(page)
+    const allowedKeys = new Set(pageDef?.fields.map((f) => f.key) ?? [])
+    const entries = Object.entries(parsed.data).filter(([key]) => allowedKeys.has(key))
 
     await Promise.all(
       entries.map(([key, value]) =>

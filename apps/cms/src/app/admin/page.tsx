@@ -10,6 +10,7 @@ interface DashboardStats {
   newsDraft: number | null
   mediaFiles: number | null
   linkedInPosts: number | null
+  contentPages: number | null
 }
 
 const initialStats: DashboardStats = {
@@ -19,6 +20,7 @@ const initialStats: DashboardStats = {
   newsDraft: null,
   mediaFiles: null,
   linkedInPosts: null,
+  contentPages: null,
 }
 
 const quickLinks = [
@@ -55,44 +57,19 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [teamRes, newsRes, mediaRes, linkedInRes] = await Promise.allSettled([
-          fetch('/api/team'),
-          fetch('/api/news'),
-          fetch('/api/media'),
-          fetch('/api/linkedin-posts'),
-        ])
-
-        const next: DashboardStats = { ...initialStats }
-
-        if (teamRes.status === 'fulfilled' && teamRes.value.ok) {
-          const data = await teamRes.value.json()
-          next.teamMembers = Array.isArray(data) ? data.length : 0
+        const res = await fetch('/api/stats')
+        if (res.ok) {
+          const data = await res.json()
+          setStats({
+            teamMembers: data.teamMembers ?? null,
+            newsPosts: data.newsPosts ?? null,
+            newsPublished: data.newsPublished ?? null,
+            newsDraft: data.newsDraft ?? null,
+            mediaFiles: data.mediaFiles ?? null,
+            linkedInPosts: data.linkedInPosts ?? null,
+            contentPages: data.contentPages ?? null,
+          })
         }
-
-        if (newsRes.status === 'fulfilled' && newsRes.value.ok) {
-          const data = await newsRes.value.json()
-          if (Array.isArray(data)) {
-            next.newsPosts = data.length
-            next.newsPublished = data.filter(
-              (p: { status?: string }) => p.status === 'published'
-            ).length
-            next.newsDraft = data.filter(
-              (p: { status?: string }) => p.status === 'draft'
-            ).length
-          }
-        }
-
-        if (mediaRes.status === 'fulfilled' && mediaRes.value.ok) {
-          const data = await mediaRes.value.json()
-          next.mediaFiles = Array.isArray(data) ? data.length : 0
-        }
-
-        if (linkedInRes.status === 'fulfilled' && linkedInRes.value.ok) {
-          const data = await linkedInRes.value.json()
-          next.linkedInPosts = Array.isArray(data) ? data.length : 0
-        }
-
-        setStats(next)
       } catch (err) {
         console.error('Failed to fetch dashboard stats:', err)
       } finally {
@@ -119,9 +96,9 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           label="Content Areas"
-          value="7 Pages"
+          value={stats.contentPages !== null ? `${stats.contentPages} Pages` : null}
           sublabel="Site pages"
-          loading={false}
+          loading={loading}
         />
         <StatCard
           label="Team Members"

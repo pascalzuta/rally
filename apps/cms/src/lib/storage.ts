@@ -1,28 +1,54 @@
-import { promises as fs } from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './public/uploads'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const BUCKET = 'media'
+
+function getClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+}
 
 export async function ensureUploadDir() {
-  await fs.mkdir(path.resolve(UPLOAD_DIR), { recursive: true })
+  // No-op for Supabase Storage (bucket created via dashboard)
 }
 
 export async function saveFile(filename: string, buffer: Buffer): Promise<string> {
-  await ensureUploadDir()
-  const filePath = path.join(path.resolve(UPLOAD_DIR), filename)
-  await fs.writeFile(filePath, buffer)
-  return `/uploads/${filename}`
+  const supabase = getClient()
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, buffer, {
+      contentType: inferMimeType(filename),
+      upsert: true,
+    })
+
+  if (error) throw new Error(`Upload failed: ${error.message}`)
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
+  return data.publicUrl
 }
 
 export async function deleteFile(filename: string): Promise<void> {
-  const filePath = path.join(path.resolve(UPLOAD_DIR), filename)
-  try {
-    await fs.unlink(filePath)
-  } catch {
-    // File may not exist, that's ok
-  }
+  const supabase = getClient()
+  await supabase.storage.from(BUCKET).remove([filename])
 }
 
 export function getPublicUrl(filename: string): string {
-  return `/uploads/${filename}`
+  const supabase = getClient()
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
+  return data.publicUrl
+}
+
+function inferMimeType(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase()
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg'
+    case 'webp':
+      return 'image/webp'
+    case 'png':
+      return 'image/png'
+    default:
+      return 'application/octet-stream'
+  }
 }

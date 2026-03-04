@@ -32,8 +32,10 @@ export default function NewsListPage() {
   const router = useRouter()
   const [posts, setPosts] = useState<NewsPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -43,7 +45,7 @@ export default function NewsListPage() {
         setPosts(data)
       }
     } catch {
-      // silently fail
+      setError('Failed to load news posts')
     } finally {
       setLoading(false)
     }
@@ -53,11 +55,7 @@ export default function NewsListPage() {
     fetchPosts()
   }, [fetchPosts])
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
-      return
-    }
-
+  const handleDelete = async (id: string) => {
     setDeletingId(id)
     try {
       const res = await fetch(`/api/news/${id}`, { method: 'DELETE' })
@@ -65,9 +63,10 @@ export default function NewsListPage() {
         setPosts((prev) => prev.filter((p) => p.id !== id))
       }
     } catch {
-      // silently fail
+      setError('Failed to delete post. Please try again.')
     } finally {
       setDeletingId(null)
+      setDeleteConfirmId(null)
     }
   }
 
@@ -124,6 +123,19 @@ export default function NewsListPage() {
           </button>
         ))}
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 font-medium underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -225,7 +237,7 @@ export default function NewsListPage() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(post.id, post.title)}
+                        onClick={() => setDeleteConfirmId(post.id)}
                         disabled={deletingId === post.id}
                         className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50"
                       >
@@ -237,6 +249,63 @@ export default function NewsListPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 transition-opacity"
+            onClick={() => setDeleteConfirmId(null)}
+          />
+
+          {/* Dialog */}
+          <div className="relative z-10 mx-4 w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                <svg
+                  className="h-5 w-5 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Delete News Post
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete &ldquo;{posts.find((p) => p.id === deleteConfirmId)?.title}&rdquo;? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deletingId === deleteConfirmId}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={deletingId === deleteConfirmId}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
+              >
+                {deletingId === deleteConfirmId ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

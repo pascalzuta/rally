@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -39,6 +39,23 @@ export default function EditNewsPostPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  // Track initial values for dirty detection
+  const initialValues = useRef({
+    title: '',
+    slug: '',
+    author: '',
+    publishedAt: '',
+    monthKey: '',
+    summary: '',
+    tagsInput: '',
+    status: 'draft' as string,
+    pages: [
+      { heading: '', body: '' },
+      { heading: '', body: '' },
+      { heading: '', body: '' },
+    ],
+  })
 
   const fetchPost = useCallback(async () => {
     try {
@@ -90,6 +107,26 @@ export default function EditNewsPostPage() {
         })
       }
       setPages(loadedPages)
+
+      // Capture initial values for dirty detection
+      initialValues.current = {
+        title: post.title,
+        slug: post.slug,
+        author: post.author || '',
+        publishedAt: new Date(post.publishedAt).toISOString().slice(0, 10),
+        monthKey: post.monthKey || '',
+        summary: post.summary || '',
+        tagsInput: (() => {
+          try {
+            const parsed = JSON.parse(post.tags)
+            return Array.isArray(parsed) ? parsed.join(', ') : ''
+          } catch {
+            return ''
+          }
+        })(),
+        status: post.status || 'draft',
+        pages: loadedPages.map((p) => ({ ...p })),
+      }
     } catch {
       setError('Network error loading post')
     } finally {
@@ -100,6 +137,33 @@ export default function EditNewsPostPage() {
   useEffect(() => {
     fetchPost()
   }, [fetchPost])
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const init = initialValues.current
+      const isDirty =
+        title !== init.title ||
+        slug !== init.slug ||
+        author !== init.author ||
+        summary !== init.summary ||
+        tagsInput !== init.tagsInput ||
+        monthKey !== init.monthKey ||
+        status !== init.status ||
+        publishedAt !== init.publishedAt ||
+        pages.some(
+          (p, i) =>
+            p.heading !== init.pages[i].heading ||
+            p.body !== init.pages[i].body
+        )
+
+      if (isDirty) {
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [title, slug, author, summary, tagsInput, monthKey, status, publishedAt, pages])
 
   function handleTitleChange(value: string) {
     setTitle(value)

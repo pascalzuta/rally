@@ -68,14 +68,14 @@ export async function processImage(
       resized.clone().webp({ quality: 80 }).toBuffer(),
     ])
 
-    const [jpgUrl, webpUrl] = await Promise.all([
+    const [jpgPath, webpPath] = await Promise.all([
       saveFile(jpgFilename, jpgBuffer),
       saveFile(webpFilename, webpBuffer),
     ])
 
     variants[key] = {
-      jpg: jpgUrl,
-      webp: webpUrl,
+      jpg: jpgPath,
+      webp: webpPath,
     }
   }
 

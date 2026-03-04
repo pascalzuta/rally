@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromCookies, isAuthenticated } from '@/lib/auth'
+import { getSessionFromCookies, isFullyAuthenticated } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { teamMemberSchema } from '@/lib/validation'
 
 export async function GET() {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const members = await prisma.teamMember.findMany({
-    orderBy: [{ type: 'asc' }, { order: 'asc' }],
-  })
+  try {
+    const members = await prisma.teamMember.findMany({
+      orderBy: [{ type: 'asc' }, { order: 'asc' }],
+    })
 
-  return NextResponse.json(members)
+    return NextResponse.json(members)
+  } catch (error) {
+    console.error('Team GET error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch team members' },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

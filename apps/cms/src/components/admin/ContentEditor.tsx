@@ -383,6 +383,9 @@ function FieldCard({ field, value, onChange }: FieldCardProps) {
                   onError={(e) => {
                     ;(e.target as HTMLImageElement).style.display = 'none'
                   }}
+                  onLoad={(e) => {
+                    ;(e.target as HTMLImageElement).style.display = 'block'
+                  }}
                 />
               </div>
               <span className="mt-1 text-xs text-gray-400">Preview</span>

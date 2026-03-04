@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { changePasswordSchema } from '@/lib/validation'
 import { getSessionFromCookies } from '@/lib/auth'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
+      )
+    }
+
+    // Rate limit by userId (AUTH-03)
+    const { success: withinLimit, resetAt } = rateLimit(
+      `change-password:${session.userId}`,
+      5,
+      15 * 60 * 1000
+    )
+
+    if (!withinLimit) {
+      const retryAfterSeconds = Math.ceil((resetAt - Date.now()) / 1000)
+      return NextResponse.json(
+        { error: 'Too many password change attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSeconds) },
+        }
       )
     }
 

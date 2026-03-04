@@ -28,7 +28,8 @@
     "@uiw/react-md-editor": "^4.0.0",
     "nanoid": "^5.0.0",
     "sharp": "^0.33.0",
-    "clsx": "^2.1.0"
+    "clsx": "^2.1.0",
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "prisma": "^5.20.0",

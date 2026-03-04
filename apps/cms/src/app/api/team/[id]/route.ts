@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromCookies, isAuthenticated } from '@/lib/auth'
+import { getSessionFromCookies, isFullyAuthenticated } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { teamMemberSchema } from '@/lib/validation'
 
@@ -9,7 +9,7 @@ interface RouteParams {
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

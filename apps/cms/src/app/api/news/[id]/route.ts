@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSessionFromCookies, isAuthenticated } from '@/lib/auth'
+import { getSessionFromCookies, isFullyAuthenticated } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { newsPostSchema } from '@/lib/validation'
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -31,7 +31,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -59,22 +59,24 @@ export async function PUT(
 
   const { pages, tags, ...postData } = result.data
 
-  await prisma.newsPostPage.deleteMany({ where: { postId: id } })
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.newsPostPage.deleteMany({ where: { postId: id } })
 
-  const updated = await prisma.newsPost.update({
-    where: { id },
-    data: {
-      ...postData,
-      tags: JSON.stringify(tags),
-      pages: {
-        create: pages.map((p, i) => ({
-          pageNum: i + 1,
-          heading: p.heading,
-          body: p.body,
-        })),
+    return tx.newsPost.update({
+      where: { id },
+      data: {
+        ...postData,
+        tags: JSON.stringify(tags),
+        pages: {
+          create: pages.map((p, i) => ({
+            pageNum: i + 1,
+            heading: p.heading,
+            body: p.body,
+          })),
+        },
       },
-    },
-    include: { pages: { orderBy: { pageNum: 'asc' } } },
+      include: { pages: { orderBy: { pageNum: 'asc' } } },
+    })
   })
 
   return NextResponse.json(updated)
@@ -85,7 +87,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getSessionFromCookies()
-  if (!isAuthenticated(session)) {
+  if (!isFullyAuthenticated(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

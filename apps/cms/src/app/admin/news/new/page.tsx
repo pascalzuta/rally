@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -38,6 +38,49 @@ export default function NewNewsPostPage() {
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Track initial values for dirty detection
+  const initialValues = useRef({
+    title: '',
+    slug: '',
+    author: 'Green Room Partners',
+    publishedAt: new Date().toISOString().slice(0, 10),
+    monthKey: '',
+    summary: '',
+    tagsInput: '',
+    status: 'draft' as const,
+    pages: [
+      { heading: '', body: '' },
+      { heading: '', body: '' },
+      { heading: '', body: '' },
+    ],
+  })
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const init = initialValues.current
+      const isDirty =
+        title !== init.title ||
+        slug !== init.slug ||
+        author !== init.author ||
+        summary !== init.summary ||
+        tagsInput !== init.tagsInput ||
+        monthKey !== init.monthKey ||
+        status !== init.status ||
+        pages.some(
+          (p, i) =>
+            p.heading !== init.pages[i].heading ||
+            p.body !== init.pages[i].body
+        )
+
+      if (isDirty) {
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [title, slug, author, summary, tagsInput, monthKey, status, pages])
 
   function handleTitleChange(value: string) {
     setTitle(value)

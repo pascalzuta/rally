@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { rateLimit } from '@/lib/rate-limit'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,10 +8,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
+function safeParseJsonArray(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value
+  if (typeof value !== 'string') return []
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { slug: string } }
 ) {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown'
+  const { success } = rateLimit(`public-news-slug:${ip}`, 60, 60 * 1000)
+  if (!success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: corsHeaders }
+    )
+  }
+
   const { slug } = params
 
   try {
@@ -28,7 +50,7 @@ export async function GET(
 
     const parsed = {
       ...post,
-      tags: typeof post.tags === 'string' ? JSON.parse(post.tags) : post.tags,
+      tags: safeParseJsonArray(post.tags),
     }
 
     return NextResponse.json(parsed, { headers: corsHeaders })

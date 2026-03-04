@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { rateLimit } from '@/lib/rate-limit'
 
 const VALID_PAGES = [
   'home',
@@ -27,12 +28,22 @@ export async function GET(
   request: Request,
   { params }: { params: { page: string } }
 ) {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown'
+  const { success } = rateLimit(`public-content:${ip}`, 60, 60 * 1000)
+  if (!success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: corsHeaders }
+    )
+  }
+
   const { page } = params
 
   if (!isValidPage(page)) {
     return NextResponse.json(
-      { error: `Invalid page: "${page}". Must be one of: ${VALID_PAGES.join(', ')}` },
-      { status: 400, headers: corsHeaders }
+      { error: 'Page not found' },
+      { status: 404, headers: corsHeaders }
     )
   }
 

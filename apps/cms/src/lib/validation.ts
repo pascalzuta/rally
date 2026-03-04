@@ -19,7 +19,7 @@ export const contentAreaSchema = z.object({
   value: z.string(),
 })
 
-export const contentBulkSchema = z.record(z.string(), z.string())
+export const contentBulkSchema = z.record(z.string(), z.string().max(10000))
 
 export const teamMemberSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),

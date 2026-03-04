@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface TeamMember {
   id: string
@@ -78,6 +78,9 @@ export default function TeamMembersPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormData>(EMPTY_FORM)
 
+  // Track original form values for dirty detection
+  const originalFormRef = useRef<FormData>(EMPTY_FORM)
+
   // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -117,13 +120,14 @@ export default function TeamMembersPage() {
   function openAddForm() {
     setEditingId(null)
     setForm(EMPTY_FORM)
+    originalFormRef.current = EMPTY_FORM
     setShowForm(true)
     setError(null)
   }
 
   function openEditForm(member: TeamMember) {
     setEditingId(member.id)
-    setForm({
+    const formData: FormData = {
       firstName: member.firstName,
       lastName: member.lastName,
       role: member.role,
@@ -132,12 +136,31 @@ export default function TeamMembersPage() {
       order: member.order,
       imageUrl: member.imageUrl,
       linkedinUrl: member.linkedinUrl,
-    })
+    }
+    setForm(formData)
+    originalFormRef.current = { ...formData }
     setShowForm(true)
     setError(null)
   }
 
   function closeForm() {
+    const original = originalFormRef.current
+    const isDirty =
+      form.firstName !== original.firstName ||
+      form.lastName !== original.lastName ||
+      form.role !== original.role ||
+      form.bio !== original.bio ||
+      form.type !== original.type ||
+      form.order !== original.order ||
+      form.imageUrl !== original.imageUrl ||
+      form.linkedinUrl !== original.linkedinUrl
+
+    if (isDirty) {
+      if (!window.confirm('You have unsaved changes. Discard?')) {
+        return
+      }
+    }
+
     setShowForm(false)
     setEditingId(null)
     setForm(EMPTY_FORM)
