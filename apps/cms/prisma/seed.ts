@@ -358,7 +358,7 @@ async function main() {
       order: 2,
       bio: "Pascal is a serial entrepreneur and investor based in the San Francisco Bay Area. He co-founded GYANT, an AI-based patient engagement platform, and has built and scaled companies across media, consumer brands, and healthcare technology. He also leads Lion\u2019s Den Ventures and serves as an investor and board member at GRENION Brands and Les Lunes. He earned his Dr. in Media Science from the HFF Potsdam-Babelsberg and studied at European Business School.",
       imageUrl:
-        "./assets/optimized/advisor-pascal-zuta-5fb9a545-full.jpg",
+        "./assets/optimized/advisor-pascal-zuta-7141b484-full.jpg",
       linkedinUrl: "",
     },
   });

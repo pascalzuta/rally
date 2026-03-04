@@ -19,9 +19,9 @@ const contentItems: NavItem[] = [
   { href: '/admin/pages/structure', label: 'Structure', icon: FileIcon },
   { href: '/admin/pages/investment', label: 'Investment', icon: FileIcon },
   { href: '/admin/pages/sectors', label: 'Sectors', icon: FileIcon },
-  { href: '/admin/pages/team-page', label: 'Team Page', icon: FileIcon },
+  { href: '/admin/pages/team', label: 'Team Page', icon: FileIcon },
   { href: '/admin/pages/contact', label: 'Contact', icon: FileIcon },
-  { href: '/admin/pages/news-config', label: 'News Page', icon: FileIcon },
+  { href: '/admin/pages/news', label: 'News Page', icon: FileIcon },
 ]
 
 const manageItems: NavItem[] = [
