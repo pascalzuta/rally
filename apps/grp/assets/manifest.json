@@ -1,4 +1,48 @@
 {
+  "advisor-hanno-fichtner.jpg": {
+    "thumbnail": {
+      "webp": "advisor-hanno-fichtner-8b8f5514-320.webp",
+      "jpeg": "advisor-hanno-fichtner-8b8f5514-320.jpg"
+    },
+    "original": {
+      "webp": "advisor-hanno-fichtner-8b8f5514-full.webp",
+      "jpeg": "advisor-hanno-fichtner-8b8f5514-full.jpg"
+    }
+  },
+  "advisor-jeff-heely.jpg": {
+    "thumbnail": {
+      "webp": "advisor-jeff-heely-39e8002b-320.webp",
+      "jpeg": "advisor-jeff-heely-39e8002b-320.jpg"
+    },
+    "original": {
+      "webp": "advisor-jeff-heely-39e8002b-full.webp",
+      "jpeg": "advisor-jeff-heely-39e8002b-full.jpg"
+    }
+  },
+  "advisor-pascal-zuta.jpg": {
+    "thumbnail": {
+      "webp": "advisor-pascal-zuta-5fb9a545-320.webp",
+      "jpeg": "advisor-pascal-zuta-5fb9a545-320.jpg"
+    },
+    "medium": {
+      "webp": "advisor-pascal-zuta-5fb9a545-800.webp",
+      "jpeg": "advisor-pascal-zuta-5fb9a545-800.jpg"
+    },
+    "original": {
+      "webp": "advisor-pascal-zuta-5fb9a545-full.webp",
+      "jpeg": "advisor-pascal-zuta-5fb9a545-full.jpg"
+    }
+  },
+  "advisor-rene-gamboa.jpg": {
+    "thumbnail": {
+      "webp": "advisor-rene-gamboa-9051a6fa-320.webp",
+      "jpeg": "advisor-rene-gamboa-9051a6fa-320.jpg"
+    },
+    "original": {
+      "webp": "advisor-rene-gamboa-9051a6fa-full.webp",
+      "jpeg": "advisor-rene-gamboa-9051a6fa-full.jpg"
+    }
+  },
   "hero-contact-sf.png": {
     "thumbnail": {
       "webp": "hero-contact-sf-71ea468f-320.webp",
@@ -69,6 +113,20 @@
     "original": {
       "webp": "hero-news-newspaper-efbadb2f-full.webp",
       "jpeg": "hero-news-newspaper-efbadb2f-full.jpg"
+    }
+  },
+  "hero-sectors-innovation.png": {
+    "thumbnail": {
+      "webp": "hero-sectors-innovation-7a3460a8-320.webp",
+      "jpeg": "hero-sectors-innovation-7a3460a8-320.jpg"
+    },
+    "medium": {
+      "webp": "hero-sectors-innovation-7a3460a8-800.webp",
+      "jpeg": "hero-sectors-innovation-7a3460a8-800.jpg"
+    },
+    "original": {
+      "webp": "hero-sectors-innovation-7a3460a8-full.webp",
+      "jpeg": "hero-sectors-innovation-7a3460a8-full.jpg"
     }
   },
   "hero-structure-forest.jpeg": {

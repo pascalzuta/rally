@@ -31,7 +31,9 @@
     "ci": "npm run lint:grp && npm run test:coverage",
     "lint:grp": "eslint apps/grp/app.js apps/grp/cms.js apps/grp/news.js apps/grp/news-data.js apps/grp/lib/ apps/grp/tests/",
     "dev:grp": "npx serve apps/grp -l 3500 --no-clipboard",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dev:cms": "npm run dev -w @grp/cms",
+    "build:cms": "npm run build -w @grp/cms"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",

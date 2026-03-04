@@ -139,10 +139,9 @@
 
   function syncLoginButtons() {
     const buttons = document.querySelectorAll("[data-login-trigger]");
-    const isAuth = isOwnerAuthenticated();
     buttons.forEach((button) => {
       if (button instanceof HTMLButtonElement) {
-        button.textContent = isAuth ? "Partner Logout" : "Partner Login";
+        button.textContent = "Partner Login";
       }
     });
   }
@@ -233,22 +232,16 @@
     }
   }
 
+  // CMS URL – uses port 3000 in local dev, same origin in production
+  const CMS_URL = window.location.hostname === "localhost"
+    ? "http://localhost:3000/admin"
+    : "/admin";
+
   document.querySelectorAll("[data-login-trigger]").forEach((button) => {
     button.addEventListener("click", function () {
-      if (isOwnerAuthenticated()) {
-        setOwnerAuthenticated(false);
-        syncLoginButtons();
-        if (window.location.pathname.endsWith("/news.html") || window.location.pathname.endsWith("news.html")) {
-          window.location.reload();
-        }
-        return;
-      }
-
-      openLoginModal(this);
+      window.open(CMS_URL, "_blank");
     });
   });
-
-  syncLoginButtons();
 
   const contactForm = document.querySelector("[data-contact-form]");
   const feedback = document.querySelector("[data-contact-feedback]");

@@ -318,6 +318,13 @@ body {
     var(--hero-investment-image, url("./assets/optimized/hero-investment-climbing-ef6eb1c2-1600.jpg")) center 45% / cover no-repeat;
 }
 
+.hero.hero-sectors {
+  background:
+    linear-gradient(135deg, rgba(5, 21, 48, 0.7), rgba(14, 55, 113, 0.48)),
+    linear-gradient(180deg, rgba(7, 23, 49, 0.62), rgba(14, 42, 84, 0.3)),
+    var(--hero-sectors-image, url("./assets/optimized/hero-sectors-innovation-7a3460a8-full.jpg")) center / cover no-repeat;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.14em;

@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  passwordHash      String
+  role              String   @default("ADMIN")
+  mustChangePassword Boolean @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Key-value store for page content areas (hero text, section copy, image URLs, etc.)
+model ContentArea {
+  id        String   @id @default(cuid())
+  page      String   // "home", "structure", "investment", "sectors", "team", "contact", "news"
+  key       String   // field key like "hero_heading"
+  value     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([page, key])
+}
+
+// Team members: founder, fund advisors, stewardship advisors
+model TeamMember {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  role        String   // "Founder & CIO", "Fund Advisor", etc.
+  bio         String   @default("")
+  type        String   // "founder", "fund_advisor", "stewardship_advisor"
+  order       Int      @default(0)
+  imageUrl    String   @default("")
+  linkedinUrl String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// News/blog posts with multi-page support
+model NewsPost {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  author      String         @default("Green Room Partners")
+  publishedAt DateTime       @default(now())
+  monthKey    String         @default("")
+  summary     String         @default("")
+  tags        String         @default("[]") // JSON array of strings
+  status      String         @default("draft") // "draft" or "published"
+  pages       NewsPostPage[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model NewsPostPage {
+  id      String   @id @default(cuid())
+  postId  String
+  post    NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  pageNum Int
+  heading String   @default("")
+  body    String   @default("") // Paragraphs separated by \n\n
+
+  @@unique([postId, pageNum])
+}
+
+// Image/media uploads
+model MediaAsset {
+  id           String   @id @default(cuid())
+  filename     String   @unique
+  originalName String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  alt          String   @default("")
+  variants     String   @default("{}") // JSON string with paths for different sizes
+  createdAt    DateTime @default(now())
+}
+
+// LinkedIn post embeds for news page
+model LinkedInPost {
+  id        String   @id @default(cuid())
+  embedHtml String
+  caption   String   @default("")
+  postDate  DateTime @default(now())
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
