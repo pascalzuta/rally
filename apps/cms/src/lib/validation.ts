@@ -13,6 +13,10 @@ export const changePasswordSchema = z.object({
     .regex(/[a-z]/, 'Password must contain a lowercase letter')
     .regex(/[A-Z]/, 'Password must contain an uppercase letter')
     .regex(/[0-9]/, 'Password must contain a number'),
+  confirmPassword: z.string().min(1, 'Please confirm your new password'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 })
 
 export const contentAreaSchema = z.object({
@@ -25,7 +29,7 @@ export const teamMemberSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   role: z.string().min(1, 'Role is required').max(200),
-  bio: z.string().optional().default(''),
+  bio: z.string().max(5000, 'Bio must be 5000 characters or less').optional().default(''),
   type: z.enum(['founder', 'fund_advisor', 'stewardship_advisor']),
   order: z.number().int().optional().default(0),
   imageUrl: z.string().optional().default(''),

@@ -29,7 +29,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
     const result = loginSchema.safeParse(body)
 
     if (!result.success) {

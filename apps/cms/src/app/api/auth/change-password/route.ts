@@ -36,7 +36,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
+
     const result = changePasswordSchema.safeParse(body)
 
     if (!result.success) {
@@ -98,7 +107,8 @@ export async function POST(request: NextRequest) {
     await session.save()
 
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (error) {
+    console.error('Change password error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

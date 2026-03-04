@@ -3,7 +3,7 @@ import { getIronSession } from 'iron-session'
 import { SessionData, sessionOptions } from '@/lib/auth'
 
 // Auth-related API routes that should be accessible without full auth
-const PUBLIC_API_PREFIXES = ['/api/auth/login', '/api/auth/session', '/api/auth/change-password', '/api/public/']
+const PUBLIC_API_PREFIXES = ['/api/auth/login', '/api/auth/logout', '/api/auth/session', '/api/auth/change-password', '/api/public/']
 
 function isPublicApiRoute(pathname: string): boolean {
   return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))

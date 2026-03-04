@@ -38,7 +38,23 @@ export async function GET(
   try {
     const post = await prisma.newsPost.findUnique({
       where: { slug, status: 'published' },
-      include: { pages: { orderBy: { pageNum: 'asc' } } },
+      select: {
+        slug: true,
+        title: true,
+        author: true,
+        publishedAt: true,
+        monthKey: true,
+        summary: true,
+        tags: true,
+        pages: {
+          select: {
+            pageNum: true,
+            heading: true,
+            body: true,
+          },
+          orderBy: { pageNum: 'asc' },
+        },
+      },
     })
 
     if (!post) {
