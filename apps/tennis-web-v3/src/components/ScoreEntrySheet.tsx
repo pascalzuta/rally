@@ -83,6 +83,8 @@ export default function ScoreEntrySheet({
   const isValid = useMemo(() => {
     if (!winner) return false;
     const numSets = showThirdSet ? 3 : 2;
+    let aSetsWon = 0;
+    let bSetsWon = 0;
     for (let i = 0; i < numSets; i++) {
       const a = parseInt(sets[i].a, 10);
       const b = parseInt(sets[i].b, 10);
@@ -96,7 +98,14 @@ export default function ScoreEntrySheet({
         const tbB = parseInt(sets[i].tbB, 10);
         if (isNaN(tbA) || isNaN(tbB)) return false;
       }
+      if (a > b) aSetsWon++;
+      else bSetsWon++;
     }
+    // Verify declared winner matches set outcomes
+    // "me" = home player (a columns), "opponent" = away player (b columns)
+    const homeWonMoreSets = aSetsWon > bSetsWon;
+    if (winner === "me" && !homeWonMoreSets) return false;
+    if (winner === "opponent" && homeWonMoreSets) return false;
     return true;
   }, [winner, sets, showThirdSet, needsTiebreak]);
 
@@ -196,6 +205,12 @@ export default function ScoreEntrySheet({
       </div>
 
       <div className="score-sets">
+        <div className="score-player-labels">
+          <span className="score-player-label-spacer" />
+          <span className="score-player-label">You</span>
+          <span className="score-player-label-vs" />
+          <span className="score-player-label">{opponentName}</span>
+        </div>
         {renderSetInputs(0)}
         {renderSetInputs(1)}
         {showThirdSet && renderSetInputs(2)}

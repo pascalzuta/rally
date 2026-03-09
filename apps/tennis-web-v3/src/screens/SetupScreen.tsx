@@ -84,29 +84,39 @@ function SetupScreen({ player, onComplete }: Props) {
         />
 
         <label className="setup-label">City</label>
-        <input
-          type="text"
-          className="setup-input"
-          placeholder="Search city..."
-          value={cityQuery}
-          onChange={(e) => {
-            setCityQuery(e.target.value);
-            setSelectedCity(null);
-          }}
-        />
-        {cityResults.length > 0 && (
-          <div className="city-dropdown">
-            {cityResults.map((r) => (
-              <div
-                key={`${r.city}-${r.county}`}
-                className="city-option"
-                onClick={() => handleCitySelect(r)}
-              >
-                {r.city} — {r.county}, {r.stateCode}
-              </div>
-            ))}
-          </div>
-        )}
+        <div style={{ position: "relative" }}>
+          <input
+            type="text"
+            className="setup-input"
+            placeholder="Search city..."
+            value={cityQuery}
+            onChange={(e) => {
+              setCityQuery(e.target.value);
+              setSelectedCity(null);
+            }}
+          />
+          {cityResults.length > 0 && (
+            <div className="city-dropdown">
+              {cityResults.map((r) => (
+                <div
+                  key={`${r.city}-${r.county}`}
+                  className="city-option"
+                  role="option"
+                  tabIndex={0}
+                  onClick={() => handleCitySelect(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleCitySelect(r);
+                    }
+                  }}
+                >
+                  {r.city} — {r.county}, {r.stateCode}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <label className="setup-label">County</label>
         <input

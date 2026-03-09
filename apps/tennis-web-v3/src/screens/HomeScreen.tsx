@@ -105,7 +105,7 @@ function HomeScreen({
       {actionItems.length > 0 ? (
         <section className="action-cards-section">
           <h2 className="section-title">Action Needed</h2>
-          <div className="action-cards-scroll">
+          <div className="action-scroll">
             {actionItems.map((item) => (
               <ActionCard
                 key={item.matchId}
@@ -196,7 +196,7 @@ function HomeScreen({
                   {t.playerIds.length}/{t.maxPlayers} players
                 </span>
                 <button
-                  className="join-btn"
+                  className="nearby-join-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     onJoinTournament(t.id);

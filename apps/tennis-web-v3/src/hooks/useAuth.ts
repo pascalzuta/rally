@@ -10,8 +10,15 @@ export function useAuth() {
 
   const refreshPlayer = useCallback(async () => {
     if (!token) return;
-    const { player: p } = await apiGetMe(token);
-    setPlayer(p);
+    try {
+      const { player: p } = await apiGetMe(token);
+      setPlayer(p);
+    } catch {
+      // Token expired or invalid — force logout
+      sessionStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      setPlayer(null);
+    }
   }, [token]);
 
   // On mount, if a token exists in sessionStorage, load the player

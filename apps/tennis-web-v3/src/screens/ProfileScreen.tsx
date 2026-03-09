@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Player, AvailabilitySlot, AvailabilityImpactSuggestion } from "../types";
 import { formatDayTime } from "../helpers";
 import { DAY_NAMES } from "../constants";
@@ -7,7 +7,7 @@ interface Props {
   player: Player;
   availability: AvailabilitySlot[];
   impactSuggestions: AvailabilityImpactSuggestion[];
-  onSaveAvailability: (slots: Array<{ dayOfWeek: number; startTime: string; endTime: string }>) => void;
+  onSaveAvailability: (slots: Array<{ dayOfWeek: number; startTime: string; endTime: string }>) => void | Promise<void>;
   onSignOut: () => void;
 }
 
@@ -24,6 +24,12 @@ export default function ProfileScreen({
   const [newDay, setNewDay] = useState(0);
   const [newStart, setNewStart] = useState("09:00");
   const [newEnd, setNewEnd] = useState("12:00");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  // Sync local slots when availability prop changes (after save or external refresh)
+  useEffect(() => {
+    setSlots(availability.map((s) => ({ dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime })));
+  }, [availability]);
 
   const handleDeleteSlot = (index: number) => {
     setSlots((prev) => prev.filter((_, i) => i !== index));
@@ -33,14 +39,22 @@ export default function ProfileScreen({
     setSlots((prev) => [...prev, { dayOfWeek: newDay, startTime: newStart, endTime: newEnd }]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (slots.length === 0) {
       const confirmed = window.confirm(
         "Clear all availability? Matches won't be auto-scheduled."
       );
       if (!confirmed) return;
     }
-    onSaveAvailability(slots);
+    setSaveStatus("saving");
+    try {
+      await onSaveAvailability(slots);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
   };
 
   const subscriptionLabel =
@@ -125,8 +139,8 @@ export default function ProfileScreen({
           </div>
         </div>
 
-        <button className="avail-save-btn" onClick={handleSave}>
-          Save Availability
+        <button className="avail-save-btn" onClick={handleSave} disabled={saveStatus === "saving"}>
+          {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved!" : saveStatus === "error" ? "Failed — Try Again" : "Save Availability"}
         </button>
       </div>
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 interface Props {
-  onLogin: (email: string) => void;
+  onLogin: (email: string) => void | Promise<void>;
   loading: boolean;
 }
 

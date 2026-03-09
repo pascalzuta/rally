@@ -61,7 +61,11 @@ export default function ConfirmScoreSheet({
       </div>
 
       <div className="confirm-score-actions">
-        <button className="btn-secondary" onClick={onClose}>
+        <button className="btn-secondary" onClick={() => {
+          if (window.confirm("Dispute this score? The match will stay pending so you can contact your opponent to resolve.")) {
+            onClose();
+          }
+        }}>
           Dispute
         </button>
         <button className="btn-primary" onClick={handleConfirm}>

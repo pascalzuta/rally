@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { Tab, ActionItem, TournamentMatch } from "./types";
 import { useAuth } from "./hooks/useAuth";
 import { useTournaments } from "./hooks/useTournaments";
@@ -32,6 +32,7 @@ import ProfileScreen from "./screens/ProfileScreen";
 
 export default function App() {
   const [gateUnlocked, setGateUnlocked] = useState(isGateUnlocked);
+  const [actionInProgress, setActionInProgress] = useState(false);
 
   const {
     token,
@@ -77,6 +78,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const fetchedDetailIds = useRef<Set<string>>(new Set());
 
   const needsSetup = player && (!player.name || !player.county);
 
@@ -98,7 +100,7 @@ export default function App() {
     loadMatchesForTournaments(token, tournaments, player.id);
   }, [token, player?.id, tournamentKey, loadMatchesForTournaments]);
 
-  // Load player names for active tournaments
+  // Load player names for active tournaments (only fetch each once per session)
   useEffect(() => {
     if (!token || tournaments.length === 0) return;
     const myTournaments = tournaments.filter(
@@ -107,7 +109,10 @@ export default function App() {
         t.playerIds.includes(player?.id ?? ""),
     );
     for (const t of myTournaments) {
-      getTournamentDetail(token, t.id);
+      if (!fetchedDetailIds.current.has(t.id)) {
+        fetchedDetailIds.current.add(t.id);
+        getTournamentDetail(token, t.id);
+      }
     }
   }, [token, tournamentKey, player?.id, getTournamentDetail]);
 
@@ -116,6 +121,18 @@ export default function App() {
     if (!token || !player) return;
     loadImpact(token, player.id);
   }, [token, player?.id, allMatches, loadImpact]);
+
+  // Periodic data refresh (every 30 seconds)
+  useEffect(() => {
+    if (!token || !player) return;
+    const interval = setInterval(() => {
+      loadTournaments(token).catch(() => {
+        // Silent fail on polling — token may have expired
+        logout();
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [token, player?.id, loadTournaments, logout]);
 
   // Auto-select first active tournament
   useEffect(() => {
@@ -162,7 +179,7 @@ export default function App() {
             const info = await getSchedulingInfo(token, match.id);
             sheet.open({ type: "propose", match, mySlots: info.mySlots });
           } catch (e) {
-            console.error("Failed to load scheduling info:", e);
+            alert(e instanceof Error ? e.message : "Failed to load scheduling info");
           }
           break;
         }
@@ -171,7 +188,7 @@ export default function App() {
             const info = await getSchedulingInfo(token, match.id);
             sheet.open({ type: "scheduling", match, schedulingInfo: info });
           } catch (e) {
-            console.error("Failed to load scheduling info:", e);
+            alert(e instanceof Error ? e.message : "Failed to load scheduling info");
           }
           break;
         }
@@ -234,44 +251,53 @@ export default function App() {
         tiebreak?: { aPoints: number; bPoints: number };
       }>,
     ) => {
-      if (!token) return;
+      if (!token || actionInProgress) return;
+      setActionInProgress(true);
       try {
         await submitScore(token, tournamentId, matchId, winnerId, sets);
         sheet.close();
         await reloadAll();
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to submit score");
+      } finally {
+        setActionInProgress(false);
       }
     },
-    [token, sheet, reloadAll, submitScore],
+    [token, sheet, reloadAll, submitScore, actionInProgress],
   );
 
   const handleSchedule = useCallback(
     async (datetime: string, label: string, matchId: string) => {
-      if (!token) return;
+      if (!token || actionInProgress) return;
+      setActionInProgress(true);
       try {
         await scheduleMatch(token, matchId, datetime, label);
         sheet.close();
         await reloadAll();
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to schedule");
+      } finally {
+        setActionInProgress(false);
       }
     },
-    [token, sheet, reloadAll, scheduleMatch],
+    [token, sheet, reloadAll, scheduleMatch, actionInProgress],
   );
 
   const handleFlexAccept = useCallback(
     async (datetime: string, label: string, matchId: string) => {
-      if (!token) return;
+      if (!token || actionInProgress) return;
+      setActionInProgress(true);
       try {
         await flexAccept(token, matchId, datetime, label);
         sheet.close();
         await reloadAll();
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to flex schedule");
+      } finally {
+        setActionInProgress(false);
       }
     },
-    [token, sheet, reloadAll, flexAccept],
+    [token, sheet, reloadAll, flexAccept, actionInProgress],
   );
 
   const handlePropose = useCallback(
@@ -279,35 +305,41 @@ export default function App() {
       times: Array<{ datetime: string; label: string }>,
       matchId: string,
     ) => {
-      if (!token) return;
+      if (!token || actionInProgress) return;
+      setActionInProgress(true);
       try {
         await proposeTimes(token, matchId, times);
         sheet.close();
         await reloadAll();
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to propose times");
+      } finally {
+        setActionInProgress(false);
       }
     },
-    [token, sheet, reloadAll, proposeTimes],
+    [token, sheet, reloadAll, proposeTimes, actionInProgress],
   );
 
   const handleAcceptProposal = useCallback(
     async (proposalId: string, matchId: string) => {
-      if (!token) return;
+      if (!token || actionInProgress) return;
+      setActionInProgress(true);
       try {
         await acceptTime(token, matchId, proposalId);
         sheet.close();
         await reloadAll();
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to accept time");
+      } finally {
+        setActionInProgress(false);
       }
     },
-    [token, sheet, reloadAll, acceptTime],
+    [token, sheet, reloadAll, acceptTime, actionInProgress],
   );
 
   const handleJoinTournament = useCallback(
     async (id: string) => {
-      if (!token) return;
+      if (!token || actionInProgress) return;
 
       if (availSlots.length === 0) {
         const goToProfile = confirm(
@@ -319,6 +351,7 @@ export default function App() {
         }
       }
 
+      setActionInProgress(true);
       try {
         const result = await joinTournament(token, id);
         if (result.activated) {
@@ -326,9 +359,11 @@ export default function App() {
         }
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to join");
+      } finally {
+        setActionInProgress(false);
       }
     },
-    [token, joinTournament, reloadAll, availSlots],
+    [token, joinTournament, reloadAll, availSlots, actionInProgress],
   );
 
   const handleViewTournament = useCallback((id: string) => {
@@ -367,10 +402,11 @@ export default function App() {
     return "";
   };
 
-  // TestBar is ALWAYS shown in v3 (not gated behind isDev)
-  const testBarElement = (
+  // TestBar shown when ?test or ?dev URL param is present, or in dev mode
+  const showTestBar = import.meta.env.DEV || new URLSearchParams(window.location.search).has("test") || new URLSearchParams(window.location.search).has("dev");
+  const testBarElement = showTestBar ? (
     <DevTestBar token={token} player={player} login={login} reloadAll={reloadAll} />
-  );
+  ) : null;
 
   // Password gate
   if (!gateUnlocked) {
@@ -601,7 +637,7 @@ function DevTestBar({
       onLogin={handleTestLogin}
       onStep={handleTestStep}
       isLoggedIn={!!player}
-      onReset={() => {}}
+      onReset={() => { if (token) reloadAll(); }}
     />
   );
 }
