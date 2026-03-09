@@ -35,7 +35,10 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
   const getStepState = (stepNum: number, needsLogin: boolean): StepState => {
     if (runningStep === stepNum) return "running";
     if (completedSteps.has(stepNum)) return "done";
+
+    // Only lock if login is required and user isn't logged in
     if (needsLogin && !isLoggedIn) return "locked";
+
     return "ready";
   };
 
@@ -72,6 +75,7 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
 
   return (
     <div className="test-bar">
+      {/* Login buttons */}
       {TEST_ACCOUNTS.map((account) => (
         <button
           key={account.email}
@@ -84,6 +88,7 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
 
       <span className="test-bar-divider">|</span>
 
+      {/* Step buttons */}
       {STEPS.map((step) => {
         const state = getStepState(step.num, step.needsLogin);
         const isDisabled = state === "locked" || state === "running";
@@ -106,10 +111,12 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
         );
       })}
 
+      {/* Reset */}
       <button className="test-bar-btn test-bar-reset" onClick={handleReset}>
         Reset
       </button>
 
+      {/* Status message */}
       {lastMessage && (
         <span className="test-bar-msg">{lastMessage}</span>
       )}

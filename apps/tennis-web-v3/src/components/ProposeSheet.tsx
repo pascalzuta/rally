@@ -38,7 +38,7 @@ function generateOccurrences(slot: AvailabilitySlot): SlotOption[] {
     ];
 
     const dayName = SHORT_DAYS[date.getDay()];
-    const label = `${dayName} ${date.getDate()} ${months[date.getMonth()]} · ${slot.startTime}`;
+    const label = `${dayName} ${date.getDate()} ${months[date.getMonth()]} \u00B7 ${slot.startTime}`;
     const datetime = `${dateStr}T${slot.startTime}`;
     const key = `${dateStr}-${slot.startTime}`;
 
@@ -94,11 +94,14 @@ export default function ProposeSheet({
     <div className="propose-sheet">
       <div className="propose-sheet-header">
         <h3>Propose Times</h3>
-        <p>vs {opponentName} &middot; {ordinal(match.round)} round</p>
+        <p>
+          vs {opponentName} &middot; {ordinal(match.round)} round
+        </p>
         <p className="propose-sheet-hint">
           Select up to 3 times ({selected.size}/3 selected)
         </p>
       </div>
+
       <div className="propose-sheet-options">
         {allOptions.length === 0 && (
           <p className="propose-empty">
@@ -122,8 +125,11 @@ export default function ProposeSheet({
           );
         })}
       </div>
+
       <div className="propose-sheet-actions">
-        <button className="btn-secondary" onClick={onClose}>Cancel</button>
+        <button className="btn-secondary" onClick={onClose}>
+          Cancel
+        </button>
         <button
           className="btn-primary"
           disabled={selected.size === 0}
