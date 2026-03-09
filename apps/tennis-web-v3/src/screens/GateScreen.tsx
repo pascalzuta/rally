@@ -1,7 +1,13 @@
 import { useState } from "react";
 
 const GATE_KEY = "rally-v3-gate";
-const API = import.meta.env.VITE_API_URL || "/v1";
+const GATE_PWD_KEY = "rally-v3-gate-pwd";
+const DEFAULT_PASSWORD = "qWf9HAPJYJsSv5kk";
+const RESET_KEY = "rally-master-reset-2024";
+
+function getGatePassword(): string {
+  return localStorage.getItem(GATE_PWD_KEY) || DEFAULT_PASSWORD;
+}
 
 /** Check if user already passed the gate this session */
 export function isGateUnlocked(): boolean {
@@ -30,28 +36,15 @@ export default function GateScreen({ onUnlock }: Props) {
     e.preventDefault();
     setChecking(true);
     setError(false);
-    try {
-      const res = await fetch(`${API}/auth/gate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: value }),
-      });
-      const data = (await res.json()) as { ok: boolean };
-      if (data.ok) {
-        sessionStorage.setItem(GATE_KEY, "1");
-        onUnlock();
-      } else {
-        setError(true);
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
-      }
-    } catch {
+    if (value === getGatePassword()) {
+      sessionStorage.setItem(GATE_KEY, "1");
+      onUnlock();
+    } else {
       setError(true);
       setShake(true);
       setTimeout(() => setShake(false), 500);
-    } finally {
-      setChecking(false);
     }
+    setChecking(false);
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -59,31 +52,17 @@ export default function GateScreen({ onUnlock }: Props) {
     setResetting(true);
     setResetError("");
     setResetSuccess(false);
-    try {
-      const res = await fetch(`${API}/auth/gate/reset`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resetKey, newPassword }),
-      });
-      if (res.ok) {
-        setResetSuccess(true);
-        setResetKey("");
-        setNewPassword("");
-      } else {
-        const data = (await res.json()) as { error: string };
-        if (data.error === "invalid_reset_key") {
-          setResetError("Invalid reset key. Please try again.");
-        } else if (data.error === "password_too_short") {
-          setResetError("Password must be at least 4 characters.");
-        } else {
-          setResetError("Something went wrong. Please try again.");
-        }
-      }
-    } catch {
-      setResetError("Could not connect to the server.");
-    } finally {
-      setResetting(false);
+    if (resetKey !== RESET_KEY) {
+      setResetError("Invalid reset key. Please try again.");
+    } else if (newPassword.length < 4) {
+      setResetError("Password must be at least 4 characters.");
+    } else {
+      localStorage.setItem(GATE_PWD_KEY, newPassword);
+      setResetSuccess(true);
+      setResetKey("");
+      setNewPassword("");
     }
+    setResetting(false);
   };
 
   if (showReset) {

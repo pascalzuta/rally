@@ -1,6 +1,6 @@
 [build]
-  command = "npm install && npm run build --workspace=apps/tennis-web-v2"
-  publish = "apps/tennis-web-v2/dist"
+  command = "npm install && npm run build --workspace=apps/tennis-web-v3"
+  publish = "apps/tennis-web-v3/dist"
 
 # SPA client-side routing fallback
 [[redirects]]
