@@ -394,14 +394,6 @@ export default function App() {
     [updateProfile],
   );
 
-  const getSheetMatchId = (): string => {
-    const content = sheet.content;
-    if (content && "match" in content) {
-      return content.match.id;
-    }
-    return "";
-  };
-
   // TestBar shown when ?test or ?dev URL param is present, or in dev mode
   const showTestBar = import.meta.env.DEV || new URLSearchParams(window.location.search).has("test") || new URLSearchParams(window.location.search).has("dev");
   const testBarElement = showTestBar ? (
@@ -431,7 +423,7 @@ export default function App() {
   if (!token || !player) {
     return (
       <div className="app">
-        <LoginScreen onLogin={login} loading={authLoading} />
+        <LoginScreen onLogin={login} />
         {testBarElement}
       </div>
     );
@@ -531,10 +523,10 @@ export default function App() {
             options={sheet.content.schedulingInfo.overlaps}
             proposals={sheet.content.match.proposals}
             onSelectOption={(dt, label) =>
-              handleSchedule(dt, label, getSheetMatchId())
+              handleSchedule(dt, label, sheet.content!.match.id)
             }
             onAcceptProposal={(pid) =>
-              handleAcceptProposal(pid, getSheetMatchId())
+              handleAcceptProposal(pid, sheet.content!.match.id)
             }
             onClose={sheet.close}
           />
@@ -546,7 +538,7 @@ export default function App() {
             playerNames={playerNames}
             playerId={player.id}
             onAccept={(dt, label) =>
-              handleFlexAccept(dt, label, getSheetMatchId())
+              handleFlexAccept(dt, label, sheet.content!.match.id)
             }
             onClose={sheet.close}
           />
@@ -557,7 +549,7 @@ export default function App() {
             mySlots={sheet.content.mySlots}
             playerNames={playerNames}
             playerId={player.id}
-            onPropose={(times) => handlePropose(times, getSheetMatchId())}
+            onPropose={(times) => handlePropose(times, sheet.content!.match.id)}
             onClose={sheet.close}
           />
         )}

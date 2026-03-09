@@ -2,12 +2,12 @@ import { useState } from "react";
 
 interface Props {
   onLogin: (email: string) => void | Promise<void>;
-  loading: boolean;
 }
 
-function LoginScreen({ onLogin, loading }: Props) {
+function LoginScreen({ onLogin }: Props) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,10 +17,12 @@ function LoginScreen({ onLogin, loading }: Props) {
       setError("Please enter your email address.");
       return;
     }
+    setSubmitting(true);
     try {
       await onLogin(trimmed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+      setSubmitting(false);
     }
   };
 
@@ -42,7 +44,7 @@ function LoginScreen({ onLogin, loading }: Props) {
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
           autoFocus
-          disabled={loading}
+          disabled={submitting}
         />
 
         {error && <p className="login-error">{error}</p>}
@@ -50,9 +52,9 @@ function LoginScreen({ onLogin, loading }: Props) {
         <button
           type="submit"
           className="login-btn"
-          disabled={loading || !email.trim()}
+          disabled={submitting || !email.trim()}
         >
-          {loading ? "Signing in..." : "Sign In / Sign Up"}
+          {submitting ? "Signing in..." : "Sign In / Sign Up"}
         </button>
       </form>
     </div>

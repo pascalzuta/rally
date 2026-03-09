@@ -36,6 +36,17 @@ export default function ProfileScreen({
   };
 
   const handleAddSlot = () => {
+    if (newStart >= newEnd) {
+      alert("Start time must be before end time.");
+      return;
+    }
+    const duplicate = slots.some(
+      (s) => s.dayOfWeek === newDay && s.startTime === newStart && s.endTime === newEnd,
+    );
+    if (duplicate) {
+      alert("This availability slot already exists.");
+      return;
+    }
     setSlots((prev) => [...prev, { dayOfWeek: newDay, startTime: newStart, endTime: newEnd }]);
   };
 

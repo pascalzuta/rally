@@ -25,8 +25,12 @@ function SetupScreen({ player, onComplete }: Props) {
       return;
     }
     const timeout = setTimeout(async () => {
-      const results = await apiSearchCities(cityQuery);
-      setCityResults(results);
+      try {
+        const results = await apiSearchCities(cityQuery);
+        setCityResults(results);
+      } catch {
+        setCityResults([]);
+      }
     }, 250);
     return () => clearTimeout(timeout);
   }, [cityQuery]);
@@ -56,6 +60,7 @@ function SetupScreen({ player, onComplete }: Props) {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Setup failed. Please try again.");
+    } finally {
       setSaving(false);
     }
   }, [name, selectedCity, level, ntrp, onComplete]);

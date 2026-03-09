@@ -49,15 +49,10 @@ export function useAuth() {
   }, []);
 
   const login = useCallback(async (email: string) => {
-    setLoading(true);
-    try {
-      const { accessToken, player: p } = await apiLogin(email);
-      sessionStorage.setItem(TOKEN_KEY, accessToken);
-      setToken(accessToken);
-      setPlayer(p);
-    } finally {
-      setLoading(false);
-    }
+    const { accessToken, player: p } = await apiLogin(email);
+    sessionStorage.setItem(TOKEN_KEY, accessToken);
+    setToken(accessToken);
+    setPlayer(p);
   }, []);
 
   const logout = useCallback(() => {
