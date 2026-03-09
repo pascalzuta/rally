@@ -451,6 +451,29 @@ html {
   80% { transform: translateX(6px); }
 }
 
+.login-success {
+  color: var(--green);
+  font-size: 13px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.login-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 16px;
+  cursor: pointer;
+  text-decoration: underline;
+  width: 100%;
+  text-align: center;
+}
+
+.login-link:hover {
+  color: var(--text);
+}
+
 /* ---------------------------------------------------------
    7. Setup Screen
    --------------------------------------------------------- */

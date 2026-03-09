@@ -18,6 +18,14 @@ export default function GateScreen({ onUnlock }: Props) {
   const [shake, setShake] = useState(false);
   const [checking, setChecking] = useState(false);
 
+  // Reset password state
+  const [showReset, setShowReset] = useState(false);
+  const [resetKey, setResetKey] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setChecking(true);
@@ -45,6 +53,92 @@ export default function GateScreen({ onUnlock }: Props) {
       setChecking(false);
     }
   };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetting(true);
+    setResetError("");
+    setResetSuccess(false);
+    try {
+      const res = await fetch(`${API}/auth/gate/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetKey, newPassword }),
+      });
+      if (res.ok) {
+        setResetSuccess(true);
+        setResetKey("");
+        setNewPassword("");
+      } else {
+        const data = (await res.json()) as { error: string };
+        if (data.error === "invalid_reset_key") {
+          setResetError("Invalid reset key. Please try again.");
+        } else if (data.error === "password_too_short") {
+          setResetError("Password must be at least 4 characters.");
+        } else {
+          setResetError("Something went wrong. Please try again.");
+        }
+      }
+    } catch {
+      setResetError("Could not connect to the server.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  if (showReset) {
+    return (
+      <div className="login-screen">
+        <div className="login-header">
+          <h1>
+            <img src="/favicon.svg" alt="Rally" className="login-logo" />
+            Rally
+          </h1>
+          <p>Reset the gate password</p>
+        </div>
+
+        <form className="login-form" onSubmit={handleReset}>
+          <input
+            type="password"
+            className="login-input"
+            placeholder="Reset key"
+            value={resetKey}
+            onChange={(e) => { setResetKey(e.target.value); setResetError(""); setResetSuccess(false); }}
+            autoFocus
+            disabled={resetting}
+          />
+          <input
+            type="password"
+            className="login-input"
+            style={{ marginTop: 12 }}
+            placeholder="New password"
+            value={newPassword}
+            onChange={(e) => { setNewPassword(e.target.value); setResetError(""); setResetSuccess(false); }}
+            disabled={resetting}
+          />
+
+          {resetError && <p className="login-error">{resetError}</p>}
+          {resetSuccess && <p className="login-success">Password changed! Go back and log in.</p>}
+
+          <button
+            type="submit"
+            className="login-btn"
+            disabled={!resetKey.trim() || !newPassword.trim() || resetting}
+          >
+            {resetting ? "Resetting..." : "Reset Password"}
+          </button>
+
+          <button
+            type="button"
+            className="login-link"
+            onClick={() => { setShowReset(false); setResetError(""); setResetSuccess(false); }}
+          >
+            Back to login
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="login-screen">
@@ -78,6 +172,14 @@ export default function GateScreen({ onUnlock }: Props) {
           disabled={!value.trim() || checking}
         >
           {checking ? "Checking..." : "Enter"}
+        </button>
+
+        <button
+          type="button"
+          className="login-link"
+          onClick={() => setShowReset(true)}
+        >
+          Forgot password?
         </button>
       </form>
     </div>
