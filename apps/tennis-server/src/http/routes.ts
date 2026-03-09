@@ -85,10 +85,27 @@ export function createRoutes(deps: RouteDeps): Router {
 
   // ── Gate (password check — no auth required) ────────────────────────────────
 
+  // Mutable gate password — starts from config, can be changed via reset
+  let gatePassword = config.GATE_PASSWORD;
+
   router.post("/auth/gate", authLimiter, (req, res) => {
     const { password } = req.body as { password?: string };
-    const ok = typeof password === "string" && password === config.GATE_PASSWORD;
+    const ok = typeof password === "string" && password === gatePassword;
     res.json({ ok });
+  });
+
+  router.post("/auth/gate/reset", authLimiter, (req, res) => {
+    const { resetKey, newPassword } = req.body as { resetKey?: string; newPassword?: string };
+    if (typeof resetKey !== "string" || resetKey !== config.GATE_RESET_KEY) {
+      res.status(403).json({ error: "invalid_reset_key" });
+      return;
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 4) {
+      res.status(400).json({ error: "password_too_short" });
+      return;
+    }
+    gatePassword = newPassword;
+    res.json({ ok: true });
   });
 
   // ── Auth ───────────────────────────────────────────────────────────────────
