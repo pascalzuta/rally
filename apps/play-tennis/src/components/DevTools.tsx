@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores } from '../store'
+import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules } from '../store'
 import { PlayerProfile } from '../types'
 
 interface Props {
@@ -30,6 +30,19 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     switchProfile(tp)
     onProfileSwitch(tp)
     setMessage(`Switched to ${tp.name}`)
+    setTimeout(() => setMessage(''), 2000)
+  }
+
+  function handleAutoConfirm() {
+    if (!activeTournamentId) return
+    const result = autoConfirmAllSchedules(activeTournamentId)
+    if (result) {
+      const confirmed = result.matches.filter(m => m.schedule?.status === 'confirmed').length
+      setMessage(`${confirmed} matches confirmed`)
+    } else {
+      setMessage('No matches to confirm')
+    }
+    onTournamentUpdated?.()
     setTimeout(() => setMessage(''), 2000)
   }
 
@@ -79,9 +92,10 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
 
       {activeTournamentId && (
         <div className="dev-section">
-          <div className="dev-label">Simulate Scores</div>
+          <div className="dev-label">Simulate</div>
           <div className="dev-buttons">
             <button className="btn dev-btn" onClick={handleSimulate}>Score Round</button>
+            <button className="btn dev-btn" onClick={handleAutoConfirm}>Confirm All</button>
           </div>
         </div>
       )}

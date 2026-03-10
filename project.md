@@ -19,6 +19,7 @@ Live URL: https://pascalzuta.github.io/rally/
 - Best-of-3 set scoring with tennis score validation (6-x, 7-5, 7-6)
 - Only match participants can enter scores (no scoring other people's games)
 - SMS invite flow: share a link to invite friends to your county lobby
+- **Match scheduling system**: availability collection during signup, automatic overlap calculation, structured accept/propose/escalate flow
 - Automatic winner advancement in single-elimination
 - Bye handling when player count isn't a power of 2
 - Standings table for round-robin (sorted by wins, set diff, game diff)
@@ -44,14 +45,15 @@ apps/play-tennis/
 └── src/
     ├── main.tsx            # React DOM entry point
     ├── App.tsx             # Auth flow + tab navigation (Play/Tournaments/Profile)
-    ├── store.ts            # All data operations (profile, lobby, tournaments, ratings)
-    ├── types.ts            # TypeScript interfaces
+    ├── store.ts            # All data operations (profile, lobby, tournaments, ratings, availability, scheduling)
+    ├── types.ts            # TypeScript interfaces (includes scheduling types)
     ├── styles.css          # All styles, CSS variables, mobile-first
     └── components/
-        ├── Register.tsx          # Name + county registration
+        ├── Register.tsx          # Name + county + availability registration
         ├── Lobby.tsx             # County waiting room, auto-start at 4
         ├── Profile.tsx           # Player rating, stats, sign out
-        ├── TournamentView.tsx    # Tournament detail + bracket view
+        ├── TournamentView.tsx    # Tournament detail + bracket view + scheduling
+        ├── MatchSchedulePanel.tsx # Inline scheduling: proposals, accept, propose
         ├── MatchScoreModal.tsx   # Score entry modal with win probability
         └── Standings.tsx         # Round-robin standings table
 ```
@@ -59,11 +61,11 @@ apps/play-tennis/
 ## Architecture
 
 ### User Flow
-1. First visit: Register with name + county (county pre-filled if arriving via invite link)
+1. First visit: Register with name + county + availability (quick picks or detailed, can skip)
 2. Play tab: Join county lobby, wait for 4 players
 3. While waiting: "Invite Friends" button generates SMS with `?join=County` deep link
-4. Friends who click the link auto-register with the right county and join the lobby
-5. When 4 players join: tournament auto-creates and starts
+4. When 4 players join: tournament auto-creates, bracket generated, matches get scheduling proposals
+5. Players accept proposed times or propose alternatives; once confirmed, they can score the match
 6. Tournaments tab: View and manage all your tournaments
 7. Profile tab: See your Elo rating, stats, and match history
 
@@ -79,12 +81,23 @@ apps/play-tennis/
 - **Tournament deletion**: Only available for completed tournaments, and only by participants
 - **Lobby**: County-scoped — players only see their county's lobby
 
+### Match Scheduling System
+- **Availability collection**: During registration (step 2), players pick quick slots (weekday evenings, weekend mornings/afternoons) or enter detailed day/time ranges. Can skip.
+- **Overlap calculation**: When a match is created, the system computes intersection of both players' availability. Ranked by duration > weekends > day order.
+- **Proposals**: Up to 3 system-generated proposals from overlapping slots. If no overlap, falls back to either player's available times.
+- **Structured actions**: Accept a proposal (one-tap confirms), or propose a new time slot. No chat required.
+- **Scheduling states**: `unscheduled → proposed → confirmed → escalated`
+- **Match scoring gate**: Players can only enter scores after the match time is confirmed (or if no schedule exists for legacy matches).
+- **Escalation**: Day 3+ auto-confirms the best pending proposal. If no proposals exist, marks as escalated.
+- **Dev tools**: "Confirm All" button auto-accepts first proposal for all unscheduled matches.
+
 ### State Management
 No state library. Each component manages local state with `useState`. Persistence handled by pure functions in `store.ts` using multiple localStorage keys:
 - `play-tennis-profile` — logged-in player profile
 - `play-tennis-lobby` — county lobby entries
 - `play-tennis-data` — tournaments
 - `play-tennis-ratings` — global Elo ratings
+- `play-tennis-availability` — player availability slots (keyed by player ID)
 
 ### Data Model
 
@@ -93,7 +106,10 @@ No state library. Each component manages local state with `useState`. Persistenc
 - **Tournament**: id, name, date, county, format, players[], matches[], status, createdAt
 - **Player**: id, name (per-tournament)
 - **PlayerRating**: name, rating, matchesPlayed (global, persists across tournaments)
-- **Match**: id, round, position, player1Id, player2Id, score1[], score2[], winnerId, completed
+- **Match**: id, round, position, player1Id, player2Id, score1[], score2[], winnerId, completed, schedule?
+- **MatchSchedule**: status, proposals[], confirmedSlot, createdAt, escalationDay, lastEscalation
+- **MatchProposal**: id, proposedBy, day, startHour, endHour, status (pending/accepted/rejected)
+- **AvailabilitySlot**: day (DayOfWeek), startHour, endHour
 
 ### Player Rating System (Elo)
 FiveThirtyEight-style Elo rating system. Ratings are global (keyed by normalized player name) and persist across tournaments.
@@ -137,3 +153,4 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | Capped tournaments at 4 players, always single-elimination   |
 | 2026-03-10 | Product hardening: participant-only scoring, delete guards, best-of-3, tennis score validation |
 | 2026-03-10 | SMS invite flow: share link to invite friends to county lobby |
+| 2026-03-10 | Match scheduling system: availability collection, overlap engine, accept/propose flow |

@@ -978,3 +978,247 @@ input:focus {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* Scheduling */
+.match-card.sched-proposed {
+  cursor: pointer;
+}
+
+.match-card.sched-confirmed {
+  border-left-color: var(--green);
+}
+
+.match-card.sched-proposed.my-match {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.match-card.sched-escalated {
+  border-left-color: var(--red);
+}
+
+.match-card.sched-unscheduled {
+  border-left-color: var(--gray-300);
+}
+
+.schedule-indicator {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 0 2px;
+}
+
+.schedule-indicator.confirmed {
+  color: var(--green-dark);
+}
+
+.schedule-indicator.proposed {
+  color: #3b82f6;
+}
+
+.schedule-indicator.escalated {
+  color: var(--red);
+}
+
+.schedule-indicator.unscheduled {
+  color: var(--gray-500);
+}
+
+.schedule-panel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.schedule-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.badge-confirmed { background: var(--green-light); color: var(--green-dark); }
+.badge-proposed { background: #dbeafe; color: #1d4ed8; }
+.badge-escalated { background: #fee2e2; color: #b91c1c; }
+.badge-unscheduled { background: var(--gray-100); color: var(--gray-500); }
+
+.confirmed-slot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+}
+
+.confirmed-day {
+  font-weight: 600;
+}
+
+.confirmed-time {
+  color: var(--gray-500);
+}
+
+.proposal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.proposal-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--gray-50);
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+}
+
+.proposal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proposal-time {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.proposal-from {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+.btn-small {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+}
+
+.propose-link {
+  margin-top: 4px;
+}
+
+.propose-form {
+  background: var(--gray-50);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.propose-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.propose-row select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+  font-size: 13px;
+  background: white;
+}
+
+.propose-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Availability Picker (Registration) */
+.availability-picker {
+  margin-bottom: 20px;
+}
+
+.quick-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.quick-slot-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--gray-200);
+  background: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.quick-slot-btn.selected {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+
+.quick-slot-check {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.detailed-slot-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.detailed-slot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  font-size: 14px;
+}
+
+.detailed-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.detailed-add-row select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+  font-size: 14px;
+  background: white;
+}
+
+.availability-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

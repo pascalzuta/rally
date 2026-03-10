@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getTournament, getPlayerName, getPlayerRating } from '../store'
-import { Tournament } from '../types'
+import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
+import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
 
 interface Props {
@@ -10,9 +11,20 @@ interface Props {
   onBack: () => void
 }
 
+function scheduleStatusClass(match: Match): string {
+  if (!match.schedule || match.completed) return ''
+  switch (match.schedule.status) {
+    case 'confirmed': return 'sched-confirmed'
+    case 'proposed': return 'sched-proposed'
+    case 'escalated': return 'sched-escalated'
+    default: return 'sched-unscheduled'
+  }
+}
+
 export default function TournamentView({ tournamentId, currentPlayerId, onBack }: Props) {
   const [tournament, setTournament] = useState<Tournament | undefined>()
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
 
   useEffect(() => {
@@ -21,9 +33,23 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
 
   if (!tournament) return <div className="screen"><p>Tournament not found</p></div>
 
+  function refresh() {
+    setTournament(getTournament(tournamentId))
+  }
+
   function handleScoreSaved() {
     setScoringMatchId(null)
-    setTournament(getTournament(tournamentId))
+    refresh()
+  }
+
+  function handleMatchClick(match: Match, canScore: boolean) {
+    if (canScore && match.schedule?.status === 'confirmed') {
+      setScoringMatchId(match.id)
+    } else if (!match.completed && match.schedule && match.player1Id && match.player2Id) {
+      setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+    } else if (canScore) {
+      setScoringMatchId(match.id)
+    }
   }
 
   const winner = tournament.status === 'completed' && tournament.format === 'single-elimination'
@@ -39,6 +65,73 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     if (round === totalRounds - 1) return 'Semifinal'
     if (round === totalRounds - 2) return 'Quarterfinal'
     return `Round ${round}`
+  }
+
+  function renderMatchCard(match: Match) {
+    const p1 = getPlayerName(tournament!, match.player1Id)
+    const p2 = getPlayerName(tournament!, match.player2Id)
+    const r1 = match.player1Id ? getPlayerRating(p1) : null
+    const r2 = match.player2Id ? getPlayerRating(p2) : null
+    const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
+    const hasSchedule = match.schedule && match.player1Id && match.player2Id
+    const isConfirmed = match.schedule?.status === 'confirmed'
+    const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch && (!hasSchedule || isConfirmed)
+    const isBye = (!match.player1Id || !match.player2Id) && match.completed
+    const isExpanded = expandedMatchId === match.id
+
+    const tapHint = match.completed ? null
+      : canScore ? 'Tap to score'
+      : (isMyMatch && hasSchedule && !isConfirmed) ? 'Tap to schedule'
+      : null
+
+    return (
+      <div
+        key={match.id}
+        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${scheduleStatusClass(match)}`}
+        onClick={() => {
+          if (isBye) return
+          handleMatchClick(match, !!canScore)
+        }}
+      >
+        {isBye ? (
+          <div className="bye-label">BYE</div>
+        ) : (
+          <>
+            <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+              <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
+              {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
+            </div>
+            <div className="match-vs">vs</div>
+            <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+              <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
+              {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
+            </div>
+
+            {/* Inline scheduling status indicator */}
+            {!match.completed && hasSchedule && (
+              <div className={`schedule-indicator ${match.schedule!.status}`}>
+                {match.schedule!.status === 'confirmed' ? '✓ Scheduled' :
+                 match.schedule!.status === 'proposed' ? '◷ Pick a time' :
+                 match.schedule!.status === 'escalated' ? '⚠ Escalated' :
+                 '○ Unscheduled'}
+              </div>
+            )}
+
+            {tapHint && <div className="tap-hint">{tapHint}</div>}
+
+            {/* Expanded scheduling panel */}
+            {isExpanded && !match.completed && match.schedule && (
+              <MatchSchedulePanel
+                tournament={tournament!}
+                match={match}
+                currentPlayerId={currentPlayerId}
+                onUpdated={refresh}
+              />
+            )}
+          </>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -70,72 +163,13 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                   <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
                   {tournament.matches
                     .filter(m => m.round === round)
-                    .map(match => {
-                      const p1 = getPlayerName(tournament, match.player1Id)
-                      const p2 = getPlayerName(tournament, match.player2Id)
-                      const r1 = match.player1Id ? getPlayerRating(p1) : null
-                      const r2 = match.player2Id ? getPlayerRating(p2) : null
-                      const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-                      const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch
-                      const isBye = (!match.player1Id || !match.player2Id) && match.completed
-
-                      return (
-                        <div
-                          key={match.id}
-                          className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''}`}
-                          onClick={() => canScore && setScoringMatchId(match.id)}
-                        >
-                          {isBye ? (
-                            <div className="bye-label">BYE</div>
-                          ) : (
-                            <>
-                              <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                                <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
-                                {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
-                              </div>
-                              <div className="match-vs">vs</div>
-                              <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                                <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
-                                {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
-                              </div>
-                              {canScore && <div className="tap-hint">Tap to score</div>}
-                            </>
-                          )}
-                        </div>
-                      )
-                    })}
+                    .map(renderMatchCard)}
                 </div>
               ))
             ) : (
               <div className="round">
                 <h3 className="round-label">All Matches</h3>
-                {tournament.matches.map(match => {
-                  const p1 = getPlayerName(tournament, match.player1Id)
-                  const p2 = getPlayerName(tournament, match.player2Id)
-                  const r1 = match.player1Id ? getPlayerRating(p1) : null
-                  const r2 = match.player2Id ? getPlayerRating(p2) : null
-                  const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-                  const canScore = !match.completed && isMyMatch
-
-                  return (
-                    <div
-                      key={match.id}
-                      className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''}`}
-                      onClick={() => canScore && setScoringMatchId(match.id)}
-                    >
-                      <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                        <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
-                        {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
-                      </div>
-                      <div className="match-vs">vs</div>
-                      <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                        <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
-                        {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
-                      </div>
-                      {canScore && <div className="tap-hint">Tap to score</div>}
-                    </div>
-                  )
-                })}
+                {tournament.matches.map(renderMatchCard)}
               </div>
             )}
           </div>

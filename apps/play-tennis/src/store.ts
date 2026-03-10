@@ -1,9 +1,10 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
 const PROFILE_KEY = 'play-tennis-profile'
 const LOBBY_KEY = 'play-tennis-lobby'
+const AVAILABILITY_KEY = 'play-tennis-availability'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -107,6 +108,207 @@ export function startTournamentFromLobby(county: string): Tournament | null {
 
   // Generate bracket immediately
   return generateBracket(tournament.id) ?? tournament
+}
+
+// --- Availability ---
+
+function loadAllAvailability(): Record<string, AvailabilitySlot[]> {
+  try {
+    const data = localStorage.getItem(AVAILABILITY_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveAllAvailability(avail: Record<string, AvailabilitySlot[]>): void {
+  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(avail))
+}
+
+export function saveAvailability(playerId: string, slots: AvailabilitySlot[]): void {
+  const all = loadAllAvailability()
+  all[playerId] = slots
+  saveAllAvailability(all)
+}
+
+export function getAvailability(playerId: string): AvailabilitySlot[] {
+  return loadAllAvailability()[playerId] ?? []
+}
+
+// --- Scheduling Engine ---
+
+function computeOverlap(slotsA: AvailabilitySlot[], slotsB: AvailabilitySlot[]): AvailabilitySlot[] {
+  const overlaps: AvailabilitySlot[] = []
+  for (const a of slotsA) {
+    for (const b of slotsB) {
+      if (a.day !== b.day) continue
+      const start = Math.max(a.startHour, b.startHour)
+      const end = Math.min(a.endHour, b.endHour)
+      if (end - start >= 1) { // at least 1 hour overlap
+        overlaps.push({ day: a.day, startHour: start, endHour: end })
+      }
+    }
+  }
+  return overlaps
+}
+
+const DAY_ORDER: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+function rankSlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
+  return [...slots].sort((a, b) => {
+    // Prefer longer slots
+    const durA = a.endHour - a.startHour
+    const durB = b.endHour - b.startHour
+    if (durB !== durA) return durB - durA
+    // Then prefer weekends
+    const weekendA = (a.day === 'saturday' || a.day === 'sunday') ? 0 : 1
+    const weekendB = (b.day === 'saturday' || b.day === 'sunday') ? 0 : 1
+    if (weekendA !== weekendB) return weekendA - weekendB
+    // Then by day order
+    return DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
+  })
+}
+
+export function generateMatchSchedule(
+  player1Id: string,
+  player2Id: string
+): MatchSchedule {
+  const slots1 = getAvailability(player1Id)
+  const slots2 = getAvailability(player2Id)
+
+  const overlaps = computeOverlap(slots1, slots2)
+  const ranked = rankSlots(overlaps)
+
+  // Generate up to 3 system proposals from overlaps
+  const proposals: MatchProposal[] = ranked.slice(0, 3).map(slot => ({
+    id: generateId(),
+    proposedBy: 'system',
+    day: slot.day,
+    startHour: slot.startHour,
+    endHour: slot.endHour,
+    status: 'pending',
+  }))
+
+  // If no overlap, use one player's slots as suggestions
+  if (proposals.length === 0) {
+    const fallback = rankSlots([...slots1, ...slots2])
+    for (const slot of fallback.slice(0, 3)) {
+      proposals.push({
+        id: generateId(),
+        proposedBy: 'system',
+        day: slot.day,
+        startHour: slot.startHour,
+        endHour: slot.endHour,
+        status: 'pending',
+      })
+    }
+  }
+
+  return {
+    status: proposals.length > 0 ? 'proposed' : 'unscheduled',
+    proposals,
+    confirmedSlot: null,
+    createdAt: new Date().toISOString(),
+    escalationDay: 0,
+    lastEscalation: new Date().toISOString(),
+  }
+}
+
+export function acceptProposal(
+  tournamentId: string,
+  matchId: string,
+  proposalId: string,
+  acceptedBy: string
+): Tournament | undefined {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule) return undefined
+
+  const proposal = match.schedule.proposals.find(p => p.id === proposalId)
+  if (!proposal || proposal.status !== 'pending') return undefined
+
+  // Mark this proposal as accepted, others as rejected
+  for (const p of match.schedule.proposals) {
+    p.status = p.id === proposalId ? 'accepted' : 'rejected'
+  }
+
+  match.schedule.status = 'confirmed'
+  match.schedule.confirmedSlot = {
+    day: proposal.day,
+    startHour: proposal.startHour,
+    endHour: proposal.endHour,
+  }
+
+  save(all)
+  return t
+}
+
+export function proposeNewSlots(
+  tournamentId: string,
+  matchId: string,
+  proposedBy: string,
+  slots: { day: DayOfWeek; startHour: number; endHour: number }[]
+): Tournament | undefined {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule) return undefined
+
+  for (const slot of slots) {
+    match.schedule.proposals.push({
+      id: generateId(),
+      proposedBy,
+      day: slot.day,
+      startHour: slot.startHour,
+      endHour: slot.endHour,
+      status: 'pending',
+    })
+  }
+
+  if (match.schedule.status === 'unscheduled') {
+    match.schedule.status = 'proposed'
+  }
+
+  save(all)
+  return t
+}
+
+export function escalateMatch(
+  tournamentId: string,
+  matchId: string
+): Tournament | undefined {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule || match.schedule.status === 'confirmed') return undefined
+
+  match.schedule.escalationDay += 1
+  match.schedule.lastEscalation = new Date().toISOString()
+
+  // Day 3: system assigns provisional slot from best available
+  if (match.schedule.escalationDay >= 3 && match.schedule.status !== 'escalated') {
+    const pending = match.schedule.proposals.filter(p => p.status === 'pending')
+    if (pending.length > 0) {
+      const best = pending[0]
+      for (const p of match.schedule.proposals) {
+        p.status = p.id === best.id ? 'accepted' : 'rejected'
+      }
+      match.schedule.status = 'confirmed'
+      match.schedule.confirmedSlot = { day: best.day, startHour: best.startHour, endHour: best.endHour }
+    } else {
+      match.schedule.status = 'escalated'
+    }
+  }
+
+  save(all)
+  return t
 }
 
 // --- Tournaments ---
@@ -240,6 +442,13 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
     t.matches = matches
   }
 
+  // Generate schedules for all matches with both players assigned
+  for (const m of t.matches) {
+    if (m.player1Id && m.player2Id && !m.completed) {
+      m.schedule = generateMatchSchedule(m.player1Id, m.player2Id)
+    }
+  }
+
   t.status = 'in-progress'
   save(all)
   return t
@@ -300,6 +509,10 @@ export function saveMatchScore(
         nextMatch.player1Id = winnerId
       } else {
         nextMatch.player2Id = winnerId
+      }
+      // Generate schedule when both players are known
+      if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+        nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
       }
     }
   }
@@ -404,6 +617,17 @@ const TEST_RATINGS: Record<string, number> = {
   'casey brooks': 1440, 'morgan lee': 1400, 'riley davis': 1550, 'quinn adams': 1470,
 }
 
+const TEST_AVAILABILITY: AvailabilitySlot[][] = [
+  [{ day: 'tuesday', startHour: 18, endHour: 21 }, { day: 'saturday', startHour: 9, endHour: 13 }],
+  [{ day: 'monday', startHour: 18, endHour: 21 }, { day: 'wednesday', startHour: 18, endHour: 21 }, { day: 'saturday', startHour: 10, endHour: 14 }],
+  [{ day: 'saturday', startHour: 8, endHour: 12 }, { day: 'sunday', startHour: 8, endHour: 12 }],
+  [{ day: 'thursday', startHour: 17, endHour: 20 }, { day: 'friday', startHour: 17, endHour: 20 }, { day: 'sunday', startHour: 13, endHour: 17 }],
+  [{ day: 'tuesday', startHour: 19, endHour: 21 }, { day: 'thursday', startHour: 19, endHour: 21 }, { day: 'saturday', startHour: 9, endHour: 12 }],
+  [{ day: 'wednesday', startHour: 17, endHour: 20 }, { day: 'saturday', startHour: 13, endHour: 17 }, { day: 'sunday', startHour: 9, endHour: 13 }],
+  [{ day: 'monday', startHour: 17, endHour: 20 }, { day: 'friday', startHour: 17, endHour: 20 }, { day: 'saturday', startHour: 8, endHour: 11 }],
+  [{ day: 'tuesday', startHour: 18, endHour: 21 }, { day: 'sunday', startHour: 10, endHour: 14 }],
+]
+
 export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
   const lobby = loadLobby()
   const existing = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
@@ -414,6 +638,7 @@ export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
 
   for (const name of toAdd) {
     const id = generateId()
+    const playerIdx = TEST_PLAYERS.indexOf(name)
     lobby.push({ playerId: id, playerName: name, county, joinedAt: new Date().toISOString() })
 
     // Set up their rating
@@ -422,6 +647,11 @@ export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
     if (!ratings[key]) {
       ratings[key] = { name, rating: TEST_RATINGS[key] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
       saveRatings(ratings)
+    }
+
+    // Set up their availability
+    if (playerIdx >= 0 && TEST_AVAILABILITY[playerIdx]) {
+      saveAvailability(id, TEST_AVAILABILITY[playerIdx])
     }
   }
 
@@ -440,6 +670,30 @@ export function getTestProfiles(county: string): PlayerProfile[] {
 
 export function switchProfile(profile: PlayerProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+}
+
+// Auto-confirm all pending schedules (dev tool)
+export function autoConfirmAllSchedules(tournamentId: string): Tournament | undefined {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  for (const match of t.matches) {
+    if (match.schedule && match.schedule.status !== 'confirmed' && !match.completed) {
+      const pending = match.schedule.proposals.filter(p => p.status === 'pending')
+      if (pending.length > 0) {
+        const best = pending[0]
+        for (const p of match.schedule.proposals) {
+          p.status = p.id === best.id ? 'accepted' : 'rejected'
+        }
+        match.schedule.status = 'confirmed'
+        match.schedule.confirmedSlot = { day: best.day, startHour: best.startHour, endHour: best.endHour }
+      }
+    }
+  }
+
+  save(all)
+  return t
 }
 
 // Simulate random scores for the current round of a tournament
