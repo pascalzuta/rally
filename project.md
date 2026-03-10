@@ -178,3 +178,4 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | SMS invite flow: share link to invite friends to county lobby |
 | 2026-03-10 | Match scheduling system: availability collection, overlap engine, accept/propose flow |
 | 2026-03-10 | Brand asset pack: full logo, logomark, white variant, favicon, app icons; navbar uses official SVG |
+| 2026-03-10 | Bracket visual overhaul: seed badges, win prob bars, round stepper, connectors, final card hierarchy, winner banner, tennis score format |
