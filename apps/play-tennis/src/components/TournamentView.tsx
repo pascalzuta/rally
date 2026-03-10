@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTournament, getPlayerName, getPlayerRating, getPlayerActiveBroadcast, leaveTournament } from '../store'
+import { getTournament, getPlayerName, getPlayerRating, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
 import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -84,27 +84,77 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     return `Round ${round}`
   }
 
-  function renderMatchCard(match: Match) {
+  // Compute seeds: players sorted by rating at tournament start
+  const seeds = new Map<string, number>()
+  if (tournament.format === 'single-elimination') {
+    const sorted = [...tournament.players].sort((a, b) => {
+      return getPlayerRating(b.name).rating - getPlayerRating(a.name).rating
+    })
+    sorted.forEach((p, i) => seeds.set(p.id, i + 1))
+  }
+
+  // Round progress: which round is currently active?
+  const roundStatus = (round: number) => {
+    const roundMatches = tournament.matches.filter(m => m.round === round)
+    const allDone = roundMatches.every(m => m.completed)
+    const anyStarted = roundMatches.some(m => m.completed || (m.player1Id && m.player2Id))
+    if (allDone) return 'completed'
+    if (anyStarted) return 'active'
+    return 'upcoming'
+  }
+
+  // Format score as tennis notation: "6-4  7-5"
+  function formatScore(scores: number[]): string {
+    return scores.map((s, i) => `${s}`).join(' ')
+  }
+  function formatMatchScores(score1: number[], score2: number[]): { p1: string; p2: string } {
+    return {
+      p1: score1.map((s, i) => `${s}-${score2[i]}`).join('  '),
+      p2: score2.map((s, i) => `${s}-${score1[i]}`).join('  '),
+    }
+  }
+
+  // Winner's path: match IDs the winner won
+  const winnerPath = new Set<string>()
+  if (winner) {
+    tournament.matches.forEach(m => {
+      if (m.winnerId === winner) winnerPath.add(m.id)
+    })
+  }
+
+  function renderMatchCard(match: Match, isFinal = false) {
     const p1 = getPlayerName(tournament!, match.player1Id)
     const p2 = getPlayerName(tournament!, match.player2Id)
     const r1 = match.player1Id ? getPlayerRating(p1) : null
     const r2 = match.player2Id ? getPlayerRating(p2) : null
+    const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
+    const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
     const hasSchedule = match.schedule && match.player1Id && match.player2Id
     const isConfirmed = match.schedule?.status === 'confirmed'
     const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch && (!hasSchedule || isConfirmed)
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
+    const onWinnerPath = winnerPath.has(match.id)
+
+    // Win probability for unplayed matches with both players
+    const showWinProb = !match.completed && match.player1Id && match.player2Id && r1 && r2
+    const p1WinProb = (showWinProb && r1 && r2) ? winProbability(r1.rating, r2.rating) : 0.5
 
     const tapHint = match.completed ? null
       : canScore ? 'Tap to score'
       : (isMyMatch && hasSchedule && !isConfirmed) ? 'Tap to schedule'
       : null
 
+    // Formatted scores
+    const formattedScores = match.completed && match.score1.length > 0
+      ? formatMatchScores(match.score1, match.score2)
+      : null
+
     return (
       <div
         key={match.id}
-        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${scheduleStatusClass(match)}`}
+        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)}`}
         onClick={() => {
           if (isBye) return
           handleMatchClick(match, !!canScore, isMyMatch)
@@ -115,16 +165,33 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         ) : (
           <>
             <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-              <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
-              {match.completed && match.score1.length > 0 && <span className="match-score">{match.score1.join(' ')}</span>}
+              <span>
+                {seed1 && <span className="seed-badge">{seed1}</span>}
+                {p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}
+              </span>
+              {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
             </div>
             <div className="match-vs">vs</div>
             <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-              <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
-              {match.completed && match.score2.length > 0 && <span className="match-score">{match.score2.join(' ')}</span>}
+              <span>
+                {seed2 && <span className="seed-badge">{seed2}</span>}
+                {p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}
+              </span>
+              {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
             </div>
+
+            {/* Win probability bar for upcoming matches */}
+            {showWinProb && (
+              <div className="match-prob-bar">
+                <div className="match-prob-fill" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+                <div className="match-prob-labels">
+                  <span>{Math.round(p1WinProb * 100)}%</span>
+                  <span>{Math.round((1 - p1WinProb) * 100)}%</span>
+                </div>
+              </div>
+            )}
 
             {/* Resolution indicator */}
             {match.resolution && (
@@ -177,7 +244,10 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
       <main className="content">
         {winner && (
           <div className="winner-banner">
-            🏆 {getPlayerName(tournament, winner)} wins!
+            <div className="winner-trophy">🏆</div>
+            <div className="winner-name">{getPlayerName(tournament, winner)}</div>
+            <div className="winner-subtitle">Tournament Champion</div>
+            <div className="winner-elo">{Math.round(getPlayerRating(getPlayerName(tournament, winner)).rating)} Elo</div>
           </div>
         )}
 
@@ -197,20 +267,46 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
               onMatchConfirmed={refresh}
             />
           </div>
+          {/* Round progress stepper */}
+          {tournament.format === 'single-elimination' && rounds.length > 1 && (
+            <div className="round-progress">
+              {rounds.map((round, i) => {
+                const status = roundStatus(round)
+                return (
+                  <div key={round} className="round-progress-item">
+                    <div className={`round-progress-dot ${status}`} />
+                    <span className={`round-progress-label ${status}`}>
+                      {roundLabel(round, rounds.length)}
+                    </span>
+                    {i < rounds.length - 1 && <div className={`round-progress-line ${status === 'completed' ? 'completed' : ''}`} />}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           <div className="bracket">
             {tournament.format === 'single-elimination' ? (
-              rounds.map(round => (
-                <div key={round} className="round">
-                  <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
-                  {tournament.matches
-                    .filter(m => m.round === round)
-                    .map(renderMatchCard)}
-                </div>
-              ))
+              rounds.map((round, roundIdx) => {
+                const isFinalRound = round === rounds.length
+                const roundMatches = tournament.matches.filter(m => m.round === round)
+                return (
+                  <div key={round} className={`round ${isFinalRound ? 'round-final' : ''}`}>
+                    <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
+                    {roundMatches.map(m => renderMatchCard(m, isFinalRound))}
+                    {/* Connector line between rounds */}
+                    {roundIdx < rounds.length - 1 && (
+                      <div className="bracket-connector">
+                        <div className="bracket-connector-line" />
+                      </div>
+                    )}
+                  </div>
+                )
+              })
             ) : (
               <div className="round">
                 <h3 className="round-label">All Matches</h3>
-                {tournament.matches.map(renderMatchCard)}
+                {tournament.matches.map(m => renderMatchCard(m))}
               </div>
             )}
           </div>
