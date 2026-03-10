@@ -175,9 +175,12 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       <div className="card formation-hero">
         {tournamentReady ? (
           <>
-            <h2 className="formation-hero-title">{profile.county} Tournament Ready</h2>
+            <h2 className="formation-hero-title">{profile.county} Tournament Starting</h2>
             <p className="formation-hero-subtitle">
-              Bracket created. The tournament starts soon.
+              {spotsLeft > 0
+                ? `The tournament will begin when the countdown ends or ${maxPlayers} players join. Invite more players to fill the bracket.`
+                : 'The bracket is full. The tournament will begin shortly.'
+              }
             </p>
             {countdown && (
               <div className="formation-countdown">
@@ -213,7 +216,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
             <div className="formation-progress-bar">
               <div className="formation-progress-fill" style={{ width: `${Math.min((totalJoined / targetPlayers) * 100, 100)}%` }} />
             </div>
-            <p className="formation-explainer">When {targetPlayers} players join, the tournament bracket is created automatically.</p>
+            <p className="formation-explainer">When {targetPlayers} players join, a 48-hour countdown begins. The tournament starts when it ends or when {maxPlayers} players join.</p>
             <div className="formation-actions">
               {!isUserInvolved && (
                 <button className="btn btn-primary btn-large" onClick={handleJoin}>Join Tournament</button>
