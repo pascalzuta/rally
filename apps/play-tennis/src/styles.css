@@ -722,13 +722,15 @@ select:focus {
 .bracket-connector {
   display: flex;
   justify-content: center;
-  padding: var(--space-sm) 0 0;
+  padding: var(--space-md) 0;
 }
 
 .bracket-connector-line {
   width: 2px;
-  height: 20px;
-  background: linear-gradient(to bottom, var(--color-divider), transparent);
+  height: 32px;
+  background: var(--color-accent-primary);
+  border-radius: 1px;
+  opacity: 0.5;
 }
 
 .match-card {
@@ -807,6 +809,7 @@ select:focus {
 .match-player {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: var(--space-xs) 0;
   font-size: var(--font-body-md);
 }
@@ -814,6 +817,16 @@ select:focus {
 .match-player.winner {
   font-weight: var(--weight-bold);
   color: var(--color-positive-primary);
+}
+
+.match-player-name {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .match-vs {
@@ -829,6 +842,34 @@ select:focus {
   color: var(--color-text-secondary);
   font-size: var(--font-body-md);
   font-variant-numeric: tabular-nums;
+}
+
+/* Scoreboard set scores */
+.match-sets {
+  display: flex;
+  gap: 2px;
+  margin-left: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.set-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-neutral-bg);
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.set-score.set-won {
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  background: var(--color-positive-bg);
 }
 
 .tap-hint {
@@ -859,11 +900,11 @@ select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: var(--color-neutral-bg);
-  color: var(--color-text-secondary);
+  background: var(--color-accent-primary);
+  color: white;
   font-size: 10px;
   font-weight: var(--weight-bold);
   margin-right: var(--space-xs);

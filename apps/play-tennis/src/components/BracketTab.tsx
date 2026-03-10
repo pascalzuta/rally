@@ -126,12 +126,9 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
     return 'upcoming'
   }
 
-  // Format scores as tennis notation
-  function formatMatchScores(score1: number[], score2: number[]): { p1: string; p2: string } {
-    return {
-      p1: score1.map((s, i) => `${s}-${score2[i]}`).join('  '),
-      p2: score2.map((s, i) => `${s}-${score1[i]}`).join('  '),
-    }
+  // Check if match has displayable scores
+  function hasScores(match: Match): boolean {
+    return match.completed && match.score1.length > 0
   }
 
   // Winner's path
@@ -166,10 +163,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
       : (isMyMatch && hasSchedule && !isConfirmed) ? 'Tap to schedule'
       : null
 
-    // Formatted scores
-    const formattedScores = match.completed && match.score1.length > 0
-      ? formatMatchScores(match.score1, match.score2)
-      : null
+    const scored = hasScores(match)
 
     return (
       <div
@@ -184,21 +178,33 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
           <div className="bye-label">BYE</div>
         ) : (
           <>
+            {/* Scoreboard layout: names on left, set scores on right */}
             <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-              <span>
+              <span className="match-player-name">
                 {seed1 && <span className="seed-badge">{seed1}</span>}
                 {p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}
               </span>
-              {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
+              {scored && (
+                <span className="match-sets">
+                  {match.score1.map((s, i) => (
+                    <span key={i} className={`set-score ${s > match.score2[i] ? 'set-won' : ''}`}>{s}</span>
+                  ))}
+                </span>
+              )}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
             </div>
-            <div className="match-vs">vs</div>
             <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-              <span>
+              <span className="match-player-name">
                 {seed2 && <span className="seed-badge">{seed2}</span>}
                 {p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}
               </span>
-              {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
+              {scored && (
+                <span className="match-sets">
+                  {match.score2.map((s, i) => (
+                    <span key={i} className={`set-score ${s > match.score1[i] ? 'set-won' : ''}`}>{s}</span>
+                  ))}
+                </span>
+              )}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
             </div>
 
