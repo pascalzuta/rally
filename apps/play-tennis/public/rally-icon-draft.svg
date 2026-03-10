@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" fill="none">
+  <!--
+    Rally logomark: stylized shuttlecock/birdie
+    - Two swept-back wing shapes that taper from wide on the left to a point on the right
+    - A horizontal shaft line extending from the convergence point
+  -->
+  <g fill="#1a1a1a">
+    <!-- Top wing: starts thin at far left, curves up and outward, then sweeps back down to center point -->
+    <path d="
+      M0 28
+      C8 26, 20 16, 38 10
+      C50 6, 62 8, 72 14
+      C66 18, 62 22, 64 26
+      L76 30
+      L64 30
+      C56 28, 44 26, 32 28
+      C20 30, 8 30, 0 30
+      Z
+    "/>
+    <!-- Bottom wing: mirror of top -->
+    <path d="
+      M0 32
+      C8 34, 20 44, 38 50
+      C50 54, 62 52, 72 46
+      C66 42, 62 38, 64 34
+      L76 30
+      L64 30
+      C56 32, 44 34, 32 32
+      C20 30, 8 30, 0 30
+      Z
+    "/>
+    <!-- Shaft extending right from convergence -->
+    <path d="M72 28.5 L116 28.5 L116 31.5 L72 31.5 Z"/>
+  </g>
+</svg>
