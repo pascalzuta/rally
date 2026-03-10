@@ -11,7 +11,7 @@ import type {
   Match,
 } from "./types";
 
-const API = import.meta.env.VITE_API_URL || "https://rally-tennis-server.onrender.com/v1";
+const API = import.meta.env.VITE_API_URL || "https://rally-hgyo.onrender.com/v1";
 
 function authH(token: string): Record<string, string> {
   return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
