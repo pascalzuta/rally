@@ -6,7 +6,7 @@ services:
     name: rally-api
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build --workspace=apps/tennis-server
+    buildCommand: npm install --include=dev && npm run build --workspace=apps/tennis-server
     startCommand: node apps/tennis-server/dist/index.js
     envVars:
       - key: NODE_ENV
