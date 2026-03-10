@@ -107,13 +107,13 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
               {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
             </div>
 
-            {/* Inline scheduling status indicator */}
+            {/* Inline scheduling status indicator — only actionable text on your matches */}
             {!match.completed && hasSchedule && (
               <div className={`schedule-indicator ${match.schedule!.status}`}>
                 {match.schedule!.status === 'confirmed' ? '✓ Scheduled' :
-                 match.schedule!.status === 'proposed' ? '◷ Pick a time' :
                  match.schedule!.status === 'escalated' ? '⚠ Escalated' :
-                 '○ Unscheduled'}
+                 isMyMatch ? (match.schedule!.status === 'proposed' ? '◷ Pick a time' : '○ Unscheduled') :
+                 '◷ Pending'}
               </div>
             )}
 
