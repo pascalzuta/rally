@@ -42,10 +42,10 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     refresh()
   }
 
-  function handleMatchClick(match: Match, canScore: boolean) {
+  function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
     if (canScore && match.schedule?.status === 'confirmed') {
       setScoringMatchId(match.id)
-    } else if (!match.completed && match.schedule && match.player1Id && match.player2Id) {
+    } else if (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id) {
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
     } else if (canScore) {
       setScoringMatchId(match.id)
@@ -90,7 +90,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${scheduleStatusClass(match)}`}
         onClick={() => {
           if (isBye) return
-          handleMatchClick(match, !!canScore)
+          handleMatchClick(match, !!canScore, isMyMatch)
         }}
       >
         {isBye ? (

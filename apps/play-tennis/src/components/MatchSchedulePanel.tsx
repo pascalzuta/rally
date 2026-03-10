@@ -43,7 +43,8 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   if (!schedule) return null
 
   const pendingProposals = schedule.proposals.filter(p => p.status === 'pending')
-  const acceptedProposal = schedule.proposals.find(p => p.status === 'accepted')
+  const acceptableProposals = pendingProposals.filter(p => p.proposedBy !== currentPlayerId)
+  const myPendingProposals = pendingProposals.filter(p => p.proposedBy === currentPlayerId)
 
   function handleAccept(proposalId: string) {
     acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
@@ -88,12 +89,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   return (
     <div className="schedule-panel">
       <div className={`schedule-status-badge ${pendingProposals.length > 0 ? 'badge-proposed' : 'badge-unscheduled'}`}>
-        {pendingProposals.length > 0 ? 'Choose a Time' : 'No Times Available'}
+        {acceptableProposals.length > 0 ? 'Choose a Time'
+          : myPendingProposals.length > 0 ? 'Waiting for Opponent'
+          : 'No Times Available'}
       </div>
 
-      {pendingProposals.length > 0 && (
+      {acceptableProposals.length > 0 && (
         <div className="proposal-list">
-          {pendingProposals.map(p => (
+          {acceptableProposals.map(p => (
             <div key={p.id} className="proposal-card">
               <div className="proposal-info">
                 <span className="proposal-time">{proposalLabel(p)}</span>
@@ -112,6 +115,19 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               >
                 Accept
               </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {myPendingProposals.length > 0 && (
+        <div className="proposal-list">
+          {myPendingProposals.map(p => (
+            <div key={p.id} className="proposal-card proposal-mine">
+              <div className="proposal-info">
+                <span className="proposal-time">{proposalLabel(p)}</span>
+                <span className="proposal-from">your proposal — waiting</span>
+              </div>
             </div>
           ))}
         </div>
