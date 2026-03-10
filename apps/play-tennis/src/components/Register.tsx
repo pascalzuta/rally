@@ -101,21 +101,17 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
   if (step === 'info') {
     return (
-      <div className="screen">
-        <header className="header">
-          <h1>Play Tennis</h1>
-        </header>
+      <div className="content">
+        <div className="register-hero">
+          <h2>Play Tennis</h2>
+          {inviteCounty ? (
+            <p>You've been invited to play in {inviteCounty}!</p>
+          ) : (
+            <p>Join your local tennis community</p>
+          )}
+        </div>
 
-        <main className="content">
-          <div className="register-hero">
-            <div className="empty-icon">🎾</div>
-            {inviteCounty ? (
-              <p>You've been invited to play in {inviteCounty}!</p>
-            ) : (
-              <p>Join your local tennis community</p>
-            )}
-          </div>
-
+        <div className="card">
           <form onSubmit={handleInfoSubmit} className="form">
             <label className="field">
               <span className="field-label">Your Name</span>
@@ -147,25 +143,20 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               Next
             </button>
           </form>
-        </main>
+        </div>
       </div>
     )
   }
 
   // Step 2: Availability
   return (
-    <div className="screen">
-      <header className="header">
-        <h1>Play Tennis</h1>
-      </header>
+    <div className="content">
+      <div className="register-hero">
+        <h2>When can you play?</h2>
+        <p>Helps us schedule matches automatically</p>
+      </div>
 
-      <main className="content">
-        <div className="register-hero">
-          <div className="empty-icon">📅</div>
-          <p>When can you play?</p>
-          <p className="subtle">Helps us schedule matches automatically</p>
-        </div>
-
+      <div className="card">
         <div className="availability-picker">
           {!detailedMode ? (
             <>
@@ -241,7 +232,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             Skip for now
           </button>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

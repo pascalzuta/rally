@@ -93,7 +93,9 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   if (!tournament || tournament.status !== 'in-progress') {
     return (
       <div className="playnow-tab">
-        <div className="broadcast-empty-state">Join an active tournament to use Play Now</div>
+        <div className="card">
+          <p className="subtle">Join an active tournament to use Play Now</p>
+        </div>
       </div>
     )
   }
@@ -165,36 +167,31 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* My active broadcast */}
       {myBroadcast && (
-        <div className="broadcast-mine">
-          <div className="broadcast-card broadcast-card-own">
-            <div className="broadcast-card-header">
-              <span className="broadcast-player-name">Your Broadcast</span>
-              <span className="broadcast-badge broadcast-badge-own">Active</span>
-            </div>
-            <div className="broadcast-card-details">
-              <span className="broadcast-detail">{formatDate(myBroadcast.date)}</span>
-              <span className="broadcast-detail">{formatTimeRange(myBroadcast.startTime, myBroadcast.endTime || defaultEndTime(myBroadcast.startTime))}</span>
-              <span className="broadcast-detail">{myBroadcast.location}</span>
-            </div>
-            <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>
-              Cancel Broadcast
-            </button>
+        <div className="card">
+          <div className="broadcast-card-header">
+            <span className="broadcast-player-name">Your Broadcast</span>
+            <span className="badge badge-live">Active</span>
           </div>
+          <div className="broadcast-card-details">
+            <span className="broadcast-detail">{formatDate(myBroadcast.date)}</span>
+            <span className="broadcast-detail">{formatTimeRange(myBroadcast.startTime, myBroadcast.endTime || defaultEndTime(myBroadcast.startTime))}</span>
+            <span className="broadcast-detail">{myBroadcast.location}</span>
+          </div>
+          <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Cancel Broadcast</button>
         </div>
       )}
 
       {/* Play Now button */}
       {!myBroadcast && !showForm && (
         <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
-          <span className="play-now-icon">&#9889;</span>
           <span className="play-now-text">Play Now</span>
-          <span className="play-now-sub">Notify opponents you're available to play</span>
+          <span className="play-now-sub">Notify opponents you're available</span>
         </button>
       )}
 
       {/* Broadcast creation form */}
       {showForm && (
-        <div className="broadcast-form">
+        <div className="card broadcast-form">
           <h3 className="broadcast-form-title">I Want To Play</h3>
 
           <div className="field">
@@ -250,16 +247,14 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
           <div className="broadcast-form-actions">
             <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleCreate}>
-              <span>&#9889;</span> Broadcast Availability
-            </button>
+            <button className="btn btn-primary" onClick={handleCreate}>Broadcast</button>
           </div>
         </div>
       )}
 
-      {/* Who's Available — always visible */}
-      <div className="availability-overview">
-        <h3 className="broadcast-timeline-title">Who's Available</h3>
+      {/* Who's Available — in card */}
+      <div className="card">
+        <h3 className="playnow-section-title">Who's Available</h3>
         {upcomingGroups.length === 0 ? (
           <div className="availability-empty">No availability set for the next 3 days</div>
         ) : (
@@ -279,12 +274,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         )}
       </div>
 
-      {/* Active Broadcasts */}
+      {/* Active Broadcasts — each date group in a card */}
       {timelineGroups.length > 0 && (
-        <div className="broadcast-timeline">
-          <h3 className="broadcast-timeline-title">Active Broadcasts</h3>
+        <div>
+          <h3 className="playnow-section-title">Active Broadcasts</h3>
           {timelineGroups.map(group => (
-            <div key={group.date} className="broadcast-timeline-group">
+            <div key={group.date} className="card broadcast-timeline-group">
               <div className="broadcast-timeline-date">{formatDate(group.date)}</div>
               <div className="broadcast-timeline-entries">
                 {group.entries.map(b => (

@@ -122,7 +122,7 @@ export default function Lobby({ profile, onTournamentCreated }: Props) {
 
       {/* Countdown banner when tournament is in setup */}
       {setupTournament && countdown && (
-        <div className="countdown-banner">
+        <div className="card countdown-banner">
           <div className="countdown-label">Tournament starts in</div>
           <div className="countdown-timer">{countdown}</div>
           <div className="countdown-detail">
@@ -132,52 +132,48 @@ export default function Lobby({ profile, onTournamentCreated }: Props) {
         </div>
       )}
 
-      {/* Players already in the setup tournament */}
-      {setupTournament && setupTournament.players.length > 0 && (
-        <ul className="player-list">
-          {setupTournament.players.map(p => {
-            const r = getPlayerRating(p.name)
-            return (
-              <li key={p.id} className={p.id === profile.id ? 'is-you' : ''}>
-                <span className="player-name">
-                  {p.name}
-                  {p.id === profile.id && <span className="you-badge">You</span>}
-                </span>
-                <span className="player-rating">{Math.round(r.rating)}</span>
-              </li>
-            )
-          })}
-        </ul>
+      {/* Player lists in card */}
+      {((setupTournament?.players.length ?? 0) > 0 || entries.length > 0) && (
+        <div className="card">
+          {setupTournament && setupTournament.players.length > 0 && (
+            <ul className="player-list">
+              {setupTournament.players.map(p => {
+                const r = getPlayerRating(p.name)
+                return (
+                  <li key={p.id} className={p.id === profile.id ? 'is-you' : ''}>
+                    <span className="player-name">{p.name}{p.id === profile.id && <span className="you-badge">You</span>}</span>
+                    <span className="player-rating">{Math.round(r.rating)}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          {entries.length > 0 && (
+            <ul className="player-list">
+              {entries.map(e => {
+                const r = getPlayerRating(e.playerName)
+                return (
+                  <li key={e.playerId} className={e.playerId === profile.id ? 'is-you' : ''}>
+                    <span className="player-name">{e.playerName}{e.playerId === profile.id && <span className="you-badge">You</span>}</span>
+                    <span className="player-rating">{Math.round(r.rating)}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
       )}
 
-      {/* Lobby players (not yet in tournament) */}
-      {entries.length > 0 && (
-        <ul className="player-list">
-          {entries.map(e => {
-            const r = getPlayerRating(e.playerName)
-            return (
-              <li key={e.playerId} className={e.playerId === profile.id ? 'is-you' : ''}>
-                <span className="player-name">
-                  {e.playerName}
-                  {e.playerId === profile.id && <span className="you-badge">You</span>}
-                </span>
-                <span className="player-rating">{Math.round(r.rating)}</span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-
+      {/* Empty + hint */}
       {entries.length === 0 && !setupTournament && (
-        <p className="subtle">No players waiting. Be the first to join!</p>
+        <div className="card"><p className="subtle">No players waiting. Be the first to join!</p></div>
       )}
 
       {!setupTournament && playersNeeded > 0 && entries.length > 0 && (
-        <p className="subtle lobby-hint">
-          {playersNeeded} more {playersNeeded === 1 ? 'player' : 'players'} needed to start
-        </p>
+        <p className="subtle lobby-hint">{playersNeeded} more {playersNeeded === 1 ? 'player' : 'players'} needed to start</p>
       )}
 
+      {/* Actions */}
       <div className="lobby-action">
         {!joined && !isInSetupTournament ? (
           <button className="btn btn-primary btn-large" onClick={handleJoin}>

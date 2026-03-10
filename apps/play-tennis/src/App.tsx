@@ -72,6 +72,9 @@ export default function App() {
   if (!profile) {
     return (
       <div className="app">
+        <nav className="top-nav">
+          <div className="top-nav-logo">RALLY</div>
+        </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
         <DevTools
           onProfileSwitch={p => setProfile(p)}
@@ -89,9 +92,20 @@ export default function App() {
   return (
     <div className="app">
       <div className="screen">
-        <header className="header">
-          <h1>Play Tennis</h1>
-        </header>
+        <nav className="top-nav">
+          <div className="top-nav-logo">RALLY</div>
+          <div className="top-nav-actions">
+            <button className="top-nav-icon" aria-label="Notifications">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </button>
+            <button className="top-nav-icon" onClick={() => setActiveTab('profile')}>
+              <div className="nav-avatar">{profile.name[0].toUpperCase()}</div>
+            </button>
+          </div>
+        </nav>
 
         <main className="content tab-content">
           {activeTab === 'home' && (
@@ -135,32 +149,31 @@ export default function App() {
         </main>
 
         <nav className="bottom-tabs">
-          <button
-            className={`bottom-tab ${activeTab === 'home' ? 'active' : ''}`}
-            onClick={() => setActiveTab('home')}
-          >
-            <span className="tab-icon">🏠</span>
+          <button className={`bottom-tab ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+            <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
             <span className="tab-text">Home</span>
           </button>
-          <button
-            className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`}
-            onClick={() => setActiveTab('bracket')}
-          >
-            <span className="tab-icon">🏆</span>
+          <button className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`} onClick={() => setActiveTab('bracket')}>
+            <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="7"/>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+            </svg>
             <span className="tab-text">Bracket</span>
           </button>
-          <button
-            className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`}
-            onClick={() => setActiveTab('playnow')}
-          >
-            <span className="tab-icon">⚡</span>
+          <button className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`} onClick={() => setActiveTab('playnow')}>
+            <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
             <span className="tab-text">Play Now</span>
           </button>
-          <button
-            className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
-          >
-            <span className="tab-icon">👤</span>
+          <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+            <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
             <span className="tab-text">Profile</span>
           </button>
         </nav>

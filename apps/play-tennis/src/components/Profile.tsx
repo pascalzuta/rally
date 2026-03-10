@@ -132,94 +132,98 @@ export default function Profile({ profile, onLogout }: Props) {
 
   return (
     <div className="profile-content">
-      <div className="profile-card">
-        <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
-        <h2 className="profile-name">{profile.name}</h2>
-        <p className="profile-county">{profile.county}</p>
+      {/* Player Card */}
+      <div className="card">
+        <div className="profile-card">
+          <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
+          <h2 className="profile-name">{profile.name}</h2>
+          <p className="profile-county">{profile.county}</p>
+        </div>
       </div>
 
-      <div className="rating-card">
-        <div className="rating-big">{Math.round(rating.rating)}</div>
-        <div className="rating-label-text">{label}</div>
+      {/* Rating Card */}
+      <div className="card">
+        <div className="rating-card">
+          <div className="rating-big">{Math.round(rating.rating)}</div>
+          <div className="rating-label-text">{label}</div>
+        </div>
       </div>
 
+      {/* Stats Row */}
       <div className="stats-row">
-        <div className="stat-box">
+        <div className="card stat-box">
           <div className="stat-value">{rating.matchesPlayed}</div>
           <div className="stat-label">Matches</div>
         </div>
-        <div className="stat-box">
+        <div className="card stat-box">
           <div className="stat-value">{wins}</div>
           <div className="stat-label">Wins</div>
         </div>
-        <div className="stat-box">
+        <div className="card stat-box">
           <div className="stat-value">{losses}</div>
           <div className="stat-label">Losses</div>
         </div>
-        <div className="stat-box">
+        <div className="card stat-box">
           <div className="stat-value">{tournaments.length}</div>
           <div className="stat-label">Events</div>
         </div>
       </div>
 
-      <div className="profile-section">
-        <h3 className="profile-section-title">Availability</h3>
+      {/* Availability Section */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title">
+          <span>Availability</span>
+          {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
+        </h3>
         {!editing ? (
-          <>
-            <div className="availability-current">
-              {slots.length === 0 ? (
-                <p>No availability slots set.</p>
-              ) : (
-                <ul>
-                  {slots.map((slot, i) => {
-                    const dayInfo = DAYS.find(d => d.key === slot.day)
-                    return (
-                      <li key={i}>
-                        {dayInfo?.label ?? slot.day} {formatHour(slot.startHour)}–{formatHour(slot.endHour)}
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </div>
-            <button className="btn" onClick={() => setEditing(true)}>
-              Edit Availability
-            </button>
-          </>
+          <div className="availability-current">
+            {slots.length === 0 ? (
+              <p className="subtle">No availability slots set</p>
+            ) : (
+              slots.map((slot, i) => {
+                const dayInfo = DAYS.find(d => d.key === slot.day)
+                return (
+                  <div key={i} className="availability-slot-item">
+                    <span className="availability-slot-day">{dayInfo?.label ?? slot.day}</span>
+                    <span className="availability-slot-hours">{formatHour(slot.startHour)}–{formatHour(slot.endHour)}</span>
+                  </div>
+                )
+              })
+            )}
+          </div>
         ) : (
           <>
             <div className="quick-slots">
               {QUICK_SLOTS.map(qs => (
                 <button
                   key={qs.label}
-                  className={`btn btn-small${isQuickSlotActive(qs) ? ' active' : ''}`}
+                  className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
                   onClick={() => toggleQuickSlot(qs)}
                 >
+                  <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
                   {qs.label}
                 </button>
               ))}
             </div>
 
-            <button className="btn btn-small" onClick={() => setDetailedMode(!detailedMode)}>
-              {detailedMode ? 'Hide detailed' : 'Add specific times'}
+            <button className="btn-link" onClick={() => setDetailedMode(!detailedMode)}>
+              {detailedMode ? 'Hide specific times' : 'Add specific times'}
             </button>
 
             {detailedMode && (
-              <div className="detailed-slots">
+              <div className="detailed-add-row">
                 <select value={detailDay} onChange={e => setDetailDay(e.target.value as DayOfWeek)}>
-                  {DAYS.map(d => (
-                    <option key={d.key} value={d.key}>{d.label}</option>
-                  ))}
+                  {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
                 </select>
                 <select value={detailStart} onChange={e => setDetailStart(Number(e.target.value))}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{formatHour(i)}</option>
+                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                    <option key={h} value={h}>{formatHour(h)}</option>
                   ))}
                 </select>
-                <span>to</span>
+                <span>–</span>
                 <select value={detailEnd} onChange={e => setDetailEnd(Number(e.target.value))}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>{formatHour(i + 1)}</option>
+                  {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
+                    <option key={h} value={h}>{formatHour(h)}</option>
                   ))}
                 </select>
                 <button className="btn btn-small" onClick={addDetailedSlot}>Add</button>
@@ -228,49 +232,52 @@ export default function Profile({ profile, onLogout }: Props) {
 
             {slots.length > 0 && (
               <div className="availability-current">
-                <ul>
-                  {slots.map((slot, i) => {
-                    const dayInfo = DAYS.find(d => d.key === slot.day)
-                    return (
-                      <li key={i}>
-                        {dayInfo?.label ?? slot.day} {formatHour(slot.startHour)}–{formatHour(slot.endHour)}
-                        <button className="btn btn-small" onClick={() => removeSlot(i)}>Remove</button>
-                      </li>
-                    )
-                  })}
-                </ul>
+                {slots.map((slot, i) => {
+                  const dayInfo = DAYS.find(d => d.key === slot.day)
+                  return (
+                    <div key={i} className="availability-slot-item">
+                      <span className="availability-slot-day">{dayInfo?.label ?? slot.day}</span>
+                      <span className="availability-slot-hours">{formatHour(slot.startHour)}–{formatHour(slot.endHour)}</span>
+                      <button className="btn-icon" onClick={() => removeSlot(i)}>✕</button>
+                    </div>
+                  )
+                })}
               </div>
             )}
 
             <div className="btn-row">
-              <button className="btn" onClick={handleSaveAvailability}>Save</button>
+              <button className="btn btn-primary" onClick={handleSaveAvailability}>Save</button>
               <button className="btn" onClick={handleCancelEdit}>Cancel</button>
             </div>
           </>
         )}
       </div>
 
-      <div className="profile-section">
+      {/* Tournament History */}
+      <div className="card profile-section">
         <h3 className="profile-section-title">Tournament History</h3>
         <div className="tournament-history">
           {completedTournaments.length === 0 ? (
-            <p>No completed tournaments yet</p>
+            <p className="subtle">No completed tournaments yet</p>
           ) : (
-            completedTournaments.map(t => (
-              <div key={t.id} className="history-card">
-                <div className="history-card-name">{t.name}</div>
-                <div className="history-card-date">{t.date}</div>
-                <div className="history-card-result">{getTournamentResult(t)}</div>
-                <div className="history-card-format">{t.format}</div>
-              </div>
-            ))
+            completedTournaments.map(t => {
+              const result = getTournamentResult(t)
+              return (
+                <div key={t.id} className="history-card">
+                  <div className="history-card-info">
+                    <div className="history-card-name">{t.name}</div>
+                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}</div>
+                  </div>
+                  <span className={`history-card-result ${result === 'Won' ? 'won' : result === 'Lost' ? 'lost' : ''}`}>{result}</span>
+                </div>
+              )
+            })
           )}
         </div>
       </div>
 
-      <button className="btn btn-large logout-btn" onClick={handleLogout}>
-        Sign Out
-      </button>
+      {/* Sign Out */}
+      <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
     </div>
   )
 }

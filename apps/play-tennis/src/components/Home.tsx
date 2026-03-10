@@ -214,7 +214,7 @@ export default function Home({
   // No active or setup tournament: show lobby
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
-      <div className="home">
+      <div className="home-section">
         <Lobby profile={profile} onTournamentCreated={onTournamentCreated} />
       </div>
     )
@@ -223,7 +223,7 @@ export default function Home({
   // Setup tournament: show countdown + lobby
   if (activeTournaments.length === 0 && setupTournaments.length > 0) {
     return (
-      <div className="home">
+      <div className="home-section">
         <Lobby profile={profile} onTournamentCreated={onTournamentCreated} />
       </div>
     )
@@ -231,18 +231,26 @@ export default function Home({
 
   // Active tournament dashboard
   return (
-    <div className="home">
+    <div className="home-section">
+      {/* Tournament Summary Card */}
       {activeTournaments.map(tournament => (
-        <div key={tournament.id} className="home-tournament-header">
-          <h2 className="home-tournament-name">{tournament.name}</h2>
-          <span className="home-format-badge">{tournament.format === 'single-elimination' ? 'Elimination' : 'Round Robin'}</span>
-          <span className="home-player-count">{tournament.players.length} players</span>
-          <div className="home-progress">{getProgressText(tournament)}</div>
+        <div key={tournament.id} className="card" onClick={() => onViewTournament(tournament.id)}>
+          <div className="card-top">
+            <h3>{tournament.name}</h3>
+            <span className="badge badge-live">
+              {tournament.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}
+            </span>
+          </div>
+          <div className="card-meta">
+            <span>{tournament.players.length} players</span>
+            <span>{getProgressText(tournament)}</span>
+          </div>
         </div>
       ))}
 
+      {/* Action Cards */}
       {actionCards.length > 0 ? (
-        <div className="home-action-cards">
+        <div className="action-cards">
           {actionCards.map(card => (
             <div
               key={`${card.tournamentId}-${card.matchId}`}
@@ -256,29 +264,33 @@ export default function Home({
           ))}
         </div>
       ) : (
-        <div className="home-caught-up">
-          <p>You're all caught up</p>
+        <div className="card">
+          <div className="caught-up">
+            <p>You're all caught up</p>
+            <p className="caught-up-sub">No matches need your attention right now</p>
+          </div>
         </div>
       )}
 
+      {/* Up Next Card */}
       {upNext && upNext.match.schedule?.confirmedSlot && (
-        <div className="home-up-next">
-          <div className="home-up-next-label">Up Next</div>
-          <div className="home-up-next-opponent">
-            vs {getPlayerName(upNext.tournament, getOpponentId(upNext.match, profile.id))}
+        <div className="card upnext-card">
+          <div>
+            <div className="upnext-label">Up Next</div>
+            <div className="upnext-opponent">
+              vs {getPlayerName(upNext.tournament, getOpponentId(upNext.match, profile.id))}
+            </div>
           </div>
-          <div className="home-up-next-time">
-            {formatSlot(upNext.match.schedule.confirmedSlot)}
+          <div className="upnext-time">
+            <div>{formatSlot(upNext.match.schedule.confirmedSlot)}</div>
           </div>
         </div>
       )}
 
-      <div className="home-footer">
-        <button
-          className="btn-link"
-          onClick={() => onViewTournament(activeTournaments[0].id)}
-        >
-          View all tournaments
+      {/* View All */}
+      <div className="home-view-all">
+        <button className="btn-link" onClick={() => onViewTournament(activeTournaments[0].id)}>
+          View bracket
         </button>
       </div>
     </div>

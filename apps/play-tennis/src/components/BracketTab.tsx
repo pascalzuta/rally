@@ -37,26 +37,32 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
 
   if (!tournament) {
     return (
-      <div className="screen">
-        <main className="content">
-          <p>Join a tournament to see the bracket</p>
-        </main>
+      <div className="bracket-tab">
+        <div className="card">
+          <div className="caught-up">
+            <p>No active tournament</p>
+            <p className="caught-up-sub">Join a tournament from the Home tab to see the bracket</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (tournament.status === 'setup') {
     return (
-      <div className="screen">
-        <main className="content">
+      <div className="bracket-tab">
+        <div className="bracket-tab-header">
           <h2>{tournament.name}</h2>
-          <p>Tournament starting soon</p>
-          <div className="player-list">
+          <div className="bracket-tab-meta">Setting up · {tournament.players.length} players</div>
+        </div>
+        <div className="card">
+          <div className="setup-roster-title">Players</div>
+          <ul className="player-list">
             {tournament.players.map(p => (
-              <div key={p.id} className="player-item">{p.name}</div>
+              <li key={p.id}><span className="player-name">{p.name}</span></li>
             ))}
-          </div>
-        </main>
+          </ul>
+        </div>
       </div>
     )
   }
@@ -182,55 +188,54 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
   const isParticipant = tournament.players.some(p => p.id === currentPlayerId)
 
   return (
-    <div className="screen">
-      <main className="content">
+    <div className="bracket-tab">
+      <div className="bracket-tab-header">
         <h2>{tournament.name}</h2>
+        <div className="bracket-tab-meta">
+          {tournament.format === 'single-elimination' ? 'Knockout' : 'Round Robin'} · {tournament.players.length} players
+        </div>
+      </div>
 
-        {winner && (
-          <div className="winner-banner">
-            🏆 {getPlayerName(tournament, winner)} wins!
-          </div>
-        )}
+      {winner && (
+        <div className="winner-banner">
+          {getPlayerName(tournament, winner)} wins the tournament
+        </div>
+      )}
 
-        {tournament.format === 'round-robin' && (
-          <div className="tab-bar">
-            <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
-            <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
-          </div>
-        )}
+      {tournament.format === 'round-robin' && (
+        <div className="tab-bar">
+          <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
+          <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
+        </div>
+      )}
 
-        {tab === 'matches' && (
-          <div className="bracket">
-            {tournament.format === 'single-elimination' ? (
-              rounds.map(round => (
-                <div key={round} className="round">
-                  <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
-                  {tournament.matches
-                    .filter(m => m.round === round)
-                    .map(renderMatchCard)}
-                </div>
-              ))
-            ) : (
-              <div className="round">
-                <h3 className="round-label">All Matches</h3>
-                {tournament.matches.map(renderMatchCard)}
+      {tab === 'matches' && (
+        <div className="bracket">
+          {tournament.format === 'single-elimination' ? (
+            rounds.map(round => (
+              <div key={round} className="round">
+                <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
+                {tournament.matches.filter(m => m.round === round).map(renderMatchCard)}
               </div>
-            )}
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="round">
+              <h3 className="round-label">All Matches</h3>
+              {tournament.matches.map(renderMatchCard)}
+            </div>
+          )}
+        </div>
+      )}
 
-        {tab === 'standings' && tournament.format === 'round-robin' && (
-          <Standings tournament={tournament} />
-        )}
+      {tab === 'standings' && tournament.format === 'round-robin' && (
+        <Standings tournament={tournament} />
+      )}
 
-        {isParticipant && tournament.status !== 'completed' && (
-          <div className="leave-link-container">
-            <button className="leave-link" onClick={() => setShowLeaveConfirm(true)}>
-              Leave this tournament
-            </button>
-          </div>
-        )}
-      </main>
+      {isParticipant && tournament.status !== 'completed' && (
+        <div className="bracket-leave-link">
+          <button onClick={() => setShowLeaveConfirm(true)}>Leave this tournament</button>
+        </div>
+      )}
 
       {scoringMatchId && (
         <MatchScoreModal
