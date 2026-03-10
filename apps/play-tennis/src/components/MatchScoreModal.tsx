@@ -168,7 +168,7 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
           return err ? <div key={i} className="score-error">Set {i + 1}: {err}</div> : null
         })}
 
-        {!showThirdSet && setsWon1 === 1 && setsWon2 === 0 && scores && scores.score1.length === 1 && (
+        {!showThirdSet && scores && scores.score1.length === 1 && (
           <p className="subtle" style={{ textAlign: 'center', marginTop: '0.5rem' }}>Enter Set 2 to continue</p>
         )}
 

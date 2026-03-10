@@ -6,6 +6,7 @@ const PROFILE_KEY = 'play-tennis-profile'
 const LOBBY_KEY = 'play-tennis-lobby'
 const AVAILABILITY_KEY = 'play-tennis-availability'
 const BROADCAST_KEY = 'play-tennis-broadcasts'
+const RATING_HISTORY_KEY = 'play-tennis-rating-history'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -920,6 +921,41 @@ export function updateRatings(playerAName: string, playerBName: string, winnerNa
   ratings[keyA] = a
   ratings[keyB] = b
   saveRatings(ratings)
+  recordRatingSnapshot(playerAName, a.rating)
+  recordRatingSnapshot(playerBName, b.rating)
+}
+
+// --- Rating History ---
+
+export interface RatingSnapshot {
+  rating: number
+  timestamp: string
+}
+
+function loadRatingHistory(): Record<string, RatingSnapshot[]> {
+  try {
+    const data = localStorage.getItem(RATING_HISTORY_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
+  localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(history))
+}
+
+function recordRatingSnapshot(playerName: string, rating: number): void {
+  const key = normalizePlayerName(playerName)
+  const history = loadRatingHistory()
+  if (!history[key]) history[key] = []
+  history[key].push({ rating, timestamp: new Date().toISOString() })
+  saveRatingHistory(history)
+}
+
+export function getRatingHistory(playerName: string): RatingSnapshot[] {
+  const key = normalizePlayerName(playerName)
+  return loadRatingHistory()[key] ?? []
 }
 
 export function getRatingLabel(rating: number): string {

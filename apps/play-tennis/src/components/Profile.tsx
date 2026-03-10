@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { getPlayerRating, getRatingLabel, getPlayerTournaments, logout, getAvailability, saveAvailability } from '../store'
+import { getPlayerRating, getRatingLabel, getRatingHistory, getPlayerTournaments, logout, getAvailability, saveAvailability } from '../store'
+import type { RatingSnapshot } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 
 interface Props {
@@ -35,6 +36,75 @@ function formatHour(h: number): string {
   if (h === 0 || h === 24) return '12am'
   if (h === 12) return '12pm'
   return h < 12 ? `${h}am` : `${h - 12}pm`
+}
+
+function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; currentRating: number }) {
+  const points: { rating: number; timestamp: string }[] = [
+    ...history,
+  ]
+  // Always include current rating as the last point
+  if (points.length === 0) {
+    // No history yet — show a flat line at current rating
+    points.push({ rating: currentRating, timestamp: new Date().toISOString() })
+  }
+
+  if (points.length === 1) {
+    // Only one data point — show a flat line
+    points.unshift({ rating: 1500, timestamp: points[0].timestamp })
+  }
+
+  const W = 300
+  const H = 140
+  const PAD_X = 40
+  const PAD_Y = 20
+  const chartW = W - PAD_X - 10
+  const chartH = H - PAD_Y * 2
+
+  const ratings = points.map(p => p.rating)
+  const minR = Math.floor((Math.min(...ratings) - 20) / 50) * 50
+  const maxR = Math.ceil((Math.max(...ratings) + 20) / 50) * 50
+  const range = maxR - minR || 100
+
+  const pathPoints = points.map((p, i) => {
+    const x = PAD_X + (i / (points.length - 1)) * chartW
+    const y = PAD_Y + chartH - ((p.rating - minR) / range) * chartH
+    return { x, y }
+  })
+
+  const d = pathPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+
+  // Y-axis labels
+  const yLabels = [minR, Math.round((minR + maxR) / 2), maxR]
+
+  // X-axis labels (first and last)
+  const firstDate = new Date(points[0].timestamp)
+  const lastDate = new Date(points[points.length - 1].timestamp)
+  const fmt = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 400 }}>
+      {/* Grid lines */}
+      {yLabels.map(v => {
+        const y = PAD_Y + chartH - ((v - minR) / range) * chartH
+        return (
+          <g key={v}>
+            <line x1={PAD_X} y1={y} x2={W - 10} y2={y} stroke="var(--border)" strokeWidth="0.5" />
+            <text x={PAD_X - 4} y={y + 3} textAnchor="end" fontSize="8" fill="var(--text-secondary)">{v}</text>
+          </g>
+        )
+      })}
+
+      {/* X-axis labels */}
+      <text x={PAD_X} y={H - 4} fontSize="8" fill="var(--text-secondary)">{fmt(firstDate)}</text>
+      <text x={W - 10} y={H - 4} textAnchor="end" fontSize="8" fill="var(--text-secondary)">{fmt(lastDate)}</text>
+
+      {/* Line */}
+      <path d={d} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+      {/* End dot */}
+      <circle cx={pathPoints[pathPoints.length - 1].x} cy={pathPoints[pathPoints.length - 1].y} r="3" fill="var(--primary)" />
+    </svg>
+  )
 }
 
 export default function Profile({ profile, onLogout }: Props) {
@@ -256,6 +326,7 @@ export default function Profile({ profile, onLogout }: Props) {
       {/* Tournament History */}
       <div className="card profile-section">
         <h3 className="profile-section-title">Tournament History</h3>
+        <RatingChart history={getRatingHistory(profile.name)} currentRating={rating.rating} />
         <div className="tournament-history">
           {completedTournaments.length === 0 ? (
             <p className="subtle">No completed tournaments yet</p>
