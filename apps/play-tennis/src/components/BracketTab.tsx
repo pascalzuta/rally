@@ -158,20 +158,26 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
 
     const scored = hasScores(match)
 
+    if (isBye) {
+      const byePlayer = match.player1Id ? p1 : p2
+      const byePlayerId = match.player1Id || match.player2Id
+      const byeSeed = byePlayerId ? seeds.get(byePlayerId) : null
+      return (
+        <div key={match.id} className="match-card-bye">
+          <span className="bye-player">{byePlayer}{byeSeed != null && <span className="seed-label"> ({byeSeed})</span>}</span>
+          <span className="bye-tag">BYE</span>
+        </div>
+      )
+    }
+
     return (
       <div
         key={match.id}
         className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)}`}
-        onClick={() => {
-          if (isBye) return
-          handleMatchClick(match, !!canScore, isMyMatch)
-        }}
+        onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
       >
-        {isBye ? (
-          <div className="bye-label">BYE</div>
-        ) : (
-          <>
-            <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+        <>
+          <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
               {showWinProb && <div className="prob-indicator prob-indicator-p1" />}
               <span className="match-player-name">
                 {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
@@ -242,8 +248,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
                 onUpdated={refresh}
               />
             )}
-          </>
-        )}
+        </>
       </div>
     )
   }
