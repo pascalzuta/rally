@@ -770,6 +770,35 @@ input:focus {
   margin-top: 8px;
 }
 
+.countdown-banner {
+  text-align: center;
+  background: linear-gradient(135deg, var(--green-light), #e0f2fe);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.countdown-label {
+  font-size: 13px;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.countdown-timer {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--green-dark);
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0;
+}
+
+.countdown-detail {
+  font-size: 13px;
+  color: var(--gray-700);
+}
+
 .lobby-action {
   margin-top: 8px;
   display: flex;

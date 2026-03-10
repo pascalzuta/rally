@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules } from '../store'
+import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty } from '../store'
 import { PlayerProfile } from '../types'
 
 interface Props {
   onProfileSwitch: (profile: PlayerProfile) => void
   activeTournamentId?: string | null
   onTournamentUpdated?: () => void
+  onTournamentCreated?: (id: string) => void
 }
 
-export default function DevTools({ onProfileSwitch, activeTournamentId, onTournamentUpdated }: Props) {
+export default function DevTools({ onProfileSwitch, activeTournamentId, onTournamentUpdated, onTournamentCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -64,6 +65,21 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
+  const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
+
+  function handleForceStart() {
+    const t = setupTournament
+    if (!t) return
+    const result = forceStartTournament(t.id)
+    if (result && result.status === 'in-progress') {
+      setMessage(`Tournament started with ${result.players.length} players!`)
+      onTournamentCreated?.(result.id)
+    } else {
+      setMessage('Could not start tournament')
+    }
+    setTimeout(() => setMessage(''), 2000)
+  }
+
   if (!open) {
     return (
       <button className="dev-toggle" onClick={() => setOpen(true)}>
@@ -89,6 +105,15 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
           <button className="btn dev-btn" onClick={() => handleSeed(5)}>+5</button>
         </div>
       </div>
+
+      {setupTournament && (
+        <div className="dev-section">
+          <div className="dev-label">Tournament ({setupTournament.players.length} players waiting)</div>
+          <div className="dev-buttons">
+            <button className="btn dev-btn" onClick={handleForceStart}>Start Now</button>
+          </div>
+        </div>
+      )}
 
       {activeTournamentId && (
         <div className="dev-section">

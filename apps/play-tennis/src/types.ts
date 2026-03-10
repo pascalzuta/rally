@@ -78,4 +78,5 @@ export interface Tournament {
   matches: Match[]
   status: 'setup' | 'in-progress' | 'completed'
   createdAt: string
+  countdownStartedAt?: string  // ISO timestamp when 6-player countdown began
 }

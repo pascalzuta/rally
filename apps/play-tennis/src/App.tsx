@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, deleteTournament, joinLobby } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, deleteTournament, joinLobby, getSetupTournamentForCounty } from './store'
 import { PlayerProfile, Tournament } from './types'
 import Register from './components/Register'
 import Lobby from './components/Lobby'
@@ -68,7 +68,7 @@ export default function App() {
     return (
       <div className="app">
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
-        <DevTools onProfileSwitch={p => setProfile(p)} />
+        <DevTools onProfileSwitch={p => setProfile(p)} onTournamentCreated={id => setViewingTournamentId(id)} />
       </div>
     )
   }
@@ -89,6 +89,7 @@ export default function App() {
           onProfileSwitch={p => { setProfile(p); setActiveTab('play') }}
           activeTournamentId={viewingTournamentId}
           onTournamentUpdated={() => setTournamentRefresh(r => r + 1)}
+          onTournamentCreated={id => setViewingTournamentId(id)}
         />
       </div>
     )
@@ -186,7 +187,7 @@ export default function App() {
           </button>
         </nav>
       </div>
-      <DevTools onProfileSwitch={p => { setProfile(p); setActiveTab('play') }} />
+      <DevTools onProfileSwitch={p => { setProfile(p); setActiveTab('play') }} onTournamentCreated={id => setViewingTournamentId(id)} />
     </div>
   )
 }

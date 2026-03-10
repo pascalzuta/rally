@@ -77,37 +77,113 @@ export function leaveLobby(playerId: string): void {
   saveLobby(lobby)
 }
 
+const COUNTDOWN_MS = 48 * 60 * 60 * 1000 // 48 hours
+const MIN_PLAYERS = 6
+const MAX_PLAYERS = 8
+
+export function getCountdownRemaining(tournament: Tournament): number | null {
+  if (!tournament.countdownStartedAt || tournament.status !== 'setup') return null
+  const elapsed = Date.now() - new Date(tournament.countdownStartedAt).getTime()
+  return Math.max(0, COUNTDOWN_MS - elapsed)
+}
+
+export function getSetupTournamentForCounty(county: string): Tournament | undefined {
+  return load().find(
+    t => t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup'
+  )
+}
+
 export function startTournamentFromLobby(county: string): Tournament | null {
   const lobby = loadLobby()
   const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
-  if (allCounty.length < 4) return null
 
-  // Take exactly 4 players per tournament
-  const countyPlayers = allCounty.slice(0, 4)
-  const format: Tournament['format'] = 'single-elimination'
+  // Check if there's already a setup tournament for this county
+  const existing = getSetupTournamentForCounty(county)
+
+  if (existing) {
+    // Add new lobby players to existing setup tournament
+    const existingIds = new Set(existing.players.map(p => p.id))
+    const newPlayers = allCounty.filter(e => !existingIds.has(e.playerId))
+
+    if (newPlayers.length > 0) {
+      const all = load()
+      const t = all.find(x => x.id === existing.id)!
+      for (const e of newPlayers) {
+        if (t.players.length >= MAX_PLAYERS) break
+        t.players.push({ id: e.playerId, name: e.playerName })
+      }
+
+      // Remove added players from lobby
+      const takenIds = new Set(t.players.map(p => p.id))
+      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
+      saveLobby(remainingLobby)
+
+      // If we hit max, start immediately
+      if (t.players.length >= MAX_PLAYERS) {
+        save(all)
+        return generateBracket(t.id) ?? t
+      }
+
+      save(all)
+      return t
+    }
+    return existing
+  }
+
+  // Need at least MIN_PLAYERS to create a tournament
+  if (allCounty.length < MIN_PLAYERS) return null
+
+  // Take up to MAX_PLAYERS
+  const countyPlayers = allCounty.slice(0, MAX_PLAYERS)
   const tournament: Tournament = {
     id: generateId(),
     name: `${county} Open`,
     date: new Date().toISOString().split('T')[0],
     county,
-    format,
+    format: 'single-elimination',
     players: countyPlayers.map(e => ({ id: e.playerId, name: e.playerName })),
     matches: [],
     status: 'setup',
     createdAt: new Date().toISOString(),
+    countdownStartedAt: new Date().toISOString(),
   }
 
   const all = load()
   all.unshift(tournament)
   save(all)
 
-  // Remove only the 4 players who entered the tournament from lobby
+  // Remove players who entered the tournament from lobby
   const takenIds = new Set(countyPlayers.map(e => e.playerId))
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
   saveLobby(remainingLobby)
 
-  // Generate bracket immediately
-  return generateBracket(tournament.id) ?? tournament
+  // If we already have max players, start immediately
+  if (countyPlayers.length >= MAX_PLAYERS) {
+    return generateBracket(tournament.id) ?? tournament
+  }
+
+  return tournament
+}
+
+// Check countdown and start tournament if expired
+export function checkCountdownExpired(tournamentId: string): Tournament | undefined {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t || t.status !== 'setup' || !t.countdownStartedAt) return undefined
+
+  const remaining = getCountdownRemaining(t)
+  if (remaining !== null && remaining <= 0 && t.players.length >= MIN_PLAYERS) {
+    save(all)
+    return generateBracket(t.id)
+  }
+  return undefined
+}
+
+// Force-start a setup tournament (dev tool)
+export function forceStartTournament(tournamentId: string): Tournament | undefined {
+  const t = getTournament(tournamentId)
+  if (!t || t.status !== 'setup') return undefined
+  return generateBracket(tournamentId)
 }
 
 // --- Availability ---
