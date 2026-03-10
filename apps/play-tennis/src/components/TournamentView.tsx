@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTournament, getPlayerName, getPlayerRating, getPlayerActiveBroadcast } from '../store'
+import { getTournament, getPlayerName, getPlayerRating, getPlayerActiveBroadcast, leaveTournament } from '../store'
 import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -35,6 +35,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const broadcastRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -50,6 +51,12 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
   function handleScoreSaved() {
     setScoringMatchId(null)
     refresh()
+  }
+
+  function handleLeave() {
+    leaveTournament(tournamentId, currentPlayerId)
+    setShowLeaveConfirm(false)
+    onBack()
   }
 
   function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
@@ -160,6 +167,9 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
       <header className="header">
         <button className="btn-back" onClick={onBack}>← Back</button>
         <h1>{tournament.name}</h1>
+        {tournament.players.some(p => p.id === currentPlayerId) && tournament.status !== 'completed' && (
+          <button className="btn-leave" onClick={() => setShowLeaveConfirm(true)}>Leave</button>
+        )}
       </header>
 
       <main className="content">
@@ -217,6 +227,24 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           onClose={() => setScoringMatchId(null)}
           onSaved={handleScoreSaved}
         />
+      )}
+
+      {/* Leave tournament confirmation */}
+      {showLeaveConfirm && (
+        <div className="leave-overlay" onClick={() => setShowLeaveConfirm(false)}>
+          <div className="leave-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="leave-title">Leave Tournament?</h3>
+            <p className="leave-message">
+              {tournament.status === 'in-progress'
+                ? 'All your remaining matches will be forfeited and your opponents will receive walkovers. This cannot be undone.'
+                : 'You will be removed from this tournament. This cannot be undone.'}
+            </p>
+            <div className="leave-actions">
+              <button className="btn" onClick={() => setShowLeaveConfirm(false)}>Cancel</button>
+              <button className="btn btn-danger" onClick={handleLeave}>Leave Tournament</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Floating action buttons */}

@@ -57,6 +57,14 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - Resolution indicators on match cards: "Match Awarded", "Final Match Assigned", "Match Canceled"
 - Walkovers advance winners in single-elimination brackets automatically
 
+### Leave Tournament
+- "Leave" button in tournament header (hidden for completed tournaments)
+- Confirmation dialog warns about forfeiting remaining matches
+- Setup tournaments: player removed from roster
+- In-progress tournaments: all incomplete matches forfeited as walkovers for opponents
+- Opponents automatically advanced in single-elimination brackets
+- Tournament removed from player's tournament list after leaving
+
 ### Match Scoring
 - 3-set tennis scoring with validation (6-4, 7-5, 7-6 tiebreak rules)
 - Win probability bar (Elo-based)

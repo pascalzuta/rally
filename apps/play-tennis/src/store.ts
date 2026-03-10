@@ -607,6 +607,73 @@ export function deleteTournament(tournamentId: string): void {
   save(all)
 }
 
+export function leaveTournament(tournamentId: string, playerId: string): boolean {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return false
+
+  // Can't leave if not a participant
+  if (!t.players.some(p => p.id === playerId)) return false
+
+  // Setup: just remove from player list
+  if (t.status === 'setup') {
+    t.players = t.players.filter(p => p.id !== playerId)
+    if (t.players.length === 0) {
+      // Remove empty tournament
+      save(all.filter(x => x.id !== tournamentId))
+    } else {
+      save(all)
+    }
+    return true
+  }
+
+  // In-progress: forfeit all incomplete matches involving this player
+  for (const match of t.matches) {
+    if (match.completed) continue
+
+    const isPlayer1 = match.player1Id === playerId
+    const isPlayer2 = match.player2Id === playerId
+    if (!isPlayer1 && !isPlayer2) continue
+
+    const opponentId = isPlayer1 ? match.player2Id : match.player1Id
+    if (opponentId) {
+      // Opponent wins by walkover
+      match.winnerId = opponentId
+      match.completed = true
+      match.score1 = []
+      match.score2 = []
+      match.resolution = {
+        type: 'walkover',
+        winnerId: opponentId,
+        reason: 'Opponent left the tournament',
+        resolvedAt: new Date().toISOString(),
+      }
+      if (match.schedule) {
+        match.schedule.status = 'resolved'
+        match.schedule.resolution = match.resolution
+      }
+
+      // Advance opponent in single-elimination
+      if (t.format === 'single-elimination') {
+        advanceWinner(t, match, opponentId)
+      }
+    } else {
+      // No opponent yet — just mark completed
+      match.completed = true
+    }
+  }
+
+  // Remove player from the tournament roster
+  t.players = t.players.filter(p => p.id !== playerId)
+
+  // Check if tournament is now complete
+  const allDone = t.matches.every(m => m.completed)
+  if (allDone) t.status = 'completed'
+
+  save(all)
+  return true
+}
+
 // Generate seed positions so top seeds are placed apart in bracket
 function getSeedPositions(size: number): number[] {
   if (size === 1) return [0]
