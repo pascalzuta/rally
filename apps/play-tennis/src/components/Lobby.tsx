@@ -7,6 +7,19 @@ interface Props {
   onTournamentCreated: (id: string) => void
 }
 
+function getInviteLink(county: string): string {
+  const url = new URL(window.location.href)
+  url.search = ''
+  url.searchParams.set('join', county)
+  return url.toString()
+}
+
+function handleInvite(county: string, playerName: string) {
+  const link = getInviteLink(county)
+  const message = `Join me for tennis in ${county}! ${link}`
+  window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
+}
+
 export default function Lobby({ profile, onTournamentCreated }: Props) {
   const [entries, setEntries] = useState<LobbyEntry[]>([])
   const [joined, setJoined] = useState(false)
@@ -77,9 +90,19 @@ export default function Lobby({ profile, onTournamentCreated }: Props) {
             Join Lobby
           </button>
         ) : (
-          <button className="btn btn-large" onClick={handleLeave}>
-            Leave Lobby
-          </button>
+          <>
+            <button className="btn btn-large" onClick={handleLeave}>
+              Leave Lobby
+            </button>
+            {playersNeeded > 0 && (
+              <button
+                className="btn btn-primary btn-large invite-btn"
+                onClick={() => handleInvite(profile.county, profile.name)}
+              >
+                Invite Friends
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

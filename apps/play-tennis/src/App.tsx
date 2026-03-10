@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, deleteTournament } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, deleteTournament, joinLobby } from './store'
 import { PlayerProfile, Tournament } from './types'
 import Register from './components/Register'
 import Lobby from './components/Lobby'
@@ -10,11 +10,32 @@ import './styles.css'
 
 type Tab = 'play' | 'tournaments' | 'profile'
 
+function getInviteCounty(): string | null {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('join')
+}
+
+function clearInviteParam() {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('join')
+  window.history.replaceState({}, '', url.pathname)
+}
+
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [activeTab, setActiveTab] = useState<Tab>('play')
   const [viewingTournamentId, setViewingTournamentId] = useState<string | null>(null)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const [inviteCounty] = useState<string | null>(getInviteCounty)
+
+  // Auto-join lobby when an existing user opens an invite link
+  useEffect(() => {
+    if (profile && inviteCounty) {
+      joinLobby({ ...profile, county: inviteCounty })
+      clearInviteParam()
+      setActiveTab('play')
+    }
+  }, [profile, inviteCounty])
 
   useEffect(() => {
     if (profile) {
@@ -33,10 +54,19 @@ export default function App() {
     ))
   }
 
+  function handleRegistered(p: PlayerProfile) {
+    if (inviteCounty) {
+      // After registering via invite, auto-join the invite county's lobby
+      joinLobby({ ...p, county: inviteCounty })
+      clearInviteParam()
+    }
+    setProfile(p)
+  }
+
   if (!profile) {
     return (
       <div className="app">
-        <Register onRegistered={p => setProfile(p)} />
+        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
         <DevTools onProfileSwitch={p => setProfile(p)} />
       </div>
     )
@@ -107,7 +137,7 @@ export default function App() {
                         <span>{t.players.length} players</span>
                         <span>{t.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}</span>
                       </div>
-                      {t.status === 'completed' && t.players.some(p => p.id === profile.id) && (
+                      {t.status === 'completed' && t.players.some(p => p.id === profile!.id) && (
                         <button className="btn-icon delete-btn" onClick={(e) => handleDelete(e, t.id)}>✕</button>
                       )}
                     </div>

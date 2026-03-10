@@ -772,6 +772,9 @@ input:focus {
 
 .lobby-action {
   margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .player-list li.is-you {

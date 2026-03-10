@@ -4,11 +4,12 @@ import { PlayerProfile } from '../types'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
+  inviteCounty?: string | null
 }
 
-export default function Register({ onRegistered }: Props) {
+export default function Register({ onRegistered, inviteCounty }: Props) {
   const [name, setName] = useState('')
-  const [county, setCounty] = useState('')
+  const [county, setCounty] = useState(inviteCounty ?? '')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,7 +27,11 @@ export default function Register({ onRegistered }: Props) {
       <main className="content">
         <div className="register-hero">
           <div className="empty-icon">🎾</div>
-          <p>Join your local tennis community</p>
+          {inviteCounty ? (
+            <p>You've been invited to play in {inviteCounty}!</p>
+          ) : (
+            <p>Join your local tennis community</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="form">
@@ -48,6 +53,7 @@ export default function Register({ onRegistered }: Props) {
               value={county}
               onChange={e => setCounty(e.target.value)}
               placeholder="e.g. Los Angeles County, CA"
+              readOnly={!!inviteCounty}
             />
           </label>
 
@@ -56,7 +62,7 @@ export default function Register({ onRegistered }: Props) {
             className="btn btn-primary btn-large"
             disabled={!name.trim() || !county}
           >
-            Join
+            {inviteCounty ? 'Join & Play' : 'Join'}
           </button>
         </form>
       </main>

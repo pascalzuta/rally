@@ -11,12 +11,14 @@ Live URL: https://pascalzuta.github.io/rally/
 - Player registration with name and county selection (Irish counties)
 - County-based lobby system — join and wait for opponents
 - Auto-start tournaments when 4+ players from the same county are in the lobby
-- Auto-selects format: round-robin (up to 6 players) or single-elimination (7+)
+- Fixed 4-player single-elimination tournaments (2 semis + final)
 - FiveThirtyEight-style Elo rating system (global, persists across tournaments)
 - Rating-based seeding for single-elimination brackets
 - Win probability bar displayed before each match
 - Opponent ratings shown next to names in all match cards
-- Set-by-set score entry (up to 2 sets per match)
+- Best-of-3 set scoring with tennis score validation (6-x, 7-5, 7-6)
+- Only match participants can enter scores (no scoring other people's games)
+- SMS invite flow: share a link to invite friends to your county lobby
 - Automatic winner advancement in single-elimination
 - Bye handling when player count isn't a power of 2
 - Standings table for round-robin (sorted by wins, set diff, game diff)
@@ -57,11 +59,25 @@ apps/play-tennis/
 ## Architecture
 
 ### User Flow
-1. First visit: Register with name + county
-2. Play tab: Join county lobby, wait for 4+ players
-3. When enough players join: tournament auto-creates and starts
-4. Tournaments tab: View and manage all your tournaments
-5. Profile tab: See your Elo rating, stats, and match history
+1. First visit: Register with name + county (county pre-filled if arriving via invite link)
+2. Play tab: Join county lobby, wait for 4 players
+3. While waiting: "Invite Friends" button generates SMS with `?join=County` deep link
+4. Friends who click the link auto-register with the right county and join the lobby
+5. When 4 players join: tournament auto-creates and starts
+6. Tournaments tab: View and manage all your tournaments
+7. Profile tab: See your Elo rating, stats, and match history
+
+### Invite Flow (SMS Deep Link)
+- **Trigger**: Player is in lobby, waiting for more players → "Invite Friends" button appears
+- **Action**: Opens SMS compose with pre-written message + link (e.g. `?join=LA+County,+CA`)
+- **New user clicks link**: Register screen with county pre-filled (read-only), auto-joined to lobby after registration
+- **Existing user clicks link**: Auto-joined to the invite county's lobby immediately
+- **Link format**: `{app-url}?join={county}` — parsed on app load, cleared from URL after processing
+
+### Access Control
+- **Scoring**: Only match participants can enter scores for their own matches
+- **Tournament deletion**: Only available for completed tournaments, and only by participants
+- **Lobby**: County-scoped — players only see their county's lobby
 
 ### State Management
 No state library. Each component manages local state with `useState`. Persistence handled by pure functions in `store.ts` using multiple localStorage keys:
@@ -118,3 +134,6 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | County-based signup, lobby, auto-start, profile tab         |
 | 2026-03-10 | Fixed county to US (free text input)                        |
 | 2026-03-10 | Added dev tools: lobby seeder + profile switcher             |
+| 2026-03-10 | Capped tournaments at 4 players, always single-elimination   |
+| 2026-03-10 | Product hardening: participant-only scoring, delete guards, best-of-3, tennis score validation |
+| 2026-03-10 | SMS invite flow: share link to invite friends to county lobby |
