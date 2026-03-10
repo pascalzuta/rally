@@ -388,3 +388,53 @@ export function getRatingLabel(rating: number): string {
   if (rating >= 1200) return 'Beginner'
   return 'Newcomer'
 }
+
+// --- Dev Tools ---
+
+const TEST_PLAYERS = [
+  'Alex Rivera', 'Jordan Chen', 'Sam Patel', 'Taylor Kim',
+  'Casey Brooks', 'Morgan Lee', 'Riley Davis', 'Quinn Adams',
+]
+
+const TEST_RATINGS: Record<string, number> = {
+  'alex rivera': 1650, 'jordan chen': 1580, 'sam patel': 1520, 'taylor kim': 1490,
+  'casey brooks': 1440, 'morgan lee': 1400, 'riley davis': 1550, 'quinn adams': 1470,
+}
+
+export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
+  const lobby = loadLobby()
+  const existing = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
+  const existingNames = new Set(existing.map(e => e.playerName.toLowerCase()))
+
+  const available = TEST_PLAYERS.filter(n => !existingNames.has(n.toLowerCase()))
+  const toAdd = available.slice(0, count)
+
+  for (const name of toAdd) {
+    const id = generateId()
+    lobby.push({ playerId: id, playerName: name, county, joinedAt: new Date().toISOString() })
+
+    // Set up their rating
+    const ratings = loadRatings()
+    const key = normalizePlayerName(name)
+    if (!ratings[key]) {
+      ratings[key] = { name, rating: TEST_RATINGS[key] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
+      saveRatings(ratings)
+    }
+  }
+
+  saveLobby(lobby)
+  return getLobbyByCounty(county)
+}
+
+export function getTestProfiles(county: string): PlayerProfile[] {
+  return TEST_PLAYERS.map((name, i) => ({
+    id: `test-${i}`,
+    name,
+    county,
+    createdAt: new Date().toISOString(),
+  }))
+}
+
+export function switchProfile(profile: PlayerProfile): void {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+}

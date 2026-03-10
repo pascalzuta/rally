@@ -116,3 +116,5 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | Added branch deployment rule for feature branch             |
 | 2026-03-10 | Added FiveThirtyEight Elo rating system with seeding        |
 | 2026-03-10 | County-based signup, lobby, auto-start, profile tab         |
+| 2026-03-10 | Fixed county to US (free text input)                        |
+| 2026-03-10 | Added dev tools: lobby seeder + profile switcher             |

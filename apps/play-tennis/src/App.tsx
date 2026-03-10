@@ -5,6 +5,7 @@ import Register from './components/Register'
 import Lobby from './components/Lobby'
 import Profile from './components/Profile'
 import TournamentView from './components/TournamentView'
+import DevTools from './components/DevTools'
 import './styles.css'
 
 type Tab = 'play' | 'tournaments' | 'profile'
@@ -36,6 +37,7 @@ export default function App() {
     return (
       <div className="app">
         <Register onRegistered={p => setProfile(p)} />
+        <DevTools onProfileSwitch={p => setProfile(p)} />
       </div>
     )
   }
@@ -144,6 +146,7 @@ export default function App() {
           </button>
         </nav>
       </div>
+      <DevTools onProfileSwitch={p => { setProfile(p); setActiveTab('play') }} />
     </div>
   )
 }
