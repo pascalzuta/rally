@@ -86,9 +86,18 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
   const canSave = scores && winnerId
 
   // Determine which sets to show: always show 2, show 3rd if split 1-1
-  const setsWon1 = scores ? scores.score1.filter((s, i) => s > scores.score2[i]).length : 0
-  const setsWon2 = scores ? scores.score2.filter((s, i) => s > scores.score1[i]).length : 0
-  const showThirdSet = setsWon1 === 1 && setsWon2 === 1
+  // Use raw input values from sets 1 & 2 only, so typing in set 3 doesn't cause it to vanish
+  const showThirdSet = (() => {
+    const s1a = parseInt(sets[0][0], 10)
+    const s1b = parseInt(sets[0][1], 10)
+    const s2a = parseInt(sets[1][0], 10)
+    const s2b = parseInt(sets[1][1], 10)
+    if (isNaN(s1a) || isNaN(s1b) || isNaN(s2a) || isNaN(s2b)) return false
+    if (!isValidSet(s1a, s1b) || !isValidSet(s2a, s2b)) return false
+    const set1Winner = s1a > s1b ? 1 : 2
+    const set2Winner = s2a > s2b ? 1 : 2
+    return set1Winner !== set2Winner
+  })()
 
   // Check which individual sets have invalid scores for feedback
   function setValidation(setIndex: number): string | null {
