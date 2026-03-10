@@ -219,22 +219,38 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         />
       )}
 
-      {/* Floating Play Now shortcut */}
-      {tournament.status === 'in-progress' && !getPlayerActiveBroadcast(currentPlayerId) && (
-        <button
-          className="broadcast-fab"
-          onClick={() => {
-            setTab('matches')
-            setTimeout(() => {
-              broadcastRef.current?.scrollIntoView({ behavior: 'smooth' })
-              // Trigger the Play Now form by clicking the button inside BroadcastPanel
-              const btn = broadcastRef.current?.querySelector('.broadcast-play-now-btn') as HTMLElement
-              btn?.click()
-            }, 100)
-          }}
-        >
-          <span>&#9889;</span> Play
-        </button>
+      {/* Floating action buttons */}
+      {tournament.status === 'in-progress' && (
+        <div className="broadcast-fab-group">
+          <button
+            className="broadcast-fab broadcast-fab-secondary"
+            onClick={() => {
+              setTab('matches')
+              setTimeout(() => {
+                broadcastRef.current?.scrollIntoView({ behavior: 'smooth' })
+                const btn = broadcastRef.current?.querySelector('.availability-toggle-btn') as HTMLElement
+                btn?.click()
+              }, 100)
+            }}
+          >
+            Who's Free?
+          </button>
+          {!getPlayerActiveBroadcast(currentPlayerId) && (
+            <button
+              className="broadcast-fab"
+              onClick={() => {
+                setTab('matches')
+                setTimeout(() => {
+                  broadcastRef.current?.scrollIntoView({ behavior: 'smooth' })
+                  const btn = broadcastRef.current?.querySelector('.broadcast-play-now-btn') as HTMLElement
+                  btn?.click()
+                }, 100)
+              }}
+            >
+              <span>&#9889;</span> Play
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

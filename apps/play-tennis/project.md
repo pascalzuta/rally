@@ -20,6 +20,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **PlayerRating**: name, rating (Elo), matchesPlayed
 - **LobbyEntry**: playerId, playerName, county, joinedAt
 - **AvailabilitySlot**: day, startHour, endHour
+- **UpcomingSlot**: date, dayLabel, playerId, playerName, startHour, endHour (computed from AvailabilitySlot for next 3 days)
 
 ### Match Broadcast Types
 - **MatchBroadcast**: id, playerId, playerName, tournamentId, date, startTime, endTime, location, message, status (active | claimed | expired), createdAt, expiresAt, claimedBy, matchId
@@ -67,9 +68,10 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 
 ### Tournament Availability Broadcast ("Play Now")
 - Prominent "Play Now" button with lightning icon at top of tournament view
-- Floating action button (FAB) in bottom-right for quick access from anywhere
+- Floating action buttons (FABs) in bottom-right: "Play" (broadcast) + "Who's Free?" (availability)
 - Creation flow: date, time window (from/to), location, optional message
 - **Timeline view**: Broadcasts grouped by day, sorted by time, showing availability windows
+- **Upcoming availability overview**: Shows all players' registered availability projected onto next 3 days, toggleable via button or FAB
 - Claim confirmation modal before committing to a match
 - First-claim-wins: opponent claims → match auto-confirmed
 - One active broadcast per player, auto-expires after 2 hours

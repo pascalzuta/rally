@@ -212,6 +212,60 @@ export function getAvailability(playerId: string): AvailabilitySlot[] {
   return loadAllAvailability()[playerId] ?? []
 }
 
+// --- Upcoming Availability (next 3 days) ---
+
+export interface UpcomingSlot {
+  date: string       // ISO date e.g. "2026-03-10"
+  dayLabel: string   // e.g. "Today", "Tomorrow", "Wednesday"
+  playerId: string
+  playerName: string
+  startHour: number
+  endHour: number
+}
+
+export function getUpcomingAvailability(tournament: Tournament, excludePlayerId?: string): UpcomingSlot[] {
+  const DAY_NAMES: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  const allAvail = loadAllAvailability()
+  const slots: UpcomingSlot[] = []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  for (let d = 0; d < 3; d++) {
+    const date = new Date(today)
+    date.setDate(date.getDate() + d)
+    const dayOfWeek = DAY_NAMES[date.getDay()]
+    const dateStr = date.toISOString().split('T')[0]
+    const dayLabel = d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'long' })
+
+    for (const player of tournament.players) {
+      if (player.id === excludePlayerId) continue
+      const playerSlots = allAvail[player.id] ?? []
+      for (const slot of playerSlots) {
+        if (slot.day === dayOfWeek) {
+          // If today, skip slots that have already passed
+          if (d === 0) {
+            const nowHour = new Date().getHours()
+            if (slot.endHour <= nowHour) continue
+          }
+          slots.push({
+            date: dateStr,
+            dayLabel,
+            playerId: player.id,
+            playerName: player.name,
+            startHour: d === 0 ? Math.max(slot.startHour, new Date().getHours()) : slot.startHour,
+            endHour: slot.endHour,
+          })
+        }
+      }
+    }
+  }
+
+  // Sort by date, then start hour
+  slots.sort((a, b) => a.date.localeCompare(b.date) || a.startHour - b.startHour)
+  return slots
+}
+
 // --- Scheduling Engine ---
 
 function computeOverlap(slotsA: AvailabilitySlot[], slotsB: AvailabilitySlot[]): AvailabilitySlot[] {

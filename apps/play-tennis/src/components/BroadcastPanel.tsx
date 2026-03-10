@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, claimBroadcast, cancelBroadcast } from '../store'
+import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, claimBroadcast, cancelBroadcast, getUpcomingAvailability, UpcomingSlot } from '../store'
 import { Tournament, MatchBroadcast } from '../types'
 
 interface Props {
@@ -45,6 +45,32 @@ function formatDateShort(dateStr: string): string {
   return date.toLocaleDateString('en-US', { weekday: 'short' })
 }
 
+function formatHour(h: number): string {
+  if (h === 0 || h === 24) return '12 AM'
+  if (h === 12) return '12 PM'
+  return h < 12 ? `${h} AM` : `${h - 12} PM`
+}
+
+function formatHourRange(start: number, end: number): string {
+  return `${formatHour(start)} – ${formatHour(end)}`
+}
+
+// Group upcoming slots by date
+function groupSlotsByDate(slots: UpcomingSlot[]): { date: string; dayLabel: string; entries: UpcomingSlot[] }[] {
+  const map = new Map<string, { dayLabel: string; entries: UpcomingSlot[] }>()
+  for (const s of slots) {
+    const existing = map.get(s.date)
+    if (existing) {
+      existing.entries.push(s)
+    } else {
+      map.set(s.date, { dayLabel: s.dayLabel, entries: [s] })
+    }
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, { dayLabel, entries }]) => ({ date, dayLabel, entries }))
+}
+
 function defaultEndTime(start: string): string {
   const [h, m] = start.split(':').map(Number)
   const endH = Math.min(h + 2, 23)
@@ -69,6 +95,7 @@ function groupByDate(broadcasts: MatchBroadcast[]): { date: string; entries: Mat
 
 export default function BroadcastPanel({ tournament, currentPlayerId, onMatchConfirmed }: Props) {
   const [showForm, setShowForm] = useState(false)
+  const [showAvailability, setShowAvailability] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [startTime, setStartTime] = useState('18:00')
   const [endTime, setEndTime] = useState('20:00')
@@ -82,6 +109,8 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
   const myBroadcast = getPlayerActiveBroadcast(currentPlayerId)
   const availableBroadcasts = getActiveBroadcasts(tournament.id, currentPlayerId)
   const timelineGroups = groupByDate(availableBroadcasts)
+  const upcomingSlots = getUpcomingAvailability(tournament, currentPlayerId)
+  const upcomingGroups = groupSlotsByDate(upcomingSlots)
 
   function handleCreate() {
     if (!location.trim()) {
@@ -152,6 +181,40 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
           <span className="play-now-text">Play Now</span>
           <span className="play-now-sub">Notify opponents you're available to play</span>
         </button>
+      )}
+
+      {/* See who's available toggle */}
+      {!showForm && (
+        <button
+          className="availability-toggle-btn"
+          onClick={() => setShowAvailability(!showAvailability)}
+        >
+          {showAvailability ? 'Hide availability' : `See who's available (next 3 days)`}
+          <span className="availability-toggle-count">{upcomingSlots.length} slots</span>
+        </button>
+      )}
+
+      {/* Upcoming availability overview */}
+      {showAvailability && !showForm && (
+        <div className="availability-overview">
+          {upcomingGroups.length === 0 ? (
+            <div className="availability-empty">No availability set for the next 3 days</div>
+          ) : (
+            upcomingGroups.map(group => (
+              <div key={group.date} className="availability-day-group">
+                <div className="availability-day-header">{group.dayLabel}</div>
+                <div className="availability-day-entries">
+                  {group.entries.map((slot, i) => (
+                    <div key={`${slot.playerId}-${i}`} className="availability-slot-entry">
+                      <span className="availability-slot-time">{formatHourRange(slot.startHour, slot.endHour)}</span>
+                      <span className="availability-slot-name">{slot.playerName}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       )}
 
       {/* Broadcast creation form */}
