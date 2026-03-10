@@ -73,7 +73,7 @@ export default function App() {
     return (
       <div className="app">
         <nav className="top-nav">
-          <div className="top-nav-logo">RALLY</div>
+          <img src="/rally-logo.svg" alt="Rally" className="top-nav-logo" />
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
         <DevTools
@@ -93,7 +93,7 @@ export default function App() {
     <div className="app">
       <div className="screen">
         <nav className="top-nav">
-          <div className="top-nav-logo">RALLY</div>
+          <img src="/rally-logo.svg" alt="Rally" className="top-nav-logo" />
           <div className="top-nav-actions">
             <button className="top-nav-icon" aria-label="Notifications">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

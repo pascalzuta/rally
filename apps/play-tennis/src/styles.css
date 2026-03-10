@@ -146,10 +146,9 @@ body {
 }
 
 .top-nav-logo {
-  font-size: 22px;
-  font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
-  letter-spacing: -0.5px;
+  height: 24px;
+  width: auto;
+  display: block;
 }
 
 .top-nav-actions {

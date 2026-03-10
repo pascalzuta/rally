@@ -1,3 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
-  <text x="0" y="26" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#111111">RALLY</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 70" fill="none">
+  <defs>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#6B6B6B"/>
+    </linearGradient>
+  </defs>
+  <!-- R -->
+  <path d="M0 10C0 4.5 4.5 0 10 0H36V20C36 20 36 28 28 28H22L36 56H24L10 28H12V20H24V12H12V56H0V10Z" fill="url(#logoGrad)"/>
+  <!-- A -->
+  <path d="M52 0H68L86 56H74L70 44H50L46 56H34L52 0ZM54 34H66L60 14L54 34Z" fill="url(#logoGrad)"/>
+  <!-- L -->
+  <path d="M90 0H102V44H126V56H90V0Z" fill="url(#logoGrad)"/>
+  <!-- L -->
+  <path d="M130 0H142V44H166V56H130V0Z" fill="url(#logoGrad)"/>
+  <!-- Y -->
+  <path d="M170 0H182L196 24L210 0H222L202 36V56H190V36L170 0Z" fill="url(#logoGrad)"/>
 </svg>
