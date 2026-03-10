@@ -179,14 +179,9 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
         ) : (
           <>
             <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-              {showWinProb && (
-                <div
-                  className="prob-indicator"
-                  style={{ background: `color-mix(in srgb, var(--color-positive-primary) ${Math.round(p1WinProb * 100)}%, var(--color-divider))` }}
-                />
-              )}
+              {showWinProb && <div className="prob-indicator prob-indicator-p1" />}
               <span className="match-player-name">
-                {p1}{seed1 != null && <span className="seed-label">[{seed1}]</span>}
+                {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
               </span>
               {scored && (
                 <span className="match-sets">
@@ -198,14 +193,9 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
             </div>
             <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-              {showWinProb && (
-                <div
-                  className="prob-indicator"
-                  style={{ background: `color-mix(in srgb, var(--color-positive-primary) ${Math.round((1 - p1WinProb) * 100)}%, var(--color-divider))` }}
-                />
-              )}
+              {showWinProb && <div className="prob-indicator prob-indicator-p2" />}
               <span className="match-player-name">
-                {p2}{seed2 != null && <span className="seed-label">[{seed2}]</span>}
+                {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
               </span>
               {scored && (
                 <span className="match-sets">
@@ -216,6 +206,18 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
               )}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
             </div>
+
+            {/* Win probability split bar */}
+            {showWinProb && (
+              <div className="prob-split">
+                <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
+                <div className="prob-split-bar">
+                  <div className="prob-split-fill-left" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+                  <div className="prob-split-fill-right" style={{ width: `${Math.round((1 - p1WinProb) * 100)}%` }} />
+                </div>
+                <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
+              </div>
+            )}
 
             {/* Resolution indicator */}
             {match.resolution && (

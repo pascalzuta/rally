@@ -821,13 +821,22 @@ select:focus {
   color: var(--color-positive-primary);
 }
 
-/* Snapchat-style vertical probability indicator */
+/* Vertical color indicator linking player to probability bar */
 .prob-indicator {
   width: 3px;
   align-self: stretch;
   border-radius: 2px;
   flex-shrink: 0;
   margin-right: var(--space-sm);
+}
+
+.prob-indicator-p1 {
+  background: var(--color-accent-primary);
+}
+
+.prob-indicator-p2 {
+  background: var(--color-text-muted);
+  opacity: 0.4;
 }
 
 .match-player-name {
