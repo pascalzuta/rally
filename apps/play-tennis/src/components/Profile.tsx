@@ -88,21 +88,21 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
         const y = PAD_Y + chartH - ((v - minR) / range) * chartH
         return (
           <g key={v}>
-            <line x1={PAD_X} y1={y} x2={W - 10} y2={y} stroke="var(--border)" strokeWidth="0.5" />
-            <text x={PAD_X - 4} y={y + 3} textAnchor="end" fontSize="8" fill="var(--text-secondary)">{v}</text>
+            <line x1={PAD_X} y1={y} x2={W - 10} y2={y} stroke="var(--color-divider)" strokeWidth="0.5" />
+            <text x={PAD_X - 4} y={y + 3} textAnchor="end" fontSize="8" fill="var(--color-text-secondary)">{v}</text>
           </g>
         )
       })}
 
       {/* X-axis labels */}
-      <text x={PAD_X} y={H - 4} fontSize="8" fill="var(--text-secondary)">{fmt(firstDate)}</text>
-      <text x={W - 10} y={H - 4} textAnchor="end" fontSize="8" fill="var(--text-secondary)">{fmt(lastDate)}</text>
+      <text x={PAD_X} y={H - 4} fontSize="8" fill="var(--color-text-secondary)">{fmt(firstDate)}</text>
+      <text x={W - 10} y={H - 4} textAnchor="end" fontSize="8" fill="var(--color-text-secondary)">{fmt(lastDate)}</text>
 
       {/* Line */}
-      <path d={d} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 
       {/* End dot */}
-      <circle cx={pathPoints[pathPoints.length - 1].x} cy={pathPoints[pathPoints.length - 1].y} r="3" fill="var(--primary)" />
+      <circle cx={pathPoints[pathPoints.length - 1].x} cy={pathPoints[pathPoints.length - 1].y} r="3" fill="var(--color-accent-primary)" />
     </svg>
   )
 }
