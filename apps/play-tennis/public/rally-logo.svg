@@ -1,3 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
-  <text x="0" y="26" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-1" fill="#111111">RALLY</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Shuttlecock/birdie icon -->
+  <g transform="translate(0, 24)">
+    <!-- Top wing -->
+    <path d="M0 -8 Q12 -14 28 -16 Q20 -8 32 -2 L38 0" stroke="#111111" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Bottom wing -->
+    <path d="M0 8 Q12 14 28 16 Q20 8 32 2 L38 0" stroke="#111111" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Center line / tail -->
+    <path d="M10 0 L38 0" stroke="#111111" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- "Rally" text -->
+  <text x="52" y="35" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="36" font-weight="800" letter-spacing="-1.5" fill="#111111">Rally</text>
 </svg>

@@ -74,7 +74,7 @@ export default function App() {
     return (
       <div className="app">
         <nav className="top-nav">
-          <div className="top-nav-logo">RALLY</div>
+          <div className="top-nav-logo"><img src="/rally-logo.svg" alt="Rally" height="28" /></div>
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
         <DevTools
@@ -94,7 +94,7 @@ export default function App() {
     <div className="app">
       <div className="screen">
         <nav className="top-nav">
-          <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>RALLY</div>
+          <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}><img src="/rally-logo.svg" alt="Rally" height="28" /></div>
           <div className="top-nav-actions">
             <button className="top-nav-icon" aria-label="Notifications">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
