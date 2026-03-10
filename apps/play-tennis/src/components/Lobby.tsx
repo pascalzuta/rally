@@ -4,6 +4,8 @@ import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
 interface Props {
   profile: PlayerProfile
+  autoJoin?: boolean
+  onAutoJoinConsumed?: () => void
   onTournamentCreated: (id: string) => void
 }
 
@@ -14,12 +16,6 @@ function getInviteLink(county: string): string {
   return url.toString()
 }
 
-function handleInvite(county: string, playerName: string) {
-  const link = getInviteLink(county)
-  const message = `Join me for tennis in ${county}! ${link}`
-  window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
-}
-
 function formatCountdown(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
   const hours = Math.floor(totalSeconds / 3600)
@@ -28,18 +24,32 @@ function formatCountdown(ms: number): string {
   return `${hours}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
 }
 
-export default function Lobby({ profile, onTournamentCreated }: Props) {
+export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournamentCreated }: Props) {
   const [entries, setEntries] = useState<LobbyEntry[]>([])
   const [joined, setJoined] = useState(false)
   const [setupTournament, setSetupTournament] = useState<Tournament | null>(null)
   const [countdown, setCountdown] = useState<string | null>(null)
+  const [showShareSheet, setShowShareSheet] = useState(false)
+  const [copied, setCopied] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoJoinedRef = useRef(false)
+
+  const isInSetupTournament = setupTournament?.players.some(p => p.id === profile.id) ?? false
 
   useEffect(() => {
     setEntries(getLobbyByCounty(profile.county))
     setJoined(isInLobby(profile.id))
     checkForSetupTournament()
   }, [profile])
+
+  // Auto-join when coming from "Start Tournament"
+  useEffect(() => {
+    if (autoJoin && !autoJoinedRef.current && !joined && !isInSetupTournament) {
+      autoJoinedRef.current = true
+      handleJoin()
+      onAutoJoinConsumed?.()
+    }
+  }, [autoJoin, joined])
 
   // Countdown timer tick
   useEffect(() => {
@@ -58,7 +68,6 @@ export default function Lobby({ profile, onTournamentCreated }: Props) {
         return
       }
       if (remaining <= 0) {
-        // Timer expired — start the tournament
         const started = checkCountdownExpired(setupTournament.id)
         if (started && started.status === 'in-progress') {
           onTournamentCreated(started.id)
@@ -85,16 +94,13 @@ export default function Lobby({ profile, onTournamentCreated }: Props) {
     setEntries(updated)
     setJoined(true)
 
-    // Try to create or join a tournament
     if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
       const tournament = startTournamentFromLobby(profile.county)
       if (tournament) {
         if (tournament.status === 'in-progress') {
-          // 8 players reached — bracket generated, go to tournament
           onTournamentCreated(tournament.id)
           return
         }
-        // Setup with countdown — show it
         setSetupTournament(tournament)
         setEntries(getLobbyByCounty(profile.county))
         return
@@ -108,104 +114,172 @@ export default function Lobby({ profile, onTournamentCreated }: Props) {
     setJoined(false)
   }
 
-  const isInSetupTournament = setupTournament?.players.some(p => p.id === profile.id) ?? false
-  const totalWaiting = entries.length + (setupTournament?.players.length ?? 0)
-  const playersNeeded = Math.max(0, 6 - totalWaiting)
-  const spotsLeft = setupTournament ? 8 - setupTournament.players.length : 0
+  function handleShareInvite() {
+    const link = getInviteLink(profile.county)
+    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    if (navigator.share) {
+      navigator.share({ title: 'Rally Tennis', text: message, url: link }).catch(() => {
+        setShowShareSheet(true)
+      })
+    } else {
+      setShowShareSheet(true)
+    }
+  }
+
+  function handleCopyLink() {
+    const link = getInviteLink(profile.county)
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function handleSMS() {
+    const link = getInviteLink(profile.county)
+    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
+    setShowShareSheet(false)
+  }
+
+  function handleWhatsApp() {
+    const link = getInviteLink(profile.county)
+    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
+    setShowShareSheet(false)
+  }
+
+  const setupPlayers = setupTournament?.players ?? []
+  const totalJoined = setupPlayers.length + entries.length
+  const targetPlayers = 6
+  const maxPlayers = 8
+  const spotsLeft = setupTournament ? maxPlayers - setupPlayers.length : 0
+  const isUserInvolved = joined || isInSetupTournament
+
+  // Build combined player list for display
+  const allPlayers: { id: string; name: string; isYou: boolean }[] = []
+  for (const p of setupPlayers) {
+    allPlayers.push({ id: p.id, name: p.name, isYou: p.id === profile.id })
+  }
+  for (const e of entries) {
+    if (!allPlayers.some(p => p.id === e.playerId)) {
+      allPlayers.push({ id: e.playerId, name: e.playerName, isYou: e.playerId === profile.id })
+    }
+  }
+
+  // Tournament ready state (6+ players in setup)
+  const tournamentReady = setupTournament && setupPlayers.length >= targetPlayers
 
   return (
     <div className="lobby-section">
-      <div className="lobby-header">
-        <h2>{profile.county}</h2>
-        <span className="lobby-count">{totalWaiting} waiting</span>
-      </div>
-
-      {/* Countdown banner when tournament is in setup */}
-      {setupTournament && countdown && (
-        <div className="card countdown-banner">
-          <div className="countdown-label">Tournament starts in</div>
-          <div className="countdown-timer">{countdown}</div>
-          <div className="countdown-detail">
-            {setupTournament.players.length}/{8} players
-            {spotsLeft > 0 && ` — ${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}
-          </div>
-        </div>
-      )}
-
-      {/* Player lists in card */}
-      {((setupTournament?.players.length ?? 0) > 0 || entries.length > 0) && (
-        <div className="card">
-          {setupTournament && setupTournament.players.length > 0 && (
-            <ul className="player-list">
-              {setupTournament.players.map(p => {
-                const r = getPlayerRating(p.name)
-                return (
-                  <li key={p.id} className={p.id === profile.id ? 'is-you' : ''}>
-                    <span className="player-name">{p.name}{p.id === profile.id && <span className="you-badge">You</span>}</span>
-                    <span className="player-rating">{Math.round(r.rating)}</span>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          {entries.length > 0 && (
-            <ul className="player-list">
-              {entries.map(e => {
-                const r = getPlayerRating(e.playerName)
-                return (
-                  <li key={e.playerId} className={e.playerId === profile.id ? 'is-you' : ''}>
-                    <span className="player-name">{e.playerName}{e.playerId === profile.id && <span className="you-badge">You</span>}</span>
-                    <span className="player-rating">{Math.round(r.rating)}</span>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* Empty + hint */}
-      {entries.length === 0 && !setupTournament && (
-        <div className="card"><p className="subtle">No players waiting. Be the first to join!</p></div>
-      )}
-
-      {!setupTournament && playersNeeded > 0 && entries.length > 0 && (
-        <p className="subtle lobby-hint">{playersNeeded} more {playersNeeded === 1 ? 'player' : 'players'} needed to start</p>
-      )}
-
-      {/* Actions */}
-      <div className="lobby-action">
-        {!joined && !isInSetupTournament ? (
-          <button className="btn btn-primary btn-large" onClick={handleJoin}>
-            Join Lobby
-          </button>
-        ) : !isInSetupTournament ? (
+      {/* Tournament Formation Hero Card */}
+      <div className="card formation-hero">
+        {tournamentReady ? (
           <>
-            <button className="btn btn-large" onClick={handleLeave}>
-              Leave Lobby
-            </button>
-            {!setupTournament && playersNeeded > 0 && (
-              <button
-                className="btn btn-primary btn-large invite-btn"
-                onClick={() => handleInvite(profile.county, profile.name)}
-              >
-                Invite Friends
-              </button>
+            <h2 className="formation-hero-title">{profile.county} Tournament Ready</h2>
+            <p className="formation-hero-subtitle">
+              Bracket created. The tournament starts soon.
+            </p>
+            {countdown && (
+              <div className="formation-countdown">
+                <div className="formation-countdown-label">Starts in</div>
+                <div className="formation-countdown-timer">{countdown}</div>
+              </div>
             )}
+            <div className="formation-progress-row">
+              <span className="formation-progress-text">{setupPlayers.length} of {maxPlayers} players</span>
+              {spotsLeft > 0 && <span className="formation-spots">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} left</span>}
+            </div>
+            <div className="formation-progress-bar">
+              <div className="formation-progress-fill" style={{ width: `${(setupPlayers.length / maxPlayers) * 100}%` }} />
+            </div>
+            <div className="formation-actions">
+              {spotsLeft > 0 && (
+                <button className="btn btn-primary btn-large" onClick={handleShareInvite}>Invite Players</button>
+              )}
+            </div>
           </>
         ) : (
           <>
-            {spotsLeft > 0 && (
-              <button
-                className="btn btn-primary btn-large invite-btn"
-                onClick={() => handleInvite(profile.county, profile.name)}
-              >
-                Invite Friends ({spotsLeft} spot{spotsLeft === 1 ? '' : 's'} left)
+            <h2 className="formation-hero-title">{profile.county} Tournament Forming</h2>
+            <p className="formation-hero-subtitle">
+              {isUserInvolved
+                ? `You started a tournament in ${profile.county}. Invite players to begin competing.`
+                : `A tournament is forming in ${profile.county}. Join and invite players.`
+              }
+            </p>
+            <div className="formation-progress-row">
+              <span className="formation-progress-text">{totalJoined} of {targetPlayers} players joined</span>
+            </div>
+            <div className="formation-progress-bar">
+              <div className="formation-progress-fill" style={{ width: `${Math.min((totalJoined / targetPlayers) * 100, 100)}%` }} />
+            </div>
+            <p className="formation-explainer">When {targetPlayers} players join, the tournament bracket is created automatically.</p>
+            <div className="formation-actions">
+              {!isUserInvolved && (
+                <button className="btn btn-primary btn-large" onClick={handleJoin}>Join Tournament</button>
+              )}
+              {isUserInvolved && (
+                <button className="btn btn-primary btn-large" onClick={handleShareInvite}>Invite Players</button>
+              )}
+              <button className="btn btn-large" onClick={handleCopyLink}>
+                {copied ? 'Copied!' : 'Copy Invite Link'}
               </button>
-            )}
+            </div>
           </>
         )}
       </div>
+
+      {/* Players Joining */}
+      {allPlayers.length > 0 && (
+        <div className="card formation-players">
+          <h3 className="formation-players-title">Players Joining</h3>
+          <ul className="player-list">
+            {allPlayers.map((p, i) => {
+              const r = getPlayerRating(p.name)
+              return (
+                <li key={p.id} className={p.isYou ? 'is-you' : ''}>
+                  <span className="player-number">{i + 1}</span>
+                  <span className="player-name">
+                    {p.name}
+                    {p.isYou && <span className="you-badge">You</span>}
+                  </span>
+                  <span className="player-rating">{Math.round(r.rating)}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Leave option for joined users */}
+      {isUserInvolved && !isInSetupTournament && (
+        <div className="formation-leave">
+          <button className="btn-link" onClick={handleLeave}>Leave tournament</button>
+        </div>
+      )}
+
+      {/* Share Sheet Modal */}
+      {showShareSheet && (
+        <div className="modal-overlay" onClick={() => setShowShareSheet(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h2>Invite Players</h2>
+            <div className="share-options">
+              <button className="btn btn-large" onClick={handleSMS}>
+                Text Message
+              </button>
+              <button className="btn btn-large" onClick={handleWhatsApp}>
+                WhatsApp
+              </button>
+              <button className="btn btn-large" onClick={() => { handleCopyLink(); setShowShareSheet(false) }}>
+                {copied ? 'Copied!' : 'Copy Invite Link'}
+              </button>
+            </div>
+            <div className="share-close">
+              <button className="btn-link" onClick={() => setShowShareSheet(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

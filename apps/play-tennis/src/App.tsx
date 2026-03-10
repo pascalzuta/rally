@@ -28,6 +28,7 @@ export default function App() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [autoJoinLobby, setAutoJoinLobby] = useState(false)
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -112,6 +113,8 @@ export default function App() {
             <Home
               profile={profile}
               tournaments={tournaments}
+              autoJoin={autoJoinLobby}
+              onAutoJoinConsumed={() => setAutoJoinLobby(false)}
               onTournamentCreated={id => {
                 refreshTournaments()
                 setActiveTab('bracket')
@@ -144,7 +147,10 @@ export default function App() {
             <Profile
               profile={profile}
               onLogout={() => setProfile(null)}
-              onNavigate={(tab) => setActiveTab(tab)}
+              onNavigate={(tab) => {
+                if (tab === 'home') setAutoJoinLobby(true)
+                setActiveTab(tab)
+              }}
             />
           )}
         </main>

@@ -6,6 +6,8 @@ import Lobby from './Lobby'
 interface Props {
   profile: PlayerProfile
   tournaments: Tournament[]
+  autoJoin?: boolean
+  onAutoJoinConsumed?: () => void
   onTournamentCreated: (id: string) => void
   onViewTournament: (id: string) => void
   onViewMatch: (tournamentId: string, matchId: string) => void
@@ -183,6 +185,8 @@ function formatSlot(slot: { day: string; startHour: number; endHour: number }): 
 export default function Home({
   profile,
   tournaments,
+  autoJoin,
+  onAutoJoinConsumed,
   onTournamentCreated,
   onViewTournament,
   onViewMatch,
@@ -215,7 +219,7 @@ export default function Home({
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
       <div className="home-section">
-        <Lobby profile={profile} onTournamentCreated={onTournamentCreated} />
+        <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
       </div>
     )
   }
@@ -224,7 +228,7 @@ export default function Home({
   if (activeTournaments.length === 0 && setupTournaments.length > 0) {
     return (
       <div className="home-section">
-        <Lobby profile={profile} onTournamentCreated={onTournamentCreated} />
+        <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
       </div>
     )
   }
