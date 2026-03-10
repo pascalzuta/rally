@@ -987,8 +987,22 @@ export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
 }
 
 export function getTestProfiles(county: string): PlayerProfile[] {
+  // Look up real IDs from lobby and tournaments so switching profiles works correctly
+  const lobby = loadLobby()
+  const tournaments = load()
+  const allPlayers = new Map<string, string>() // name -> id
+
+  for (const entry of lobby) {
+    allPlayers.set(entry.playerName.toLowerCase(), entry.playerId)
+  }
+  for (const t of tournaments) {
+    for (const p of t.players) {
+      allPlayers.set(p.name.toLowerCase(), p.id)
+    }
+  }
+
   return TEST_PLAYERS.map((name, i) => ({
-    id: `test-${i}`,
+    id: allPlayers.get(name.toLowerCase()) ?? `test-${i}`,
     name,
     county,
     createdAt: new Date().toISOString(),
