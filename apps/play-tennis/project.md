@@ -58,7 +58,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - Walkovers advance winners in single-elimination brackets automatically
 
 ### Leave Tournament
-- "Leave" button in tournament header (hidden for completed tournaments)
+- "Leave this tournament" link at bottom of Bracket tab (hidden for completed tournaments)
 - Confirmation dialog warns about forfeiting remaining matches
 - Setup tournaments: player removed from roster
 - In-progress tournaments: all incomplete matches forfeited as walkovers for opponents
@@ -75,11 +75,10 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - Rating labels: Newcomer → Beginner → Club → Strong → Elite → Semi-pro → Pro
 
 ### Tournament Availability Broadcast ("Play Now")
-- Prominent "Play Now" button with lightning icon at top of tournament view
-- Floating action buttons (FABs) in bottom-right: "Play" (broadcast) + "Who's Free?" (availability)
+- Dedicated "Play Now" tab in bottom navigation (elevated from sub-feature to first-class tab)
 - Creation flow: date, time window (from/to), location, optional message
 - **Timeline view**: Broadcasts grouped by day, sorted by time, showing availability windows
-- **Upcoming availability overview**: Shows all players' registered availability projected onto next 3 days, toggleable via button or FAB
+- **Availability overview**: Shows all players' registered availability projected onto next 3 days (always visible, no toggle)
 - Claim confirmation modal before committing to a match
 - First-claim-wins: opponent claims → match auto-confirmed
 - One active broadcast per player, auto-expires after 2 hours
@@ -93,16 +92,53 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `play-tennis-availability` — Player availability
 - `play-tennis-broadcasts` — Match broadcasts
 
+## Navigation Structure
+Four-tab layout designed around the player's tournament journey:
+
+| Tab | Icon | Purpose |
+|-----|------|---------|
+| **Home** | 🏠 | Dashboard with action cards — answers "what should I do next?" |
+| **Bracket** | 🏆 | Dedicated bracket/standings view, always one tap away |
+| **Play Now** | ⚡ | Broadcast availability & find opponents |
+| **Profile** | 👤 | Stats, availability management, tournament history |
+
+### Home Tab
+- When no active tournament: shows Lobby (join/leave, invite friends, countdown)
+- When active tournament: shows prioritized action cards for matches needing attention
+  - Action types (by priority): Escalated > Score Match > Respond to Proposal > Schedule Match
+  - "Up Next" card for confirmed upcoming matches with day/time
+  - Tournament progress indicator
+  - "You're all caught up" state when nothing needs attention
+
+### Bracket Tab
+- Full bracket (elimination) or standings table (round-robin) for the active tournament
+- Match cards with inline scheduling and scoring (tap to expand/score)
+- "Leave this tournament" link at bottom (replaces header button)
+
+### Play Now Tab
+- Broadcast creation form (date, time, location, message)
+- Active broadcast management
+- Availability timeline always visible (not behind a toggle)
+- Active broadcasts from opponents with "Claim Match" flow
+
+### Profile Tab
+- Player info, Elo rating, and stats
+- Availability management (edit weekly slots post-registration)
+- Completed tournament history with results
+
 ## Components
-- **App.tsx** — Root with tab navigation (Play, Tournaments, Profile)
+- **App.tsx** — Root with 4-tab navigation (Home, Bracket, Play Now, Profile), derives active tournament
+- **Home.tsx** — Dashboard with action cards, lobby fallback, tournament progress
+- **BracketTab.tsx** — Dedicated bracket/standings view with inline scheduling and scoring
+- **PlayNowTab.tsx** — Elevated broadcast/availability as first-class tab
 - **Register.tsx** — Two-step registration
-- **Lobby.tsx** — County lobby with countdown
-- **TournamentView.tsx** — Bracket/match display with tabs
-- **MatchSchedulePanel.tsx** — Time negotiation UI
-- **MatchScoreModal.tsx** — Score entry modal
-- **Standings.tsx** — Round-robin standings table
-- **BroadcastPanel.tsx** — Play Now button, timeline view, creation form, claim confirmation
-- **Profile.tsx** — Player stats and Elo rating
+- **Lobby.tsx** — County lobby with countdown (used by Home tab)
+- **TournamentView.tsx** — Legacy bracket/match display (retained for reference)
+- **MatchSchedulePanel.tsx** — Time negotiation UI (used by BracketTab)
+- **MatchScoreModal.tsx** — Score entry modal (used by BracketTab)
+- **Standings.tsx** — Round-robin standings table (used by BracketTab)
+- **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
+- **Profile.tsx** — Player stats, Elo rating, availability management, tournament history
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
 
 ## Dev Tools
