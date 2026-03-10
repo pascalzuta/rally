@@ -74,7 +74,14 @@ export default function App() {
     return (
       <div className="app">
         <nav className="top-nav">
-          <div className="top-nav-logo"><img src="/rally-logo.svg" alt="Rally" height="28" /></div>
+          <div className="top-nav-logo">
+              <svg className="rally-icon" width="36" height="24" viewBox="0 0 44 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 15C6 13 12 10 20 8C26 7 32 7.5 36 9C30 13 28 17 32 21L38 23.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 33C6 35 12 38 20 40C26 41 32 40.5 36 39C30 35 28 31 32 27L38 24.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 24L42 24" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round"/>
+              </svg>
+              <span className="rally-wordmark">Rally</span>
+            </div>
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
         <DevTools
@@ -94,7 +101,14 @@ export default function App() {
     <div className="app">
       <div className="screen">
         <nav className="top-nav">
-          <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}><img src="/rally-logo.svg" alt="Rally" height="28" /></div>
+          <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
+              <svg className="rally-icon" width="36" height="24" viewBox="0 0 44 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 15C6 13 12 10 20 8C26 7 32 7.5 36 9C30 13 28 17 32 21L38 23.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 33C6 35 12 38 20 40C26 41 32 40.5 36 39C30 35 28 31 32 27L38 24.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 24L42 24" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round"/>
+              </svg>
+              <span className="rally-wordmark">Rally</span>
+            </div>
           <div className="top-nav-actions">
             <button className="top-nav-icon" aria-label="Notifications">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

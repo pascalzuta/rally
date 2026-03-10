@@ -148,12 +148,19 @@ body {
 .top-nav-logo {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
-.top-nav-logo img {
-  height: 28px;
-  width: auto;
+.rally-icon {
   display: block;
+  flex-shrink: 0;
+}
+
+.rally-wordmark {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.5px;
 }
 
 .top-nav-actions {
