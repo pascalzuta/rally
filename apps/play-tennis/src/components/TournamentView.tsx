@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTournament, getPlayerName, getPlayerRating, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
+import { getTournament, getPlayerName, getPlayerRating, getSeeds, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
 import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -84,14 +84,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     return `Round ${round}`
   }
 
-  // Compute seeds: players sorted by rating at tournament start
-  const seeds = new Map<string, number>()
-  if (tournament.format === 'single-elimination') {
-    const sorted = [...tournament.players].sort((a, b) => {
-      return getPlayerRating(b.name).rating - getPlayerRating(a.name).rating
-    })
-    sorted.forEach((p, i) => seeds.set(p.id, i + 1))
-  }
+  const seeds = getSeeds(tournament)
 
   // Round progress: which round is currently active?
   const roundStatus = (round: number) => {
@@ -243,7 +236,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         {winner && (
           <div className="winner-banner">
             <div className="winner-trophy">🏆</div>
-            <div className="winner-name">{getPlayerName(tournament, winner)}</div>
+            <div className="winner-name">{getPlayerName(tournament, winner)}{seeds.get(winner!) != null && <span className="seed-label"> ({seeds.get(winner!)})</span>}</div>
             <div className="winner-subtitle">Tournament Champion</div>
           </div>
         )}

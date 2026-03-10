@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, winProbability, leaveTournament } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, winProbability, leaveTournament } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
@@ -107,14 +107,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
     return `Round ${round}`
   }
 
-  // Compute seeds: players sorted by rating
-  const seeds = new Map<string, number>()
-  if (tournament.format === 'single-elimination') {
-    const sorted = [...tournament.players].sort((a, b) => {
-      return getPlayerRating(b.name).rating - getPlayerRating(a.name).rating
-    })
-    sorted.forEach((p, i) => seeds.set(p.id, i + 1))
-  }
+  const seeds = getSeeds(tournament)
 
   // Round progress
   const roundStatus = (round: number) => {
@@ -269,7 +262,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
       {winner && (
         <div className="winner-banner">
           <div className="winner-trophy">🏆</div>
-          <div className="winner-name">{getPlayerName(tournament, winner)}</div>
+          <div className="winner-name">{getPlayerName(tournament, winner)}{seeds.get(winner!) != null && <span className="seed-label"> ({seeds.get(winner!)})</span>}</div>
           <div className="winner-subtitle">Tournament Champion</div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getPlayerName } from '../store'
+import { getPlayerName, getPlayerSeed } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 
@@ -39,6 +39,12 @@ function getOpponentId(match: Match, playerId: string): string | null {
   return null
 }
 
+function playerNameWithSeed(tournament: Tournament, playerId: string | null): string {
+  const name = getPlayerName(tournament, playerId)
+  const seed = getPlayerSeed(tournament, playerId)
+  return seed != null ? `${name} (${seed})` : name
+}
+
 function buildActionCards(
   tournaments: Tournament[],
   playerId: string
@@ -52,7 +58,7 @@ function buildActionCards(
       if (!match.player1Id || !match.player2Id) continue
 
       const opponentId = getOpponentId(match, playerId)
-      const opponentName = getPlayerName(tournament, opponentId)
+      const opponentName = playerNameWithSeed(tournament, opponentId)
       const schedule = match.schedule
 
       // Escalated matches
@@ -282,7 +288,7 @@ export default function Home({
           <div>
             <div className="upnext-label">Up Next</div>
             <div className="upnext-opponent">
-              vs {getPlayerName(upNext.tournament, getOpponentId(upNext.match, profile.id))}
+              vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
             </div>
           </div>
           <div className="upnext-time">

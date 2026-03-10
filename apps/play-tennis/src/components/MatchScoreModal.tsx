@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { saveMatchScore, getPlayerName, getPlayerRating, winProbability } from '../store'
+import { saveMatchScore, getPlayerName, getPlayerRating, getSeeds, winProbability } from '../store'
 import { Tournament } from '../types'
 
 interface Props {
@@ -26,6 +26,9 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
   const match = tournament.matches.find(m => m.id === matchId)!
   const p1Name = getPlayerName(tournament, match.player1Id)
   const p2Name = getPlayerName(tournament, match.player2Id)
+  const seeds = getSeeds(tournament)
+  const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
+  const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
 
   const r1 = getPlayerRating(p1Name)
   const r2 = getPlayerRating(p2Name)
@@ -133,7 +136,7 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
             <div key={i} className="score-header">Set {i + 1}</div>
           ))}
 
-          <div className="score-player-name">{p1Name}</div>
+          <div className="score-player-name">{p1Name}{seed1 != null && <span className="seed-label"> ({seed1})</span>}</div>
           {sets.slice(0, visibleSets).map((set, i) => (
             <input
               key={`p1-${i}`}
@@ -147,7 +150,7 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
             />
           ))}
 
-          <div className="score-player-name">{p2Name}</div>
+          <div className="score-player-name">{p2Name}{seed2 != null && <span className="seed-label"> ({seed2})</span>}</div>
           {sets.slice(0, visibleSets).map((set, i) => (
             <input
               key={`p2-${i}`}
@@ -173,7 +176,7 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
 
         {winnerId && (
           <div className="winner-preview">
-            Winner: <strong>{getPlayerName(tournament, winnerId)}</strong>
+            Winner: <strong>{getPlayerName(tournament, winnerId)}{winnerId && seeds.get(winnerId) != null && <span className="seed-label"> ({seeds.get(winnerId)})</span>}</strong>
           </div>
         )}
 

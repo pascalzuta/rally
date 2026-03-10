@@ -859,6 +859,23 @@ export function getPlayerName(tournament: Tournament, playerId: string | null): 
   return tournament.players.find(p => p.id === playerId)?.name ?? 'Unknown'
 }
 
+export function getSeeds(tournament: Tournament): Map<string, number> {
+  const seeds = new Map<string, number>()
+  if (tournament.format === 'single-elimination') {
+    const sorted = [...tournament.players].sort((a, b) => {
+      return getPlayerRating(b.name).rating - getPlayerRating(a.name).rating
+    })
+    sorted.forEach((p, i) => seeds.set(p.id, i + 1))
+  }
+  return seeds
+}
+
+export function getPlayerSeed(tournament: Tournament, playerId: string | null): number | null {
+  if (!playerId) return null
+  const seeds = getSeeds(tournament)
+  return seeds.get(playerId) ?? null
+}
+
 // --- Player Ratings (Global Elo) ---
 
 function normalizePlayerName(name: string): string {
