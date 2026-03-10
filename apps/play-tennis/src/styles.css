@@ -2318,11 +2318,11 @@ select:focus {
   transition: background 0.1s;
 }
 
-.pn-opponent-broadcast {
+.pn-opponent-actionable {
   cursor: pointer;
 }
 
-.pn-opponent-broadcast:active {
+.pn-opponent-actionable:active {
   background: var(--color-neutral-bg);
 }
 

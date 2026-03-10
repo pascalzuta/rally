@@ -158,7 +158,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const [location, setLocation] = useState('')
   const [message, setMessage] = useState('')
   const [feedback, setFeedback] = useState('')
-  const [claimingId, setClaimingId] = useState<string | null>(null)
+  const [askingRow, setAskingRow] = useState<OpponentRow | null>(null)
   const [, setTick] = useState(0)
 
   if (!tournament || tournament.status !== 'in-progress') {
@@ -213,11 +213,11 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     setTick(t => t + 1)
   }
 
-  function handleClaim(broadcast: MatchBroadcast) {
-    const result = claimBroadcast(broadcast.id, currentPlayerId)
+  function handleClaim(broadcastId: string) {
+    const result = claimBroadcast(broadcastId, currentPlayerId)
     if (result) {
       setFeedback('Match confirmed!')
-      setClaimingId(null)
+      setAskingRow(null)
       onMatchConfirmed()
     } else {
       setFeedback('Slot already taken or no match available')
@@ -346,8 +346,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                 {group.entries.map((row, i) => (
                   <div
                     key={`${row.playerId}-${row.date}-${i}`}
-                    className={`pn-opponent-row ${row.type === 'broadcast' ? 'pn-opponent-broadcast' : ''}`}
-                    onClick={() => row.broadcastId ? setClaimingId(row.broadcastId) : null}
+                    className="pn-opponent-row pn-opponent-actionable"
+                    onClick={() => setAskingRow(row)}
                   >
                     <div className="pn-opponent-avatar">
                       {row.playerName[0]?.toUpperCase() ?? '?'}
@@ -364,14 +364,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                       </div>
                       {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
                     </div>
-                    {row.type === 'broadcast' && (
-                      <button
-                        className="btn btn-primary btn-small pn-ask-btn"
-                        onClick={e => { e.stopPropagation(); setClaimingId(row.broadcastId!) }}
-                      >
-                        Ask to Play
-                      </button>
-                    )}
+                    <button
+                      className="btn btn-primary btn-small pn-ask-btn"
+                      onClick={e => { e.stopPropagation(); setAskingRow(row) }}
+                    >
+                      Ask to Play
+                    </button>
                   </div>
                 ))}
               </div>
@@ -381,33 +379,36 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       </div>
 
       {/* === ASK TO PLAY MODAL === */}
-      {claimingId && (() => {
-        const b = availableBroadcasts.find(x => x.id === claimingId)
-        if (!b) return null
-        return (
-          <div className="broadcast-claim-overlay" onClick={() => setClaimingId(null)}>
-            <div className="broadcast-claim-modal" onClick={e => e.stopPropagation()}>
-              <h3 className="broadcast-claim-title">Ask {b.playerName} to play</h3>
-              <div className="broadcast-claim-info">
-                <div className="broadcast-claim-player">
-                  <span className="pn-modal-avatar">{b.playerName[0]?.toUpperCase()}</span>
-                  {b.playerName}
-                  <span className="seed-label">{playerSeedLabel(b.playerId)}</span>
-                </div>
-                <div className="broadcast-claim-detail">
-                  {b.playerName} is available {formatDate(b.date).toLowerCase()} from {formatTimeRange(b.startTime, b.endTime || defaultEndTime(b.startTime))}
-                </div>
-                <div className="broadcast-claim-detail">{b.location}</div>
-                {b.message && <div className="broadcast-claim-message">"{b.message}"</div>}
+      {askingRow && (
+        <div className="broadcast-claim-overlay" onClick={() => setAskingRow(null)}>
+          <div className="broadcast-claim-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="broadcast-claim-title">Ask {askingRow.playerName} to play</h3>
+            <div className="broadcast-claim-info">
+              <div className="broadcast-claim-player">
+                <span className="pn-modal-avatar">{askingRow.playerName[0]?.toUpperCase()}</span>
+                {askingRow.playerName}
+                <span className="seed-label">{playerSeedLabel(askingRow.playerId)}</span>
               </div>
-              <div className="broadcast-claim-actions">
-                <button className="btn" onClick={() => setClaimingId(null)}>Cancel</button>
-                <button className="btn btn-primary" onClick={() => handleClaim(b)}>Ask to Play</button>
+              <div className="broadcast-claim-detail">
+                {askingRow.playerName} is available {askingRow.dateLabel.toLowerCase()} · {askingRow.timeLabel}
               </div>
+              {askingRow.location && <div className="broadcast-claim-detail">{askingRow.location}</div>}
+              {askingRow.message && <div className="broadcast-claim-message">"{askingRow.message}"</div>}
+            </div>
+            <div className="broadcast-claim-actions">
+              <button className="btn" onClick={() => setAskingRow(null)}>Cancel</button>
+              {askingRow.broadcastId ? (
+                <button className="btn btn-primary" onClick={() => handleClaim(askingRow.broadcastId!)}>Ask to Play</button>
+              ) : (
+                <button className="btn btn-primary" onClick={() => {
+                  setAskingRow(null)
+                  setShowForm(true)
+                }}>Broadcast Your Availability</button>
+              )}
             </div>
           </div>
-        )
-      })()}
+        </div>
+      )}
     </div>
   )
 }
