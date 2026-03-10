@@ -1,10 +1,11 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
 const PROFILE_KEY = 'play-tennis-profile'
 const LOBBY_KEY = 'play-tennis-lobby'
 const AVAILABILITY_KEY = 'play-tennis-availability'
+const BROADCAST_KEY = 'play-tennis-broadcasts'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -806,4 +807,170 @@ export function simulateRoundScores(tournamentId: string): Tournament | undefine
   }
 
   return updated
+}
+
+// --- Match Broadcasts ---
+
+function loadBroadcasts(): MatchBroadcast[] {
+  try {
+    const data = localStorage.getItem(BROADCAST_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveBroadcasts(broadcasts: MatchBroadcast[]): void {
+  localStorage.setItem(BROADCAST_KEY, JSON.stringify(broadcasts))
+}
+
+function cleanExpiredBroadcasts(): void {
+  const broadcasts = loadBroadcasts()
+  const now = Date.now()
+  let changed = false
+  for (const b of broadcasts) {
+    if (b.status === 'active' && new Date(b.expiresAt).getTime() <= now) {
+      b.status = 'expired'
+      changed = true
+    }
+  }
+  if (changed) saveBroadcasts(broadcasts)
+}
+
+export function createBroadcast(
+  playerId: string,
+  playerName: string,
+  tournamentId: string,
+  date: string,
+  startTime: string,
+  location: string,
+  message?: string
+): MatchBroadcast | null {
+  cleanExpiredBroadcasts()
+  const broadcasts = loadBroadcasts()
+
+  // One active broadcast per player
+  const existing = broadcasts.find(b => b.playerId === playerId && b.status === 'active')
+  if (existing) return null
+
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString()
+
+  const broadcast: MatchBroadcast = {
+    id: generateId(),
+    playerId,
+    playerName,
+    tournamentId,
+    date,
+    startTime,
+    location,
+    message,
+    status: 'active',
+    createdAt: now.toISOString(),
+    expiresAt,
+  }
+
+  broadcasts.push(broadcast)
+  saveBroadcasts(broadcasts)
+  return broadcast
+}
+
+export function getActiveBroadcasts(tournamentId: string, forPlayerId?: string): MatchBroadcast[] {
+  cleanExpiredBroadcasts()
+  const broadcasts = loadBroadcasts()
+  const tournament = getTournament(tournamentId)
+  if (!tournament) return []
+
+  return broadcasts.filter(b => {
+    if (b.tournamentId !== tournamentId || b.status !== 'active') return false
+    if (!forPlayerId) return true
+    // Don't show own broadcasts
+    if (b.playerId === forPlayerId) return false
+    // Only show if the viewer hasn't already played/scheduled with the broadcaster
+    const hasPlayed = tournament.matches.some(
+      m => m.completed &&
+        ((m.player1Id === b.playerId && m.player2Id === forPlayerId) ||
+         (m.player2Id === b.playerId && m.player1Id === forPlayerId))
+    )
+    if (hasPlayed) return false
+    const hasScheduled = tournament.matches.some(
+      m => !m.completed && m.schedule?.status === 'confirmed' &&
+        ((m.player1Id === b.playerId && m.player2Id === forPlayerId) ||
+         (m.player2Id === b.playerId && m.player1Id === forPlayerId))
+    )
+    return !hasScheduled
+  })
+}
+
+export function getPlayerActiveBroadcast(playerId: string): MatchBroadcast | undefined {
+  cleanExpiredBroadcasts()
+  return loadBroadcasts().find(b => b.playerId === playerId && b.status === 'active')
+}
+
+export function claimBroadcast(
+  broadcastId: string,
+  claimingPlayerId: string
+): { broadcast: MatchBroadcast; tournament: Tournament } | null {
+  cleanExpiredBroadcasts()
+  const broadcasts = loadBroadcasts()
+  const broadcast = broadcasts.find(b => b.id === broadcastId)
+  if (!broadcast || broadcast.status !== 'active') return null
+
+  const tournament = getTournament(broadcast.tournamentId)
+  if (!tournament) return null
+
+  // Find unplayed match between these two players
+  const match = tournament.matches.find(
+    m => !m.completed &&
+      ((m.player1Id === broadcast.playerId && m.player2Id === claimingPlayerId) ||
+       (m.player2Id === broadcast.playerId && m.player1Id === claimingPlayerId))
+  )
+
+  if (!match) return null
+
+  // Claim the broadcast
+  broadcast.status = 'claimed'
+  broadcast.claimedBy = claimingPlayerId
+  broadcast.matchId = match.id
+  saveBroadcasts(broadcasts)
+
+  // Confirm the match schedule
+  const all = load()
+  const t = all.find(x => x.id === broadcast.tournamentId)
+  if (!t) return null
+
+  const m = t.matches.find(x => x.id === match.id)
+  if (m) {
+    // Parse the broadcast date/time into a day of week and hour
+    const broadcastDate = new Date(broadcast.date + 'T' + broadcast.startTime)
+    const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const day = days[broadcastDate.getDay()]
+    const hour = broadcastDate.getHours()
+
+    if (!m.schedule) {
+      m.schedule = {
+        status: 'confirmed',
+        proposals: [],
+        confirmedSlot: { day, startHour: hour, endHour: hour + 1 },
+        createdAt: new Date().toISOString(),
+        escalationDay: 0,
+        lastEscalation: new Date().toISOString(),
+      }
+    } else {
+      m.schedule.status = 'confirmed'
+      m.schedule.confirmedSlot = { day, startHour: hour, endHour: hour + 1 }
+    }
+    save(all)
+  }
+
+  return { broadcast, tournament: t }
+}
+
+export function cancelBroadcast(broadcastId: string, playerId: string): boolean {
+  const broadcasts = loadBroadcasts()
+  const broadcast = broadcasts.find(b => b.id === broadcastId && b.playerId === playerId)
+  if (!broadcast || broadcast.status !== 'active') return false
+  broadcast.status = 'expired'
+  saveBroadcasts(broadcasts)
+  return true
 }

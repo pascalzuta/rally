@@ -80,3 +80,23 @@ export interface Tournament {
   createdAt: string
   countdownStartedAt?: string  // ISO timestamp when 6-player countdown began
 }
+
+// --- Match Broadcast ---
+
+export type BroadcastStatus = 'active' | 'claimed' | 'expired'
+
+export interface MatchBroadcast {
+  id: string
+  playerId: string
+  playerName: string
+  tournamentId: string
+  date: string       // ISO date string e.g. "2026-03-10"
+  startTime: string  // e.g. "18:30"
+  location: string
+  message?: string
+  status: BroadcastStatus
+  createdAt: string
+  expiresAt: string  // ISO timestamp, default 2 hours from creation
+  claimedBy?: string // player ID who claimed
+  matchId?: string   // match ID created from the claim
+}

@@ -1256,3 +1256,140 @@ input:focus {
   flex-direction: column;
   gap: 8px;
 }
+
+/* Match Broadcast */
+.broadcast-section {
+  margin-bottom: 20px;
+}
+
+.broadcast-feedback {
+  background: var(--green);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.broadcast-list {
+  margin-bottom: 16px;
+}
+
+.broadcast-list-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.broadcast-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--green);
+  margin-bottom: 8px;
+}
+
+.broadcast-card-own {
+  border-left-color: #3b82f6;
+  background: #f0f7ff;
+}
+
+.broadcast-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.broadcast-player-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.broadcast-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--green-light);
+  color: var(--green-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.broadcast-badge-own {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.broadcast-card-details {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.broadcast-detail {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.broadcast-message {
+  font-size: 13px;
+  color: var(--gray-500);
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.broadcast-claim-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.broadcast-cancel-btn {
+  width: 100%;
+  margin-top: 4px;
+  color: var(--red);
+  border-color: var(--gray-200);
+}
+
+.broadcast-mine {
+  margin-bottom: 16px;
+}
+
+.broadcast-play-now-btn {
+  margin-bottom: 16px;
+}
+
+.broadcast-form {
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.broadcast-form-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.broadcast-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.broadcast-form-actions .btn {
+  flex: 1;
+}

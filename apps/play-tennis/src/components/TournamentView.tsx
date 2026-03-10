@@ -4,6 +4,7 @@ import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
+import BroadcastPanel from './BroadcastPanel'
 
 interface Props {
   tournamentId: string
@@ -156,6 +157,12 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         )}
 
         {tab === 'matches' && (
+          <>
+          <BroadcastPanel
+            tournament={tournament}
+            currentPlayerId={currentPlayerId}
+            onMatchConfirmed={refresh}
+          />
           <div className="bracket">
             {tournament.format === 'single-elimination' ? (
               rounds.map(round => (
@@ -173,6 +180,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
               </div>
             )}
           </div>
+          </>
         )}
 
         {tab === 'standings' && tournament.format === 'round-robin' && (
