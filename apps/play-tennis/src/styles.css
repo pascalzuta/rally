@@ -1825,3 +1825,167 @@ input:focus {
 .leave-actions .btn {
   flex: 1;
 }
+
+/* ================================================
+   Home Tab
+   ================================================ */
+.home-section { display: flex; flex-direction: column; gap: 16px; }
+
+.home-tournament-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px;
+}
+.home-tournament-header h2 { font-size: 18px; font-weight: 700; }
+
+.home-progress {
+  font-size: 13px; color: var(--gray-500);
+  margin-bottom: 8px;
+}
+
+/* Action Cards */
+.action-cards { display: flex; flex-direction: column; gap: 10px; }
+
+.action-card {
+  background: white; border-radius: var(--radius);
+  padding: 14px 16px; box-shadow: var(--shadow);
+  border-left: 4px solid var(--gray-300);
+  cursor: pointer; transition: transform 0.1s;
+}
+.action-card:active { transform: scale(0.98); }
+
+.action-card.action-score { border-left-color: var(--gold); }
+.action-card.action-respond { border-left-color: #3b82f6; }
+.action-card.action-schedule { border-left-color: var(--gray-400, #9ca3af); }
+.action-card.action-escalated { border-left-color: var(--red); }
+
+.action-card-type {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.action-score .action-card-type { color: var(--gold); }
+.action-respond .action-card-type { color: #3b82f6; }
+.action-schedule .action-card-type { color: var(--gray-500); }
+.action-escalated .action-card-type { color: var(--red); }
+
+.action-card-opponent {
+  font-size: 16px; font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.action-card-detail {
+  font-size: 13px; color: var(--gray-500);
+}
+
+/* Up Next card */
+.upnext-card {
+  background: var(--green-light); border-radius: var(--radius);
+  padding: 12px 16px; display: flex;
+  justify-content: space-between; align-items: center;
+}
+.upnext-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--green-dark); margin-bottom: 2px; }
+.upnext-opponent { font-size: 15px; font-weight: 600; }
+.upnext-time { font-size: 14px; font-weight: 600; color: var(--green-dark); text-align: right; }
+.upnext-day { font-size: 12px; color: var(--gray-500); }
+
+/* Caught up */
+.caught-up {
+  text-align: center; padding: 40px 20px;
+  color: var(--gray-500);
+}
+.caught-up-icon { font-size: 48px; margin-bottom: 12px; }
+.caught-up p { font-size: 15px; }
+
+.home-view-all {
+  text-align: center; margin-top: 8px;
+}
+
+/* ================================================
+   Play Now Tab
+   ================================================ */
+.playnow-tab { display: flex; flex-direction: column; gap: 16px; }
+.playnow-section-title {
+  font-size: 13px; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--gray-500);
+  font-weight: 600; margin-bottom: 8px;
+}
+
+/* ================================================
+   Profile Sections
+   ================================================ */
+.profile-section {
+  background: white; border-radius: var(--radius);
+  padding: 16px; box-shadow: var(--shadow);
+}
+
+.profile-section-title {
+  font-size: 14px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--gray-700); margin-bottom: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.availability-current {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 12px;
+}
+
+.availability-slot-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; background: var(--gray-50);
+  border-radius: 8px; font-size: 14px;
+}
+
+.availability-slot-day { font-weight: 600; }
+.availability-slot-hours { color: var(--gray-500); }
+
+.tournament-history { display: flex; flex-direction: column; gap: 8px; }
+
+.history-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.history-card-info { display: flex; flex-direction: column; gap: 2px; }
+.history-card-name { font-size: 14px; font-weight: 600; }
+.history-card-meta { font-size: 12px; color: var(--gray-500); }
+.history-card-result {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 10px;
+}
+.history-card-result.won { background: var(--green-light); color: var(--green-dark); }
+.history-card-result.lost { background: #fee2e2; color: var(--red); }
+
+/* ================================================
+   Bracket Tab
+   ================================================ */
+.bracket-tab { }
+.bracket-tab-header {
+  margin-bottom: 16px;
+}
+.bracket-tab-header h2 {
+  font-size: 18px; font-weight: 700;
+}
+.bracket-tab-meta {
+  font-size: 13px; color: var(--gray-500); margin-top: 2px;
+}
+.bracket-leave-link {
+  text-align: center; margin-top: 24px; padding: 12px;
+}
+.bracket-leave-link button {
+  background: none; border: none;
+  color: var(--red); font-size: 13px;
+  cursor: pointer; text-decoration: underline;
+  opacity: 0.7;
+}
+.bracket-leave-link button:hover { opacity: 1; }
+
+/* Player roster for setup state */
+.setup-roster {
+  display: flex; flex-direction: column; gap: 16px;
+}
+.setup-roster-title {
+  font-size: 16px; font-weight: 600; text-align: center;
+  color: var(--gray-500);
+}

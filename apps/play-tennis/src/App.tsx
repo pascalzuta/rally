@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, deleteTournament, joinLobby, getSetupTournamentForCounty } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament } from './store'
 import { PlayerProfile, Tournament } from './types'
 import Register from './components/Register'
-import Lobby from './components/Lobby'
+import Home from './components/Home'
+import BracketTab from './components/BracketTab'
+import PlayNowTab from './components/PlayNowTab'
 import Profile from './components/Profile'
-import TournamentView from './components/TournamentView'
 import DevTools from './components/DevTools'
 import './styles.css'
 
-type Tab = 'play' | 'tournaments' | 'profile'
+type Tab = 'home' | 'bracket' | 'playnow' | 'profile'
 
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
@@ -23,26 +24,30 @@ function clearInviteParam() {
 
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
-  const [activeTab, setActiveTab] = useState<Tab>('play')
-  const [viewingTournamentId, setViewingTournamentId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('home')
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
-  const [tournamentRefresh, setTournamentRefresh] = useState(0)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Find the user's active tournament (prefer in-progress, then setup)
+  const activeTournament = tournaments.find(t =>
+    t.status === 'in-progress' && t.players.some(p => p.id === profile?.id)
+  ) ?? tournaments.find(t =>
+    t.status === 'setup' && t.players.some(p => p.id === profile?.id)
+  ) ?? null
 
   // Auto-join lobby when an existing user opens an invite link
   useEffect(() => {
     if (profile && inviteCounty) {
       joinLobby({ ...profile, county: inviteCounty })
       clearInviteParam()
-      setActiveTab('play')
+      setActiveTab('home')
     }
   }, [profile, inviteCounty])
 
   useEffect(() => {
-    if (profile) {
-      refreshTournaments()
-    }
-  }, [profile, activeTab])
+    if (profile) refreshTournaments()
+  }, [profile, activeTab, refreshKey])
 
   function refreshTournaments() {
     if (!profile) return
@@ -68,46 +73,18 @@ export default function App() {
     return (
       <div className="app">
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
-        <DevTools onProfileSwitch={p => setProfile(p)} onTournamentCreated={id => setViewingTournamentId(id)} />
-      </div>
-    )
-  }
-
-  if (viewingTournamentId) {
-    return (
-      <div className="app">
-        <TournamentView
-          tournamentId={viewingTournamentId}
-          currentPlayerId={profile.id}
-          onBack={() => {
-            setViewingTournamentId(null)
-            refreshTournaments()
-          }}
-          key={tournamentRefresh}
-        />
         <DevTools
-          onProfileSwitch={p => { setProfile(p); setActiveTab('play') }}
-          activeTournamentId={viewingTournamentId}
-          onTournamentUpdated={() => setTournamentRefresh(r => r + 1)}
-          onTournamentCreated={id => setViewingTournamentId(id)}
+          onProfileSwitch={p => setProfile(p)}
+          activeTournamentId={null}
+          onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+          onTournamentCreated={id => {
+            refreshTournaments()
+            setActiveTab('bracket')
+          }}
         />
       </div>
     )
   }
-
-  function handleDelete(e: React.MouseEvent, id: string) {
-    e.stopPropagation()
-    if (confirm('Delete this tournament?')) {
-      deleteTournament(id)
-      refreshTournaments()
-    }
-  }
-
-  const statusLabel = (s: Tournament['status']) =>
-    s === 'setup' ? 'Setting up' : s === 'in-progress' ? 'In progress' : 'Completed'
-
-  const statusClass = (s: Tournament['status']) =>
-    s === 'setup' ? 'badge-setup' : s === 'in-progress' ? 'badge-live' : 'badge-done'
 
   return (
     <div className="app">
@@ -117,42 +94,36 @@ export default function App() {
         </header>
 
         <main className="content tab-content">
-          {activeTab === 'play' && (
-            <Lobby
+          {activeTab === 'home' && (
+            <Home
               profile={profile}
-              onTournamentCreated={id => setViewingTournamentId(id)}
+              tournaments={tournaments}
+              onTournamentCreated={id => {
+                refreshTournaments()
+                setActiveTab('bracket')
+              }}
+              onViewTournament={() => setActiveTab('bracket')}
+              onViewMatch={(tournamentId, matchId) => {
+                setActiveTab('bracket')
+              }}
             />
           )}
 
-          {activeTab === 'tournaments' && (
-            <>
-              {tournaments.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">🏆</div>
-                  <p>No tournaments yet</p>
-                  <p className="subtle">Join the lobby to start playing</p>
-                </div>
-              ) : (
-                <div className="card-list">
-                  {tournaments.map(t => (
-                    <div key={t.id} className="card" onClick={() => setViewingTournamentId(t.id)}>
-                      <div className="card-top">
-                        <h3>{t.name}</h3>
-                        <span className={`badge ${statusClass(t.status)}`}>{statusLabel(t.status)}</span>
-                      </div>
-                      <div className="card-meta">
-                        <span>{t.date}</span>
-                        <span>{t.players.length} players</span>
-                        <span>{t.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}</span>
-                      </div>
-                      {t.status === 'completed' && t.players.some(p => p.id === profile!.id) && (
-                        <button className="btn-icon delete-btn" onClick={(e) => handleDelete(e, t.id)}>✕</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+          {activeTab === 'bracket' && (
+            <BracketTab
+              tournament={activeTournament}
+              currentPlayerId={profile.id}
+              onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+            />
+          )}
+
+          {activeTab === 'playnow' && (
+            <PlayNowTab
+              tournament={activeTournament}
+              currentPlayerId={profile.id}
+              currentPlayerName={profile.name}
+              onMatchConfirmed={() => setRefreshKey(r => r + 1)}
+            />
           )}
 
           {activeTab === 'profile' && (
@@ -165,18 +136,25 @@ export default function App() {
 
         <nav className="bottom-tabs">
           <button
-            className={`bottom-tab ${activeTab === 'play' ? 'active' : ''}`}
-            onClick={() => setActiveTab('play')}
+            className={`bottom-tab ${activeTab === 'home' ? 'active' : ''}`}
+            onClick={() => setActiveTab('home')}
           >
-            <span className="tab-icon">🎾</span>
-            <span className="tab-text">Play</span>
+            <span className="tab-icon">🏠</span>
+            <span className="tab-text">Home</span>
           </button>
           <button
-            className={`bottom-tab ${activeTab === 'tournaments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tournaments')}
+            className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bracket')}
           >
             <span className="tab-icon">🏆</span>
-            <span className="tab-text">Tournaments</span>
+            <span className="tab-text">Bracket</span>
+          </button>
+          <button
+            className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`}
+            onClick={() => setActiveTab('playnow')}
+          >
+            <span className="tab-icon">⚡</span>
+            <span className="tab-text">Play Now</span>
           </button>
           <button
             className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`}
@@ -187,7 +165,15 @@ export default function App() {
           </button>
         </nav>
       </div>
-      <DevTools onProfileSwitch={p => { setProfile(p); setActiveTab('play') }} onTournamentCreated={id => setViewingTournamentId(id)} />
+      <DevTools
+        onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}
+        activeTournamentId={activeTournament?.id ?? null}
+        onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+        onTournamentCreated={id => {
+          refreshTournaments()
+          setActiveTab('bracket')
+        }}
+      />
     </div>
   )
 }
