@@ -22,7 +22,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **AvailabilitySlot**: day, startHour, endHour
 
 ### Match Broadcast Types
-- **MatchBroadcast**: id, playerId, playerName, tournamentId, date, startTime, location, message, status (active | claimed | expired), createdAt, expiresAt, claimedBy, matchId
+- **MatchBroadcast**: id, playerId, playerName, tournamentId, date, startTime, endTime, location, message, status (active | claimed | expired), createdAt, expiresAt, claimedBy, matchId
 
 ## Features
 
@@ -65,13 +65,15 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - Global Elo system with dynamic K-factor
 - Rating labels: Newcomer → Beginner → Club → Strong → Elite → Semi-pro → Pro
 
-### Tournament Availability Broadcast
-- Players can broadcast availability ("Play Now") within a tournament
-- Structured format: date, time, location, optional message
-- Broadcasts visible to eligible opponents (unplayed, unscheduled)
+### Tournament Availability Broadcast ("Play Now")
+- Prominent "Play Now" button with lightning icon at top of tournament view
+- Floating action button (FAB) in bottom-right for quick access from anywhere
+- Creation flow: date, time window (from/to), location, optional message
+- **Timeline view**: Broadcasts grouped by day, sorted by time, showing availability windows
+- Claim confirmation modal before committing to a match
 - First-claim-wins: opponent claims → match auto-confirmed
 - One active broadcast per player, auto-expires after 2 hours
-- Appears as "Players Available To Play" section in tournament view
+- Broadcasts visible only to eligible opponents (unplayed, unscheduled)
 
 ## Storage Keys
 - `play-tennis-data` — Tournament data
@@ -89,7 +91,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **MatchSchedulePanel.tsx** — Time negotiation UI
 - **MatchScoreModal.tsx** — Score entry modal
 - **Standings.tsx** — Round-robin standings table
-- **BroadcastPanel.tsx** — Broadcast creation, listing, and claim flow
+- **BroadcastPanel.tsx** — Play Now button, timeline view, creation form, claim confirmation
 - **Profile.tsx** — Player stats and Elo rating
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
 

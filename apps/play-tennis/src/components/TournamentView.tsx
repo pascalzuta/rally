@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { getTournament, getPlayerName, getPlayerRating } from '../store'
+import { useState, useEffect, useRef } from 'react'
+import { getTournament, getPlayerName, getPlayerRating, getPlayerActiveBroadcast } from '../store'
 import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -35,6 +35,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
+  const broadcastRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setTournament(getTournament(tournamentId))
@@ -177,11 +178,13 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
 
         {tab === 'matches' && (
           <>
-          <BroadcastPanel
-            tournament={tournament}
-            currentPlayerId={currentPlayerId}
-            onMatchConfirmed={refresh}
-          />
+          <div ref={broadcastRef}>
+            <BroadcastPanel
+              tournament={tournament}
+              currentPlayerId={currentPlayerId}
+              onMatchConfirmed={refresh}
+            />
+          </div>
           <div className="bracket">
             {tournament.format === 'single-elimination' ? (
               rounds.map(round => (
@@ -214,6 +217,24 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           onClose={() => setScoringMatchId(null)}
           onSaved={handleScoreSaved}
         />
+      )}
+
+      {/* Floating Play Now shortcut */}
+      {tournament.status === 'in-progress' && !getPlayerActiveBroadcast(currentPlayerId) && (
+        <button
+          className="broadcast-fab"
+          onClick={() => {
+            setTab('matches')
+            setTimeout(() => {
+              broadcastRef.current?.scrollIntoView({ behavior: 'smooth' })
+              // Trigger the Play Now form by clicking the button inside BroadcastPanel
+              const btn = broadcastRef.current?.querySelector('.broadcast-play-now-btn') as HTMLElement
+              btn?.click()
+            }, 100)
+          }}
+        >
+          <span>&#9889;</span> Play
+        </button>
       )}
     </div>
   )

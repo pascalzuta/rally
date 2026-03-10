@@ -1305,6 +1305,8 @@ input:focus {
 }
 
 /* Match Broadcast */
+/* --- Broadcast / Play Now --- */
+
 .broadcast-section {
   margin-bottom: 20px;
 }
@@ -1319,19 +1321,72 @@ input:focus {
   margin-bottom: 12px;
 }
 
-.broadcast-list {
+/* Play Now button */
+.broadcast-play-now-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
   margin-bottom: 16px;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
-.broadcast-list-title {
-  font-size: 13px;
-  text-transform: uppercase;
+.broadcast-play-now-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(34, 197, 94, 0.3);
+}
+
+.play-now-icon {
+  font-size: 20px;
+}
+
+.play-now-text {
+  font-size: 16px;
+  font-weight: 700;
   letter-spacing: 0.5px;
-  color: var(--gray-500);
-  font-weight: 600;
-  margin-bottom: 8px;
+  text-transform: uppercase;
 }
 
+.play-now-sub {
+  font-size: 12px;
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+/* Floating action button */
+.broadcast-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+  z-index: 100;
+  transition: transform 0.1s;
+}
+
+.broadcast-fab:active {
+  transform: scale(0.95);
+}
+
+/* My broadcast card */
 .broadcast-card {
   background: white;
   border-radius: var(--radius);
@@ -1389,18 +1444,6 @@ input:focus {
   gap: 4px;
 }
 
-.broadcast-message {
-  font-size: 13px;
-  color: var(--gray-500);
-  font-style: italic;
-  margin-bottom: 8px;
-}
-
-.broadcast-claim-btn {
-  width: 100%;
-  margin-top: 4px;
-}
-
 .broadcast-cancel-btn {
   width: 100%;
   margin-top: 4px;
@@ -1412,10 +1455,7 @@ input:focus {
   margin-bottom: 16px;
 }
 
-.broadcast-play-now-btn {
-  margin-bottom: 16px;
-}
-
+/* Broadcast creation form */
 .broadcast-form {
   background: white;
   border-radius: var(--radius);
@@ -1432,11 +1472,168 @@ input:focus {
   font-weight: 600;
 }
 
+.broadcast-time-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-half {
+  flex: 1;
+}
+
 .broadcast-form-actions {
   display: flex;
   gap: 10px;
 }
 
 .broadcast-form-actions .btn {
+  flex: 1;
+}
+
+/* Timeline view */
+.broadcast-timeline {
+  margin-bottom: 20px;
+}
+
+.broadcast-timeline-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.broadcast-timeline-group {
+  margin-bottom: 16px;
+}
+
+.broadcast-timeline-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 8px;
+}
+
+.broadcast-timeline-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.broadcast-timeline-entry {
+  background: white;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  border-left: 3px solid var(--green);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  transition: background 0.1s;
+}
+
+.broadcast-timeline-entry:active {
+  background: #f0fdf4;
+}
+
+.broadcast-timeline-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-dark);
+  min-width: 130px;
+}
+
+.broadcast-timeline-player {
+  flex: 1;
+  min-width: 0;
+}
+
+.broadcast-timeline-name {
+  font-size: 14px;
+  font-weight: 600;
+  display: block;
+}
+
+.broadcast-timeline-location {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.broadcast-timeline-message {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-style: italic;
+  width: 100%;
+  padding-left: 142px;
+  margin-top: -4px;
+}
+
+.broadcast-timeline-claim {
+  flex-shrink: 0;
+}
+
+/* Claim confirmation overlay */
+.broadcast-claim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.broadcast-claim-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.broadcast-claim-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.broadcast-claim-info {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.broadcast-claim-player {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.broadcast-claim-detail {
+  font-size: 14px;
+  color: var(--gray-700);
+  margin-bottom: 2px;
+}
+
+.broadcast-claim-message {
+  font-size: 13px;
+  color: var(--gray-500);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.broadcast-claim-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.broadcast-claim-actions .btn {
   flex: 1;
 }

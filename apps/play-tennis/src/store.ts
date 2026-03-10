@@ -972,6 +972,7 @@ export function createBroadcast(
   tournamentId: string,
   date: string,
   startTime: string,
+  endTime: string,
   location: string,
   message?: string
 ): MatchBroadcast | null {
@@ -992,6 +993,7 @@ export function createBroadcast(
     tournamentId,
     date,
     startTime,
+    endTime,
     location,
     message,
     status: 'active',

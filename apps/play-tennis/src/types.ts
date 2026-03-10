@@ -105,6 +105,7 @@ export interface MatchBroadcast {
   tournamentId: string
   date: string       // ISO date string e.g. "2026-03-10"
   startTime: string  // e.g. "18:30"
+  endTime: string    // e.g. "20:30"
   location: string
   message?: string
   status: BroadcastStatus
