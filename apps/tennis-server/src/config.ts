@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 const configSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim() : v),
+    z.enum(["development", "test", "production"]).default("development")
+  ),
   PORT: z.coerce.number().int().positive().default(8788),
   AUTH_TOKEN_SECRET: z.string().min(32),
   CORS_ORIGIN: z.string().default("http://localhost:5174"),
