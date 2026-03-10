@@ -78,10 +78,12 @@ export function leaveLobby(playerId: string): void {
 
 export function startTournamentFromLobby(county: string): Tournament | null {
   const lobby = loadLobby()
-  const countyPlayers = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
-  if (countyPlayers.length < 4) return null
+  const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
+  if (allCounty.length < 4) return null
 
-  const format: Tournament['format'] = countyPlayers.length <= 6 ? 'round-robin' : 'single-elimination'
+  // Take exactly 4 players per tournament
+  const countyPlayers = allCounty.slice(0, 4)
+  const format: Tournament['format'] = 'single-elimination'
   const tournament: Tournament = {
     id: generateId(),
     name: `${county} Open`,
@@ -98,8 +100,9 @@ export function startTournamentFromLobby(county: string): Tournament | null {
   all.unshift(tournament)
   save(all)
 
-  // Remove these players from lobby
-  const remainingLobby = lobby.filter(e => e.county.toLowerCase() !== county.toLowerCase())
+  // Remove only the 4 players who entered the tournament from lobby
+  const takenIds = new Set(countyPlayers.map(e => e.playerId))
+  const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
   saveLobby(remainingLobby)
 
   // Generate bracket immediately
