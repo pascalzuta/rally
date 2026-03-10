@@ -181,8 +181,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
             {/* Scoreboard layout: names on left, set scores on right */}
             <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
               <span className="match-player-name">
-                {seed1 && <span className="seed-badge">{seed1}</span>}
-                {p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}
+                {p1}{seed1 && <span className="seed-label"> [{seed1}]</span>}
               </span>
               {scored && (
                 <span className="match-sets">
@@ -195,8 +194,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
             </div>
             <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
               <span className="match-player-name">
-                {seed2 && <span className="seed-badge">{seed2}</span>}
-                {p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}
+                {p2}{seed2 && <span className="seed-label"> [{seed2}]</span>}
               </span>
               {scored && (
                 <span className="match-sets">
@@ -272,7 +270,6 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
           <div className="winner-trophy">🏆</div>
           <div className="winner-name">{getPlayerName(tournament, winner)}</div>
           <div className="winner-subtitle">Tournament Champion</div>
-          <div className="winner-elo">{Math.round(getPlayerRating(getPlayerName(tournament, winner)).rating)} Elo</div>
         </div>
       )}
 

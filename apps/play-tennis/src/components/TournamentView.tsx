@@ -165,18 +165,16 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         ) : (
           <>
             <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-              <span>
-                {seed1 && <span className="seed-badge">{seed1}</span>}
-                {p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}
+              <span className="match-player-name">
+                {p1}{seed1 && <span className="seed-label"> [{seed1}]</span>}
               </span>
               {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
             </div>
             <div className="match-vs">vs</div>
             <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-              <span>
-                {seed2 && <span className="seed-badge">{seed2}</span>}
-                {p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}
+              <span className="match-player-name">
+                {p2}{seed2 && <span className="seed-label"> [{seed2}]</span>}
               </span>
               {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
@@ -247,7 +245,6 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
             <div className="winner-trophy">🏆</div>
             <div className="winner-name">{getPlayerName(tournament, winner)}</div>
             <div className="winner-subtitle">Tournament Champion</div>
-            <div className="winner-elo">{Math.round(getPlayerRating(getPlayerName(tournament, winner)).rating)} Elo</div>
           </div>
         )}
 

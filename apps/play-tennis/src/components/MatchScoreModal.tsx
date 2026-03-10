@@ -118,14 +118,13 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h2>Enter Score</h2>
 
-        <div className="win-probability">
-          <div className="prob-bar">
-            <div className="prob-fill" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+        <div className="prob-split">
+          <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
+          <div className="prob-split-bar">
+            <div className="prob-split-fill-left" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+            <div className="prob-split-fill-right" style={{ width: `${Math.round((1 - p1WinProb) * 100)}%` }} />
           </div>
-          <div className="prob-labels">
-            <span>{p1Name} {Math.round(p1WinProb * 100)}%</span>
-            <span>{Math.round((1 - p1WinProb) * 100)}% {p2Name}</span>
-          </div>
+          <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
         </div>
 
         <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>

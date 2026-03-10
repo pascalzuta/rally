@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getPlayerRating, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired } from '../store'
+import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired } from '../store'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
 interface Props {
@@ -237,19 +237,15 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
         <div className="card formation-players">
           <h3 className="formation-players-title">Players Joining</h3>
           <ul className="player-list">
-            {allPlayers.map((p, i) => {
-              const r = getPlayerRating(p.name)
-              return (
+            {allPlayers.map((p, i) => (
                 <li key={p.id} className={p.isYou ? 'is-you' : ''}>
                   <span className="player-number">{i + 1}</span>
                   <span className="player-name">
                     {p.name}
                     {p.isYou && <span className="you-badge">You</span>}
                   </span>
-                  <span className="player-rating">{Math.round(r.rating)}</span>
                 </li>
-              )
-            })}
+            ))}
           </ul>
         </div>
       )}

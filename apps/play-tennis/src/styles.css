@@ -888,28 +888,11 @@ select:focus {
   font-style: italic;
 }
 
-.inline-rating {
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
+/* Seed label in tennis bracket style: "Player [1]" */
+.seed-label {
   color: var(--color-text-secondary);
-  margin-left: var(--space-xs);
-}
-
-/* Seed badges */
-.seed-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-accent-primary);
-  color: white;
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  margin-right: var(--space-xs);
-  flex-shrink: 0;
-  vertical-align: middle;
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
 }
 
 /* Win probability split bar */
@@ -994,16 +977,6 @@ select:focus {
   margin-bottom: var(--space-xs);
 }
 
-.winner-elo {
-  display: inline-block;
-  font-size: var(--font-body-md);
-  font-weight: var(--weight-semibold);
-  color: var(--color-positive-primary);
-  background: rgba(31, 157, 85, 0.1);
-  padding: 2px var(--space-sm);
-  border-radius: var(--radius-chip);
-  font-variant-numeric: tabular-nums;
-}
 
 /* ================================================
    Modal
