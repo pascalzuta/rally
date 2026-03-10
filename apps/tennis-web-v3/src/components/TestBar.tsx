@@ -5,6 +5,7 @@ interface Props {
   onStep: (step: 1 | 2 | 3 | 4 | 5 | 6) => Promise<string>;
   isLoggedIn: boolean;
   onReset: () => void;
+  error?: string | null;
 }
 
 const TEST_ACCOUNTS = [
@@ -27,10 +28,11 @@ const STEPS = [
 
 type StepState = "locked" | "ready" | "running" | "done" | "error";
 
-export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props) {
+export default function TestBar({ onLogin, onStep, isLoggedIn, onReset, error }: Props) {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [runningStep, setRunningStep] = useState<number | null>(null);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const getStepState = (stepNum: number, needsLogin: boolean): StepState => {
     if (runningStep === stepNum) return "running";
@@ -67,11 +69,16 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
   }, [onReset]);
 
   const handleLogin = useCallback(
-    (email: string) => {
-      onLogin(email);
+    async (email: string) => {
+      setLoggingIn(true);
+      setLastMessage(null);
+      await onLogin(email);
+      setLoggingIn(false);
     },
     [onLogin],
   );
+
+  const displayMessage = error || lastMessage;
 
   return (
     <div className="test-bar">
@@ -80,6 +87,7 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
         <button
           key={account.email}
           className="test-bar-btn"
+          disabled={loggingIn}
           onClick={() => handleLogin(account.email)}
         >
           {account.name}
@@ -117,8 +125,10 @@ export default function TestBar({ onLogin, onStep, isLoggedIn, onReset }: Props)
       </button>
 
       {/* Status message */}
-      {lastMessage && (
-        <span className="test-bar-msg">{lastMessage}</span>
+      {displayMessage && (
+        <span className={`test-bar-msg${error ? " test-bar-msg--error" : ""}`}>
+          {loggingIn ? "Logging in..." : displayMessage}
+        </span>
       )}
     </div>
   );

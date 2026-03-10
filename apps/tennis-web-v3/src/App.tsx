@@ -572,12 +572,16 @@ function DevTestBar({
   login: (email: string) => Promise<void>;
   reloadAll: () => Promise<void>;
 }) {
+  const [loginError, setLoginError] = useState<string | null>(null);
+
   const handleTestLogin = useCallback(
     async (email: string) => {
+      setLoginError(null);
       try {
         await login(email);
-      } catch {
-        /* test login failure ok */
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Login failed";
+        setLoginError(msg);
       }
     },
     [login],
@@ -630,6 +634,7 @@ function DevTestBar({
       onStep={handleTestStep}
       isLoggedIn={!!player}
       onReset={() => { if (token) reloadAll(); }}
+      error={loginError}
     />
   );
 }
