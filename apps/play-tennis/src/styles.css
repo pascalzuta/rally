@@ -56,6 +56,13 @@ body {
   font-weight: 700;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .btn-back {
   background: none;
   border: none;
@@ -68,9 +75,6 @@ body {
 }
 
 .btn-leave {
-  position: absolute;
-  right: 20px;
-  top: 16px;
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.5);
   color: white;
@@ -80,6 +84,7 @@ body {
   border-radius: 14px;
   cursor: pointer;
   opacity: 0.85;
+  flex-shrink: 0;
 }
 
 .btn-leave:active {

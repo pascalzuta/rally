@@ -166,10 +166,12 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     <div className="screen">
       <header className="header">
         <button className="btn-back" onClick={onBack}>← Back</button>
-        <h1>{tournament.name}</h1>
-        {tournament.players.some(p => p.id === currentPlayerId) && tournament.status !== 'completed' && (
-          <button className="btn-leave" onClick={() => setShowLeaveConfirm(true)}>Leave</button>
-        )}
+        <div className="header-row">
+          <h1>{tournament.name}</h1>
+          {tournament.players.some(p => p.id === currentPlayerId) && tournament.status !== 'completed' && (
+            <button className="btn-leave" onClick={() => setShowLeaveConfirm(true)}>Leave</button>
+          )}
+        </div>
       </header>
 
       <main className="content">
