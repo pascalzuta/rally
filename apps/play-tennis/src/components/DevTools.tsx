@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { seedLobby, getProfile, getTestProfiles, switchProfile } from '../store'
+import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores } from '../store'
 import { PlayerProfile } from '../types'
 
 interface Props {
   onProfileSwitch: (profile: PlayerProfile) => void
+  activeTournamentId?: string | null
+  onTournamentUpdated?: () => void
 }
 
-export default function DevTools({ onProfileSwitch }: Props) {
+export default function DevTools({ onProfileSwitch, activeTournamentId, onTournamentUpdated }: Props) {
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -28,6 +30,24 @@ export default function DevTools({ onProfileSwitch }: Props) {
     switchProfile(tp)
     onProfileSwitch(tp)
     setMessage(`Switched to ${tp.name}`)
+    setTimeout(() => setMessage(''), 2000)
+  }
+
+  function handleSimulate() {
+    if (!activeTournamentId) {
+      setMessage('No active tournament')
+      return
+    }
+    const result = simulateRoundScores(activeTournamentId)
+    if (!result) {
+      setMessage('Could not simulate scores')
+    } else if (result.status === 'completed') {
+      setMessage('Tournament complete!')
+    } else {
+      const incomplete = result.matches.filter(m => !m.completed && m.player1Id && m.player2Id)
+      setMessage(incomplete.length > 0 ? `Round scored! ${incomplete.length} matches remaining` : 'All matches scored!')
+    }
+    onTournamentUpdated?.()
     setTimeout(() => setMessage(''), 2000)
   }
 
@@ -56,6 +76,15 @@ export default function DevTools({ onProfileSwitch }: Props) {
           <button className="btn dev-btn" onClick={() => handleSeed(5)}>+5</button>
         </div>
       </div>
+
+      {activeTournamentId && (
+        <div className="dev-section">
+          <div className="dev-label">Simulate Scores</div>
+          <div className="dev-buttons">
+            <button className="btn dev-btn" onClick={handleSimulate}>Score Round</button>
+          </div>
+        </div>
+      )}
 
       {profile && (
         <div className="dev-section">

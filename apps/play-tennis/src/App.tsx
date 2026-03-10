@@ -27,6 +27,7 @@ export default function App() {
   const [viewingTournamentId, setViewingTournamentId] = useState<string | null>(null)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
+  const [tournamentRefresh, setTournamentRefresh] = useState(0)
 
   // Auto-join lobby when an existing user opens an invite link
   useEffect(() => {
@@ -82,6 +83,12 @@ export default function App() {
             setViewingTournamentId(null)
             refreshTournaments()
           }}
+          key={tournamentRefresh}
+        />
+        <DevTools
+          onProfileSwitch={p => { setProfile(p); setActiveTab('play') }}
+          activeTournamentId={viewingTournamentId}
+          onTournamentUpdated={() => setTournamentRefresh(r => r + 1)}
         />
       </div>
     )

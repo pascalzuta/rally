@@ -441,3 +441,39 @@ export function getTestProfiles(county: string): PlayerProfile[] {
 export function switchProfile(profile: PlayerProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
 }
+
+// Simulate random scores for the current round of a tournament
+export function simulateRoundScores(tournamentId: string): Tournament | undefined {
+  const t = getTournament(tournamentId)
+  if (!t || t.status !== 'in-progress') return undefined
+
+  // Find the earliest incomplete round with scoreable matches
+  const incompleteMatches = t.matches.filter(
+    m => !m.completed && m.player1Id && m.player2Id
+  )
+  if (incompleteMatches.length === 0) return t
+
+  const minRound = Math.min(...incompleteMatches.map(m => m.round))
+  const roundMatches = incompleteMatches.filter(m => m.round === minRound)
+
+  const SCORES = [
+    { s1: [6, 6], s2: [3, 4], w: 1 },
+    { s1: [6, 6], s2: [2, 1], w: 1 },
+    { s1: [6, 6], s2: [4, 3], w: 1 },
+    { s1: [7, 6], s2: [5, 4], w: 1 },
+    { s1: [3, 4], s2: [6, 6], w: 2 },
+    { s1: [2, 6, 4], s2: [6, 3, 6], w: 2 },
+    { s1: [6, 4, 6], s2: [3, 6, 2], w: 1 },
+    { s1: [4, 2], s2: [6, 6], w: 2 },
+  ]
+
+  let updated = t
+  for (const match of roundMatches) {
+    const pick = SCORES[Math.floor(Math.random() * SCORES.length)]
+    const winnerId = pick.w === 1 ? match.player1Id! : match.player2Id!
+    const result = saveMatchScore(tournamentId, match.id, pick.s1, pick.s2, winnerId)
+    if (result) updated = result
+  }
+
+  return updated
+}
