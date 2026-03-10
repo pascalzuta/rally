@@ -34,6 +34,28 @@ Live URL: https://pascalzuta.github.io/rally/
 - localStorage for persistence (no backend)
 - GitHub Pages for hosting (deployed via GitHub Actions)
 
+## Brand Assets
+
+All brand assets live in `apps/play-tennis/brand/` and are the canonical source. Do not modify proportions, stretch, rotate, or recolor.
+
+```
+apps/play-tennis/brand/
+├── rally-logo.svg          # Full wordmark (logomark + "Rally" text) — canonical source
+├── rally-logo-mark.svg     # Extracted swoosh logomark only
+├── rally-logo-white.svg    # White version for dark backgrounds
+├── favicon.svg             # Logomark as SVG favicon
+├── favicon.ico             # 16x16 + 32x32 ICO favicon
+├── apple-touch-icon.png    # 180x180 iOS home screen icon
+├── app-icon-1024.png       # 1024x1024 app store icon
+└── generate-assets.mjs     # Script to regenerate raster assets from SVG source
+```
+
+**UI usage rules:**
+- Navigation bars: full logo (logomark + wordmark), rendered inline as SVG
+- Small contexts (favicon, loading spinners, icons): logomark only
+- Maintain clear spacing around the logo equal to at least the height of the "R"
+- Logomark should be slightly smaller than wordmark height when inline with text
+
 ## Project Structure
 
 ```
@@ -42,6 +64,7 @@ apps/play-tennis/
 ├── vite.config.ts          # Base path: /rally/
 ├── tsconfig.json
 ├── package.json
+├── brand/                  # Brand asset pack (see above)
 └── src/
     ├── main.tsx            # React DOM entry point
     ├── App.tsx             # Auth flow + tab navigation (Play/Tournaments/Profile)
@@ -154,3 +177,4 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | Product hardening: participant-only scoring, delete guards, best-of-3, tennis score validation |
 | 2026-03-10 | SMS invite flow: share link to invite friends to county lobby |
 | 2026-03-10 | Match scheduling system: availability collection, overlap engine, accept/propose flow |
+| 2026-03-10 | Brand asset pack: full logo, logomark, white variant, favicon, app icons; navbar uses official SVG |
