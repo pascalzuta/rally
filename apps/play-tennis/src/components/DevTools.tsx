@@ -71,7 +71,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     if (!t) { setMessage('No tournament found'); return }
 
     const unconfirmed = t.matches.filter(
-      m => m.schedule && m.schedule.status !== 'confirmed' && !m.completed
+      m => m.schedule && m.schedule.status !== 'confirmed' && m.schedule.status !== 'resolved' && !m.completed
     )
     if (unconfirmed.length === 0) {
       setMessage('No matches to escalate')
@@ -81,16 +81,22 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
 
     let escalated = 0
     let confirmed = 0
+    let resolved = 0
     for (const match of unconfirmed) {
       const result = escalateMatch(activeTournamentId, match.id)
       if (result) {
         const updated = result.matches.find(m => m.id === match.id)
         if (updated?.schedule?.status === 'confirmed') confirmed++
+        else if (updated?.schedule?.status === 'resolved') resolved++
         else if (updated?.schedule?.status === 'escalated') escalated++
         else escalated++
       }
     }
-    setMessage(`Escalated: ${escalated} confirmed, ${confirmed} auto-resolved`)
+    const parts = []
+    if (confirmed) parts.push(`${confirmed} confirmed`)
+    if (escalated) parts.push(`${escalated} escalated`)
+    if (resolved) parts.push(`${resolved} resolved`)
+    setMessage(parts.join(', ') || 'Escalation processed')
     onTournamentUpdated?.()
     setTimeout(() => setMessage(''), 2000)
   }

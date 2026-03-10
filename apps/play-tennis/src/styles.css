@@ -1030,6 +1030,53 @@ input:focus {
   border-left-color: var(--gray-300);
 }
 
+.match-card.sched-resolved {
+  border-left-color: var(--gray-500);
+}
+
+.match-card.sched-walkover {
+  border-left-color: #f59e0b;
+}
+
+.match-card.sched-forced {
+  border-left-color: #8b5cf6;
+}
+
+.match-card.sched-double-loss {
+  border-left-color: var(--gray-500);
+  opacity: 0.7;
+}
+
+.resolution-indicator {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 0 2px;
+}
+
+.resolution-indicator.resolution-walkover {
+  color: #f59e0b;
+}
+
+.resolution-indicator.resolution-forced-match {
+  color: #8b5cf6;
+}
+
+.resolution-indicator.resolution-double-loss {
+  color: var(--gray-500);
+}
+
+.resolution-detail {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin: 6px 0;
+  line-height: 1.4;
+}
+
+.badge-walkover { background: #fef3c7; color: #92400e; }
+.badge-forced { background: #ede9fe; color: #6d28d9; }
+.badge-double-loss { background: var(--gray-100); color: var(--gray-500); }
+
 .schedule-indicator {
   text-align: center;
   font-size: 12px;

@@ -13,11 +13,19 @@ interface Props {
 }
 
 function scheduleStatusClass(match: Match): string {
+  if (match.resolution) {
+    switch (match.resolution.type) {
+      case 'walkover': return 'sched-walkover'
+      case 'forced-match': return 'sched-forced'
+      case 'double-loss': return 'sched-double-loss'
+    }
+  }
   if (!match.schedule || match.completed) return ''
   switch (match.schedule.status) {
     case 'confirmed': return 'sched-confirmed'
     case 'proposed': return 'sched-proposed'
     case 'escalated': return 'sched-escalated'
+    case 'resolved': return 'sched-resolved'
     default: return 'sched-unscheduled'
   }
 }
@@ -100,16 +108,27 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           <>
             <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
               <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
-              {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
+              {match.completed && match.score1.length > 0 && <span className="match-score">{match.score1.join(' ')}</span>}
+              {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
             </div>
             <div className="match-vs">vs</div>
             <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
               <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
-              {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
+              {match.completed && match.score2.length > 0 && <span className="match-score">{match.score2.join(' ')}</span>}
+              {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
             </div>
 
+            {/* Resolution indicator */}
+            {match.resolution && (
+              <div className={`resolution-indicator resolution-${match.resolution.type}`}>
+                {match.resolution.type === 'walkover' ? '⊘ Walkover' :
+                 match.resolution.type === 'forced-match' ? '⚑ Final Match Assigned' :
+                 '✕ Match Canceled'}
+              </div>
+            )}
+
             {/* Inline scheduling status indicator — only actionable text on your matches */}
-            {!match.completed && hasSchedule && (
+            {!match.completed && !match.resolution && hasSchedule && (
               <div className={`schedule-indicator ${match.schedule!.status}`}>
                 {match.schedule!.status === 'confirmed' ? '✓ Scheduled' :
                  match.schedule!.status === 'escalated' ? '⚠ Escalated' :

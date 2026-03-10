@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
@@ -319,6 +319,10 @@ export function acceptProposal(
     endHour: proposal.endHour,
   }
 
+  // Track participation: +4 for accepting
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[acceptedBy] = (match.schedule.participationScores[acceptedBy] ?? 0) + 4
+
   save(all)
   return t
 }
@@ -351,6 +355,10 @@ export function proposeNewSlots(
     match.schedule.status = 'proposed'
   }
 
+  // Track participation: +3 for proposing
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[proposedBy] = (match.schedule.participationScores[proposedBy] ?? 0) + 3
+
   save(all)
   return t
 }
@@ -364,13 +372,13 @@ export function escalateMatch(
   if (!t) return undefined
 
   const match = t.matches.find(m => m.id === matchId)
-  if (!match?.schedule || match.schedule.status === 'confirmed') return undefined
+  if (!match?.schedule || match.schedule.status === 'confirmed' || match.schedule.status === 'resolved') return undefined
 
   match.schedule.escalationDay += 1
   match.schedule.lastEscalation = new Date().toISOString()
 
   // Day 3: system assigns provisional slot from best available
-  if (match.schedule.escalationDay >= 3 && match.schedule.status !== 'escalated') {
+  if (match.schedule.escalationDay === 3 && match.schedule.status !== 'escalated') {
     const pending = match.schedule.proposals.filter(p => p.status === 'pending')
     if (pending.length > 0) {
       const best = pending[0]
@@ -384,8 +392,129 @@ export function escalateMatch(
     }
   }
 
+  // Day 4+: trigger resolution based on participation scores
+  if (match.schedule.escalationDay >= 4 && match.schedule.status === 'escalated') {
+    resolveMatchByParticipation(t, match)
+  }
+
   save(all)
   return t
+}
+
+const PARTICIPATION_THRESHOLD = 3
+
+export function getParticipationScore(schedule: MatchSchedule, playerId: string): number {
+  return schedule.participationScores?.[playerId] ?? 0
+}
+
+export function getParticipationLabel(score: number): string {
+  if (score >= 6) return 'Very Active'
+  if (score >= PARTICIPATION_THRESHOLD) return 'Participated'
+  if (score >= 1) return 'Minimal'
+  return 'Inactive'
+}
+
+function resolveMatchByParticipation(tournament: Tournament, match: Match): void {
+  if (!match.schedule || !match.player1Id || !match.player2Id) return
+
+  const scores = match.schedule.participationScores ?? {}
+  const score1 = scores[match.player1Id] ?? 0
+  const score2 = scores[match.player2Id] ?? 0
+
+  const p1Above = score1 >= PARTICIPATION_THRESHOLD
+  const p2Above = score2 >= PARTICIPATION_THRESHOLD
+
+  let resolution: MatchResolution
+
+  if (p1Above && !p2Above) {
+    // Case 1: Player 1 wins walkover
+    resolution = {
+      type: 'walkover',
+      winnerId: match.player1Id,
+      reason: 'Opponent did not participate in scheduling',
+      resolvedAt: new Date().toISOString(),
+    }
+    match.winnerId = match.player1Id
+    match.completed = true
+    match.score1 = []
+    match.score2 = []
+
+    // Update Elo
+    const p1 = tournament.players.find(p => p.id === match.player1Id)
+    const p2 = tournament.players.find(p => p.id === match.player2Id)
+    if (p1 && p2) updateRatings(p1.name, p2.name, p1.name)
+
+    // Advance in single-elimination
+    if (tournament.format === 'single-elimination') {
+      advanceWinner(tournament, match, match.player1Id)
+    }
+  } else if (!p1Above && p2Above) {
+    // Case 2: Player 2 wins walkover
+    resolution = {
+      type: 'walkover',
+      winnerId: match.player2Id,
+      reason: 'Opponent did not participate in scheduling',
+      resolvedAt: new Date().toISOString(),
+    }
+    match.winnerId = match.player2Id
+    match.completed = true
+    match.score1 = []
+    match.score2 = []
+
+    const p1 = tournament.players.find(p => p.id === match.player1Id)
+    const p2 = tournament.players.find(p => p.id === match.player2Id)
+    if (p1 && p2) updateRatings(p1.name, p2.name, p2.name)
+
+    if (tournament.format === 'single-elimination') {
+      advanceWinner(tournament, match, match.player2Id)
+    }
+  } else if (p1Above && p2Above) {
+    // Case 3: Both participated — forced match assignment
+    resolution = {
+      type: 'forced-match',
+      winnerId: null,
+      reason: 'Both players participated but could not agree on a time',
+      resolvedAt: new Date().toISOString(),
+      forcedSlot: { day: 'sunday', startHour: 10, endHour: 11 },
+    }
+    match.schedule.status = 'confirmed'
+    match.schedule.confirmedSlot = { day: 'sunday', startHour: 10, endHour: 11 }
+  } else {
+    // Case 4: Neither participated — double loss
+    resolution = {
+      type: 'double-loss',
+      winnerId: null,
+      reason: 'Neither player participated in scheduling',
+      resolvedAt: new Date().toISOString(),
+    }
+    match.completed = true
+    match.score1 = []
+    match.score2 = []
+  }
+
+  match.schedule.resolution = resolution
+  match.resolution = resolution
+  match.schedule.status = 'resolved'
+
+  // Check if tournament is complete
+  const allDone = tournament.matches.every(m => m.completed)
+  if (allDone) tournament.status = 'completed'
+}
+
+function advanceWinner(tournament: Tournament, match: Match, winnerId: string): void {
+  if (tournament.format !== 'single-elimination') return
+  const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1)
+  const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+  if (nextMatch) {
+    if (match.position % 2 === 0) {
+      nextMatch.player1Id = winnerId
+    } else {
+      nextMatch.player2Id = winnerId
+    }
+    if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+      nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+    }
+  }
 }
 
 // --- Tournaments ---

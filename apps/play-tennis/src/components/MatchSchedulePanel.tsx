@@ -75,6 +75,45 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     )
   }
 
+  // Resolved state
+  if (schedule.status === 'resolved' && schedule.resolution) {
+    const r = schedule.resolution
+    if (r.type === 'walkover') {
+      const winnerName = tournament.players.find(p => p.id === r.winnerId)?.name ?? 'Unknown'
+      const isWinner = r.winnerId === currentPlayerId
+      return (
+        <div className="schedule-panel">
+          <div className="schedule-status-badge badge-walkover">Match Awarded</div>
+          <div className="resolution-detail">
+            {isWinner
+              ? 'Your opponent did not participate in scheduling. You have been awarded the match.'
+              : `${winnerName} was awarded the match. Opponent did not participate in scheduling.`}
+          </div>
+        </div>
+      )
+    }
+    if (r.type === 'forced-match' && r.forcedSlot) {
+      return (
+        <div className="schedule-panel">
+          <div className="schedule-status-badge badge-forced">Final Match Assigned</div>
+          <div className="resolution-detail">Both players participated but could not agree on a time.</div>
+          <div className="confirmed-slot">
+            <span className="confirmed-day">{dayLabel(r.forcedSlot.day)}</span>
+            <span className="confirmed-time">{formatHour(r.forcedSlot.startHour)}–{formatHour(r.forcedSlot.endHour)}</span>
+          </div>
+        </div>
+      )
+    }
+    if (r.type === 'double-loss') {
+      return (
+        <div className="schedule-panel">
+          <div className="schedule-status-badge badge-double-loss">Match Canceled</div>
+          <div className="resolution-detail">Neither player participated in scheduling. Both receive a loss.</div>
+        </div>
+      )
+    }
+  }
+
   // Escalated state
   if (schedule.status === 'escalated') {
     return (

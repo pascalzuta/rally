@@ -35,7 +35,7 @@ export interface AvailabilitySlot {
 
 // --- Scheduling ---
 
-export type SchedulingStatus = 'unscheduled' | 'proposed' | 'confirmed' | 'escalated'
+export type SchedulingStatus = 'unscheduled' | 'proposed' | 'confirmed' | 'escalated' | 'resolved'
 
 export interface MatchProposal {
   id: string
@@ -53,6 +53,18 @@ export interface MatchSchedule {
   createdAt: string          // when scheduling started
   escalationDay: number      // 0-4, tracks escalation timeline
   lastEscalation: string     // ISO date of last escalation check
+  participationScores?: Record<string, number>  // playerId -> score
+  resolution?: MatchResolution
+}
+
+export type ResolutionType = 'walkover' | 'forced-match' | 'double-loss'
+
+export interface MatchResolution {
+  type: ResolutionType
+  winnerId: string | null      // null for double-loss
+  reason: string               // human-readable explanation
+  resolvedAt: string           // ISO timestamp
+  forcedSlot?: { day: DayOfWeek; startHour: number; endHour: number }  // for forced-match
 }
 
 export interface Match {
@@ -66,6 +78,7 @@ export interface Match {
   winnerId: string | null
   completed: boolean
   schedule?: MatchSchedule
+  resolution?: MatchResolution
 }
 
 export interface Tournament {

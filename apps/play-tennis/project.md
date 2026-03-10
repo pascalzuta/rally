@@ -13,8 +13,9 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 ### Core Types
 - **PlayerProfile**: id, name, county, createdAt
 - **Tournament**: id, name, date, county, format (single-elimination | round-robin), players, matches, status (setup | in-progress | completed)
-- **Match**: id, round, position, player1Id, player2Id, scores, winnerId, completed, schedule
-- **MatchSchedule**: status (unscheduled | proposed | confirmed | escalated), proposals, confirmedSlot, escalationDay
+- **Match**: id, round, position, player1Id, player2Id, scores, winnerId, completed, schedule, resolution
+- **MatchSchedule**: status (unscheduled | proposed | confirmed | escalated | resolved), proposals, confirmedSlot, escalationDay, participationScores, resolution
+- **MatchResolution**: type (walkover | forced-match | double-loss), winnerId, reason, resolvedAt, forcedSlot
 - **MatchProposal**: id, proposedBy, day, startHour, endHour, status (pending | accepted | rejected)
 - **PlayerRating**: name, rating (Elo), matchesPlayed
 - **LobbyEntry**: playerId, playerName, county, joinedAt
@@ -42,7 +43,18 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - System generates proposals from availability overlap
 - Players accept or counter-propose times
 - Escalation timeline (Day 0-3): Day 3 auto-assigns best available slot
-- Status flow: unscheduled → proposed → confirmed → escalated
+- Status flow: unscheduled → proposed → confirmed → escalated → resolved
+
+### Unresolved Match Resolution
+- **Participation Score**: Tracks scheduling engagement per player per match
+  - +4 for accepting a proposal, +3 for proposing a time
+  - Threshold: 3 points = meaningful participation
+- **Resolution at Day 4**: When escalation completes without confirmation
+  - **Walkover**: One player participated (>= threshold), other didn't → active player wins
+  - **Forced Match**: Both participated → system assigns Sunday 10am slot, match must be played
+  - **Double Loss**: Neither participated → match canceled, both receive loss
+- Resolution indicators on match cards: "Match Awarded", "Final Match Assigned", "Match Canceled"
+- Walkovers advance winners in single-elimination brackets automatically
 
 ### Match Scoring
 - 3-set tennis scoring with validation (6-4, 7-5, 7-6 tiebreak rules)
