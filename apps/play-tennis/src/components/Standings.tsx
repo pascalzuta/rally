@@ -1,5 +1,5 @@
 import { Tournament } from '../types'
-import { getPlayerName } from '../store'
+import { getPlayerName, getPlayerRating } from '../store'
 
 interface Props {
   tournament: Tournament
@@ -72,6 +72,7 @@ export default function Standings({ tournament }: Props) {
           <tr>
             <th>#</th>
             <th>Player</th>
+            <th>Elo</th>
             <th>W</th>
             <th>L</th>
             <th>Sets</th>
@@ -82,6 +83,7 @@ export default function Standings({ tournament }: Props) {
             <tr key={s.id}>
               <td className="rank">{i + 1}</td>
               <td className="player-cell">{s.name}</td>
+              <td className="stat-cell">{Math.round(getPlayerRating(s.name).rating)}</td>
               <td className="stat-cell">{s.wins}</td>
               <td className="stat-cell">{s.losses}</td>
               <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>

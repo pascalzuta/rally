@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { saveMatchScore, getPlayerName } from '../store'
+import { saveMatchScore, getPlayerName, getPlayerRating, winProbability } from '../store'
 import { Tournament } from '../types'
 
 interface Props {
@@ -14,7 +14,11 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
   const p1Name = getPlayerName(tournament, match.player1Id)
   const p2Name = getPlayerName(tournament, match.player2Id)
 
-  const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])
+  const r1 = getPlayerRating(p1Name)
+  const r2 = getPlayerRating(p2Name)
+  const p1WinProb = winProbability(r1.rating, r2.rating)
+
+  const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', '']])
 
   function getScores(): { score1: number[]; score2: number[] } | null {
     const score1: number[] = []
@@ -70,6 +74,16 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h2>Enter Score</h2>
+
+        <div className="win-probability">
+          <div className="prob-bar">
+            <div className="prob-fill" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+          </div>
+          <div className="prob-labels">
+            <span>{p1Name} {Math.round(p1WinProb * 100)}%</span>
+            <span>{Math.round((1 - p1WinProb) * 100)}% {p2Name}</span>
+          </div>
+        </div>
 
         <div className="score-grid">
           <div className="score-header"></div>

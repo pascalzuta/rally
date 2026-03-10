@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTournament, addPlayer, removePlayer, generateBracket, getPlayerName } from '../store'
+import { getTournament, addPlayer, removePlayer, generateBracket, getPlayerName, getPlayerRating } from '../store'
 import { Tournament } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import Standings from './Standings'
@@ -94,13 +94,17 @@ export default function TournamentView({ tournamentId, onBack }: Props) {
                 <p className="subtle">Add at least 2 players to start</p>
               ) : (
                 <ul className="player-list">
-                  {tournament.players.map((p, i) => (
-                    <li key={p.id}>
-                      <span className="player-num">{i + 1}</span>
-                      <span className="player-name">{p.name}</span>
-                      <button className="btn-icon" onClick={() => handleRemovePlayer(p.id)}>✕</button>
-                    </li>
-                  ))}
+                  {tournament.players.map((p, i) => {
+                    const r = getPlayerRating(p.name)
+                    return (
+                      <li key={p.id}>
+                        <span className="player-num">{i + 1}</span>
+                        <span className="player-name">{p.name}</span>
+                        <span className="player-rating">{Math.round(r.rating)}</span>
+                        <button className="btn-icon" onClick={() => handleRemovePlayer(p.id)}>✕</button>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>

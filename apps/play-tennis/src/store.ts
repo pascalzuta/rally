@@ -1,6 +1,7 @@
-import { Tournament, Player, Match } from './types'
+import { Tournament, Player, Match, PlayerRating } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
+const RATINGS_KEY = 'play-tennis-ratings'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -67,13 +68,22 @@ export function deleteTournament(tournamentId: string): void {
   save(all)
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]]
+// Generate seed positions so top seeds are placed apart in bracket
+// E.g., for 8: seed 1 at pos 0, seed 2 at pos 7, seed 3 at pos 3, seed 4 at pos 4...
+function getSeedPositions(size: number): number[] {
+  if (size === 1) return [0]
+  const positions = [0, 1]
+  while (positions.length < size) {
+    const next: number[] = []
+    const len = positions.length
+    for (let i = 0; i < len; i++) {
+      next.push(positions[i] * 2)
+      next.push(len * 2 - 1 - positions[i] * 2)
+    }
+    positions.length = 0
+    positions.push(...next)
   }
-  return a
+  return positions
 }
 
 export function generateBracket(tournamentId: string): Tournament | undefined {
@@ -82,11 +92,20 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
   if (!t || t.players.length < 2) return undefined
 
   if (t.format === 'single-elimination') {
-    const shuffled = shuffle(t.players)
-    // Pad to next power of 2
-    const size = Math.pow(2, Math.ceil(Math.log2(shuffled.length)))
-    const padded: (Player | null)[] = [...shuffled]
-    while (padded.length < size) padded.push(null)
+    // Seed by rating: highest rated players placed apart in bracket
+    const seeded = [...t.players].sort((a, b) => {
+      const rA = getPlayerRating(a.name).rating
+      const rB = getPlayerRating(b.name).rating
+      return rB - rA
+    })
+    const size = Math.pow(2, Math.ceil(Math.log2(seeded.length)))
+    // Place seeds so top seeds meet latest: 1v8, 4v5, 2v7, 3v6 etc.
+    const slots = new Array<Player | null>(size).fill(null)
+    const seedOrder = getSeedPositions(size)
+    for (let i = 0; i < seeded.length; i++) {
+      slots[seedOrder[i]] = seeded[i]
+    }
+    const padded: (Player | null)[] = slots
 
     const totalRounds = Math.log2(size)
     const matches: Match[] = []
@@ -196,6 +215,14 @@ export function saveMatchScore(
   match.winnerId = winnerId
   match.completed = true
 
+  // Update global Elo ratings
+  const p1 = t.players.find(p => p.id === match.player1Id)
+  const p2 = t.players.find(p => p.id === match.player2Id)
+  const winner = t.players.find(p => p.id === winnerId)
+  if (p1 && p2 && winner) {
+    updateRatings(p1.name, p2.name, winner.name)
+  }
+
   // Advance winner in single-elimination
   if (t.format === 'single-elimination') {
     const nextRoundMatches = t.matches.filter(m => m.round === match.round + 1)
@@ -222,4 +249,79 @@ export function saveMatchScore(
 export function getPlayerName(tournament: Tournament, playerId: string | null): string {
   if (!playerId) return 'TBD'
   return tournament.players.find(p => p.id === playerId)?.name ?? 'Unknown'
+}
+
+// --- Player Ratings (Global Elo) ---
+
+function normalizePlayerName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+function loadRatings(): Record<string, PlayerRating> {
+  try {
+    const data = localStorage.getItem(RATINGS_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveRatings(ratings: Record<string, PlayerRating>): void {
+  localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
+}
+
+export function getPlayerRating(playerName: string): PlayerRating {
+  const key = normalizePlayerName(playerName)
+  const ratings = loadRatings()
+  return ratings[key] ?? { name: playerName, rating: 1500, matchesPlayed: 0 }
+}
+
+export function getAllRatings(): PlayerRating[] {
+  return Object.values(loadRatings()).sort((a, b) => b.rating - a.rating)
+}
+
+function kFactor(matchesPlayed: number): number {
+  return 250 / Math.pow(matchesPlayed + 5, 0.4)
+}
+
+export function winProbability(ratingA: number, ratingB: number): number {
+  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
+}
+
+export function updateRatings(playerAName: string, playerBName: string, winnerName: string): void {
+  const ratings = loadRatings()
+  const keyA = normalizePlayerName(playerAName)
+  const keyB = normalizePlayerName(playerBName)
+
+  const a = ratings[keyA] ?? { name: playerAName, rating: 1500, matchesPlayed: 0 }
+  const b = ratings[keyB] ?? { name: playerBName, rating: 1500, matchesPlayed: 0 }
+
+  const pA = winProbability(a.rating, b.rating)
+  const pB = 1 - pA
+
+  const kA = kFactor(a.matchesPlayed)
+  const kB = kFactor(b.matchesPlayed)
+
+  const winnerKey = normalizePlayerName(winnerName)
+  const sA = winnerKey === keyA ? 1 : 0
+  const sB = 1 - sA
+
+  a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
+  b.rating = Math.round((b.rating + kB * (sB - pB)) * 10) / 10
+  a.matchesPlayed += 1
+  b.matchesPlayed += 1
+
+  ratings[keyA] = a
+  ratings[keyB] = b
+  saveRatings(ratings)
+}
+
+export function getRatingLabel(rating: number): string {
+  if (rating >= 2200) return 'Pro'
+  if (rating >= 2000) return 'Semi-pro'
+  if (rating >= 1800) return 'Elite'
+  if (rating >= 1600) return 'Strong'
+  if (rating >= 1400) return 'Club'
+  if (rating >= 1200) return 'Beginner'
+  return 'Newcomer'
 }

@@ -11,7 +11,9 @@ Live URL: https://pascalzuta.github.io/rally/
 - Create tournaments with name, date, and format selection
 - Two formats: Single-elimination (knockout) and Round-robin
 - Add/remove players during setup phase
-- Auto-generated brackets with player shuffling
+- Auto-generated brackets with rating-based seeding
+- FiveThirtyEight-style Elo rating system (global, persists across tournaments)
+- Win probability display before each match
 - Set-by-set score entry (up to 3 sets per match)
 - Automatic winner advancement in single-elimination
 - Bye handling when player count isn't a power of 2
@@ -55,13 +57,27 @@ apps/play-tennis/
 Client-side screen switching via `useState<Screen>()` in App.tsx. No URL-based router — refreshing returns to home screen.
 
 ### State Management
-No state library. Each component manages local state with `useState`. Persistence handled by pure functions in `store.ts` that read/write to localStorage under the key `play-tennis-data`.
+No state library. Each component manages local state with `useState`. Persistence handled by pure functions in `store.ts` that read/write to localStorage under the key `play-tennis-data`. Global player ratings stored separately under `play-tennis-ratings`.
 
 ### Data Model
 
 - **Tournament**: id, name, date, format, players[], matches[], status, createdAt
-- **Player**: id, name
+- **Player**: id, name (per-tournament)
+- **PlayerRating**: name, rating, matchesPlayed (global, persists across tournaments)
 - **Match**: id, round, position, player1Id, player2Id, score1[], score2[], winnerId, completed
+
+### Player Rating System (Elo)
+FiveThirtyEight-style Elo rating system. Ratings are global (keyed by normalized player name) and persist across tournaments.
+
+- **Initial rating**: 1500
+- **Win probability**: P_A = 1 / (1 + 10^((R_B - R_A) / 400))
+- **Dynamic K-factor**: K = 250 / ((matches + 5)^0.4) — new players adjust fast, veterans stabilize
+- **Rating update**: R' = R + K * (actual - expected)
+- **Score margin ignored** — only win/loss affects ratings (per FiveThirtyEight model)
+- **Seeding**: Single-elimination brackets seed by rating (top seeds placed apart)
+- **Storage**: Separate localStorage key `play-tennis-ratings`
+
+Rating scale: <1200 Newcomer, 1200 Beginner, 1400 Club, 1600 Strong, 1800 Elite, 2000 Semi-pro, 2200+ Pro
 
 ### Styling
 Pure CSS with variables for theming. Mobile-optimized (max-width 480px). Green primary color (#16a34a), system font stack, 12px border radius.
@@ -85,3 +101,4 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | Initial app deployed to GitHub Pages                        |
 | 2026-03-10 | Fixed workflow: install deps from monorepo root             |
 | 2026-03-10 | Added branch deployment rule for feature branch             |
+| 2026-03-10 | Added FiveThirtyEight Elo rating system with seeding        |

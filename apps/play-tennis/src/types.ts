@@ -3,6 +3,12 @@ export interface Player {
   name: string
 }
 
+export interface PlayerRating {
+  name: string
+  rating: number
+  matchesPlayed: number
+}
+
 export interface Match {
   id: string
   round: number
