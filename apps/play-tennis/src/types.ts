@@ -3,10 +3,24 @@ export interface Player {
   name: string
 }
 
+export interface PlayerProfile {
+  id: string
+  name: string
+  county: string
+  createdAt: string
+}
+
 export interface PlayerRating {
   name: string
   rating: number
   matchesPlayed: number
+}
+
+export interface LobbyEntry {
+  playerId: string
+  playerName: string
+  county: string
+  joinedAt: string
 }
 
 export interface Match {
@@ -25,6 +39,7 @@ export interface Tournament {
   id: string
   name: string
   date: string
+  county: string
   format: 'single-elimination' | 'round-robin'
   players: Player[]
   matches: Match[]

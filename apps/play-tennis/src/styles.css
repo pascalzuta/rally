@@ -509,7 +509,7 @@ input:focus {
 
 .score-grid {
   display: grid;
-  grid-template-columns: 1fr repeat(3, 56px);
+  grid-template-columns: 1fr repeat(2, 56px);
   gap: 8px;
   align-items: center;
   margin-bottom: 16px;
@@ -638,4 +638,230 @@ input:focus {
 .stat-cell {
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* Inline rating in match cards */
+.inline-rating {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-left: 4px;
+}
+
+/* Select input */
+.select-input {
+  padding: 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 16px;
+  background: white;
+  outline: none;
+  width: 100%;
+  color: var(--gray-900);
+  -webkit-appearance: none;
+}
+
+.select-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+/* Register */
+.register-hero {
+  text-align: center;
+  padding: 40px 20px 20px;
+}
+
+.register-hero p {
+  color: var(--gray-500);
+  font-size: 16px;
+}
+
+/* Bottom tab navigation */
+.bottom-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  background: white;
+  border-top: 1px solid var(--gray-200);
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--gray-500);
+  transition: color 0.15s;
+}
+
+.bottom-tab.active {
+  color: var(--green);
+}
+
+.tab-icon {
+  font-size: 20px;
+}
+
+.tab-text {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tab-content {
+  padding-bottom: 80px;
+}
+
+/* Lobby */
+.lobby-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lobby-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lobby-count {
+  font-size: 13px;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.lobby-hint {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.lobby-action {
+  margin-top: 8px;
+}
+
+.player-list li.is-you {
+  background: var(--green-light);
+}
+
+.you-badge {
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+/* Profile */
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-card {
+  text-align: center;
+  padding: 20px;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  background: var(--green);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 auto 12px;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.profile-county {
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.rating-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.rating-big {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--green);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-label-text {
+  font-size: 14px;
+  color: var(--gray-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 8px;
+}
+
+.stat-box {
+  flex: 1;
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px 8px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--gray-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.logout-btn {
+  margin-top: 12px;
+  color: var(--red);
+  border-color: var(--gray-200);
 }

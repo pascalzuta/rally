@@ -2,24 +2,26 @@
 
 ## Project Overview
 
-Play Tennis is a mobile-first tennis tournament management web app. Users can create tournaments, add players, generate brackets, enter match scores, and track standings. The app runs entirely in the browser with no backend — all data is stored in localStorage.
+Play Tennis is a mobile-first tennis tournament app where players sign up by county and get auto-matched into tournaments. When 4+ players from the same county join the lobby, a tournament starts automatically. The app features a FiveThirtyEight-style Elo rating system that tracks player skill across tournaments.
 
 Live URL: https://pascalzuta.github.io/rally/
 
 ## Features
 
-- Create tournaments with name, date, and format selection
-- Two formats: Single-elimination (knockout) and Round-robin
-- Add/remove players during setup phase
-- Auto-generated brackets with rating-based seeding
+- Player registration with name and county selection (Irish counties)
+- County-based lobby system — join and wait for opponents
+- Auto-start tournaments when 4+ players from the same county are in the lobby
+- Auto-selects format: round-robin (up to 6 players) or single-elimination (7+)
 - FiveThirtyEight-style Elo rating system (global, persists across tournaments)
-- Win probability display before each match
-- Set-by-set score entry (up to 3 sets per match)
+- Rating-based seeding for single-elimination brackets
+- Win probability bar displayed before each match
+- Opponent ratings shown next to names in all match cards
+- Set-by-set score entry (up to 2 sets per match)
 - Automatic winner advancement in single-elimination
 - Bye handling when player count isn't a power of 2
 - Standings table for round-robin (sorted by wins, set diff, game diff)
-- Tournament lifecycle: setup -> in-progress -> completed
-- Delete tournaments
+- Profile tab with rating, win/loss stats, and match count
+- Bottom tab navigation: Play, Tournaments, Profile
 
 ## Tech Stack
 
@@ -39,29 +41,40 @@ apps/play-tennis/
 ├── package.json
 └── src/
     ├── main.tsx            # React DOM entry point
-    ├── App.tsx             # Screen router (home / create / tournament)
-    ├── store.ts            # localStorage CRUD operations
+    ├── App.tsx             # Auth flow + tab navigation (Play/Tournaments/Profile)
+    ├── store.ts            # All data operations (profile, lobby, tournaments, ratings)
     ├── types.ts            # TypeScript interfaces
     ├── styles.css          # All styles, CSS variables, mobile-first
     └── components/
-        ├── Home.tsx              # Tournament list
-        ├── CreateTournament.tsx  # New tournament form
+        ├── Register.tsx          # Name + county registration
+        ├── Lobby.tsx             # County waiting room, auto-start at 4
+        ├── Profile.tsx           # Player rating, stats, sign out
         ├── TournamentView.tsx    # Tournament detail + bracket view
-        ├── MatchScoreModal.tsx   # Score entry modal (3 sets)
+        ├── MatchScoreModal.tsx   # Score entry modal with win probability
         └── Standings.tsx         # Round-robin standings table
 ```
 
 ## Architecture
 
-### Routing
-Client-side screen switching via `useState<Screen>()` in App.tsx. No URL-based router — refreshing returns to home screen.
+### User Flow
+1. First visit: Register with name + county
+2. Play tab: Join county lobby, wait for 4+ players
+3. When enough players join: tournament auto-creates and starts
+4. Tournaments tab: View and manage all your tournaments
+5. Profile tab: See your Elo rating, stats, and match history
 
 ### State Management
-No state library. Each component manages local state with `useState`. Persistence handled by pure functions in `store.ts` that read/write to localStorage under the key `play-tennis-data`. Global player ratings stored separately under `play-tennis-ratings`.
+No state library. Each component manages local state with `useState`. Persistence handled by pure functions in `store.ts` using multiple localStorage keys:
+- `play-tennis-profile` — logged-in player profile
+- `play-tennis-lobby` — county lobby entries
+- `play-tennis-data` — tournaments
+- `play-tennis-ratings` — global Elo ratings
 
 ### Data Model
 
-- **Tournament**: id, name, date, format, players[], matches[], status, createdAt
+- **PlayerProfile**: id, name, county, createdAt
+- **LobbyEntry**: playerId, playerName, county, joinedAt
+- **Tournament**: id, name, date, county, format, players[], matches[], status, createdAt
 - **Player**: id, name (per-tournament)
 - **PlayerRating**: name, rating, matchesPlayed (global, persists across tournaments)
 - **Match**: id, round, position, player1Id, player2Id, score1[], score2[], winnerId, completed
@@ -80,7 +93,7 @@ FiveThirtyEight-style Elo rating system. Ratings are global (keyed by normalized
 Rating scale: <1200 Newcomer, 1200 Beginner, 1400 Club, 1600 Strong, 1800 Elite, 2000 Semi-pro, 2200+ Pro
 
 ### Styling
-Pure CSS with variables for theming. Mobile-optimized (max-width 480px). Green primary color (#16a34a), system font stack, 12px border radius.
+Pure CSS with variables for theming. Mobile-optimized (max-width 480px). Green primary color (#16a34a), system font stack, 12px border radius. Bottom tab navigation with safe-area-inset support.
 
 ## Deployment
 
@@ -102,3 +115,4 @@ This app lives inside a larger monorepo with npm workspaces. The root `package.j
 | 2026-03-10 | Fixed workflow: install deps from monorepo root             |
 | 2026-03-10 | Added branch deployment rule for feature branch             |
 | 2026-03-10 | Added FiveThirtyEight Elo rating system with seeding        |
+| 2026-03-10 | County-based signup, lobby, auto-start, profile tab         |

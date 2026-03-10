@@ -1,11 +1,112 @@
-import { Tournament, Player, Match, PlayerRating } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
+const PROFILE_KEY = 'play-tennis-profile'
+const LOBBY_KEY = 'play-tennis-lobby'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 }
+
+// --- Profile ---
+
+export function getProfile(): PlayerProfile | null {
+  try {
+    const data = localStorage.getItem(PROFILE_KEY)
+    return data ? JSON.parse(data) : null
+  } catch {
+    return null
+  }
+}
+
+export function createProfile(name: string, county: string): PlayerProfile {
+  const profile: PlayerProfile = {
+    id: generateId(),
+    name: name.trim(),
+    county: county.trim(),
+    createdAt: new Date().toISOString(),
+  }
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  return profile
+}
+
+export function logout(): void {
+  localStorage.removeItem(PROFILE_KEY)
+}
+
+// --- Lobby ---
+
+function loadLobby(): LobbyEntry[] {
+  try {
+    const data = localStorage.getItem(LOBBY_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveLobby(lobby: LobbyEntry[]): void {
+  localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
+}
+
+export function getLobbyByCounty(county: string): LobbyEntry[] {
+  return loadLobby().filter(e => e.county.toLowerCase() === county.toLowerCase())
+}
+
+export function isInLobby(playerId: string): boolean {
+  return loadLobby().some(e => e.playerId === playerId)
+}
+
+export function joinLobby(profile: PlayerProfile): LobbyEntry[] {
+  const lobby = loadLobby()
+  if (lobby.some(e => e.playerId === profile.id)) return getLobbyByCounty(profile.county)
+  lobby.push({
+    playerId: profile.id,
+    playerName: profile.name,
+    county: profile.county,
+    joinedAt: new Date().toISOString(),
+  })
+  saveLobby(lobby)
+  return getLobbyByCounty(profile.county)
+}
+
+export function leaveLobby(playerId: string): void {
+  const lobby = loadLobby().filter(e => e.playerId !== playerId)
+  saveLobby(lobby)
+}
+
+export function startTournamentFromLobby(county: string): Tournament | null {
+  const lobby = loadLobby()
+  const countyPlayers = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
+  if (countyPlayers.length < 4) return null
+
+  const format: Tournament['format'] = countyPlayers.length <= 6 ? 'round-robin' : 'single-elimination'
+  const tournament: Tournament = {
+    id: generateId(),
+    name: `${county} Open`,
+    date: new Date().toISOString().split('T')[0],
+    county,
+    format,
+    players: countyPlayers.map(e => ({ id: e.playerId, name: e.playerName })),
+    matches: [],
+    status: 'setup',
+    createdAt: new Date().toISOString(),
+  }
+
+  const all = load()
+  all.unshift(tournament)
+  save(all)
+
+  // Remove these players from lobby
+  const remainingLobby = lobby.filter(e => e.county.toLowerCase() !== county.toLowerCase())
+  saveLobby(remainingLobby)
+
+  // Generate bracket immediately
+  return generateBracket(tournament.id) ?? tournament
+}
+
+// --- Tournaments ---
 
 function load(): Tournament[] {
   try {
@@ -24,43 +125,16 @@ export function getTournaments(): Tournament[] {
   return load()
 }
 
+export function getTournamentsByCounty(county: string): Tournament[] {
+  return load().filter(t => t.county && t.county.toLowerCase() === county.toLowerCase())
+}
+
+export function getPlayerTournaments(playerId: string): Tournament[] {
+  return load().filter(t => t.players.some(p => p.id === playerId))
+}
+
 export function getTournament(id: string): Tournament | undefined {
   return load().find(t => t.id === id)
-}
-
-export function createTournament(name: string, date: string, format: Tournament['format']): Tournament {
-  const tournament: Tournament = {
-    id: generateId(),
-    name,
-    date,
-    format,
-    players: [],
-    matches: [],
-    status: 'setup',
-    createdAt: new Date().toISOString(),
-  }
-  const all = load()
-  all.unshift(tournament)
-  save(all)
-  return tournament
-}
-
-export function addPlayer(tournamentId: string, playerName: string): Tournament | undefined {
-  const all = load()
-  const t = all.find(x => x.id === tournamentId)
-  if (!t) return undefined
-  t.players.push({ id: generateId(), name: playerName.trim() })
-  save(all)
-  return t
-}
-
-export function removePlayer(tournamentId: string, playerId: string): Tournament | undefined {
-  const all = load()
-  const t = all.find(x => x.id === tournamentId)
-  if (!t) return undefined
-  t.players = t.players.filter(p => p.id !== playerId)
-  save(all)
-  return t
 }
 
 export function deleteTournament(tournamentId: string): void {
@@ -69,7 +143,6 @@ export function deleteTournament(tournamentId: string): void {
 }
 
 // Generate seed positions so top seeds are placed apart in bracket
-// E.g., for 8: seed 1 at pos 0, seed 2 at pos 7, seed 3 at pos 3, seed 4 at pos 4...
 function getSeedPositions(size: number): number[] {
   if (size === 1) return [0]
   const positions = [0, 1]
@@ -92,14 +165,12 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
   if (!t || t.players.length < 2) return undefined
 
   if (t.format === 'single-elimination') {
-    // Seed by rating: highest rated players placed apart in bracket
     const seeded = [...t.players].sort((a, b) => {
       const rA = getPlayerRating(a.name).rating
       const rB = getPlayerRating(b.name).rating
       return rB - rA
     })
     const size = Math.pow(2, Math.ceil(Math.log2(seeded.length)))
-    // Place seeds so top seeds meet latest: 1v8, 4v5, 2v7, 3v6 etc.
     const slots = new Array<Player | null>(size).fill(null)
     const seedOrder = getSeedPositions(size)
     for (let i = 0; i < seeded.length; i++) {
@@ -110,7 +181,6 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
     const totalRounds = Math.log2(size)
     const matches: Match[] = []
 
-    // First round
     for (let i = 0; i < size / 2; i++) {
       const p1 = padded[i * 2]
       const p2 = padded[i * 2 + 1]
@@ -128,7 +198,6 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
       })
     }
 
-    // Later rounds (empty slots)
     for (let round = 2; round <= totalRounds; round++) {
       const matchesInRound = size / Math.pow(2, round)
       for (let i = 0; i < matchesInRound; i++) {
@@ -146,19 +215,15 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
       }
     }
 
-    // Advance byes
     advanceByes(matches)
-
     t.matches = matches
   } else {
-    // Round-robin: every player plays every other player
     const matches: Match[] = []
-    let round = 1
     for (let i = 0; i < t.players.length; i++) {
       for (let j = i + 1; j < t.players.length; j++) {
         matches.push({
           id: generateId(),
-          round,
+          round: 1,
           position: matches.length,
           player1Id: t.players[i].id,
           player2Id: t.players[j].id,
@@ -236,7 +301,6 @@ export function saveMatchScore(
     }
   }
 
-  // Check if tournament is completed
   const allDone = t.matches.every(m => m.completed)
   if (allDone) {
     t.status = 'completed'
@@ -297,7 +361,6 @@ export function updateRatings(playerAName: string, playerBName: string, winnerNa
   const b = ratings[keyB] ?? { name: playerBName, rating: 1500, matchesPlayed: 0 }
 
   const pA = winProbability(a.rating, b.rating)
-  const pB = 1 - pA
 
   const kA = kFactor(a.matchesPlayed)
   const kB = kFactor(b.matchesPlayed)
@@ -307,7 +370,7 @@ export function updateRatings(playerAName: string, playerBName: string, winnerNa
   const sB = 1 - sA
 
   a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
-  b.rating = Math.round((b.rating + kB * (sB - pB)) * 10) / 10
+  b.rating = Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10
   a.matchesPlayed += 1
   b.matchesPlayed += 1
 

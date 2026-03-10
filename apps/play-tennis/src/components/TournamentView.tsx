@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTournament, addPlayer, removePlayer, generateBracket, getPlayerName, getPlayerRating } from '../store'
+import { getTournament, getPlayerName, getPlayerRating } from '../store'
 import { Tournament } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import Standings from './Standings'
@@ -11,7 +11,6 @@ interface Props {
 
 export default function TournamentView({ tournamentId, onBack }: Props) {
   const [tournament, setTournament] = useState<Tournament | undefined>()
-  const [newPlayer, setNewPlayer] = useState('')
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
 
@@ -21,31 +20,11 @@ export default function TournamentView({ tournamentId, onBack }: Props) {
 
   if (!tournament) return <div className="screen"><p>Tournament not found</p></div>
 
-  function handleAddPlayer(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newPlayer.trim()) return
-    const updated = addPlayer(tournamentId, newPlayer)
-    setTournament(updated)
-    setNewPlayer('')
-  }
-
-  function handleRemovePlayer(playerId: string) {
-    const updated = removePlayer(tournamentId, playerId)
-    setTournament(updated)
-  }
-
-  function handleStartTournament() {
-    if (tournament!.players.length < 2) return
-    const updated = generateBracket(tournamentId)
-    setTournament(updated)
-  }
-
   function handleScoreSaved() {
     setScoringMatchId(null)
     setTournament(getTournament(tournamentId))
   }
 
-  const isSetup = tournament.status === 'setup'
   const winner = tournament.status === 'completed' && tournament.format === 'single-elimination'
     ? tournament.matches[tournament.matches.length - 1]?.winnerId
     : null
@@ -69,116 +48,34 @@ export default function TournamentView({ tournamentId, onBack }: Props) {
       </header>
 
       <main className="content">
-        {/* Winner banner */}
         {winner && (
           <div className="winner-banner">
             🏆 {getPlayerName(tournament, winner)} wins!
           </div>
         )}
 
-        {/* Setup phase: add players */}
-        {isSetup && (
-          <>
-            <div className="section">
-              <h2>Players ({tournament.players.length})</h2>
-              <form onSubmit={handleAddPlayer} className="add-player-form">
-                <input
-                  type="text"
-                  value={newPlayer}
-                  onChange={e => setNewPlayer(e.target.value)}
-                  placeholder="Player name"
-                />
-                <button type="submit" className="btn btn-primary" disabled={!newPlayer.trim()}>Add</button>
-              </form>
-              {tournament.players.length === 0 ? (
-                <p className="subtle">Add at least 2 players to start</p>
-              ) : (
-                <ul className="player-list">
-                  {tournament.players.map((p, i) => {
-                    const r = getPlayerRating(p.name)
-                    return (
-                      <li key={p.id}>
-                        <span className="player-num">{i + 1}</span>
-                        <span className="player-name">{p.name}</span>
-                        <span className="player-rating">{Math.round(r.rating)}</span>
-                        <button className="btn-icon" onClick={() => handleRemovePlayer(p.id)}>✕</button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </div>
-
-            <div className="bottom-action">
-              <button
-                className="btn btn-primary btn-large"
-                onClick={handleStartTournament}
-                disabled={tournament.players.length < 2}
-              >
-                Start Tournament ({tournament.players.length} players)
-              </button>
-            </div>
-          </>
+        {tournament.format === 'round-robin' && (
+          <div className="tab-bar">
+            <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
+            <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
+          </div>
         )}
 
-        {/* Matches phase */}
-        {!isSetup && (
-          <>
-            {tournament.format === 'round-robin' && (
-              <div className="tab-bar">
-                <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
-                <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
-              </div>
-            )}
-
-            {tab === 'matches' && (
-              <div className="bracket">
-                {tournament.format === 'single-elimination' ? (
-                  rounds.map(round => (
-                    <div key={round} className="round">
-                      <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
-                      {tournament.matches
-                        .filter(m => m.round === round)
-                        .map(match => {
-                          const p1 = getPlayerName(tournament, match.player1Id)
-                          const p2 = getPlayerName(tournament, match.player2Id)
-                          const canScore = match.player1Id && match.player2Id && !match.completed
-                          const isBye = (!match.player1Id || !match.player2Id) && match.completed
-
-                          return (
-                            <div
-                              key={match.id}
-                              className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''}`}
-                              onClick={() => canScore && setScoringMatchId(match.id)}
-                            >
-                              {isBye ? (
-                                <div className="bye-label">BYE</div>
-                              ) : (
-                                <>
-                                  <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                                    <span>{p1}</span>
-                                    {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
-                                  </div>
-                                  <div className="match-vs">vs</div>
-                                  <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                                    <span>{p2}</span>
-                                    {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
-                                  </div>
-                                  {canScore && <div className="tap-hint">Tap to score</div>}
-                                </>
-                              )}
-                            </div>
-                          )
-                        })}
-                    </div>
-                  ))
-                ) : (
-                  <div className="round">
-                    <h3 className="round-label">All Matches</h3>
-                    {tournament.matches.map(match => {
+        {tab === 'matches' && (
+          <div className="bracket">
+            {tournament.format === 'single-elimination' ? (
+              rounds.map(round => (
+                <div key={round} className="round">
+                  <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
+                  {tournament.matches
+                    .filter(m => m.round === round)
+                    .map(match => {
                       const p1 = getPlayerName(tournament, match.player1Id)
                       const p2 = getPlayerName(tournament, match.player2Id)
-                      const canScore = !match.completed
+                      const r1 = match.player1Id ? getPlayerRating(p1) : null
+                      const r2 = match.player2Id ? getPlayerRating(p2) : null
+                      const canScore = match.player1Id && match.player2Id && !match.completed
+                      const isBye = (!match.player1Id || !match.player2Id) && match.completed
 
                       return (
                         <div
@@ -186,32 +83,66 @@ export default function TournamentView({ tournamentId, onBack }: Props) {
                           className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''}`}
                           onClick={() => canScore && setScoringMatchId(match.id)}
                         >
-                          <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                            <span>{p1}</span>
-                            {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
-                          </div>
-                          <div className="match-vs">vs</div>
-                          <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                            <span>{p2}</span>
-                            {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
-                          </div>
-                          {canScore && <div className="tap-hint">Tap to score</div>}
+                          {isBye ? (
+                            <div className="bye-label">BYE</div>
+                          ) : (
+                            <>
+                              <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+                                <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
+                                {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
+                              </div>
+                              <div className="match-vs">vs</div>
+                              <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+                                <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
+                                {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
+                              </div>
+                              {canScore && <div className="tap-hint">Tap to score</div>}
+                            </>
+                          )}
                         </div>
                       )
                     })}
-                  </div>
-                )}
+                </div>
+              ))
+            ) : (
+              <div className="round">
+                <h3 className="round-label">All Matches</h3>
+                {tournament.matches.map(match => {
+                  const p1 = getPlayerName(tournament, match.player1Id)
+                  const p2 = getPlayerName(tournament, match.player2Id)
+                  const r1 = match.player1Id ? getPlayerRating(p1) : null
+                  const r2 = match.player2Id ? getPlayerRating(p2) : null
+                  const canScore = !match.completed
+
+                  return (
+                    <div
+                      key={match.id}
+                      className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''}`}
+                      onClick={() => canScore && setScoringMatchId(match.id)}
+                    >
+                      <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+                        <span>{p1} {r1 && <span className="inline-rating">{Math.round(r1.rating)}</span>}</span>
+                        {match.completed && <span className="match-score">{match.score1.join(' ')}</span>}
+                      </div>
+                      <div className="match-vs">vs</div>
+                      <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+                        <span>{p2} {r2 && <span className="inline-rating">{Math.round(r2.rating)}</span>}</span>
+                        {match.completed && <span className="match-score">{match.score2.join(' ')}</span>}
+                      </div>
+                      {canScore && <div className="tap-hint">Tap to score</div>}
+                    </div>
+                  )
+                })}
               </div>
             )}
+          </div>
+        )}
 
-            {tab === 'standings' && tournament.format === 'round-robin' && (
-              <Standings tournament={tournament} />
-            )}
-          </>
+        {tab === 'standings' && tournament.format === 'round-robin' && (
+          <Standings tournament={tournament} />
         )}
       </main>
 
-      {/* Score entry modal */}
       {scoringMatchId && (
         <MatchScoreModal
           tournament={tournament}
