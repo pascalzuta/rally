@@ -146,9 +146,10 @@ body {
 }
 
 .top-nav-logo {
-  height: 24px;
-  width: auto;
-  display: block;
+  font-size: 22px;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
 }
 
 .top-nav-actions {
