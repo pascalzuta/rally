@@ -811,12 +811,23 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-xs) 0;
+  padding-left: 0;
   font-size: var(--font-body-md);
+  position: relative;
 }
 
 .match-player.winner {
   font-weight: var(--weight-bold);
   color: var(--color-positive-primary);
+}
+
+/* Snapchat-style vertical probability indicator */
+.prob-indicator {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-right: var(--space-sm);
 }
 
 .match-player-name {
@@ -890,9 +901,10 @@ select:focus {
 
 /* Seed label in tennis bracket style: "Player [1]" */
 .seed-label {
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: var(--font-body-sm);
   font-weight: var(--weight-medium);
+  margin-left: var(--space-xs);
 }
 
 /* Win probability split bar */
