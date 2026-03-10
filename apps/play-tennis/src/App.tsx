@@ -47,6 +47,7 @@ export default function App() {
       <div className="app">
         <TournamentView
           tournamentId={viewingTournamentId}
+          currentPlayerId={profile.id}
           onBack={() => {
             setViewingTournamentId(null)
             refreshTournaments()
@@ -106,7 +107,9 @@ export default function App() {
                         <span>{t.players.length} players</span>
                         <span>{t.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}</span>
                       </div>
-                      <button className="btn-icon delete-btn" onClick={(e) => handleDelete(e, t.id)}>✕</button>
+                      {t.status === 'completed' && t.players.some(p => p.id === profile.id) && (
+                        <button className="btn-icon delete-btn" onClick={(e) => handleDelete(e, t.id)}>✕</button>
+                      )}
                     </div>
                   ))}
                 </div>

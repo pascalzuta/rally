@@ -6,10 +6,11 @@ import Standings from './Standings'
 
 interface Props {
   tournamentId: string
+  currentPlayerId: string
   onBack: () => void
 }
 
-export default function TournamentView({ tournamentId, onBack }: Props) {
+export default function TournamentView({ tournamentId, currentPlayerId, onBack }: Props) {
   const [tournament, setTournament] = useState<Tournament | undefined>()
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
@@ -74,13 +75,14 @@ export default function TournamentView({ tournamentId, onBack }: Props) {
                       const p2 = getPlayerName(tournament, match.player2Id)
                       const r1 = match.player1Id ? getPlayerRating(p1) : null
                       const r2 = match.player2Id ? getPlayerRating(p2) : null
-                      const canScore = match.player1Id && match.player2Id && !match.completed
+                      const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
+                      const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch
                       const isBye = (!match.player1Id || !match.player2Id) && match.completed
 
                       return (
                         <div
                           key={match.id}
-                          className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''}`}
+                          className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''}`}
                           onClick={() => canScore && setScoringMatchId(match.id)}
                         >
                           {isBye ? (
@@ -112,12 +114,13 @@ export default function TournamentView({ tournamentId, onBack }: Props) {
                   const p2 = getPlayerName(tournament, match.player2Id)
                   const r1 = match.player1Id ? getPlayerRating(p1) : null
                   const r2 = match.player2Id ? getPlayerRating(p2) : null
-                  const canScore = !match.completed
+                  const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
+                  const canScore = !match.completed && isMyMatch
 
                   return (
                     <div
                       key={match.id}
-                      className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''}`}
+                      className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''}`}
                       onClick={() => canScore && setScoringMatchId(match.id)}
                     >
                       <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
