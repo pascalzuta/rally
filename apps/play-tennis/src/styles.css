@@ -912,34 +912,53 @@ select:focus {
   vertical-align: middle;
 }
 
-/* Win probability bar on upcoming matches */
-.match-prob-bar {
-  position: relative;
-  height: 6px;
-  background: var(--color-neutral-bg);
-  border-radius: 3px;
+/* Win probability split bar */
+.prob-split {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   margin-top: var(--space-sm);
-  overflow: hidden;
 }
 
-.match-prob-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
+.prob-split-bar {
+  flex: 1;
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.prob-split-fill-left {
   height: 100%;
   background: var(--color-accent-primary);
-  border-radius: 3px;
+  border-radius: 4px 0 0 4px;
   transition: width 0.3s ease;
 }
 
-.match-prob-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2px;
-  font-size: 10px;
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
+.prob-split-fill-right {
+  height: 100%;
+  background: var(--color-text-muted);
+  opacity: 0.3;
+  border-radius: 0 4px 4px 0;
+  transition: width 0.3s ease;
+}
+
+.prob-split-label {
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
+  min-width: 32px;
+}
+
+.prob-split-p1 {
+  color: var(--color-accent-primary);
+  text-align: right;
+}
+
+.prob-split-p2 {
+  color: var(--color-text-muted);
+  text-align: left;
 }
 
 /* ================================================

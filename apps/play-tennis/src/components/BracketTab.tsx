@@ -208,14 +208,15 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
               {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
             </div>
 
-            {/* Win probability bar for upcoming matches */}
+            {/* Win probability split bar */}
             {showWinProb && (
-              <div className="match-prob-bar">
-                <div className="match-prob-fill" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
-                <div className="match-prob-labels">
-                  <span>{Math.round(p1WinProb * 100)}%</span>
-                  <span>{Math.round((1 - p1WinProb) * 100)}%</span>
+              <div className="prob-split">
+                <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
+                <div className="prob-split-bar">
+                  <div className="prob-split-fill-left" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+                  <div className="prob-split-fill-right" style={{ width: `${Math.round((1 - p1WinProb) * 100)}%` }} />
                 </div>
+                <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
               </div>
             )}
 
