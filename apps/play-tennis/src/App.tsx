@@ -144,6 +144,7 @@ export default function App() {
             <Profile
               profile={profile}
               onLogout={() => setProfile(null)}
+              onNavigate={(tab) => setActiveTab(tab)}
             />
           )}
         </main>

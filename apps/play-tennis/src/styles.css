@@ -2235,3 +2235,93 @@ select:focus {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* --- Activation Progress --- */
+
+.activation-progress {
+  cursor: default;
+}
+
+.activation-progress:active {
+  transform: none;
+}
+
+.activation-progress-title {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-lg);
+  color: var(--color-text-primary);
+}
+
+.activation-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.activation-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.activation-step-check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activation-step-label {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+}
+
+.activation-step.completed .activation-step-label {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.activation-step.next .activation-step-label {
+  color: var(--color-accent-primary);
+  font-weight: var(--weight-semibold);
+}
+
+/* --- Activation Card --- */
+
+.activation-card {
+  cursor: default;
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.activation-card:active {
+  transform: none;
+}
+
+.activation-card-icon {
+  font-size: 32px;
+  margin-bottom: var(--space-sm);
+}
+
+.activation-card-title {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.activation-card-desc {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-lg);
+}
+
+.activation-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
