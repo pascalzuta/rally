@@ -75,10 +75,10 @@ export default function App() {
       <div className="app">
         <nav className="top-nav">
           <div className="top-nav-logo">
-              <svg className="rally-icon" width="36" height="24" viewBox="0 0 44 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 15C6 13 12 10 20 8C26 7 32 7.5 36 9C30 13 28 17 32 21L38 23.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 33C6 35 12 38 20 40C26 41 32 40.5 36 39C30 35 28 31 32 27L38 24.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M10 24L42 24" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round"/>
+              <svg className="rally-icon" width="40" height="20" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 28C8 26 20 16 38 10C50 6 62 8 72 14C66 18 62 22 64 26L76 30L64 30C56 28 44 26 32 28C20 30 8 30 0 30Z" fill="#1a1a1a"/>
+                <path d="M0 32C8 34 20 44 38 50C50 54 62 52 72 46C66 42 62 38 64 34L76 30L64 30C56 32 44 34 32 32C20 30 8 30 0 30Z" fill="#1a1a1a"/>
+                <path d="M72 28.5H116V31.5H72Z" fill="#1a1a1a"/>
               </svg>
               <span className="rally-wordmark">Rally</span>
             </div>
@@ -102,10 +102,10 @@ export default function App() {
       <div className="screen">
         <nav className="top-nav">
           <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
-              <svg className="rally-icon" width="36" height="24" viewBox="0 0 44 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 15C6 13 12 10 20 8C26 7 32 7.5 36 9C30 13 28 17 32 21L38 23.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 33C6 35 12 38 20 40C26 41 32 40.5 36 39C30 35 28 31 32 27L38 24.5" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M10 24L42 24" stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round"/>
+              <svg className="rally-icon" width="40" height="20" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 28C8 26 20 16 38 10C50 6 62 8 72 14C66 18 62 22 64 26L76 30L64 30C56 28 44 26 32 28C20 30 8 30 0 30Z" fill="#1a1a1a"/>
+                <path d="M0 32C8 34 20 44 38 50C50 54 62 52 72 46C66 42 62 38 64 34L76 30L64 30C56 32 44 34 32 32C20 30 8 30 0 30Z" fill="#1a1a1a"/>
+                <path d="M72 28.5H116V31.5H72Z" fill="#1a1a1a"/>
               </svg>
               <span className="rally-wordmark">Rally</span>
             </div>
