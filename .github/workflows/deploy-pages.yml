@@ -27,11 +27,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        working-directory: apps/play-tennis
 
       - name: Build
-        run: npx vite build
-        working-directory: apps/play-tennis
+        run: npm run build:play-tennis
 
       - uses: actions/upload-pages-artifact@v3
         with:
