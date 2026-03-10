@@ -146,12 +146,24 @@ function getProgressText(tournament: Tournament): string {
       if (!m.completed) return max
       return Math.max(max, m.round)
     }, 0)
-    // Find the current active round
     const incompleteMatches = tournament.matches.filter(m => !m.completed && m.player1Id && m.player2Id)
     const currentRound = incompleteMatches.length > 0
       ? Math.min(...incompleteMatches.map(m => m.round))
       : completedRounds
     return `Round ${currentRound} of ${totalRounds}`
+  }
+
+  if (tournament.format === 'group-knockout') {
+    const groupMatches = tournament.matches.filter(m => m.phase === 'group')
+    const groupDone = groupMatches.filter(m => m.completed).length
+    if (!tournament.groupPhaseComplete) {
+      return `Group stage: ${groupDone} of ${groupMatches.length} matches`
+    }
+    const knockoutMatches = tournament.matches.filter(m => m.phase === 'knockout')
+    const knockoutDone = knockoutMatches.filter(m => m.completed).length
+    if (knockoutDone === 0) return 'Semifinals'
+    if (knockoutDone < knockoutMatches.length) return 'Final'
+    return 'Completed'
   }
 
   const completed = tournament.matches.filter(m => m.completed).length
@@ -248,7 +260,7 @@ export default function Home({
           <div className="card-top">
             <h3>{tournament.name}</h3>
             <span className="badge badge-live">
-              {tournament.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}
+              {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'}
             </span>
           </div>
           <div className="card-meta">

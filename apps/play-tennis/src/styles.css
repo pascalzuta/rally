@@ -1205,6 +1205,68 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 
+/* Group-knockout inline standings */
+.group-standings-inline {
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+}
+
+.group-standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-body-md);
+}
+
+.group-standings-table th {
+  text-align: left;
+  padding: var(--space-sm) 10px;
+  font-size: var(--font-body-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-divider);
+  font-weight: var(--weight-semibold);
+}
+
+.group-standings-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--color-neutral-bg);
+}
+
+.group-standings-table .rank {
+  font-weight: var(--weight-bold);
+  color: var(--color-text-secondary);
+  width: 30px;
+}
+
+.group-standings-table .player-cell {
+  font-weight: var(--weight-medium);
+}
+
+.group-standings-table .stat-cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.group-standings-table tr.qualifies td {
+  color: var(--color-primary);
+}
+
+.group-standings-table tr.qualifies .rank {
+  color: var(--color-primary);
+}
+
+.qualification-hint {
+  margin-top: var(--space-sm);
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-style: italic;
+}
+
 /* ================================================
    Registration
    ================================================ */

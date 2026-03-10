@@ -67,6 +67,8 @@ export interface MatchResolution {
   forcedSlot?: { day: DayOfWeek; startHour: number; endHour: number }  // for forced-match
 }
 
+export type MatchPhase = 'group' | 'knockout'
+
 export interface Match {
   id: string
   round: number
@@ -79,6 +81,7 @@ export interface Match {
   completed: boolean
   schedule?: MatchSchedule
   resolution?: MatchResolution
+  phase?: MatchPhase
 }
 
 export interface Tournament {
@@ -86,12 +89,13 @@ export interface Tournament {
   name: string
   date: string
   county: string
-  format: 'single-elimination' | 'round-robin'
+  format: 'single-elimination' | 'round-robin' | 'group-knockout'
   players: Player[]
   matches: Match[]
   status: 'setup' | 'in-progress' | 'completed'
   createdAt: string
   countdownStartedAt?: string  // ISO timestamp when 6-player countdown began
+  groupPhaseComplete?: boolean  // for group-knockout: true once all group matches done
 }
 
 // --- Match Broadcast ---

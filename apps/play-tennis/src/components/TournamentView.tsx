@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTournament, getPlayerName, getPlayerRating, getSeeds, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
+import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
 import { Tournament, Match } from '../types'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -69,13 +69,27 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     }
   }
 
-  const winner = tournament.status === 'completed' && tournament.format === 'single-elimination'
+  const winner = tournament.status === 'completed' && (tournament.format === 'single-elimination' || tournament.format === 'group-knockout')
     ? tournament.matches[tournament.matches.length - 1]?.winnerId
     : null
 
   const rounds = tournament.format === 'single-elimination'
     ? [...new Set(tournament.matches.map(m => m.round))].sort((a, b) => a - b)
+    : tournament.format === 'group-knockout'
+    ? [...new Set(tournament.matches.filter(m => m.phase === 'knockout').map(m => m.round))].sort((a, b) => a - b)
     : [0]
+
+  // Group-knockout specific
+  const groupMatches = tournament.format === 'group-knockout'
+    ? tournament.matches.filter(m => m.phase === 'group')
+    : []
+  const knockoutMatches = tournament.format === 'group-knockout'
+    ? tournament.matches.filter(m => m.phase === 'knockout')
+    : []
+  const groupComplete = tournament.format === 'group-knockout' && tournament.groupPhaseComplete
+  const groupStandings = tournament.format === 'group-knockout' ? getGroupStandings(tournament) : []
+  const groupMatchesCompleted = groupMatches.filter(m => m.completed).length
+  const groupMatchesTotal = groupMatches.length
 
   const roundLabel = (round: number, totalRounds: number) => {
     if (round === totalRounds) return 'Final'
@@ -241,7 +255,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           </div>
         )}
 
-        {tournament.format === 'round-robin' && (
+        {(tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
           <div className="tab-bar">
             <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
             <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
@@ -284,7 +298,6 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                   <div key={round} className={`round ${isFinalRound ? 'round-final' : ''}`}>
                     <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
                     {roundMatches.map(m => renderMatchCard(m, isFinalRound))}
-                    {/* Connector line between rounds */}
                     {roundIdx < rounds.length - 1 && (
                       <div className="bracket-connector">
                         <div className="bracket-connector-line" />
@@ -293,6 +306,62 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                   </div>
                 )
               })
+            ) : tournament.format === 'group-knockout' ? (
+              <>
+                <div className="round">
+                  <h3 className="round-label">Group Stage</h3>
+                  {groupMatches.map(m => renderMatchCard(m))}
+                </div>
+
+                {groupMatches.some(m => m.completed) && (
+                  <div className="group-standings-inline">
+                    <h3 className="round-label">Standings</h3>
+                    <table className="group-standings-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Player</th>
+                          <th>W</th>
+                          <th>L</th>
+                          <th>Sets</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupStandings.map((s, i) => {
+                          const seed = seeds.get(s.id)
+                          const qualifies = i < 4
+                          return (
+                            <tr key={s.id} className={qualifies ? 'qualifies' : ''}>
+                              <td className="rank">{i + 1}</td>
+                              <td className="player-cell">{s.name}{seed != null && <span className="seed-label"> ({seed})</span>}</td>
+                              <td className="stat-cell">{s.wins}</td>
+                              <td className="stat-cell">{s.losses}</td>
+                              <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                    {!groupComplete && <div className="qualification-hint">Top 4 advance to semifinals</div>}
+                  </div>
+                )}
+
+                {groupComplete && knockoutMatches.length > 0 && (
+                  <>
+                    <div className="round">
+                      <h3 className="round-label">Semifinals</h3>
+                      {knockoutMatches.filter(m => m.round === 2).map(m => renderMatchCard(m))}
+                    </div>
+                    <div className="bracket-connector">
+                      <div className="bracket-connector-line" />
+                    </div>
+                    <div className="round round-final">
+                      <h3 className="round-label">Final</h3>
+                      {knockoutMatches.filter(m => m.round === 3).map(m => renderMatchCard(m, true))}
+                    </div>
+                  </>
+                )}
+              </>
             ) : (
               <div className="round">
                 <h3 className="round-label">All Matches</h3>
@@ -303,7 +372,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           </>
         )}
 
-        {tab === 'standings' && tournament.format === 'round-robin' && (
+        {tab === 'standings' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
           <Standings tournament={tournament} />
         )}
       </main>

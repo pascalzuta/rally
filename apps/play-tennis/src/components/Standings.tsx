@@ -28,7 +28,12 @@ export default function Standings({ tournament }: Props) {
     gamesLost: 0,
   }))
 
-  for (const match of tournament.matches) {
+  // For group-knockout, only count group phase matches in standings
+  const relevantMatches = tournament.format === 'group-knockout'
+    ? tournament.matches.filter(m => m.phase === 'group')
+    : tournament.matches
+
+  for (const match of relevantMatches) {
     if (!match.completed) continue
     const s1 = stats.find(s => s.id === match.player1Id)
     const s2 = stats.find(s => s.id === match.player2Id)

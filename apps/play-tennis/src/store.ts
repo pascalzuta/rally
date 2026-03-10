@@ -142,7 +142,7 @@ export function startTournamentFromLobby(county: string): Tournament | null {
     name: `${county} Open`,
     date: new Date().toISOString().split('T')[0],
     county,
-    format: 'single-elimination',
+    format: 'group-knockout',
     players: countyPlayers.map(e => ({ id: e.playerId, name: e.playerName })),
     matches: [],
     status: 'setup',
@@ -499,10 +499,8 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
     const p2 = tournament.players.find(p => p.id === match.player2Id)
     if (p1 && p2) updateRatings(p1.name, p2.name, p1.name)
 
-    // Advance in single-elimination
-    if (tournament.format === 'single-elimination') {
-      advanceWinner(tournament, match, match.player1Id)
-    }
+    // Advance winner
+    advanceWinner(tournament, match, match.player1Id)
   } else if (!p1Above && p2Above) {
     // Case 2: Player 2 wins walkover
     resolution = {
@@ -520,9 +518,7 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
     const p2 = tournament.players.find(p => p.id === match.player2Id)
     if (p1 && p2) updateRatings(p1.name, p2.name, p2.name)
 
-    if (tournament.format === 'single-elimination') {
-      advanceWinner(tournament, match, match.player2Id)
-    }
+    advanceWinner(tournament, match, match.player2Id)
   } else if (p1Above && p2Above) {
     // Case 3: Both participated — forced match assignment
     resolution = {
@@ -557,17 +553,40 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
 }
 
 function advanceWinner(tournament: Tournament, match: Match, winnerId: string): void {
-  if (tournament.format !== 'single-elimination') return
-  const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1)
-  const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
-  if (nextMatch) {
-    if (match.position % 2 === 0) {
-      nextMatch.player1Id = winnerId
-    } else {
-      nextMatch.player2Id = winnerId
+  if (tournament.format === 'single-elimination') {
+    const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1)
+    const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+    if (nextMatch) {
+      if (match.position % 2 === 0) {
+        nextMatch.player1Id = winnerId
+      } else {
+        nextMatch.player2Id = winnerId
+      }
+      if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+        nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+      }
     }
-    if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
-      nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+  } else if (tournament.format === 'group-knockout') {
+    if (match.phase === 'group') {
+      // Check if all group matches are done → generate knockout
+      const groupMatches = tournament.matches.filter(m => m.phase === 'group')
+      const allGroupDone = groupMatches.every(m => m.completed)
+      if (allGroupDone && !tournament.groupPhaseComplete) {
+        generateKnockoutPhase(tournament)
+      }
+    } else if (match.phase === 'knockout') {
+      const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1 && m.phase === 'knockout')
+      const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+      if (nextMatch) {
+        if (match.position % 2 === 0) {
+          nextMatch.player1Id = winnerId
+        } else {
+          nextMatch.player2Id = winnerId
+        }
+        if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+          nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+        }
+      }
     }
   }
 }
@@ -654,10 +673,8 @@ export function leaveTournament(tournamentId: string, playerId: string): boolean
         match.schedule.resolution = match.resolution
       }
 
-      // Advance opponent in single-elimination
-      if (t.format === 'single-elimination') {
-        advanceWinner(t, match, opponentId)
-      }
+      // Advance opponent
+      advanceWinner(t, match, opponentId)
     } else {
       // No opponent yet — just mark completed
       match.completed = true
@@ -750,6 +767,28 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
 
     advanceByes(matches)
     t.matches = matches
+  } else if (t.format === 'group-knockout') {
+    // Group phase: full round robin (every player plays every other player)
+    const matches: Match[] = []
+    for (let i = 0; i < t.players.length; i++) {
+      for (let j = i + 1; j < t.players.length; j++) {
+        matches.push({
+          id: generateId(),
+          round: 1,
+          position: matches.length,
+          player1Id: t.players[i].id,
+          player2Id: t.players[j].id,
+          score1: [],
+          score2: [],
+          winnerId: null,
+          completed: false,
+          phase: 'group',
+        })
+      }
+    }
+    // Knockout matches (semis + final) are generated when group phase completes
+    t.groupPhaseComplete = false
+    t.matches = matches
   } else {
     const matches: Match[] = []
     for (let i = 0; i < t.players.length; i++) {
@@ -780,6 +819,119 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
   t.status = 'in-progress'
   save(all)
   return t
+}
+
+// Compute group standings for group-knockout format
+export function getGroupStandings(tournament: Tournament): { id: string; name: string; wins: number; losses: number; setsWon: number; setsLost: number; gamesWon: number; gamesLost: number }[] {
+  const stats = tournament.players.map(p => ({
+    id: p.id,
+    name: p.name,
+    wins: 0,
+    losses: 0,
+    setsWon: 0,
+    setsLost: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+  }))
+
+  const groupMatches = tournament.matches.filter(m => m.phase === 'group')
+  for (const match of groupMatches) {
+    if (!match.completed) continue
+    const s1 = stats.find(s => s.id === match.player1Id)
+    const s2 = stats.find(s => s.id === match.player2Id)
+    if (!s1 || !s2) continue
+
+    if (match.winnerId === match.player1Id) {
+      s1.wins++
+      s2.losses++
+    } else {
+      s2.wins++
+      s1.losses++
+    }
+
+    for (let i = 0; i < match.score1.length; i++) {
+      s1.gamesWon += match.score1[i]
+      s1.gamesLost += match.score2[i]
+      s2.gamesWon += match.score2[i]
+      s2.gamesLost += match.score1[i]
+      if (match.score1[i] > match.score2[i]) {
+        s1.setsWon++
+        s2.setsLost++
+      } else {
+        s2.setsWon++
+        s1.setsLost++
+      }
+    }
+  }
+
+  stats.sort((a, b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins
+    const aSetDiff = a.setsWon - a.setsLost
+    const bSetDiff = b.setsWon - b.setsLost
+    if (bSetDiff !== aSetDiff) return bSetDiff - aSetDiff
+    return (b.gamesWon - b.gamesLost) - (a.gamesWon - a.gamesLost)
+  })
+
+  return stats
+}
+
+// Generate knockout phase matches for group-knockout format
+function generateKnockoutPhase(tournament: Tournament): void {
+  const standings = getGroupStandings(tournament)
+  const top4 = standings.slice(0, 4)
+
+  // Semi 1: #1 vs #4
+  const semi1: Match = {
+    id: generateId(),
+    round: 2,
+    position: 0,
+    player1Id: top4[0]?.id ?? null,
+    player2Id: top4[3]?.id ?? null,
+    score1: [],
+    score2: [],
+    winnerId: null,
+    completed: false,
+    phase: 'knockout',
+  }
+
+  // Semi 2: #2 vs #3
+  const semi2: Match = {
+    id: generateId(),
+    round: 2,
+    position: 1,
+    player1Id: top4[1]?.id ?? null,
+    player2Id: top4[2]?.id ?? null,
+    score1: [],
+    score2: [],
+    winnerId: null,
+    completed: false,
+    phase: 'knockout',
+  }
+
+  // Final: TBD vs TBD
+  const final: Match = {
+    id: generateId(),
+    round: 3,
+    position: 0,
+    player1Id: null,
+    player2Id: null,
+    score1: [],
+    score2: [],
+    winnerId: null,
+    completed: false,
+    phase: 'knockout',
+  }
+
+  tournament.matches.push(semi1, semi2, final)
+  tournament.groupPhaseComplete = true
+
+  // Generate schedules for semis
+  if (semi1.player1Id && semi1.player2Id) {
+    semi1.schedule = generateMatchSchedule(semi1.player1Id, semi1.player2Id)
+  }
+  if (semi2.player1Id && semi2.player2Id) {
+    semi2.schedule = generateMatchSchedule(semi2.player1Id, semi2.player2Id)
+  }
 }
 
 function advanceByes(matches: Match[]): void {
@@ -845,6 +997,31 @@ export function saveMatchScore(
     }
   }
 
+  // Group-knockout: check if group phase is done, generate knockout
+  if (t.format === 'group-knockout') {
+    if (match.phase === 'group') {
+      const groupMatches = t.matches.filter(m => m.phase === 'group')
+      const allGroupDone = groupMatches.every(m => m.completed)
+      if (allGroupDone && !t.groupPhaseComplete) {
+        generateKnockoutPhase(t)
+      }
+    } else if (match.phase === 'knockout') {
+      // Advance in knockout bracket (semis → final)
+      const nextRoundMatches = t.matches.filter(m => m.round === match.round + 1 && m.phase === 'knockout')
+      const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+      if (nextMatch) {
+        if (match.position % 2 === 0) {
+          nextMatch.player1Id = winnerId
+        } else {
+          nextMatch.player2Id = winnerId
+        }
+        if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+          nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+        }
+      }
+    }
+  }
+
   const allDone = t.matches.every(m => m.completed)
   if (allDone) {
     t.status = 'completed'
@@ -861,7 +1038,7 @@ export function getPlayerName(tournament: Tournament, playerId: string | null): 
 
 export function getSeeds(tournament: Tournament): Map<string, number> {
   const seeds = new Map<string, number>()
-  if (tournament.format === 'single-elimination') {
+  if (tournament.format === 'single-elimination' || tournament.format === 'group-knockout') {
     const sorted = [...tournament.players].sort((a, b) => {
       return getPlayerRating(b.name).rating - getPlayerRating(a.name).rating
     })
