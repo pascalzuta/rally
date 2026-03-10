@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty } from '../store'
+import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty, escalateMatch, getTournament } from '../store'
 import { PlayerProfile } from '../types'
 
 interface Props {
@@ -65,6 +65,36 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
+  function handleEscalateAll() {
+    if (!activeTournamentId) return
+    const t = getTournament(activeTournamentId)
+    if (!t) { setMessage('No tournament found'); return }
+
+    const unconfirmed = t.matches.filter(
+      m => m.schedule && m.schedule.status !== 'confirmed' && !m.completed
+    )
+    if (unconfirmed.length === 0) {
+      setMessage('No matches to escalate')
+      setTimeout(() => setMessage(''), 2000)
+      return
+    }
+
+    let escalated = 0
+    let confirmed = 0
+    for (const match of unconfirmed) {
+      const result = escalateMatch(activeTournamentId, match.id)
+      if (result) {
+        const updated = result.matches.find(m => m.id === match.id)
+        if (updated?.schedule?.status === 'confirmed') confirmed++
+        else if (updated?.schedule?.status === 'escalated') escalated++
+        else escalated++
+      }
+    }
+    setMessage(`Escalated: ${escalated} confirmed, ${confirmed} auto-resolved`)
+    onTournamentUpdated?.()
+    setTimeout(() => setMessage(''), 2000)
+  }
+
   const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
 
   function handleForceStart() {
@@ -121,6 +151,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
           <div className="dev-buttons">
             <button className="btn dev-btn" onClick={handleSimulate}>Score Round</button>
             <button className="btn dev-btn" onClick={handleAutoConfirm}>Confirm All</button>
+            <button className="btn dev-btn" onClick={handleEscalateAll}>Escalate All</button>
           </div>
         </div>
       )}
