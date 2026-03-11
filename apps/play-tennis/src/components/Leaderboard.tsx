@@ -12,6 +12,7 @@ export default function Leaderboard({ county, currentPlayerName, onBack }: Props
 
   // Find current player's position
   const myIndex = leaderboard.findIndex(e => e.name.toLowerCase() === currentPlayerName.toLowerCase())
+  const myEntry = myIndex >= 0 ? leaderboard[myIndex] : null
 
   // Show players near the current user (context window)
   // Always show top 3 + players around current user
@@ -26,10 +27,16 @@ export default function Leaderboard({ county, currentPlayerName, onBack }: Props
 
   function renderRow(entry: LeaderboardEntry) {
     const isMe = entry.name.toLowerCase() === currentPlayerName.toLowerCase()
+    const initial = entry.name[0].toUpperCase()
+    const record = entry.wins + entry.losses > 0 ? `${entry.wins}W–${entry.losses}L` : ''
     return (
       <div key={entry.name} className={`lb-row ${isMe ? 'lb-row-me' : ''}`}>
-        <span className="lb-row-rank">#{entry.rank}</span>
-        <span className="lb-row-name">{entry.name}</span>
+        <span className="lb-row-rank">{entry.rank === 1 ? '🥇' : `#${entry.rank}`}</span>
+        <span className={`lb-row-avatar ${isMe ? 'lb-avatar-me' : ''}`}>{initial}</span>
+        <span className="lb-row-info">
+          <span className="lb-row-name">{entry.name}</span>
+          {record && <span className="lb-row-record">{record}</span>}
+        </span>
         <span className="lb-row-rating">{Math.round(entry.rating)}</span>
       </div>
     )
@@ -66,7 +73,12 @@ export default function Leaderboard({ county, currentPlayerName, onBack }: Props
         )}
       </div>
 
-      <div className="lb-total">{leaderboard.length} players ranked</div>
+      <div className="lb-total">
+        {myEntry
+          ? `Rank #${myEntry.rank} of ${leaderboard.length} players in ${county}`
+          : `${leaderboard.length} players ranked`
+        }
+      </div>
     </div>
   )
 }

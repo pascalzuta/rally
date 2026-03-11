@@ -1152,6 +1152,25 @@ export function getRatingHistory(playerName: string): RatingSnapshot[] {
   return loadRatingHistory()[key] ?? []
 }
 
+export function getRatingTrend(playerName: string): number {
+  const history = getRatingHistory(playerName)
+  if (history.length < 2) return 0
+  const weekAgo = new Date()
+  weekAgo.setDate(weekAgo.getDate() - 7)
+  const weekAgoStr = weekAgo.toISOString()
+  // Find earliest snapshot within the last week, or use the one just before
+  let baseRating = history[0].rating
+  for (const snap of history) {
+    if (snap.timestamp < weekAgoStr) {
+      baseRating = snap.rating
+    } else {
+      break
+    }
+  }
+  const currentRating = history[history.length - 1].rating
+  return Math.round(currentRating - baseRating)
+}
+
 export function getRatingLabel(rating: number): string {
   if (rating >= 2200) return 'Pro'
   if (rating >= 2000) return 'Semi-pro'
@@ -1169,17 +1188,37 @@ export interface LeaderboardEntry {
   rating: number
   matchesPlayed: number
   rank: number
+  wins: number
+  losses: number
 }
 
 export function getCountyLeaderboard(county: string): LeaderboardEntry[] {
   const tournaments = load()
   const playerNames = new Set<string>()
+  const playerStats: Record<string, { wins: number; losses: number }> = {}
 
   // Collect all player names from tournaments in this county
   for (const t of tournaments) {
     if (t.county.toLowerCase() !== county.toLowerCase()) continue
     for (const p of t.players) {
       playerNames.add(p.name)
+      if (!playerStats[p.name]) playerStats[p.name] = { wins: 0, losses: 0 }
+    }
+    for (const m of t.matches) {
+      if (!m.completed || !m.winnerId) continue
+      const p1 = t.players.find(p => p.id === m.player1Id)
+      const p2 = t.players.find(p => p.id === m.player2Id)
+      const winner = t.players.find(p => p.id === m.winnerId)
+      if (p1 && winner) {
+        if (!playerStats[p1.name]) playerStats[p1.name] = { wins: 0, losses: 0 }
+        if (m.winnerId === p1.id) playerStats[p1.name].wins++
+        else playerStats[p1.name].losses++
+      }
+      if (p2 && winner) {
+        if (!playerStats[p2.name]) playerStats[p2.name] = { wins: 0, losses: 0 }
+        if (m.winnerId === p2.id) playerStats[p2.name].wins++
+        else playerStats[p2.name].losses++
+      }
     }
   }
 
@@ -1194,7 +1233,8 @@ export function getCountyLeaderboard(county: string): LeaderboardEntry[] {
   const entries: LeaderboardEntry[] = []
   for (const name of playerNames) {
     const r = getPlayerRating(name)
-    entries.push({ name, rating: r.rating, matchesPlayed: r.matchesPlayed, rank: 0 })
+    const stats = playerStats[name] ?? { wins: 0, losses: 0 }
+    entries.push({ name, rating: r.rating, matchesPlayed: r.matchesPlayed, rank: 0, wins: stats.wins, losses: stats.losses })
   }
 
   entries.sort((a, b) => b.rating - a.rating)

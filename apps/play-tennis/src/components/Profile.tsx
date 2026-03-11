@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getPlayerRating, getRatingLabel, getRatingHistory, getPlayerTournaments, getPlayerRank, logout, getAvailability, saveAvailability } from '../store'
+import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, logout, getAvailability, saveAvailability } from '../store'
 import type { RatingSnapshot } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 
@@ -50,16 +50,18 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
     points.push({ rating: currentRating, timestamp: new Date().toISOString() })
   }
 
+  // Prepend starting rating if only one point
   if (points.length === 1) {
     points.unshift({ rating: 1500, timestamp: points[0].timestamp })
   }
 
   const W = 300
-  const H = 140
+  const H = 150
   const PAD_X = 40
   const PAD_Y = 20
+  const PAD_BOTTOM = 28
   const chartW = W - PAD_X - 10
-  const chartH = H - PAD_Y * 2
+  const chartH = H - PAD_Y - PAD_BOTTOM
 
   const ratings = points.map(p => p.rating)
   const minR = Math.floor((Math.min(...ratings) - 20) / 50) * 50
@@ -69,16 +71,26 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
   const pathPoints = points.map((p, i) => {
     const x = PAD_X + (i / (points.length - 1)) * chartW
     const y = PAD_Y + chartH - ((p.rating - minR) / range) * chartH
-    return { x, y }
+    return { x, y, rating: p.rating }
   })
 
   const d = pathPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
 
   const yLabels = [minR, Math.round((minR + maxR) / 2), maxR]
 
-  const firstDate = new Date(points[0].timestamp)
-  const lastDate = new Date(points[points.length - 1].timestamp)
-  const fmt = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`
+  // Match-based x-axis labels
+  const totalPoints = points.length
+  const xLabelIndices: number[] = []
+  if (totalPoints <= 6) {
+    // Show all
+    for (let i = 0; i < totalPoints; i++) xLabelIndices.push(i)
+  } else {
+    // Show first, last, and a few evenly spaced
+    xLabelIndices.push(0)
+    const step = Math.floor((totalPoints - 1) / 4)
+    for (let i = step; i < totalPoints - 1; i += step) xLabelIndices.push(i)
+    xLabelIndices.push(totalPoints - 1)
+  }
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: 400 }}>
@@ -92,12 +104,19 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
         )
       })}
 
-      <text x={PAD_X} y={H - 4} fontSize="8" fill="var(--color-text-secondary)">{fmt(firstDate)}</text>
-      <text x={W - 10} y={H - 4} textAnchor="end" fontSize="8" fill="var(--color-text-secondary)">{fmt(lastDate)}</text>
+      {/* Match-based x-axis */}
+      {xLabelIndices.map(i => (
+        <text key={i} x={pathPoints[i].x} y={H - 6} textAnchor="middle" fontSize="7" fill="var(--color-text-secondary)">
+          {i === 0 ? 'Start' : `M${i}`}
+        </text>
+      ))}
 
       <path d={d} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 
-      <circle cx={pathPoints[pathPoints.length - 1].x} cy={pathPoints[pathPoints.length - 1].y} r="3" fill="var(--color-accent-primary)" />
+      {/* Data points */}
+      {pathPoints.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={i === pathPoints.length - 1 ? 3.5 : 2} fill="var(--color-accent-primary)" opacity={i === pathPoints.length - 1 ? 1 : 0.5} />
+      ))}
     </svg>
   )
 }
@@ -110,6 +129,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   const tournaments = getPlayerTournaments(profile.id)
   const rankInfo = getPlayerRank(profile.name, profile.county)
   const ratingHistory = getRatingHistory(profile.name)
+  const weeklyTrend = getRatingTrend(profile.name)
 
   const [showRatingInfo, setShowRatingInfo] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -208,6 +228,16 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
     return 'Draw'
   }
 
+  // Engagement prompt
+  const nextRankUp = rankInfo.rank > 1 ? rankInfo.rank - 1 : null
+  const engagementPrompt = lastRatingChange > 0 && nextRankUp
+    ? `One more win could move you to #${nextRankUp}.`
+    : lastRatingChange > 0
+      ? 'Keep the momentum — play another match.'
+      : totalMatches > 0
+        ? 'Play another match to climb the leaderboard.'
+        : null
+
   return (
     <div className="profile-content">
       {/* Player Identity */}
@@ -216,50 +246,46 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
           <h2 className="profile-name">{profile.name}</h2>
           <p className="profile-county">{profile.county}</p>
+          {totalMatches > 0 && <p className="profile-matches-played">{totalMatches} matches played</p>}
         </div>
       </div>
 
       {/* Rating Hero Card */}
       <div className="card rating-hero">
-        <div className="rating-hero-number">{Math.round(rating.rating)}</div>
-        <div className="rating-hero-label">{label} Rating</div>
+        <div className="rating-hero-top">
+          <div className="rating-hero-number">
+            {Math.round(rating.rating)}
+            {weeklyTrend !== 0 && (
+              <span className={`rating-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
+                {weeklyTrend > 0 ? ' ▲' : ' ▼'}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="rating-hero-label">{label} Level</div>
         <div className="rating-hero-details">
           {rankInfo.total > 1 && (
-            <>
-              <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
-              <span className="rating-hero-percentile">Top {100 - rankInfo.percentile}% in county</span>
-            </>
+            <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
           )}
           {lastRatingChange !== 0 && (
             <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
               {lastRatingChange > 0 ? '+' : ''}{lastRatingChange} last match
             </span>
           )}
+          {weeklyTrend !== 0 && (
+            <span className={`rating-hero-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
+              {weeklyTrend > 0 ? '+' : ''}{weeklyTrend} this week
+            </span>
+          )}
         </div>
+        {engagementPrompt && (
+          <div className="engagement-prompt">{engagementPrompt}</div>
+        )}
         <div className="rating-hero-actions">
           {onViewLeaderboard && rankInfo.total > 1 && (
             <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View leaderboard</button>
           )}
-          <button className="btn-link rating-hero-link" onClick={() => setShowRatingInfo(!showRatingInfo)}>
-            {showRatingInfo ? 'Hide rating info' : 'How ratings work'}
-          </button>
         </div>
-        {showRatingInfo && (
-          <div className="rating-explainer">
-            <p>Rally uses an <strong>Elo rating system</strong>, similar to chess rankings. Every player starts at <strong>1500</strong>.</p>
-            <p>When you win against a higher-rated opponent, you gain more points. Losing to a lower-rated opponent costs more. This means upsets are rewarded and the system finds your true level over time.</p>
-            <div className="rating-tiers">
-              <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
-              <div className="rating-tier"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
-              <div className="rating-tier"><span className="tier-range">1800–1999</span><span className="tier-label">Elite</span></div>
-              <div className="rating-tier"><span className="tier-range">1600–1799</span><span className="tier-label">Strong</span></div>
-              <div className="rating-tier"><span className="tier-range">1400–1599</span><span className="tier-label">Club</span></div>
-              <div className="rating-tier"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
-              <div className="rating-tier"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
-            </div>
-            <p className="subtle">Your rating changes more in your first matches, then stabilises as you play more.</p>
-          </div>
-        )}
       </div>
 
       {/* Performance Section */}
@@ -310,20 +336,20 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
       {/* Availability Section */}
       <div className="card profile-section">
         <h3 className="profile-section-title">
-          <span>When You Play</span>
+          <span>{slots.length > 0 ? 'Available' : 'When You Play'}</span>
           {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
         </h3>
         {!editing ? (
           <div className="availability-current">
             {slots.length === 0 ? (
-              <p className="subtle">No availability slots set</p>
+              <p className="subtle">No availability set</p>
             ) : (
               slots.map((slot, i) => {
                 const dayInfo = DAYS.find(d => d.key === slot.day)
                 return (
                   <div key={i} className="availability-slot-item">
-                    <span className="availability-slot-day">{dayInfo?.label ?? slot.day}</span>
-                    <span className="availability-slot-hours">{formatHour(slot.startHour)}–{formatHour(slot.endHour)}</span>
+                    <span className="availability-slot-day">{dayInfo?.short ?? slot.day}</span>
+                    <span className="availability-slot-hours">{formatHour(slot.startHour).replace(':00', '')}–{formatHour(slot.endHour).replace(':00', '')}</span>
                   </div>
                 )
               })
@@ -388,6 +414,31 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
               <button className="btn" onClick={handleCancelEdit}>Cancel</button>
             </div>
           </>
+        )}
+      </div>
+
+      {/* Rating Explanation (collapsed by default) */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title">
+          <button className="btn-link" onClick={() => setShowRatingInfo(!showRatingInfo)}>
+            {showRatingInfo ? 'Hide rating info ▾' : 'How ratings work ▸'}
+          </button>
+        </h3>
+        {showRatingInfo && (
+          <div className="rating-explainer">
+            <p>Rally uses an <strong>Elo rating system</strong>, similar to chess rankings. Every player starts at <strong>1500</strong>.</p>
+            <p>When you win against a higher-rated opponent, you gain more points. Losing to a lower-rated opponent costs more. This means upsets are rewarded and the system finds your true level over time.</p>
+            <div className="rating-tiers">
+              <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
+              <div className="rating-tier"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
+              <div className="rating-tier"><span className="tier-range">1800–1999</span><span className="tier-label">Elite</span></div>
+              <div className="rating-tier"><span className="tier-range">1600–1799</span><span className="tier-label">Strong</span></div>
+              <div className="rating-tier"><span className="tier-range">1400–1599</span><span className="tier-label">Club</span></div>
+              <div className="rating-tier"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
+              <div className="rating-tier"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
+            </div>
+            <p className="subtle">Your rating changes more in your first matches, then stabilises as you play more.</p>
+          </div>
         )}
       </div>
 
