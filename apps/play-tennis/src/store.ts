@@ -1162,6 +1162,56 @@ export function getRatingLabel(rating: number): string {
   return 'Newcomer'
 }
 
+// --- Leaderboard ---
+
+export interface LeaderboardEntry {
+  name: string
+  rating: number
+  matchesPlayed: number
+  rank: number
+}
+
+export function getCountyLeaderboard(county: string): LeaderboardEntry[] {
+  const tournaments = load()
+  const playerNames = new Set<string>()
+
+  // Collect all player names from tournaments in this county
+  for (const t of tournaments) {
+    if (t.county.toLowerCase() !== county.toLowerCase()) continue
+    for (const p of t.players) {
+      playerNames.add(p.name)
+    }
+  }
+
+  // Also include lobby entries
+  const lobby = loadLobby()
+  for (const e of lobby) {
+    if (e.county.toLowerCase() === county.toLowerCase()) {
+      playerNames.add(e.playerName)
+    }
+  }
+
+  const entries: LeaderboardEntry[] = []
+  for (const name of playerNames) {
+    const r = getPlayerRating(name)
+    entries.push({ name, rating: r.rating, matchesPlayed: r.matchesPlayed, rank: 0 })
+  }
+
+  entries.sort((a, b) => b.rating - a.rating)
+  entries.forEach((e, i) => e.rank = i + 1)
+
+  return entries
+}
+
+export function getPlayerRank(playerName: string, county: string): { rank: number; total: number; percentile: number } {
+  const leaderboard = getCountyLeaderboard(county)
+  const total = leaderboard.length
+  const entry = leaderboard.find(e => e.name.toLowerCase() === playerName.toLowerCase())
+  const rank = entry?.rank ?? total
+  const percentile = total > 0 ? Math.round(((total - rank) / total) * 100) : 0
+  return { rank, total, percentile }
+}
+
 // --- Dev Tools ---
 
 const TEST_PLAYERS = [

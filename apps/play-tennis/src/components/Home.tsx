@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getPlayerName, getPlayerSeed } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 
@@ -11,6 +11,52 @@ interface Props {
   onTournamentCreated: (id: string) => void
   onViewTournament: (id: string) => void
   onViewMatch: (tournamentId: string, matchId: string) => void
+  onViewLeaderboard?: () => void
+}
+
+// --- Onboarding ---
+
+interface ActivationStep {
+  label: string
+  completed: boolean
+}
+
+function getActivationSteps(
+  profile: PlayerProfile,
+  tournaments: Tournament[],
+  hasAvailability: boolean,
+  hasPlayedMatch: boolean
+): ActivationStep[] {
+  const inTournament = tournaments.some(t =>
+    (t.status === 'setup' || t.status === 'in-progress') &&
+    t.players.some(p => p.id === profile.id)
+  )
+
+  return [
+    { label: 'Create profile', completed: true },
+    { label: 'Start or join tournament', completed: inTournament || hasPlayedMatch },
+    { label: 'Add availability', completed: hasAvailability },
+    { label: 'Play your first match', completed: hasPlayedMatch },
+  ]
+}
+
+function getInviteLink(county: string): string {
+  const url = new URL(window.location.href)
+  url.search = ''
+  url.searchParams.set('join', county)
+  return url.toString()
+}
+
+function handleInvite(county: string) {
+  const link = getInviteLink(county)
+  const message = `Join the Rally tennis tournament in ${county}. Let's start competing.\n${link}`
+  if (navigator.share) {
+    navigator.share({ title: 'Rally Tennis', text: message, url: link }).catch(() => {
+      window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
+    })
+  } else {
+    window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
+  }
 }
 
 type ActionType = 'score' | 'respond' | 'schedule' | 'escalated'
@@ -208,6 +254,7 @@ export default function Home({
   onTournamentCreated,
   onViewTournament,
   onViewMatch,
+  onViewLeaderboard,
 }: Props) {
   const activeTournaments = useMemo(
     () => tournaments.filter(
@@ -233,11 +280,68 @@ export default function Home({
     [activeTournaments, profile.id]
   )
 
+  // Onboarding state
+  const hasAvailability = getAvailability(profile.id).length > 0
+  const hasPlayedMatch = tournaments.some(t =>
+    t.matches.some(m =>
+      m.completed &&
+      (m.player1Id === profile.id || m.player2Id === profile.id)
+    )
+  )
+  const activationSteps = getActivationSteps(profile, tournaments, hasAvailability, hasPlayedMatch)
+  const showOnboarding = !activationSteps.every(s => s.completed)
+
+  // Leaderboard teaser
+  const leaderboard = useMemo(() => getCountyLeaderboard(profile.county), [profile.county, tournaments])
+  const topPlayers = leaderboard.slice(0, 3)
+
   // No active or setup tournament: show lobby
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
       <div className="home-section">
+        {/* Onboarding */}
+        {showOnboarding && (
+          <div className="card onboarding-card">
+            <h3 className="onboarding-title">Welcome to Rally</h3>
+            <p className="onboarding-subtitle">Your next steps</p>
+            <div className="onboarding-steps">
+              {activationSteps.map((step, i) => (
+                <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
+                  <span className="onboarding-step-icon">
+                    {step.completed ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                        <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="onboarding-step-label">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
+
+        {/* Leaderboard Teaser */}
+        {topPlayers.length > 1 && (
+          <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
+            <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
+            {topPlayers.map(entry => (
+              <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
+                <span className="leaderboard-rank">#{entry.rank}</span>
+                <span className="leaderboard-name">{entry.name}</span>
+                <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
+              </div>
+            ))}
+            <button className="btn-link leaderboard-see-all">See full leaderboard</button>
+          </div>
+        )}
       </div>
     )
   }
@@ -246,6 +350,32 @@ export default function Home({
   if (activeTournaments.length === 0 && setupTournaments.length > 0) {
     return (
       <div className="home-section">
+        {showOnboarding && (
+          <div className="card onboarding-card">
+            <h3 className="onboarding-title">Welcome to Rally</h3>
+            <p className="onboarding-subtitle">Your next steps</p>
+            <div className="onboarding-steps">
+              {activationSteps.map((step, i) => (
+                <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
+                  <span className="onboarding-step-icon">
+                    {step.completed ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                        <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="onboarding-step-label">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
       </div>
     )
@@ -254,6 +384,34 @@ export default function Home({
   // Active tournament dashboard
   return (
     <div className="home-section">
+      {/* Onboarding (shows until all steps complete) */}
+      {showOnboarding && (
+        <div className="card onboarding-card">
+          <h3 className="onboarding-title">Welcome to Rally</h3>
+          <p className="onboarding-subtitle">Your next steps</p>
+          <div className="onboarding-steps">
+            {activationSteps.map((step, i) => (
+              <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
+                <span className="onboarding-step-icon">
+                  {step.completed ? (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
+                    </svg>
+                  )}
+                </span>
+                <span className="onboarding-step-label">{step.label}</span>
+              </div>
+            ))}
+          </div>
+          <button className="btn btn-primary onboarding-cta" onClick={() => handleInvite(profile.county)}>Invite Players</button>
+        </div>
+      )}
+
       {/* Tournament Summary Card */}
       {activeTournaments.map(tournament => (
         <div key={tournament.id} className="card" onClick={() => onViewTournament(tournament.id)}>
@@ -306,6 +464,21 @@ export default function Home({
           <div className="upnext-time">
             <div>{formatSlot(upNext.match.schedule.confirmedSlot)}</div>
           </div>
+        </div>
+      )}
+
+      {/* Leaderboard Teaser */}
+      {topPlayers.length > 1 && (
+        <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
+          <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
+          {topPlayers.map(entry => (
+            <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
+              <span className="leaderboard-rank">#{entry.rank}</span>
+              <span className="leaderboard-name">{entry.name}</span>
+              <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
+            </div>
+          ))}
+          <button className="btn-link leaderboard-see-all">See full leaderboard</button>
         </div>
       )}
 

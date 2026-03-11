@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { getPlayerRating, getRatingLabel, getRatingHistory, getPlayerTournaments, getTournamentsByCounty, logout, getAvailability, saveAvailability } from '../store'
+import { getPlayerRating, getRatingLabel, getRatingHistory, getPlayerTournaments, getPlayerRank, logout, getAvailability, saveAvailability } from '../store'
 import type { RatingSnapshot } from '../store'
-import { PlayerProfile, AvailabilitySlot, DayOfWeek, Tournament } from '../types'
+import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 
 interface Props {
   profile: PlayerProfile
   onLogout: () => void
   onNavigate: (tab: 'home' | 'bracket' | 'playnow') => void
+  onViewLeaderboard?: () => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -37,183 +38,6 @@ function formatHour(h: number): string {
   if (h === 0 || h === 24) return '12am'
   if (h === 12) return '12pm'
   return h < 12 ? `${h}am` : `${h - 12}pm`
-}
-
-function getInviteLink(county: string): string {
-  const url = new URL(window.location.href)
-  url.search = ''
-  url.searchParams.set('join', county)
-  return url.toString()
-}
-
-function handleInvite(county: string) {
-  const link = getInviteLink(county)
-  const message = `Join the Rally tennis tournament in ${county}. Let's start competing.\n${link}`
-  if (navigator.share) {
-    navigator.share({ title: 'Rally Tennis', text: message, url: link }).catch(() => {
-      window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
-    })
-  } else {
-    window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
-  }
-}
-
-// --- Activation Progress ---
-
-interface ActivationStep {
-  label: string
-  completed: boolean
-}
-
-function getActivationSteps(
-  profile: PlayerProfile,
-  tournaments: Tournament[],
-  hasAvailability: boolean,
-  hasPlayedMatch: boolean
-): ActivationStep[] {
-  const inTournament = tournaments.some(t =>
-    (t.status === 'setup' || t.status === 'in-progress') &&
-    t.players.some(p => p.id === profile.id)
-  )
-
-  return [
-    { label: 'Create profile', completed: true },
-    { label: 'Join or start a tournament', completed: inTournament || hasPlayedMatch },
-    { label: 'Invite players', completed: false },
-    { label: 'Add availability', completed: hasAvailability },
-    { label: 'Play your first match', completed: hasPlayedMatch },
-  ]
-}
-
-function ActivationProgress({ steps }: { steps: ActivationStep[] }) {
-  const allDone = steps.every(s => s.completed)
-  if (allDone) return null
-
-  const nextIndex = steps.findIndex(s => !s.completed)
-
-  return (
-    <div className="card activation-progress">
-      <h3 className="activation-progress-title">Your Rally Journey</h3>
-      <div className="activation-steps">
-        {steps.map((step, i) => (
-          <div key={i} className={`activation-step ${step.completed ? 'completed' : ''} ${i === nextIndex ? 'next' : ''}`}>
-            <span className="activation-step-check">
-              {step.completed ? (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                  <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="7.5" stroke={i === nextIndex ? 'var(--color-accent-primary)' : 'var(--color-divider)'} />
-                </svg>
-              )}
-            </span>
-            <span className="activation-step-label">{step.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// --- Activation Card ---
-
-type ActivationState = 'no-tournament' | 'tournament-joinable' | 'in-tournament' | 'needs-availability' | 'all-done'
-
-function getActivationState(
-  profile: PlayerProfile,
-  tournaments: Tournament[],
-  countyTournaments: Tournament[],
-  hasAvailability: boolean,
-  hasPlayedMatch: boolean
-): ActivationState {
-  if (hasPlayedMatch && hasAvailability) return 'all-done'
-
-  const userActiveTournament = tournaments.find(t =>
-    (t.status === 'setup' || t.status === 'in-progress') &&
-    t.players.some(p => p.id === profile.id)
-  )
-
-  if (userActiveTournament) {
-    if (!hasAvailability) return 'needs-availability'
-    return 'in-tournament'
-  }
-
-  const joinable = countyTournaments.find(t =>
-    (t.status === 'setup' || t.status === 'in-progress') &&
-    !t.players.some(p => p.id === profile.id)
-  )
-
-  if (joinable) return 'tournament-joinable'
-  return 'no-tournament'
-}
-
-function ActivationCard({ state, county, onNavigate }: {
-  state: ActivationState
-  county: string
-  onNavigate: (tab: 'home' | 'bracket' | 'playnow') => void
-}) {
-  if (state === 'all-done') return null
-
-  if (state === 'needs-availability') {
-    return (
-      <div className="card activation-card">
-        <div className="activation-card-icon">&#128197;</div>
-        <h3 className="activation-card-title">Add Your Playing Times</h3>
-        <p className="activation-card-desc">Tell other players when you are available. This makes scheduling matches much easier.</p>
-        <div className="activation-card-actions">
-          <button className="btn btn-primary btn-large" onClick={() => {
-            const el = document.querySelector('.profile-section .btn-small')
-            if (el instanceof HTMLElement) el.click()
-          }}>Add Availability</button>
-          <button className="btn btn-large" onClick={() => handleInvite(county)}>Invite Players</button>
-        </div>
-      </div>
-    )
-  }
-
-  if (state === 'no-tournament') {
-    return (
-      <div className="card activation-card">
-        <div className="activation-card-icon">&#127942;</div>
-        <h3 className="activation-card-title">Start the first tournament in {county}</h3>
-        <p className="activation-card-desc">There is no active tournament in your county yet. Start one and invite players to begin competing.</p>
-        <div className="activation-card-actions">
-          <button className="btn btn-primary btn-large" onClick={() => onNavigate('home')}>Start Tournament</button>
-          <button className="btn btn-large" onClick={() => handleInvite(county)}>Invite Players</button>
-        </div>
-      </div>
-    )
-  }
-
-  if (state === 'tournament-joinable') {
-    return (
-      <div className="card activation-card">
-        <div className="activation-card-icon">&#127934;</div>
-        <h3 className="activation-card-title">Join the {county} Tournament</h3>
-        <p className="activation-card-desc">Players in your county are already competing. Join the tournament to start playing matches.</p>
-        <div className="activation-card-actions">
-          <button className="btn btn-primary btn-large" onClick={() => onNavigate('home')}>Join Tournament</button>
-          <button className="btn btn-large" onClick={() => handleInvite(county)}>Invite Players</button>
-        </div>
-      </div>
-    )
-  }
-
-  // in-tournament
-  return (
-    <div className="card activation-card">
-      <div className="activation-card-icon">&#127934;</div>
-      <h3 className="activation-card-title">Start Playing Matches</h3>
-      <p className="activation-card-desc">Schedule matches with players in your tournament or broadcast that you're ready to play now.</p>
-      <div className="activation-card-actions">
-        <button className="btn btn-primary btn-large" onClick={() => onNavigate('bracket')}>Find Match</button>
-        <button className="btn btn-large" onClick={() => onNavigate('playnow')}>Play Now</button>
-        <button className="btn btn-large" onClick={() => handleInvite(county)}>Invite Players</button>
-      </div>
-    </div>
-  )
 }
 
 // --- Rating Chart ---
@@ -280,11 +104,12 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
 
 // --- Main Profile ---
 
-export default function Profile({ profile, onLogout, onNavigate }: Props) {
+export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard }: Props) {
   const rating = getPlayerRating(profile.name)
   const label = getRatingLabel(rating.rating)
   const tournaments = getPlayerTournaments(profile.id)
-  const countyTournaments = getTournamentsByCounty(profile.county)
+  const rankInfo = getPlayerRank(profile.name, profile.county)
+  const ratingHistory = getRatingHistory(profile.name)
 
   const [editing, setEditing] = useState(false)
   const [slots, setSlots] = useState<AvailabilitySlot[]>(() => getAvailability(profile.id))
@@ -292,19 +117,6 @@ export default function Profile({ profile, onLogout, onNavigate }: Props) {
   const [detailDay, setDetailDay] = useState<DayOfWeek>('monday')
   const [detailStart, setDetailStart] = useState(9)
   const [detailEnd, setDetailEnd] = useState(12)
-
-  const hasAvailability = slots.length > 0
-
-  const hasPlayedMatch = tournaments.some(t =>
-    t.matches.some(m =>
-      m.completed &&
-      (m.player1Id === profile.id || m.player2Id === profile.id)
-    )
-  )
-
-  const activationSteps = getActivationSteps(profile, tournaments, hasAvailability, hasPlayedMatch)
-  const activationState = getActivationState(profile, tournaments, countyTournaments, hasAvailability, hasPlayedMatch)
-  const showActivation = !activationSteps.every(s => s.completed)
 
   const wins = tournaments.reduce((sum, t) => {
     return sum + t.matches.filter(m =>
@@ -321,6 +133,14 @@ export default function Profile({ profile, onLogout, onNavigate }: Props) {
       m.winnerId !== profile.id
     ).length
   }, 0)
+
+  const totalMatches = wins + losses
+  const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0
+
+  // Last match rating change
+  const lastRatingChange = ratingHistory.length >= 2
+    ? Math.round(ratingHistory[ratingHistory.length - 1].rating - ratingHistory[ratingHistory.length - 2].rating)
+    : 0
 
   const completedTournaments = tournaments.filter(t => t.status === 'completed')
 
@@ -389,7 +209,7 @@ export default function Profile({ profile, onLogout, onNavigate }: Props) {
 
   return (
     <div className="profile-content">
-      {/* Player Card */}
+      {/* Player Identity */}
       <div className="card">
         <div className="profile-card">
           <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
@@ -398,44 +218,77 @@ export default function Profile({ profile, onLogout, onNavigate }: Props) {
         </div>
       </div>
 
-      {/* Rating Card */}
-      <div className="card">
-        <div className="rating-card">
-          <div className="rating-big">{Math.round(rating.rating)}</div>
-          <div className="rating-label-text">{label}</div>
+      {/* Rating Hero Card */}
+      <div className="card rating-hero">
+        <div className="rating-hero-number">{Math.round(rating.rating)}</div>
+        <div className="rating-hero-label">{label} Rating</div>
+        <div className="rating-hero-details">
+          {rankInfo.total > 1 && (
+            <>
+              <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
+              <span className="rating-hero-percentile">Top {100 - rankInfo.percentile}% in county</span>
+            </>
+          )}
+          {lastRatingChange !== 0 && (
+            <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
+              {lastRatingChange > 0 ? '+' : ''}{lastRatingChange} last match
+            </span>
+          )}
+        </div>
+        {onViewLeaderboard && rankInfo.total > 1 && (
+          <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View leaderboard</button>
+        )}
+      </div>
+
+      {/* Performance Section */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title"><span>Performance</span></h3>
+        <div className="performance-grid">
+          <div className="performance-item">
+            <div className="performance-value">{totalMatches}</div>
+            <div className="performance-label">Matches</div>
+          </div>
+          <div className="performance-item">
+            <div className="performance-value">{wins}</div>
+            <div className="performance-label">Wins</div>
+          </div>
+          <div className="performance-item">
+            <div className="performance-value">{losses}</div>
+            <div className="performance-label">Losses</div>
+          </div>
+          <div className="performance-item">
+            <div className="performance-value">{winRate}%</div>
+            <div className="performance-label">Win Rate</div>
+          </div>
         </div>
       </div>
 
-      {/* Activation Progress System */}
-      {showActivation && <ActivationProgress steps={activationSteps} />}
-
-      {/* Activation Card */}
-      {showActivation && <ActivationCard state={activationState} county={profile.county} onNavigate={onNavigate} />}
-
-      {/* Stats Row */}
-      <div className="stats-row">
-        <div className="card stat-box">
-          <div className="stat-value">{rating.matchesPlayed}</div>
-          <div className="stat-label">Matches</div>
-        </div>
-        <div className="card stat-box">
-          <div className="stat-value">{wins}</div>
-          <div className="stat-label">Wins</div>
-        </div>
-        <div className="card stat-box">
-          <div className="stat-value">{losses}</div>
-          <div className="stat-label">Losses</div>
-        </div>
-        <div className="card stat-box">
-          <div className="stat-value">{tournaments.length}</div>
-          <div className="stat-label">Events</div>
-        </div>
+      {/* Rating History */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title"><span>Rating Progress</span></h3>
+        <RatingChart history={ratingHistory} currentRating={rating.rating} />
+        {completedTournaments.length > 0 && (
+          <div className="tournament-history">
+            {completedTournaments.map(t => {
+              const result = getTournamentResult(t)
+              return (
+                <div key={t.id} className="history-card">
+                  <div className="history-card-info">
+                    <div className="history-card-name">{t.name}</div>
+                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Knockout' : t.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'}</div>
+                  </div>
+                  <span className={`history-card-result ${result === 'Won' ? 'won' : result === 'Lost' ? 'lost' : ''}`}>{result}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Availability Section */}
       <div className="card profile-section">
         <h3 className="profile-section-title">
-          <span>Availability</span>
+          <span>When You Play</span>
           {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
         </h3>
         {!editing ? (
@@ -514,30 +367,6 @@ export default function Profile({ profile, onLogout, onNavigate }: Props) {
             </div>
           </>
         )}
-      </div>
-
-      {/* Tournament History */}
-      <div className="card profile-section">
-        <h3 className="profile-section-title">Tournament History</h3>
-        <RatingChart history={getRatingHistory(profile.name)} currentRating={rating.rating} />
-        <div className="tournament-history">
-          {completedTournaments.length === 0 ? (
-            <p className="subtle">No completed tournaments yet</p>
-          ) : (
-            completedTournaments.map(t => {
-              const result = getTournamentResult(t)
-              return (
-                <div key={t.id} className="history-card">
-                  <div className="history-card-info">
-                    <div className="history-card-name">{t.name}</div>
-                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Knockout' : 'Round Robin'}</div>
-                  </div>
-                  <span className={`history-card-result ${result === 'Won' ? 'won' : result === 'Lost' ? 'lost' : ''}`}>{result}</span>
-                </div>
-              )
-            })
-          )}
-        </div>
       </div>
 
       {/* Sign Out */}

@@ -6,10 +6,11 @@ import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
 import Profile from './components/Profile'
+import Leaderboard from './components/Leaderboard'
 import DevTools from './components/DevTools'
 import './styles.css'
 
-type Tab = 'home' | 'bracket' | 'playnow' | 'profile'
+type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard'
 
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
@@ -141,6 +142,7 @@ export default function App() {
               onViewMatch={(tournamentId, matchId) => {
                 setActiveTab('bracket')
               }}
+              onViewLeaderboard={() => setActiveTab('leaderboard')}
             />
           )}
 
@@ -161,6 +163,14 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'leaderboard' && (
+            <Leaderboard
+              county={profile.county}
+              currentPlayerName={profile.name}
+              onBack={() => setActiveTab('home')}
+            />
+          )}
+
           {activeTab === 'profile' && (
             <Profile
               profile={profile}
@@ -169,12 +179,13 @@ export default function App() {
                 if (tab === 'home') setAutoJoinLobby(true)
                 setActiveTab(tab)
               }}
+              onViewLeaderboard={() => setActiveTab('leaderboard')}
             />
           )}
         </main>
 
         <nav className="bottom-tabs">
-          <button className={`bottom-tab ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+          <button className={`bottom-tab ${activeTab === 'home' || activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
