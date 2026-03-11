@@ -1781,6 +1781,143 @@ export function simulateRoundScores(tournamentId: string): Tournament | undefine
   return updated
 }
 
+// Simulate a tournament all the way to the final, with the given player as a finalist
+export function simulateToFinal(playerId: string, county: string): { tournamentId: string } | null {
+  const profile = getProfile()
+  if (!profile) return null
+
+  // Step 1: Seed lobby to 6 players and force start
+  seedLobby(county, 5)
+  const lobby = getLobbyByCounty(county)
+  if (lobby.length < 6) return null
+
+  const setupT = getSetupTournamentForCounty(county)
+  if (!setupT) {
+    // Need to create tournament via lobby - join lobby first if not in it
+    const inLobby = lobby.find(e => e.playerId === playerId)
+    if (!inLobby) {
+      joinLobby(profile)
+    }
+    // Still need 6 in lobby for tournament creation
+    const updatedLobby = getLobbyByCounty(county)
+    if (updatedLobby.length < 6) {
+      seedLobby(county, 6 - updatedLobby.length)
+    }
+    const st = getSetupTournamentForCounty(county)
+    if (!st) return null
+    const started = forceStartTournament(st.id)
+    if (!started) return null
+    return simulateToFinalInner(started.id, playerId)
+  }
+
+  const started = forceStartTournament(setupT.id)
+  if (!started) return null
+  return simulateToFinalInner(started.id, playerId)
+}
+
+function simulateToFinalInner(tournamentId: string, playerId: string): { tournamentId: string } | null {
+  let t = getTournament(tournamentId)
+  if (!t) return null
+
+  // For group-knockout: score all group matches, ensuring player wins enough
+  if (t.format === 'group-knockout') {
+    const groupMatches = t.matches.filter(m => m.phase === 'group')
+    for (const match of groupMatches) {
+      if (match.completed || !match.player1Id || !match.player2Id) continue
+      const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+      const s1 = [6, 6]
+      const s2 = [3, 4]
+      let winnerId: string
+      if (isMyMatch) {
+        winnerId = playerId
+      } else {
+        winnerId = match.player1Id!
+      }
+      // Set scores so the winner wins
+      if (winnerId === match.player1Id) {
+        saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+      } else {
+        saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+      }
+    }
+
+    // Reload tournament (knockout phase should now exist)
+    t = getTournament(tournamentId)
+    if (!t) return null
+
+    // Score semifinals, ensuring our player wins
+    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+    const semis = knockoutMatches.filter(m => m.round === 2)
+    for (const semi of semis) {
+      if (semi.completed || !semi.player1Id || !semi.player2Id) continue
+      const isMyMatch = semi.player1Id === playerId || semi.player2Id === playerId
+      const s1 = [6, 6]
+      const s2 = [3, 4]
+      let winnerId: string
+      if (isMyMatch) {
+        winnerId = playerId
+      } else {
+        winnerId = semi.player1Id!
+      }
+      if (winnerId === semi.player1Id) {
+        saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
+      } else {
+        saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
+      }
+    }
+
+    return { tournamentId }
+  }
+
+  // For single-elimination: score all rounds except the last
+  if (t.format === 'single-elimination') {
+    const maxRound = Math.max(...t.matches.map(m => m.round))
+    for (let round = 1; round < maxRound; round++) {
+      t = getTournament(tournamentId)
+      if (!t) return null
+      const roundMatches = t.matches.filter(m => m.round === round && !m.completed && m.player1Id && m.player2Id)
+      for (const match of roundMatches) {
+        const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+        const s1 = [6, 6]
+        const s2 = [3, 4]
+        let winnerId: string
+        if (isMyMatch) {
+          winnerId = playerId
+        } else {
+          winnerId = match.player1Id!
+        }
+        if (winnerId === match.player1Id) {
+          saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+        } else {
+          saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+        }
+      }
+    }
+    return { tournamentId }
+  }
+
+  // Round-robin: score all except last match involving player
+  const myMatches = t.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId)
+  const otherMatches = t.matches.filter(m => m.player1Id !== playerId && m.player2Id !== playerId)
+  // Score all other matches
+  for (const match of otherMatches) {
+    if (match.completed || !match.player1Id || !match.player2Id) continue
+    saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], match.player1Id!)
+  }
+  // Score all my matches except the last
+  for (let i = 0; i < myMatches.length - 1; i++) {
+    const match = myMatches[i]
+    if (match.completed || !match.player1Id || !match.player2Id) continue
+    if (match.player1Id === playerId) {
+      saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], playerId)
+    } else {
+      saveMatchScore(tournamentId, match.id, [3, 4], [6, 6], playerId)
+    }
+  }
+
+  return { tournamentId }
+}
+
 // --- Match Broadcasts ---
 
 function loadBroadcasts(): MatchBroadcast[] {

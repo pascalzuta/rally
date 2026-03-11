@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty, escalateMatch, getTournament } from '../store'
+import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty, escalateMatch, getTournament, simulateToFinal } from '../store'
 import { PlayerProfile } from '../types'
 
 interface Props {
@@ -101,6 +101,22 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
+  function handleSimulateToFinal() {
+    if (!profile) {
+      setMessage('Register first')
+      return
+    }
+    const result = simulateToFinal(profile.id, county)
+    if (result) {
+      setMessage('Tournament ready — score the final!')
+      onTournamentCreated?.(result.tournamentId)
+      onTournamentUpdated?.()
+    } else {
+      setMessage('Could not simulate to final')
+    }
+    setTimeout(() => setMessage(''), 3000)
+  }
+
   const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
 
   function handleForceStart() {
@@ -150,6 +166,13 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
           </div>
         </div>
       )}
+
+      <div className="dev-section">
+        <div className="dev-label">Quick Setup</div>
+        <div className="dev-buttons">
+          <button className="btn dev-btn" onClick={handleSimulateToFinal}>Sim → Final</button>
+        </div>
+      </div>
 
       {activeTournamentId && (
         <div className="dev-section">
