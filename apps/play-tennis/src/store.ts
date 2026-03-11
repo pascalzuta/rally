@@ -553,9 +553,9 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
   const allDone = tournament.matches.every(m => m.completed)
   if (allDone) {
     tournament.status = 'completed'
-    awardTournamentTrophies(tournament.id)
+    awardTournamentTrophies(tournament.id, tournament)
     for (const p of tournament.players) {
-      checkAndAwardBadges(p.id, tournament.id)
+      checkAndAwardBadges(p.id, tournament.id, tournament)
     }
   }
 }
@@ -696,9 +696,9 @@ export function leaveTournament(tournamentId: string, playerId: string): boolean
   const allDone = t.matches.every(m => m.completed)
   if (allDone) {
     t.status = 'completed'
-    awardTournamentTrophies(t.id)
+    awardTournamentTrophies(t.id, t)
     for (const p of t.players) {
-      checkAndAwardBadges(p.id, t.id)
+      checkAndAwardBadges(p.id, t.id, t)
     }
   }
 
@@ -1039,9 +1039,9 @@ export function saveMatchScore(
   const allDone = t.matches.every(m => m.completed)
   if (allDone) {
     t.status = 'completed'
-    awardTournamentTrophies(t.id)
+    awardTournamentTrophies(t.id, t)
     for (const p of t.players) {
-      checkAndAwardBadges(p.id, t.id)
+      checkAndAwardBadges(p.id, t.id, t)
     }
   }
 
@@ -1301,9 +1301,8 @@ function formatMatchScore(score1: number[], score2: number[]): string {
   return score1.map((s, i) => `${s}-${score2[i]}`).join(' ')
 }
 
-export function awardTournamentTrophies(tournamentId: string): Trophy[] {
-  const tournaments = load()
-  const t = tournaments.find(t => t.id === tournamentId)
+export function awardTournamentTrophies(tournamentId: string, tournamentObj?: Tournament): Trophy[] {
+  const t = tournamentObj ?? load().find(t => t.id === tournamentId)
   if (!t || t.status !== 'completed') return []
 
   const trophies = loadTrophies()
@@ -1411,7 +1410,16 @@ export function awardTournamentTrophies(tournamentId: string): Trophy[] {
     }
   } else if (t.format === 'round-robin') {
     // Round-robin: winner is #1 in standings (most wins)
-    const standings = getGroupStandings(t)
+    // getGroupStandings filters by phase==='group', but round-robin matches have no phase
+    // So compute standings directly
+    const stats = t.players.map(p => ({ id: p.id, name: p.name, wins: 0 }))
+    for (const m of t.matches) {
+      if (!m.completed || !m.winnerId) continue
+      const s = stats.find(s => s.id === m.winnerId)
+      if (s) s.wins++
+    }
+    stats.sort((a, b) => b.wins - a.wins)
+    const standings = stats
     if (standings.length > 0) {
       const winner = t.players.find(p => p.name === standings[0].name)
       if (winner) {
@@ -1500,9 +1508,18 @@ function awardBadge(playerId: string, type: BadgeType, tournamentId?: string): v
   saveBadges(badges)
 }
 
-export function checkAndAwardBadges(playerId: string, tournamentId: string): Badge[] {
+export function checkAndAwardBadges(playerId: string, tournamentId: string, tournamentObj?: Tournament): Badge[] {
   const before = getPlayerBadges(playerId)
-  const tournaments = load()
+  const savedTournaments = load()
+  // Merge in the unsaved tournament object so we see it as completed
+  const tournaments = tournamentObj
+    ? savedTournaments.map(st => st.id === tournamentObj.id ? tournamentObj : st)
+    : savedTournaments
+  // If the tournament isn't in saved list yet, add it
+  if (tournamentObj && !tournaments.some(t => t.id === tournamentObj.id)) {
+    tournaments.push(tournamentObj)
+  }
+
   const completed = tournaments.filter(t =>
     t.status === 'completed' && t.players.some(p => p.id === playerId)
   )
@@ -1513,10 +1530,11 @@ export function checkAndAwardBadges(playerId: string, tournamentId: string): Bad
   if (completed.length >= 5) awardBadge(playerId, 'five-tournaments', tournamentId)
 
   // Ten matches
-  const rating = getPlayerRating(
-    tournaments.flatMap(t => t.players).find(p => p.id === playerId)?.name ?? ''
-  )
-  if (rating.matchesPlayed >= 10) awardBadge(playerId, 'ten-matches')
+  const playerName = tournaments.flatMap(t => t.players).find(p => p.id === playerId)?.name ?? ''
+  if (playerName) {
+    const rating = getPlayerRating(playerName)
+    if (rating.matchesPlayed >= 10) awardBadge(playerId, 'ten-matches')
+  }
 
   // Undefeated champion
   const t = tournaments.find(t => t.id === tournamentId)
@@ -1557,9 +1575,9 @@ export function retroactivelyAwardTrophies(): void {
   const tournaments = load()
   for (const t of tournaments) {
     if (t.status === 'completed') {
-      awardTournamentTrophies(t.id)
+      awardTournamentTrophies(t.id, t)
       for (const p of t.players) {
-        checkAndAwardBadges(p.id, t.id)
+        checkAndAwardBadges(p.id, t.id, t)
       }
     }
   }
