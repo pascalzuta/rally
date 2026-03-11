@@ -1553,6 +1553,18 @@ export function checkAndAwardBadges(playerId: string, tournamentId: string): Bad
   return after.filter(b => !before.some(bb => bb.id === b.id))
 }
 
+export function retroactivelyAwardTrophies(): void {
+  const tournaments = load()
+  for (const t of tournaments) {
+    if (t.status === 'completed') {
+      awardTournamentTrophies(t.id)
+      for (const p of t.players) {
+        checkAndAwardBadges(p.id, t.id)
+      }
+    }
+  }
+}
+
 // --- Dev Tools ---
 
 const TEST_PLAYERS = [

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, getPlayerTrophies } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, getPlayerTrophies, retroactivelyAwardTrophies } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import Register from './components/Register'
 import Home from './components/Home'
@@ -40,6 +40,11 @@ export default function App() {
   ) ?? tournaments.find(t =>
     t.status === 'setup' && t.players.some(p => p.id === profile?.id)
   ) ?? null
+
+  // Award trophies for any previously completed tournaments
+  useEffect(() => {
+    retroactivelyAwardTrophies()
+  }, [])
 
   // Auto-join lobby when an existing user opens an invite link
   useEffect(() => {
