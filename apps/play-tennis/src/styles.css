@@ -2791,6 +2791,122 @@ select:focus {
   flex: 1;
 }
 
+/* ================================================
+   Match Offer Cards
+   ================================================ */
+.offer-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.offer-card {
+  padding: var(--space-lg);
+  cursor: default;
+}
+
+.offer-card:active {
+  transform: none;
+}
+
+.offer-card-incoming {
+  border-left: 3px solid var(--color-accent-primary);
+}
+
+.offer-card-outgoing {
+  border-left: 3px solid var(--color-text-muted);
+}
+
+.offer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.offer-card-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.offer-card-expires {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-card-time {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-card-date {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.offer-card-opponent {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.offer-card-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.offer-accept-btn {
+  flex: 1;
+}
+
+.offer-decline-btn {
+  flex: 1;
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+}
+
+.offer-cancel-btn {
+  color: var(--color-text-muted);
+}
+
+/* Offer confirmation modal additions */
+.offer-confirm-time {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.offer-confirm-date {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+}
+
+.offer-confirm-note {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: var(--space-md) 0;
+}
+
+/* Notification unread state */
+.notif-unread {
+  background: var(--color-accent-bg);
+}
+
 /* Availability overview (Play Now tab) */
 .availability-toggle-btn {
   width: 100%;

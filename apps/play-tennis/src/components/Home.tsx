@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 
@@ -12,6 +12,7 @@ interface Props {
   onViewTournament: (id: string) => void
   onViewMatch: (tournamentId: string, matchId: string) => void
   onViewLeaderboard?: () => void
+  onViewOffers?: () => void
 }
 
 // --- Onboarding ---
@@ -255,6 +256,7 @@ export default function Home({
   onViewTournament,
   onViewMatch,
   onViewLeaderboard,
+  onViewOffers,
 }: Props) {
   const activeTournaments = useMemo(
     () => tournaments.filter(
@@ -462,6 +464,27 @@ export default function Home({
           </div>
         )
       })}
+
+      {/* Incoming Match Offers */}
+      {(() => {
+        const offers = getIncomingOffers(profile.id)
+        if (offers.length === 0) return null
+        return (
+          <div className="action-cards">
+            {offers.map(offer => (
+              <div
+                key={offer.offerId}
+                className="action-card action-respond"
+                onClick={onViewOffers}
+              >
+                <div className="action-card-type">Match Offer</div>
+                <div className="action-card-opponent">{offer.senderName}</div>
+                <div className="action-card-detail">{offer.proposedTime} · {offer.proposedDate}</div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Action Cards */}
       {actionCards.length > 0 ? (

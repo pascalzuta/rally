@@ -27,6 +27,10 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 ### Match Broadcast Types
 - **MatchBroadcast**: id, playerId, playerName, tournamentId, date, startTime, endTime, location, message, status (active | claimed | expired), createdAt, expiresAt, claimedBy, matchId
 
+### Match Offer Types
+- **MatchOffer**: offerId, senderId, senderName, recipientId, recipientName, tournamentId, proposedDate, proposedTime, createdAt, expiresAt, status (proposed | accepted | declined | expired), matchId
+- **RallyNotification**: id, type (match_offer | offer_accepted | offer_declined | offer_expired | match_reminder), recipientId, message, detail, relatedOfferId, createdAt, read
+
 ## Features
 
 ### Onboarding & Registration
@@ -118,6 +122,31 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - One active broadcast per player, auto-expires after 2 hours
 - Broadcasts visible only to eligible opponents (unplayed, unscheduled)
 
+### Match Offer & Acceptance System
+- **Core model**: Structured match offers, not messaging. Players propose a specific time → opponent accepts/declines.
+- **Flow**: Player proposes time → opponent receives offer → Accept / Decline → Match confirmed
+- **MatchOffer type**: offerId, senderId, senderName, recipientId, recipientName, proposedDate, proposedTime, createdAt, expiresAt, status (proposed | accepted | declined | expired)
+- **Offer creation** (Find Match tab):
+  1. Player selects opponent
+  2. System shows overlapping availability slots
+  3. Player selects one time slot
+  4. Taps "Ask to Play" → creates offer with status=proposed, 2-hour expiration
+  5. Toast: "Match offer sent" (does NOT auto-confirm)
+- **Offer delivery** (MVP localStorage simulation):
+  - Stored in `rally_notifications` localStorage key
+  - Notification appears in: bell dropdown, Play Now tab, Home action cards
+  - Allows realistic testing when switching users in DevTools
+- **Recipient experience**: Match Offer Card showing sender name, proposed time, expiration countdown, Accept/Decline buttons
+- **Accepting**: status→confirmed, match record created, time slot reserved, both players notified, toast "Match scheduled"
+- **Declining**: status→declined, sender notified, offer disappears from active lists
+- **Expiration**: expiresAt = createdAt + 2 hours, expired offers cannot be accepted, sender sees "Offer expired"
+- **Limits**: 1 active offer per opponent, 5 total outgoing offers max
+- **Conflict prevention**: Accepting a match reserves the time slot, overlapping offers auto-closed
+- **Home integration**: Confirmed match appears as top "Next Match" card with "Score Match" action
+- **Notification types**: match_offer ("proposed a match"), offer_accepted, offer_declined, offer_expired, match_reminder
+- **Backend transition**: System structured to map to future API → Match Offer Service → Notification Service (push, SMS, email)
+- **UI principles**: Cards emphasize Time > Opponent > Expiration > Actions. No chat bubbles, no sports icons. Minimal and structured.
+
 ## Storage Keys
 - `play-tennis-data` — Tournament data
 - `play-tennis-ratings` — Global Elo ratings
@@ -128,6 +157,8 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `play-tennis-rating-history` — Rating snapshots over time
 - `play-tennis-trophies` — Player trophies (champion/finalist/semifinalist)
 - `play-tennis-badges` — Player achievement badges
+- `rally-match-offers` — Match offers (proposed/accepted/declined/expired)
+- `rally-notifications` — In-app notification entries
 
 ## Navigation Structure
 Four-tab layout designed around the player's tournament journey:

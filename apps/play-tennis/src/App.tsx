@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import Register from './components/Register'
 import Home from './components/Home'
@@ -36,7 +36,7 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false)
 
   // Count pending actions for notification badge
-  const pendingActionCount = tournaments.reduce((count, t) => {
+  const matchActionCount = tournaments.reduce((count, t) => {
     if (t.status !== 'in-progress') return count
     return count + t.matches.filter(m =>
       !m.completed &&
@@ -53,6 +53,11 @@ export default function App() {
       )
     ).length
   }, 0)
+
+  // Include incoming match offers and unread notifications in badge
+  const incomingOfferCount = profile ? getIncomingOffers(profile.id).length : 0
+  const unreadNotifCount = profile ? getUnreadNotificationCount(profile.id) : 0
+  const pendingActionCount = matchActionCount + incomingOfferCount + unreadNotifCount
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -172,50 +177,83 @@ export default function App() {
                   <span className="notif-badge">{pendingActionCount}</span>
                 )}
               </button>
-              {showNotifications && (
-                <div className="notif-dropdown">
-                  <div className="notif-header">Notifications</div>
-                  {pendingActionCount === 0 ? (
-                    <div className="notif-empty">All caught up!</div>
-                  ) : (
-                    <div className="notif-list">
-                      {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
-                        t.matches.filter(m =>
-                          !m.completed &&
-                          (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
-                          m.player1Id && m.player2Id
-                        ).map(m => {
-                          const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
-                          const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
-                          let action = ''
-                          let icon = ''
-                          if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️' }
-                          else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾' }
-                          else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = 'Time proposed — respond'; icon = '📩' }
-                          else { action = 'Needs scheduling'; icon = '📅' }
+              {showNotifications && (() => {
+                const rallyNotifs = profile ? getNotifications(profile.id).slice(0, 10) : []
+                if (profile) markNotificationsRead(profile.id)
+                return (
+                  <div className="notif-dropdown">
+                    <div className="notif-header">Notifications</div>
+                    {pendingActionCount === 0 && rallyNotifs.length === 0 ? (
+                      <div className="notif-empty">All caught up!</div>
+                    ) : (
+                      <div className="notif-list">
+                        {/* Rally notifications (offers, acceptances, etc.) */}
+                        {rallyNotifs.map(n => {
+                          const icon = n.type === 'match_offer' ? '📩'
+                            : n.type === 'offer_accepted' ? '✅'
+                            : n.type === 'offer_declined' ? '✗'
+                            : n.type === 'offer_expired' ? '⏱'
+                            : '🎾'
                           return (
                             <button
-                              key={`${t.id}-${m.id}`}
-                              className="notif-item"
+                              key={n.id}
+                              className={`notif-item ${!n.read ? 'notif-unread' : ''}`}
                               onClick={() => {
-                                setFocusMatchId(m.id)
-                                setActiveTab('bracket')
+                                if (n.type === 'match_offer') {
+                                  setActiveTab('playnow')
+                                } else if (n.type === 'offer_accepted') {
+                                  setActiveTab('bracket')
+                                }
                                 setShowNotifications(false)
                               }}
                             >
                               <span className="notif-icon">{icon}</span>
                               <div className="notif-content">
-                                <div className="notif-action">{action}</div>
-                                <div className="notif-opponent">vs {opponentName}</div>
+                                <div className="notif-action">{n.message}</div>
+                                {n.detail && <div className="notif-opponent">{n.detail}</div>}
                               </div>
                             </button>
                           )
-                        })
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                        })}
+                        {/* Match action notifications */}
+                        {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
+                          t.matches.filter(m =>
+                            !m.completed &&
+                            (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
+                            m.player1Id && m.player2Id
+                          ).map(m => {
+                            const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
+                            const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+                            let action = ''
+                            let icon = ''
+                            if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️' }
+                            else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾' }
+                            else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = 'Time proposed — respond'; icon = '📩' }
+                            else { action = 'Needs scheduling'; icon = '📅' }
+                            return (
+                              <button
+                                key={`${t.id}-${m.id}`}
+                                className="notif-item"
+                                onClick={() => {
+                                  setFocusMatchId(m.id)
+                                  setActiveTab('bracket')
+                                  setShowNotifications(false)
+                                }}
+                              >
+                                <span className="notif-icon">{icon}</span>
+                                <div className="notif-content">
+                                  <div className="notif-action">{action}</div>
+                                  <div className="notif-opponent">vs {opponentName}</div>
+                                </div>
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
             <button className="top-nav-icon" onClick={() => setActiveTab('profile')}>
               <div className="nav-avatar">{profile.name[0].toUpperCase()}</div>
@@ -240,6 +278,7 @@ export default function App() {
                 setActiveTab('bracket')
               }}
               onViewLeaderboard={() => setActiveTab('leaderboard')}
+              onViewOffers={() => setActiveTab('playnow')}
             />
           )}
 

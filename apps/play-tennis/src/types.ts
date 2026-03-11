@@ -156,3 +156,42 @@ export interface Badge {
   awardedAt: string
   tournamentId?: string     // optional: which tournament triggered it
 }
+
+// --- Match Offers ---
+
+export type OfferStatus = 'proposed' | 'accepted' | 'declined' | 'expired'
+
+export interface MatchOffer {
+  offerId: string
+  senderId: string
+  senderName: string
+  recipientId: string
+  recipientName: string
+  tournamentId: string
+  proposedDate: string     // ISO date string e.g. "2026-03-15"
+  proposedTime: string     // e.g. "9:00 AM"
+  proposedDay: string      // e.g. "saturday"
+  proposedStartHour: number
+  proposedEndHour: number
+  createdAt: string        // ISO timestamp
+  expiresAt: string        // ISO timestamp (createdAt + 2 hours)
+  status: OfferStatus
+  matchId?: string         // linked match ID once accepted
+}
+
+// --- Notifications ---
+
+export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder'
+
+export interface RallyNotification {
+  id: string
+  type: NotificationType
+  recipientId: string
+  senderId?: string
+  senderName?: string
+  message: string
+  detail?: string
+  relatedOfferId?: string
+  createdAt: string
+  read: boolean
+}

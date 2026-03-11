@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
@@ -10,6 +10,8 @@ const RATING_HISTORY_KEY = 'play-tennis-rating-history'
 const TROPHIES_KEY = 'play-tennis-trophies'
 const BADGES_KEY = 'play-tennis-badges'
 const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
+const OFFERS_KEY = 'rally-match-offers'
+const NOTIFICATIONS_KEY = 'rally-notifications'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -2107,4 +2109,305 @@ export function cancelBroadcast(broadcastId: string, playerId: string): boolean 
   broadcast.status = 'expired'
   saveBroadcasts(broadcasts)
   return true
+}
+
+// =====================================================================
+// Match Offer System
+// =====================================================================
+
+function loadOffers(): MatchOffer[] {
+  const raw = localStorage.getItem(OFFERS_KEY)
+  return raw ? JSON.parse(raw) : []
+}
+
+function saveOffers(offers: MatchOffer[]): void {
+  localStorage.setItem(OFFERS_KEY, JSON.stringify(offers))
+}
+
+function loadNotifications(): RallyNotification[] {
+  const raw = localStorage.getItem(NOTIFICATIONS_KEY)
+  return raw ? JSON.parse(raw) : []
+}
+
+function saveNotifications(notifications: RallyNotification[]): void {
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+}
+
+function addNotification(notif: Omit<RallyNotification, 'id' | 'createdAt' | 'read'>): RallyNotification {
+  const notifications = loadNotifications()
+  const entry: RallyNotification = {
+    ...notif,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    read: false,
+  }
+  notifications.unshift(entry)
+  // Keep last 50 notifications
+  if (notifications.length > 50) notifications.length = 50
+  saveNotifications(notifications)
+  return entry
+}
+
+/** Clean expired offers and update their status */
+export function cleanExpiredOffers(): void {
+  const offers = loadOffers()
+  const now = Date.now()
+  let changed = false
+  for (const offer of offers) {
+    if (offer.status === 'proposed' && new Date(offer.expiresAt).getTime() <= now) {
+      offer.status = 'expired'
+      changed = true
+      addNotification({
+        type: 'offer_expired',
+        recipientId: offer.senderId,
+        message: 'Match offer expired',
+        detail: `${offer.proposedTime} offer to ${offer.recipientName}`,
+        relatedOfferId: offer.offerId,
+      })
+    }
+  }
+  if (changed) saveOffers(offers)
+}
+
+/** Create a match offer */
+export function createMatchOffer(
+  sender: { id: string; name: string },
+  recipient: { id: string; name: string },
+  tournamentId: string,
+  proposedDate: string,
+  proposedTime: string,
+  proposedDay: string,
+  proposedStartHour: number,
+  proposedEndHour: number,
+): MatchOffer | { error: string } {
+  cleanExpiredOffers()
+  const offers = loadOffers()
+
+  // Check: 1 active offer per opponent
+  const existingToRecipient = offers.find(
+    o => o.senderId === sender.id && o.recipientId === recipient.id && o.status === 'proposed'
+  )
+  if (existingToRecipient) {
+    return { error: 'You already have a pending offer to this player.' }
+  }
+
+  // Check: max 5 outgoing active offers
+  const activeOutgoing = offers.filter(o => o.senderId === sender.id && o.status === 'proposed')
+  if (activeOutgoing.length >= 5) {
+    return { error: 'You have too many active match offers. Wait for responses or cancel one.' }
+  }
+
+  const now = new Date()
+  const offer: MatchOffer = {
+    offerId: generateId(),
+    senderId: sender.id,
+    senderName: sender.name,
+    recipientId: recipient.id,
+    recipientName: recipient.name,
+    tournamentId,
+    proposedDate,
+    proposedTime,
+    proposedDay,
+    proposedStartHour,
+    proposedEndHour,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+    status: 'proposed',
+  }
+
+  offers.push(offer)
+  saveOffers(offers)
+
+  // Notify recipient
+  addNotification({
+    type: 'match_offer',
+    recipientId: recipient.id,
+    senderId: sender.id,
+    senderName: sender.name,
+    message: `${sender.name} proposed a match`,
+    detail: `${proposedTime} on ${proposedDate}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  return offer
+}
+
+/** Get active incoming offers for a player */
+export function getIncomingOffers(playerId: string): MatchOffer[] {
+  cleanExpiredOffers()
+  return loadOffers().filter(
+    o => o.recipientId === playerId && o.status === 'proposed'
+  )
+}
+
+/** Get active outgoing offers for a player */
+export function getOutgoingOffers(playerId: string): MatchOffer[] {
+  cleanExpiredOffers()
+  return loadOffers().filter(
+    o => o.senderId === playerId && o.status === 'proposed'
+  )
+}
+
+/** Accept a match offer */
+export function acceptMatchOffer(offerId: string, acceptorId: string): { offer: MatchOffer; matchConfirmed: boolean } | { error: string } {
+  cleanExpiredOffers()
+  const offers = loadOffers()
+  const offer = offers.find(o => o.offerId === offerId)
+
+  if (!offer) return { error: 'Offer not found.' }
+  if (offer.recipientId !== acceptorId) return { error: 'Not your offer to accept.' }
+  if (offer.status !== 'proposed') return { error: `Offer is already ${offer.status}.` }
+
+  offer.status = 'accepted'
+
+  // Find the match between these two players and confirm the schedule
+  const all = load()
+  const tournament = all.find(t => t.id === offer.tournamentId)
+  let matchConfirmed = false
+
+  if (tournament) {
+    const match = tournament.matches.find(m =>
+      !m.completed &&
+      ((m.player1Id === offer.senderId && m.player2Id === offer.recipientId) ||
+       (m.player1Id === offer.recipientId && m.player2Id === offer.senderId))
+    )
+    if (match) {
+      offer.matchId = match.id
+      if (!match.schedule) {
+        match.schedule = {
+          status: 'confirmed',
+          proposals: [],
+          confirmedSlot: {
+            day: offer.proposedDay as DayOfWeek,
+            startHour: offer.proposedStartHour,
+            endHour: offer.proposedEndHour,
+          },
+          escalationDay: 0,
+          participationScores: {},
+          createdAt: new Date().toISOString(),
+          lastEscalation: new Date().toISOString(),
+        }
+      } else {
+        match.schedule.status = 'confirmed'
+        match.schedule.confirmedSlot = {
+          day: offer.proposedDay as DayOfWeek,
+          startHour: offer.proposedStartHour,
+          endHour: offer.proposedEndHour,
+        }
+      }
+      matchConfirmed = true
+      save(all)
+    }
+  }
+
+  // Close conflicting offers for the same time slot
+  for (const other of offers) {
+    if (other.offerId === offerId) continue
+    if (other.status !== 'proposed') continue
+    if (
+      (other.senderId === offer.senderId || other.senderId === offer.recipientId ||
+       other.recipientId === offer.senderId || other.recipientId === offer.recipientId) &&
+      other.proposedDate === offer.proposedDate &&
+      other.proposedStartHour === offer.proposedStartHour
+    ) {
+      other.status = 'expired'
+      addNotification({
+        type: 'offer_expired',
+        recipientId: other.senderId,
+        message: 'This time is no longer available',
+        detail: `${other.proposedTime} — ${other.recipientName} is now booked`,
+        relatedOfferId: other.offerId,
+      })
+    }
+  }
+
+  saveOffers(offers)
+
+  // Notify sender
+  addNotification({
+    type: 'offer_accepted',
+    recipientId: offer.senderId,
+    senderId: offer.recipientId,
+    senderName: offer.recipientName,
+    message: `${offer.recipientName} accepted your match`,
+    detail: `${offer.proposedTime} on ${offer.proposedDate}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  // Notify acceptor too
+  addNotification({
+    type: 'offer_accepted',
+    recipientId: offer.recipientId,
+    senderId: offer.senderId,
+    senderName: offer.senderName,
+    message: 'Match confirmed',
+    detail: `${offer.proposedTime} vs ${offer.senderName}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  return { offer, matchConfirmed }
+}
+
+/** Decline a match offer */
+export function declineMatchOffer(offerId: string, declinerId: string): MatchOffer | { error: string } {
+  const offers = loadOffers()
+  const offer = offers.find(o => o.offerId === offerId)
+
+  if (!offer) return { error: 'Offer not found.' }
+  if (offer.recipientId !== declinerId) return { error: 'Not your offer to decline.' }
+  if (offer.status !== 'proposed') return { error: `Offer is already ${offer.status}.` }
+
+  offer.status = 'declined'
+  saveOffers(offers)
+
+  // Notify sender
+  addNotification({
+    type: 'offer_declined',
+    recipientId: offer.senderId,
+    senderId: offer.recipientId,
+    senderName: offer.recipientName,
+    message: `${offer.recipientName} declined your match`,
+    detail: `${offer.proposedTime} on ${offer.proposedDate}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  return offer
+}
+
+/** Cancel an outgoing offer */
+export function cancelMatchOffer(offerId: string, senderId: string): boolean {
+  const offers = loadOffers()
+  const offer = offers.find(o => o.offerId === offerId && o.senderId === senderId)
+  if (!offer || offer.status !== 'proposed') return false
+  offer.status = 'expired'
+  saveOffers(offers)
+  return true
+}
+
+/** Get notifications for a player */
+export function getNotifications(playerId: string): RallyNotification[] {
+  return loadNotifications().filter(n => n.recipientId === playerId)
+}
+
+/** Get unread notification count */
+export function getUnreadNotificationCount(playerId: string): number {
+  return loadNotifications().filter(n => n.recipientId === playerId && !n.read).length
+}
+
+/** Mark notifications as read */
+export function markNotificationsRead(playerId: string): void {
+  const notifications = loadNotifications()
+  let changed = false
+  for (const n of notifications) {
+    if (n.recipientId === playerId && !n.read) {
+      n.read = true
+      changed = true
+    }
+  }
+  if (changed) saveNotifications(notifications)
+}
+
+/** Get an offer by ID */
+export function getMatchOffer(offerId: string): MatchOffer | null {
+  return loadOffers().find(o => o.offerId === offerId) ?? null
 }

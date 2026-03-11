@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, claimBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot } from '../store'
-import { Tournament, MatchBroadcast } from '../types'
+import { useState, useEffect } from 'react'
+import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers } from '../store'
+import { Tournament, MatchBroadcast, MatchOffer } from '../types'
 
 interface Props {
   tournament: Tournament | null
@@ -49,7 +49,6 @@ function defaultEndTime(start: string): string {
   return `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
 }
 
-// Check if a time window includes the current time
 function isAvailableNow(dateStr: string, startHour: number, endHour: number): boolean {
   const now = new Date()
   const today = now.toISOString().split('T')[0]
@@ -69,7 +68,16 @@ function isAvailableNowBroadcast(b: MatchBroadcast): boolean {
   return currentHour >= startH && currentHour < endH
 }
 
-// Merge availability slots and broadcasts into unified opponent rows
+function timeRemaining(expiresAt: string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now()
+  if (ms <= 0) return 'Expired'
+  const mins = Math.floor(ms / 60000)
+  const hrs = Math.floor(mins / 60)
+  const m = mins % 60
+  if (hrs > 0) return `${hrs}h ${m}m`
+  return `${m}m`
+}
+
 interface OpponentRow {
   type: 'availability' | 'broadcast'
   playerId: string
@@ -81,7 +89,10 @@ interface OpponentRow {
   message?: string
   broadcastId?: string
   isNow: boolean
-  sortKey: string // for ordering
+  sortKey: string
+  startHour: number
+  endHour: number
+  day: string // day name lowercase
 }
 
 function buildOpponentRows(
@@ -91,11 +102,15 @@ function buildOpponentRows(
   const rows: OpponentRow[] = []
   const broadcastPlayerDates = new Set<string>()
 
-  // Add broadcasts first (they're more actionable)
   for (const b of broadcasts) {
     const dateLabel = formatDate(b.date)
     const timeLabel = formatTimeRange(b.startTime, b.endTime || defaultEndTime(b.startTime))
     broadcastPlayerDates.add(`${b.playerId}-${b.date}`)
+    const [startH] = b.startTime.split(':').map(Number)
+    const endTime = b.endTime || defaultEndTime(b.startTime)
+    const [endH] = endTime.split(':').map(Number)
+    const dateObj = new Date(b.date + 'T00:00:00')
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
     rows.push({
       type: 'broadcast',
       playerId: b.playerId,
@@ -108,12 +123,16 @@ function buildOpponentRows(
       broadcastId: b.id,
       isNow: isAvailableNowBroadcast(b),
       sortKey: `${b.date}-${b.startTime}`,
+      startHour: startH,
+      endHour: endH,
+      day: dayName,
     })
   }
 
-  // Add availability slots (only if no broadcast from same player on same date)
   for (const s of slots) {
     if (broadcastPlayerDates.has(`${s.playerId}-${s.date}`)) continue
+    const dateObj = new Date(s.date + 'T00:00:00')
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
     rows.push({
       type: 'availability',
       playerId: s.playerId,
@@ -123,10 +142,12 @@ function buildOpponentRows(
       timeLabel: formatHourRange(s.startHour, s.endHour),
       isNow: isAvailableNow(s.date, s.startHour, s.endHour),
       sortKey: `${s.date}-${s.startHour.toString().padStart(2, '0')}`,
+      startHour: s.startHour,
+      endHour: s.endHour,
+      day: dayName,
     })
   }
 
-  // Sort: available now first, then by date/time
   rows.sort((a, b) => {
     if (a.isNow !== b.isNow) return a.isNow ? -1 : 1
     return a.sortKey.localeCompare(b.sortKey)
@@ -161,11 +182,20 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const [askingRow, setAskingRow] = useState<OpponentRow | null>(null)
   const [, setTick] = useState(0)
 
+  // Auto-refresh expiration timers
+  useEffect(() => {
+    const interval = setInterval(() => {
+      cleanExpiredOffers()
+      setTick(t => t + 1)
+    }, 30000) // every 30s
+    return () => clearInterval(interval)
+  }, [])
+
   if (!tournament || tournament.status !== 'in-progress') {
     return (
       <div className="playnow-tab">
         <div className="card">
-          <p className="subtle">Join an active tournament to use Play Now</p>
+          <p className="subtle">Join an active tournament to use Find Match</p>
         </div>
       </div>
     )
@@ -176,7 +206,10 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const upcomingSlots = getUpcomingAvailability(tournament, currentPlayerId)
   const seeds = getSeeds(tournament)
 
-  // Build merged opponent rows
+  // Match offers
+  const incomingOffers = getIncomingOffers(currentPlayerId)
+  const outgoingOffers = getOutgoingOffers(currentPlayerId)
+
   const opponentRows = buildOpponentRows(upcomingSlots, availableBroadcasts)
   const dateGroups = groupRowsByDate(opponentRows)
 
@@ -213,15 +246,54 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     setTick(t => t + 1)
   }
 
-  function handleClaim(broadcastId: string) {
-    const result = claimBroadcast(broadcastId, currentPlayerId)
-    if (result) {
-      setFeedback('Match confirmed!')
-      setAskingRow(null)
-      onMatchConfirmed()
+  function handleAskToPlay(row: OpponentRow) {
+    const result = createMatchOffer(
+      { id: currentPlayerId, name: currentPlayerName },
+      { id: row.playerId, name: row.playerName },
+      tournament!.id,
+      row.date,
+      `${formatHour(row.startHour)}`,
+      row.day,
+      row.startHour,
+      row.endHour,
+    )
+
+    if ('error' in result) {
+      setFeedback(result.error)
     } else {
-      setFeedback('Slot already taken or no match available')
+      setFeedback('Match offer sent')
     }
+    setAskingRow(null)
+    setTimeout(() => setFeedback(''), 2500)
+    setTick(t => t + 1)
+  }
+
+  function handleAcceptOffer(offer: MatchOffer) {
+    const result = acceptMatchOffer(offer.offerId, currentPlayerId)
+    if ('error' in result) {
+      setFeedback(result.error)
+    } else {
+      setFeedback('Match scheduled')
+      if (result.matchConfirmed) onMatchConfirmed()
+    }
+    setTimeout(() => setFeedback(''), 2500)
+    setTick(t => t + 1)
+  }
+
+  function handleDeclineOffer(offer: MatchOffer) {
+    const result = declineMatchOffer(offer.offerId, currentPlayerId)
+    if ('error' in result) {
+      setFeedback(result.error)
+    } else {
+      setFeedback('Offer declined')
+    }
+    setTimeout(() => setFeedback(''), 2000)
+    setTick(t => t + 1)
+  }
+
+  function handleCancelOffer(offer: MatchOffer) {
+    cancelMatchOffer(offer.offerId, currentPlayerId)
+    setFeedback('Offer cancelled')
     setTimeout(() => setFeedback(''), 2000)
     setTick(t => t + 1)
   }
@@ -244,7 +316,51 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     <div className="playnow-tab">
       {feedback && <div className="broadcast-feedback">{feedback}</div>}
 
-      {/* === HERO SECTION === */}
+      {/* === INCOMING OFFERS === */}
+      {incomingOffers.length > 0 && (
+        <div className="pn-section">
+          <h3 className="pn-section-title">Match Offers</h3>
+          <div className="offer-list">
+            {incomingOffers.map(offer => (
+              <div key={offer.offerId} className="card offer-card offer-card-incoming">
+                <div className="offer-card-header">
+                  <span className="offer-card-label">Match Proposed</span>
+                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
+                </div>
+                <div className="offer-card-time">{offer.proposedTime}</div>
+                <div className="offer-card-date">{formatDate(offer.proposedDate)}</div>
+                <div className="offer-card-opponent">{offer.senderName}</div>
+                <div className="offer-card-actions">
+                  <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
+                  <button className="btn offer-decline-btn" onClick={() => handleDeclineOffer(offer)}>Decline</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* === OUTGOING OFFERS === */}
+      {outgoingOffers.length > 0 && (
+        <div className="pn-section">
+          <h3 className="pn-section-title">Your Pending Offers</h3>
+          <div className="offer-list">
+            {outgoingOffers.map(offer => (
+              <div key={offer.offerId} className="card offer-card offer-card-outgoing">
+                <div className="offer-card-header">
+                  <span className="offer-card-label">Sent to {offer.recipientName}</span>
+                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
+                </div>
+                <div className="offer-card-time">{offer.proposedTime}</div>
+                <div className="offer-card-date">{formatDate(offer.proposedDate)}</div>
+                <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* === BROADCAST HERO === */}
       {myBroadcast ? (
         <div className="card pn-my-broadcast">
           <div className="broadcast-card-header">
@@ -328,7 +444,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       {/* === AVAILABLE OPPONENTS === */}
       <div className="pn-section">
         <h3 className="pn-section-title">Available Opponents</h3>
-        <p className="pn-section-helper">Tap a player to request a match in their available time</p>
+        <p className="pn-section-helper">Tap a player to propose a match at their available time</p>
 
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
@@ -378,33 +494,22 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         )}
       </div>
 
-      {/* === ASK TO PLAY MODAL === */}
+      {/* === ASK TO PLAY CONFIRMATION MODAL === */}
       {askingRow && (
         <div className="broadcast-claim-overlay" onClick={() => setAskingRow(null)}>
           <div className="broadcast-claim-modal" onClick={e => e.stopPropagation()}>
-            <h3 className="broadcast-claim-title">Ask {askingRow.playerName} to play</h3>
+            <h3 className="broadcast-claim-title">Propose match vs {askingRow.playerName}</h3>
             <div className="broadcast-claim-info">
-              <div className="broadcast-claim-player">
-                <span className="pn-modal-avatar">{askingRow.playerName[0]?.toUpperCase()}</span>
-                {askingRow.playerName}
-                <span className="seed-label">{playerSeedLabel(askingRow.playerId)}</span>
-              </div>
-              <div className="broadcast-claim-detail">
-                {askingRow.playerName} is available {askingRow.dateLabel.toLowerCase()} · {askingRow.timeLabel}
-              </div>
+              <div className="offer-confirm-time">{askingRow.timeLabel}</div>
+              <div className="offer-confirm-date">{askingRow.dateLabel}</div>
               {askingRow.location && <div className="broadcast-claim-detail">{askingRow.location}</div>}
-              {askingRow.message && <div className="broadcast-claim-message">"{askingRow.message}"</div>}
             </div>
+            <p className="offer-confirm-note">
+              {askingRow.playerName} will have 2 hours to accept or decline.
+            </p>
             <div className="broadcast-claim-actions">
               <button className="btn" onClick={() => setAskingRow(null)}>Cancel</button>
-              {askingRow.broadcastId ? (
-                <button className="btn btn-primary" onClick={() => handleClaim(askingRow.broadcastId!)}>Ask to Play</button>
-              ) : (
-                <button className="btn btn-primary" onClick={() => {
-                  setAskingRow(null)
-                  setShowForm(true)
-                }}>Broadcast Your Availability</button>
-              )}
+              <button className="btn btn-primary" onClick={() => handleAskToPlay(askingRow)}>Ask to Play</button>
             </div>
           </div>
         </div>
