@@ -155,100 +155,83 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   const spotsLeft = setupTournament ? maxPlayers - setupPlayers.length : 0
   const isUserInvolved = joined || isInSetupTournament
 
-  // Build combined player list for display
-  const allPlayers: { id: string; name: string; isYou: boolean }[] = []
-  for (const p of setupPlayers) {
-    allPlayers.push({ id: p.id, name: p.name, isYou: p.id === profile.id })
-  }
-  for (const e of entries) {
-    if (!allPlayers.some(p => p.id === e.playerId)) {
-      allPlayers.push({ id: e.playerId, name: e.playerName, isYou: e.playerId === profile.id })
-    }
-  }
-
   // Tournament ready state (6+ players in setup)
   const tournamentReady = setupTournament && setupPlayers.length >= targetPlayers
 
+  // Progress bar color: gray (0), blue (1-5), green (6+)
+  const progressPct = tournamentReady
+    ? (setupPlayers.length / maxPlayers) * 100
+    : Math.min((totalJoined / targetPlayers) * 100, 100)
+  const progressColor = totalJoined === 0
+    ? 'var(--color-text-muted)'
+    : totalJoined >= targetPlayers
+      ? 'var(--color-positive-primary)'
+      : 'var(--color-accent-primary)'
+
   return (
     <div className="lobby-section">
-      {/* Tournament Formation Hero Card */}
+      {/* Tournament Formation Card */}
       <div className="card formation-hero">
         {tournamentReady ? (
           <>
-            <h2 className="formation-hero-title">{profile.county} Tournament Starting</h2>
-            <p className="formation-hero-subtitle">
-              {spotsLeft > 0
-                ? `The tournament will begin when the countdown ends or ${maxPlayers} players join. Invite more players to fill the bracket.`
-                : 'The bracket is full. The tournament will begin shortly.'
-              }
-            </p>
+            <h2 className="formation-title">{profile.county} Tournament<br />Starting</h2>
+            <p className="formation-desc">Bracket is filling up. Tournament begins when the countdown ends.</p>
             {countdown && (
               <div className="formation-countdown">
                 <div className="formation-countdown-label">Starts in</div>
                 <div className="formation-countdown-timer">{countdown}</div>
               </div>
             )}
-            <div className="formation-progress-row">
-              <span className="formation-progress-text">{setupPlayers.length} of {maxPlayers} players</span>
-              {spotsLeft > 0 && <span className="formation-spots">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} left</span>}
+            <div className="formation-player-count">
+              <span className="formation-count-mono">{setupPlayers.length}</span>
+              <span className="formation-count-sep">/</span>
+              <span className="formation-count-mono">{maxPlayers}</span>
+              <span className="formation-count-label">players joined</span>
             </div>
-            <div className="formation-progress-bar">
-              <div className="formation-progress-fill" style={{ width: `${(setupPlayers.length / maxPlayers) * 100}%` }} />
+            <div className="formation-progress-bar formation-progress-animated">
+              <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
             </div>
+            {spotsLeft > 0 && (
+              <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before bracket is full</p>
+            )}
             <div className="formation-actions">
-              {spotsLeft > 0 && (
-                <button className="btn btn-primary btn-large" onClick={handleShareInvite}>Invite Players</button>
+              <button className="btn btn-primary btn-large formation-cta-primary" onClick={!isUserInvolved ? handleJoin : handleShareInvite}>
+                {!isUserInvolved ? 'Join Tournament' : 'Invite Players'}
+              </button>
+              {isUserInvolved && spotsLeft > 0 && (
+                <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
+                  {copied ? 'Copied!' : 'Copy Invite Link'}
+                </button>
               )}
             </div>
           </>
         ) : (
           <>
-            <h2 className="formation-hero-title">{profile.county} Tournament Forming</h2>
-            <p className="formation-hero-subtitle">
-              {isUserInvolved
-                ? `You started a tournament in ${profile.county}. Invite players to begin competing.`
-                : `A tournament is forming in ${profile.county}. Join and invite players.`
-              }
-            </p>
-            <div className="formation-progress-row">
-              <span className="formation-progress-text">{totalJoined} of {targetPlayers} players joined</span>
+            <h2 className="formation-title">{profile.county} Tournament<br />Forming</h2>
+            <p className="formation-desc">6–8 players compete in a local knockout tournament</p>
+            <div className="formation-player-count">
+              <span className="formation-count-mono">{totalJoined}</span>
+              <span className="formation-count-sep">/</span>
+              <span className="formation-count-mono">{targetPlayers}</span>
+              <span className="formation-count-label">players joined</span>
             </div>
-            <div className="formation-progress-bar">
-              <div className="formation-progress-fill" style={{ width: `${Math.min((totalJoined / targetPlayers) * 100, 100)}%` }} />
+            <div className="formation-progress-bar formation-progress-animated">
+              <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
             </div>
-            <p className="formation-explainer">When {targetPlayers} players join, a 48-hour countdown begins. The tournament starts when it ends or when {maxPlayers} players join.</p>
+            <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Tournament starts when it ends or {maxPlayers} join.</p>
             <div className="formation-actions">
-              {!isUserInvolved && (
-                <button className="btn btn-primary btn-large" onClick={handleJoin}>Join Tournament</button>
+              {!isUserInvolved ? (
+                <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>Join Tournament</button>
+              ) : (
+                <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>Invite Players</button>
               )}
-              {isUserInvolved && (
-                <button className="btn btn-primary btn-large" onClick={handleShareInvite}>Invite Players</button>
-              )}
-              <button className="btn btn-large" onClick={handleCopyLink}>
+              <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
                 {copied ? 'Copied!' : 'Copy Invite Link'}
               </button>
             </div>
           </>
         )}
       </div>
-
-      {/* Players Joining */}
-      {allPlayers.length > 0 && (
-        <div className="card formation-players">
-          <h3 className="formation-players-title">Players Joining</h3>
-          <ul className="player-list">
-            {allPlayers.map((p, i) => (
-                <li key={p.id} className={p.isYou ? 'is-you' : ''}>
-                  <span className="player-number">{i + 1}</span>
-                  <span className="player-name">
-                    {p.name}
-                    {p.isYou && <span className="you-badge">You</span>}
-                  </span>
-                </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* Leave option for joined users */}
       {isUserInvolved && !isInSetupTournament && (

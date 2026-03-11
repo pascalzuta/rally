@@ -295,50 +295,64 @@ export default function Home({
   const leaderboard = useMemo(() => getCountyLeaderboard(profile.county), [profile.county, tournaments])
   const topPlayers = leaderboard.slice(0, 3)
 
-  // No active or setup tournament: show lobby
+  // Player's own leaderboard entry (for personalized leaderboard)
+  const myLeaderboardEntry = leaderboard.find(
+    e => e.name.toLowerCase() === profile.name.toLowerCase()
+  )
+  const myRating = getPlayerRating(profile.id, profile.name)
+
+  // No active or setup tournament: show lobby + status + leaderboard
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
-      <div className="home-section">
-        {/* Onboarding */}
-        {showOnboarding && (
-          <div className="card onboarding-card">
-            <h3 className="onboarding-title">Welcome to Rally</h3>
-            <p className="onboarding-subtitle">Your next steps</p>
-            <div className="onboarding-steps">
-              {activationSteps.map((step, i) => (
-                <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
-                  <span className="onboarding-step-icon">
-                    {step.completed ? (
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                        <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className="onboarding-step-label">{step.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+      <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
-        {/* Leaderboard Teaser */}
+        {/* User Status Block */}
+        <div className="card user-status-card">
+          <div className="user-status-row">
+            <div className="user-status-info">
+              <div className="user-status-headline">Not in a tournament</div>
+              <div className="user-status-sub">Join the lobby above to start competing</div>
+            </div>
+            <div className="user-status-rating">
+              <span className="user-status-rating-value">{Math.round(myRating.rating)}</span>
+              <span className="user-status-rating-label">Elo</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Leaderboard Block */}
         {topPlayers.length > 1 && (
           <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
             <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
             {topPlayers.map(entry => (
               <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
                 <span className="leaderboard-rank">#{entry.rank}</span>
-                <span className="leaderboard-name">{entry.name}</span>
+                <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
                 <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
               </div>
             ))}
+            {/* Show user's own rank if not in top 3 */}
+            {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
+              <>
+                <div className="leaderboard-teaser-divider" />
+                <div className="leaderboard-teaser-row is-me">
+                  <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
+                  <span className="leaderboard-name">You</span>
+                  <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
+                </div>
+              </>
+            )}
+            {!myLeaderboardEntry && (
+              <>
+                <div className="leaderboard-teaser-divider" />
+                <div className="leaderboard-teaser-row is-me">
+                  <span className="leaderboard-rank">—</span>
+                  <span className="leaderboard-name">You</span>
+                  <span className="leaderboard-rating">{Math.round(myRating.rating)}</span>
+                </div>
+              </>
+            )}
             <button className="btn-link leaderboard-see-all">See full leaderboard</button>
           </div>
         )}
@@ -346,37 +360,50 @@ export default function Home({
     )
   }
 
-  // Setup tournament: show countdown + lobby
+  // Setup tournament: show lobby + status + leaderboard
   if (activeTournaments.length === 0 && setupTournaments.length > 0) {
     return (
-      <div className="home-section">
-        {showOnboarding && (
-          <div className="card onboarding-card">
-            <h3 className="onboarding-title">Welcome to Rally</h3>
-            <p className="onboarding-subtitle">Your next steps</p>
-            <div className="onboarding-steps">
-              {activationSteps.map((step, i) => (
-                <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
-                  <span className="onboarding-step-icon">
-                    {step.completed ? (
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                        <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className="onboarding-step-label">{step.label}</span>
-                </div>
-              ))}
+      <div className="home-section home-section-spaced">
+        <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
+
+        {/* User Status Block */}
+        <div className="card user-status-card">
+          <div className="user-status-row">
+            <div className="user-status-info">
+              <div className="user-status-headline">Tournament forming</div>
+              <div className="user-status-sub">Waiting for more players to join</div>
+            </div>
+            <div className="user-status-rating">
+              <span className="user-status-rating-value">{Math.round(myRating.rating)}</span>
+              <span className="user-status-rating-label">Elo</span>
             </div>
           </div>
-        )}
+        </div>
 
-        <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
+        {/* Leaderboard Block */}
+        {topPlayers.length > 1 && (
+          <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
+            <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
+            {topPlayers.map(entry => (
+              <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
+                <span className="leaderboard-rank">#{entry.rank}</span>
+                <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
+                <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
+              </div>
+            ))}
+            {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
+              <>
+                <div className="leaderboard-teaser-divider" />
+                <div className="leaderboard-teaser-row is-me">
+                  <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
+                  <span className="leaderboard-name">You</span>
+                  <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
+                </div>
+              </>
+            )}
+            <button className="btn-link leaderboard-see-all">See full leaderboard</button>
+          </div>
+        )}
       </div>
     )
   }

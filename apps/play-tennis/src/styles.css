@@ -1857,11 +1857,11 @@ select:focus {
   width: 100%;
 }
 
-/* --- Tournament Formation Hero --- */
+/* --- Tournament Formation Card (Polymarket style) --- */
 
 .formation-hero {
   cursor: default;
-  text-align: center;
+  text-align: left;
   padding: var(--space-xl);
 }
 
@@ -1869,57 +1869,76 @@ select:focus {
   transform: none;
 }
 
-.formation-hero-title {
-  font-size: var(--font-title-sm);
+.formation-title {
+  font-size: var(--font-title-md);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
+  line-height: 1.25;
   margin-bottom: var(--space-sm);
 }
 
-.formation-hero-subtitle {
+.formation-desc {
   font-size: var(--font-body-md);
   color: var(--color-text-secondary);
   line-height: 1.5;
   margin-bottom: var(--space-lg);
 }
 
-.formation-progress-row {
+.formation-player-count {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
+  gap: 2px;
   margin-bottom: var(--space-sm);
 }
 
-.formation-progress-text {
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
+.formation-count-mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
-.formation-spots {
+.formation-count-sep {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-body-lg);
+  color: var(--color-text-muted);
+  margin: 0 1px;
+}
+
+.formation-count-label {
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
+  margin-left: var(--space-sm);
 }
 
 .formation-progress-bar {
-  height: 8px;
+  height: 6px;
   background: var(--color-neutral-bg);
   border-radius: var(--radius-chip);
   overflow: hidden;
   margin-bottom: var(--space-md);
 }
 
-.formation-progress-fill {
-  height: 100%;
-  background: var(--color-positive-primary);
-  border-radius: var(--radius-chip);
-  transition: width 0.3s ease;
-  min-width: 4px;
+.formation-progress-animated .formation-progress-fill {
+  animation: progressGrow 500ms ease-out forwards;
 }
 
-.formation-explainer {
+@keyframes progressGrow {
+  from { width: 0%; }
+}
+
+.formation-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-chip);
+  transition: width 0.4s ease, background 0.3s ease;
+  min-width: 2px;
+}
+
+.formation-logic {
   font-size: var(--font-body-sm);
   color: var(--color-text-muted);
+  line-height: 1.5;
   margin-bottom: var(--space-lg);
 }
 
@@ -1927,6 +1946,17 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+.formation-cta-primary {
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+}
+
+.formation-cta-secondary {
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
 }
 
 .formation-countdown {
@@ -1942,6 +1972,7 @@ select:focus {
 }
 
 .formation-countdown-timer {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: var(--font-title-md);
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
@@ -3586,10 +3617,79 @@ select:focus {
 }
 
 /* ================================================
+   Home Section Spacing
+   ================================================ */
+.home-section-spaced {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ================================================
+   User Status Card (Home)
+   ================================================ */
+.user-status-card {
+  padding: var(--space-lg);
+  cursor: default;
+}
+
+.user-status-card:active {
+  transform: none;
+}
+
+.user-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.user-status-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-status-headline {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.user-status-sub {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.user-status-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.user-status-rating-value {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.user-status-rating-label {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--weight-semibold);
+}
+
+/* ================================================
    Leaderboard Teaser (Home)
    ================================================ */
 .leaderboard-teaser {
-  padding: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
   cursor: pointer;
 }
 
@@ -3635,6 +3735,12 @@ select:focus {
   font-size: var(--font-body-md);
   font-variant-numeric: tabular-nums;
   font-weight: var(--weight-semibold);
+}
+
+.leaderboard-teaser-divider {
+  height: 1px;
+  background: var(--color-divider);
+  margin: var(--space-xs) 0;
 }
 
 .leaderboard-see-all {
