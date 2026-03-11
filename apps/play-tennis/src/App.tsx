@@ -145,7 +145,7 @@ export default function App() {
           onTournamentUpdated={() => setRefreshKey(r => r + 1)}
           onTournamentCreated={id => {
             refreshTournaments()
-            setActiveTab('bracket')
+            setActiveTab('home')
           }}
         />
       </div>
