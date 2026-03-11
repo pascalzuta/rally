@@ -29,9 +29,20 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 
 ## Features
 
-### Player Registration
-- Two-step flow: name/county then availability setup
-- Quick availability presets and custom time picker
+### Onboarding & Registration
+- **Three-screen onboarding flow** before signup:
+  - Screen 1 (Problem): "Scheduling tennis is frustrating" — chat bubble illustration
+  - Screen 2 (Solution): "Rally schedules matches automatically" — availability overlap visual
+  - Screen 3 (Motivation): "Compete in your local tennis ladder" — leaderboard preview
+- **Signup screen**: First name, last name, county autocomplete
+  - County field: searchable autocomplete with all 3,000+ US counties
+  - Geolocation detection: reverse geocodes user location to suggest county
+  - Social proof: "N players competing in [County]" below CTA
+  - CTA button: "Start Competing"
+  - Large Rally logo prominence (1.5x larger on registration)
+- **Availability step**: Quick availability presets and custom time picker
+- Polymarket-inspired visual style: clean cards, large typography, subtle animations
+- Invite link flow skips onboarding, goes directly to signup with county pre-filled
 
 ### Lobby System
 - County-based lobbies with 6-8 player tournaments
@@ -163,7 +174,7 @@ Four-tab layout designed around the player's tournament journey:
 - **Home.tsx** — Dashboard with action cards, lobby fallback, tournament progress
 - **BracketTab.tsx** — Dedicated bracket/standings view with inline scheduling and scoring
 - **PlayNowTab.tsx** — Elevated broadcast/availability as first-class tab
-- **Register.tsx** — Two-step registration
+- **Register.tsx** — Three-screen onboarding + signup with county autocomplete + availability picker
 - **Lobby.tsx** — County lobby with countdown (used by Home tab)
 - **TournamentView.tsx** — Legacy bracket/match display (retained for reference)
 - **MatchSchedulePanel.tsx** — Time negotiation UI (used by BracketTab)

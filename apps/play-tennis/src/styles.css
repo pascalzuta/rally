@@ -151,6 +151,16 @@ body {
   gap: 4px;
 }
 
+.top-nav-register {
+  justify-content: center;
+  padding-top: var(--space-md);
+  padding-bottom: var(--space-md);
+}
+
+.top-nav-logo-large {
+  padding: var(--space-sm) 0;
+}
+
 .rally-icon {
   display: block;
   flex-shrink: 0;
@@ -1268,7 +1278,7 @@ select:focus {
 }
 
 /* ================================================
-   Registration
+   Registration (legacy - kept for compatibility)
    ================================================ */
 .register-hero {
   text-align: center;
@@ -1279,6 +1289,375 @@ select:focus {
   color: var(--color-text-secondary);
   font-size: var(--font-body-lg);
   margin-top: var(--space-sm);
+}
+
+/* ================================================
+   Onboarding Screens
+   ================================================ */
+.onboard-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 56px);
+  padding: var(--space-xl);
+  justify-content: space-between;
+}
+
+.onboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-lg);
+}
+
+.onboard-title {
+  font-size: 28px;
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.onboard-subtitle {
+  font-size: var(--font-body-lg);
+  color: var(--color-text-secondary);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.onboard-tagline {
+  font-size: var(--font-body-md);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+}
+
+/* Onboarding visuals */
+.onboard-visual {
+  margin-bottom: var(--space-xl);
+}
+
+.onboard-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 260px;
+  opacity: 0;
+  animation: onboardFadeIn 0.5s ease forwards;
+}
+
+.onboard-chat-bubble {
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 200px;
+  opacity: 0;
+  animation: onboardSlideUp 0.3s ease forwards;
+}
+
+.onboard-chat-bubble:nth-child(1) { animation-delay: 0.1s; }
+.onboard-chat-bubble:nth-child(2) { animation-delay: 0.3s; }
+.onboard-chat-bubble:nth-child(3) { animation-delay: 0.5s; }
+.onboard-chat-bubble:nth-child(4) { animation-delay: 0.7s; }
+
+.onboard-chat-out {
+  align-self: flex-end;
+  background: var(--color-accent-primary);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.onboard-chat-in {
+  align-self: flex-start;
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: 4px;
+}
+
+/* Match scheduling visual */
+.onboard-match-visual {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  opacity: 0;
+  animation: onboardFadeIn 0.5s ease 0.1s forwards;
+}
+
+.onboard-match-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.onboard-match-row:last-of-type {
+  border-bottom: none;
+}
+
+.onboard-match-player {
+  font-weight: var(--weight-semibold);
+  font-size: var(--font-body-md);
+}
+
+.onboard-match-time {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.onboard-match-confirmed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: var(--weight-semibold);
+  font-size: var(--font-body-md);
+  color: var(--color-positive-primary);
+  padding-top: var(--space-sm);
+  opacity: 0;
+  animation: onboardFadeIn 0.4s ease 0.5s forwards;
+}
+
+/* Leaderboard visual */
+.onboard-leaderboard {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  width: 280px;
+  opacity: 0;
+  animation: onboardFadeIn 0.5s ease 0.1s forwards;
+}
+
+.onboard-lb-header {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-md);
+}
+
+.onboard-lb-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-divider);
+  font-size: var(--font-body-md);
+}
+
+.onboard-lb-row:last-child {
+  border-bottom: none;
+}
+
+.onboard-lb-you {
+  background: rgba(37, 99, 235, 0.06);
+  margin: 0 calc(-1 * var(--space-lg));
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+  border-radius: var(--radius-button);
+  font-weight: var(--weight-semibold);
+}
+
+.onboard-lb-rank {
+  width: 32px;
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+}
+
+.onboard-lb-name {
+  flex: 1;
+}
+
+.onboard-lb-rating {
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+}
+
+/* Onboarding actions & dots */
+.onboard-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  padding-top: var(--space-xl);
+}
+
+.onboard-btn {
+  width: 100%;
+}
+
+.onboard-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.onboard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-divider);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.onboard-dot.active {
+  background: var(--color-text-primary);
+  transform: scale(1.2);
+}
+
+/* Onboard animations */
+@keyframes onboardFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes onboardSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================================
+   Signup Screen
+   ================================================ */
+.signup-screen {
+  justify-content: flex-start;
+  padding-top: var(--space-xxl);
+}
+
+.signup-content {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.signup-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.signup-title {
+  font-size: 32px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+}
+
+.signup-subtitle {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.signup-desc {
+  font-size: var(--font-body-md);
+  color: var(--color-text-muted);
+  margin-top: var(--space-sm);
+}
+
+.signup-invite-banner {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-button);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.signup-cta {
+  margin-top: var(--space-sm);
+}
+
+.signup-social-proof {
+  text-align: center;
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-lg);
+  font-weight: var(--weight-medium);
+}
+
+/* County autocomplete */
+.county-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-button);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.county-suggestion-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px var(--space-md);
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: var(--font-body-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.county-suggestion-item:hover {
+  background: var(--color-neutral-bg);
+}
+
+.field {
+  position: relative;
+}
+
+/* Detected county */
+.county-detected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.county-detected-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
+.county-detected-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-positive-bg);
+  border: 1px solid var(--color-positive-primary);
+  border-radius: var(--radius-button);
+  font-family: inherit;
+  font-size: var(--font-body-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-weight: var(--weight-medium);
+}
+
+.county-detected-use {
+  color: var(--color-positive-primary);
+  font-weight: var(--weight-semibold);
+  font-size: var(--font-body-sm);
 }
 
 /* Availability Picker */

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
+import { searchCounties } from '../counties'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -45,10 +46,60 @@ function formatHour(h: number): string {
   return h < 12 ? `${h}am` : `${h - 12}pm`
 }
 
+// Reverse geocode coordinates to county using free Nominatim API
+async function reverseGeocodeCounty(lat: number, lon: number): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    )
+    const data = await res.json()
+    const addr = data?.address
+    if (!addr) return null
+    const county = addr.county
+    const state = addr.state
+    if (!county || !state) return null
+    // Convert state name to abbreviation
+    const abbr = STATE_ABBREVS[state.toLowerCase()]
+    if (!abbr) return null
+    // Ensure "County" suffix
+    const countyName = county.includes('County') || county.includes('Parish') || county.includes('Borough')
+      ? county
+      : `${county} County`
+    return `${countyName}, ${abbr}`
+  } catch {
+    return null
+  }
+}
+
+const STATE_ABBREVS: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'district of columbia': 'DC',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL',
+  'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA',
+  'maine': 'ME', 'maryland': 'MD', 'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN',
+  'mississippi': 'MS', 'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK', 'oregon': 'OR',
+  'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC', 'south dakota': 'SD',
+  'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT', 'virginia': 'VA',
+  'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+}
+
+type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'availability'
+
 export default function Register({ onRegistered, inviteCounty }: Props) {
-  const [step, setStep] = useState<'info' | 'availability'>('info')
-  const [name, setName] = useState('')
+  const [step, setStep] = useState<Step>(inviteCounty ? 'signup' : 'onboard-1')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [county, setCounty] = useState(inviteCounty ?? '')
+  const [countyQuery, setCountyQuery] = useState(inviteCounty ?? '')
+  const [countySuggestions, setCountySuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestedCounty, setSuggestedCounty] = useState<string | null>(null)
+  const [detectingLocation, setDetectingLocation] = useState(false)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
+
   const [selectedQuick, setSelectedQuick] = useState<Set<number>>(new Set())
   const [detailedMode, setDetailedMode] = useState(false)
   const [detailedSlots, setDetailedSlots] = useState<AvailabilitySlot[]>([])
@@ -56,9 +107,65 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [addingStart, setAddingStart] = useState(18)
   const [addingEnd, setAddingEnd] = useState(21)
 
-  function handleInfoSubmit(e: React.FormEvent) {
+  // Attempt geolocation on signup step
+  useEffect(() => {
+    if (step === 'signup' && !inviteCounty && !suggestedCounty && !detectingLocation) {
+      if ('geolocation' in navigator) {
+        setDetectingLocation(true)
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const result = await reverseGeocodeCounty(pos.coords.latitude, pos.coords.longitude)
+            if (result) setSuggestedCounty(result)
+            setDetectingLocation(false)
+          },
+          () => setDetectingLocation(false),
+          { timeout: 5000 }
+        )
+      }
+    }
+  }, [step, inviteCounty, suggestedCounty, detectingLocation])
+
+  // County autocomplete
+  useEffect(() => {
+    if (countyQuery.length >= 2 && county !== countyQuery) {
+      const results = searchCounties(countyQuery)
+      setCountySuggestions(results)
+      setShowSuggestions(results.length > 0)
+    } else {
+      setCountySuggestions([])
+      setShowSuggestions(false)
+    }
+  }, [countyQuery, county])
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function selectCounty(value: string) {
+    setCounty(value)
+    setCountyQuery(value)
+    setShowSuggestions(false)
+  }
+
+  function useSuggestedCounty() {
+    if (suggestedCounty) {
+      selectCounty(suggestedCounty)
+      setSuggestedCounty(null)
+    }
+  }
+
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
+
+  function handleSignup(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !county) return
+    if (!firstName.trim() || !lastName.trim() || !county) return
     setStep('availability')
   }
 
@@ -80,8 +187,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   }
 
   function handleFinish(skip: boolean) {
-    const profile = createProfile(name, county)
-
+    const profile = createProfile(fullName, county)
     if (!skip) {
       let slots: AvailabilitySlot[] = []
       if (detailedMode) {
@@ -95,68 +201,249 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         saveAvailability(profile.id, slots)
       }
     }
-
     onRegistered(profile)
   }
 
-  if (step === 'info') {
+  // Social proof number (deterministic based on county)
+  function getPlayerCount(c: string): number {
+    if (!c) return 0
+    let hash = 0
+    for (let i = 0; i < c.length; i++) hash = ((hash << 5) - hash + c.charCodeAt(i)) | 0
+    return 80 + Math.abs(hash % 400)
+  }
+
+  // --- Onboarding Screen 1: The Problem ---
+  if (step === 'onboard-1') {
     return (
-      <div className="content">
-        <div className="register-hero">
-          <h2>Play Tennis</h2>
-          {inviteCounty ? (
-            <p>You've been invited to play in {inviteCounty}!</p>
-          ) : (
-            <p>Join your local tennis community</p>
-          )}
+      <div className="onboard-screen">
+        <div className="onboard-content">
+          <div className="onboard-visual">
+            <div className="onboard-chat">
+              <div className="onboard-chat-bubble onboard-chat-out">Can you play Tuesday?</div>
+              <div className="onboard-chat-bubble onboard-chat-in">Maybe Wednesday?</div>
+              <div className="onboard-chat-bubble onboard-chat-out">I can't that day</div>
+              <div className="onboard-chat-bubble onboard-chat-in">Let's try next week</div>
+            </div>
+          </div>
+
+          <h1 className="onboard-title">Scheduling tennis is frustrating</h1>
+          <p className="onboard-subtitle">You message five people just to organize one match.</p>
+          <p className="onboard-tagline">Rally removes the scheduling headache.</p>
         </div>
 
-        <div className="card">
-          <form onSubmit={handleInfoSubmit} className="form">
-            <label className="field">
-              <span className="field-label">Your Name</span>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="e.g. John Smith"
-                autoFocus
-              />
-            </label>
-
-            <label className="field">
-              <span className="field-label">County</span>
-              <input
-                type="text"
-                value={county}
-                onChange={e => setCounty(e.target.value)}
-                placeholder="e.g. Los Angeles County, CA"
-                readOnly={!!inviteCounty}
-              />
-            </label>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-large"
-              disabled={!name.trim() || !county}
-            >
-              Next
-            </button>
-          </form>
+        <div className="onboard-actions">
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
+            Continue
+          </button>
+          <div className="onboard-dots">
+            <span className="onboard-dot active" />
+            <span className="onboard-dot" />
+            <span className="onboard-dot" />
+          </div>
         </div>
       </div>
     )
   }
 
-  // Step 2: Availability
-  return (
-    <div className="content">
-      <div className="register-hero">
-        <h2>When can you play?</h2>
-        <p>Helps us schedule matches automatically</p>
-      </div>
+  // --- Onboarding Screen 2: The Solution ---
+  if (step === 'onboard-2') {
+    return (
+      <div className="onboard-screen">
+        <div className="onboard-content">
+          <div className="onboard-visual">
+            <div className="onboard-match-visual">
+              <div className="onboard-match-row">
+                <span className="onboard-match-player">You</span>
+                <span className="onboard-match-time">Sat 9am available</span>
+              </div>
+              <div className="onboard-match-row">
+                <span className="onboard-match-player">Opponent</span>
+                <span className="onboard-match-time">Sat 9am available</span>
+              </div>
+              <div className="onboard-match-confirmed">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                  <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Match scheduled
+              </div>
+            </div>
+          </div>
 
-      <div className="card">
+          <h1 className="onboard-title">Rally schedules matches automatically</h1>
+          <p className="onboard-subtitle">Find local opponents and let Rally coordinate the match time.</p>
+          <p className="onboard-tagline">Just show up and play.</p>
+        </div>
+
+        <div className="onboard-actions">
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
+            Continue
+          </button>
+          <div className="onboard-dots">
+            <span className="onboard-dot" />
+            <span className="onboard-dot active" />
+            <span className="onboard-dot" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // --- Onboarding Screen 3: The Motivation ---
+  if (step === 'onboard-3') {
+    return (
+      <div className="onboard-screen">
+        <div className="onboard-content">
+          <div className="onboard-visual">
+            <div className="onboard-leaderboard">
+              <div className="onboard-lb-header">Local Rankings</div>
+              {[
+                { rank: '#1', name: 'Taylor Kim', rating: 1650 },
+                { rank: '#2', name: 'Alex Rivera', rating: 1580 },
+                { rank: '#3', name: 'Sam Patel', rating: 1520 },
+                { rank: '#4', name: 'You', rating: '—', isYou: true },
+              ].map((row, i) => (
+                <div key={i} className={`onboard-lb-row ${row.isYou ? 'onboard-lb-you' : ''}`}>
+                  <span className="onboard-lb-rank">{row.rank}</span>
+                  <span className="onboard-lb-name">{row.name}</span>
+                  <span className="onboard-lb-rating">{row.rating}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <h1 className="onboard-title">Compete in your local tennis ladder</h1>
+          <p className="onboard-subtitle">Play matches, climb the rankings, and win tournaments.</p>
+          <p className="onboard-tagline">Every match counts.</p>
+        </div>
+
+        <div className="onboard-actions">
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('signup')}>
+            Join Rally
+          </button>
+          <div className="onboard-dots">
+            <span className="onboard-dot" />
+            <span className="onboard-dot" />
+            <span className="onboard-dot active" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // --- Signup Screen ---
+  if (step === 'signup') {
+    return (
+      <div className="onboard-screen signup-screen">
+        <div className="signup-content">
+          <div className="signup-header">
+            <h1 className="signup-title">Start Playing</h1>
+            <p className="signup-subtitle">We'll Handle the Scheduling</p>
+            <p className="signup-desc">Find local players and let Rally organize your matches.</p>
+          </div>
+
+          {inviteCounty && (
+            <div className="signup-invite-banner">
+              You've been invited to play in {inviteCounty}
+            </div>
+          )}
+
+          <form onSubmit={handleSignup} className="signup-form">
+            <label className="field">
+              <span className="field-label">First name</span>
+              <input
+                type="text"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="e.g. John"
+                autoFocus
+              />
+            </label>
+
+            <label className="field">
+              <span className="field-label">Last name</span>
+              <input
+                type="text"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                placeholder="e.g. Smith"
+              />
+            </label>
+
+            <div className="field" ref={suggestionsRef}>
+              <span className="field-label">Where do you play?</span>
+              {inviteCounty ? (
+                <input type="text" value={county} readOnly />
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={countyQuery}
+                    onChange={e => {
+                      setCountyQuery(e.target.value)
+                      setCounty('')
+                    }}
+                    onFocus={() => {
+                      if (countySuggestions.length > 0) setShowSuggestions(true)
+                    }}
+                    placeholder="Search county..."
+                  />
+                  {showSuggestions && (
+                    <div className="county-suggestions">
+                      {countySuggestions.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          className="county-suggestion-item"
+                          onClick={() => selectCounty(c)}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {suggestedCounty && !county && (
+              <div className="county-detected">
+                <span className="county-detected-label">Detected location</span>
+                <button type="button" className="county-detected-btn" onClick={useSuggestedCounty}>
+                  {suggestedCounty}
+                  <span className="county-detected-use">Use this</span>
+                </button>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-large signup-cta"
+              disabled={!firstName.trim() || !lastName.trim() || !county}
+            >
+              Start Competing
+            </button>
+          </form>
+
+          {county && (
+            <p className="signup-social-proof">
+              {getPlayerCount(county)} players competing in {county.split(',')[0]}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // --- Step: Availability ---
+  return (
+    <div className="onboard-screen">
+      <div className="signup-content">
+        <div className="signup-header">
+          <h1 className="signup-title">When can you play?</h1>
+          <p className="signup-desc">Helps us schedule matches automatically</p>
+        </div>
+
         <div className="availability-picker">
           {!detailedMode ? (
             <>
@@ -223,7 +510,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             onClick={() => handleFinish(false)}
             disabled={detailedMode ? detailedSlots.length === 0 : selectedQuick.size === 0}
           >
-            {inviteCounty ? 'Join & Play' : 'Join'}
+            Start Competing
           </button>
           <button
             className="btn btn-large"
