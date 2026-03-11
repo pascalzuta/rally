@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies } from '../store'
 import MatchScoreModal from './MatchScoreModal'
@@ -38,6 +38,8 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [showOverflow, setShowOverflow] = useState(false)
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
+  const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const pendingScrollId = useRef<string | null>(null)
 
   // Auto-focus a match when navigated from Home action card
   if (focusMatchId && tournament && tournament.status !== 'setup') {
@@ -50,9 +52,24 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
       } else if (expandedMatchId !== focusMatchId) {
         setExpandedMatchId(focusMatchId)
       }
+      pendingScrollId.current = focusMatchId
     }
     onFocusConsumed?.()
   }
+
+  // Scroll focused match into view after render
+  useEffect(() => {
+    if (!pendingScrollId.current) return
+    const id = pendingScrollId.current
+    pendingScrollId.current = null
+    // Small delay to allow the DOM to update (expanded panel, etc.)
+    requestAnimationFrame(() => {
+      const el = matchRefs.current.get(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    })
+  })
 
   if (!tournament) {
     return (
@@ -221,6 +238,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
     return (
       <div
         key={match.id}
+        ref={el => { if (el) matchRefs.current.set(match.id, el); else matchRefs.current.delete(match.id) }}
         className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)}`}
         onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
       >

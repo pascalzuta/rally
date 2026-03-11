@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 
@@ -465,13 +465,14 @@ export default function Home({
         )
       })}
 
-      {/* Incoming Match Offers */}
+      {/* Match Offers (incoming + outgoing) */}
       {(() => {
-        const offers = getIncomingOffers(profile.id)
-        if (offers.length === 0) return null
+        const incoming = getIncomingOffers(profile.id)
+        const outgoing = getOutgoingOffers(profile.id)
+        if (incoming.length === 0 && outgoing.length === 0) return null
         return (
           <div className="action-cards">
-            {offers.map(offer => (
+            {incoming.map(offer => (
               <div
                 key={offer.offerId}
                 className="action-card action-respond"
@@ -480,6 +481,17 @@ export default function Home({
                 <div className="action-card-type">Match Offer</div>
                 <div className="action-card-opponent">{offer.senderName}</div>
                 <div className="action-card-detail">{offer.proposedTime} · {offer.proposedDate}</div>
+              </div>
+            ))}
+            {outgoing.map(offer => (
+              <div
+                key={offer.offerId}
+                className="action-card action-schedule"
+                onClick={onViewOffers}
+              >
+                <div className="action-card-type">Offer Sent</div>
+                <div className="action-card-opponent">to {offer.recipientName}</div>
+                <div className="action-card-detail">{offer.proposedTime} · Waiting for response</div>
               </div>
             ))}
           </div>
