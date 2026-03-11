@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers } from '../store'
+import { useMemo, useState } from 'react'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers, getTournament } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
+import MatchScoreModal from './MatchScoreModal'
+import MatchSchedulePanel from './MatchSchedulePanel'
 
 interface Props {
   profile: PlayerProfile
@@ -13,6 +15,7 @@ interface Props {
   onViewMatch: (tournamentId: string, matchId: string) => void
   onViewLeaderboard?: () => void
   onViewOffers?: () => void
+  onDataChanged?: () => void
 }
 
 // --- Onboarding ---
@@ -237,16 +240,6 @@ function getUpNextMatch(
   return null
 }
 
-function formatSlot(slot: { day: string; startHour: number; endHour: number }): string {
-  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1)
-  const fmt = (h: number) => {
-    const period = h >= 12 ? 'pm' : 'am'
-    const hour = h % 12 || 12
-    return `${hour}${period}`
-  }
-  return `${day} ${fmt(slot.startHour)}–${fmt(slot.endHour)}`
-}
-
 export default function Home({
   profile,
   tournaments,
@@ -257,7 +250,11 @@ export default function Home({
   onViewMatch,
   onViewLeaderboard,
   onViewOffers,
+  onDataChanged,
 }: Props) {
+  const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
+  const [scoringMatchInfo, setScoringMatchInfo] = useState<{ tournamentId: string; matchId: string } | null>(null)
+
   const activeTournaments = useMemo(
     () => tournaments.filter(
       t => t.status === 'in-progress' && isPlayerInTournament(t, profile.id)
@@ -497,20 +494,55 @@ export default function Home({
       {/* Action Cards */}
       {actionCards.length > 0 ? (
         <div className="action-cards">
-          {actionCards.map(card => (
-            <div
-              key={`${card.tournamentId}-${card.matchId}`}
-              className={`action-card action-${card.type}`}
-              onClick={() => onViewMatch(card.tournamentId, card.matchId)}
-            >
-              <div className="action-card-type">{card.label}</div>
-              <div className="action-card-opponent">vs {card.opponentName}</div>
-              <div className="action-card-detail">{card.detail}</div>
-              <button className="action-card-btn" onClick={e => { e.stopPropagation(); onViewMatch(card.tournamentId, card.matchId) }}>
-                {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
-              </button>
-            </div>
-          ))}
+          {actionCards.map(card => {
+            const cardKey = `${card.tournamentId}-${card.matchId}`
+            const isExpanded = expandedCardKey === cardKey
+            const cardTournament = activeTournaments.find(t => t.id === card.tournamentId)
+            const cardMatch = cardTournament?.matches.find(m => m.id === card.matchId)
+
+            return (
+              <div
+                key={cardKey}
+                className={`action-card action-${card.type}`}
+                onClick={() => {
+                  if (card.type === 'score') {
+                    setScoringMatchInfo({ tournamentId: card.tournamentId, matchId: card.matchId })
+                  } else {
+                    setExpandedCardKey(isExpanded ? null : cardKey)
+                  }
+                }}
+              >
+                <div className="action-card-type">{card.label}</div>
+                <div className="action-card-opponent">vs {card.opponentName}</div>
+                <div className="action-card-detail">{card.detail}</div>
+                {!isExpanded && (
+                  <button className="action-card-btn" onClick={e => {
+                    e.stopPropagation()
+                    if (card.type === 'score') {
+                      setScoringMatchInfo({ tournamentId: card.tournamentId, matchId: card.matchId })
+                    } else {
+                      setExpandedCardKey(cardKey)
+                    }
+                  }}>
+                    {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
+                  </button>
+                )}
+                {isExpanded && cardTournament && cardMatch?.schedule && (
+                  <div onClick={e => e.stopPropagation()}>
+                    <MatchSchedulePanel
+                      tournament={cardTournament}
+                      match={cardMatch}
+                      currentPlayerId={profile.id}
+                      onUpdated={() => {
+                        setExpandedCardKey(null)
+                        onDataChanged?.()
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       ) : (
         <div className="card" style={{ cursor: 'default' }}>
@@ -521,6 +553,23 @@ export default function Home({
         </div>
       )}
 
+      {/* Score Modal */}
+      {scoringMatchInfo && (() => {
+        const t = activeTournaments.find(tr => tr.id === scoringMatchInfo.tournamentId)
+        if (!t) return null
+        return (
+          <MatchScoreModal
+            tournament={t}
+            matchId={scoringMatchInfo.matchId}
+            onClose={() => setScoringMatchInfo(null)}
+            onSaved={() => {
+              setScoringMatchInfo(null)
+              onDataChanged?.()
+            }}
+          />
+        )
+      })()}
+
       {/* Up Next Card */}
       {upNext && upNext.match.schedule?.confirmedSlot && (() => {
         const slot = upNext.match.schedule!.confirmedSlot!
@@ -528,7 +577,7 @@ export default function Home({
         const period = slot.startHour >= 12 ? 'pm' : 'am'
         const hour = slot.startHour % 12 || 12
         return (
-          <div className="card upnext-card" onClick={() => onViewMatch(upNext.tournament.id, upNext.match.id)}>
+          <div className="card upnext-card" onClick={() => setScoringMatchInfo({ tournamentId: upNext.tournament.id, matchId: upNext.match.id })}>
             <div>
               <div className="upnext-label">Confirmed</div>
               <div className="upnext-opponent">

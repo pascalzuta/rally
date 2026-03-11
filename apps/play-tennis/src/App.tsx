@@ -279,6 +279,7 @@ export default function App() {
               }}
               onViewLeaderboard={() => setActiveTab('leaderboard')}
               onViewOffers={() => setActiveTab('playnow')}
+              onDataChanged={() => setRefreshKey(r => r + 1)}
             />
           )}
 
