@@ -12,14 +12,11 @@ interface Props {
   onBack: () => void
 }
 
-function formatSlot(slot: { day: string; startHour: number; endHour: number }): string {
-  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1)
-  const fmt = (h: number) => {
-    const period = h >= 12 ? 'pm' : 'am'
-    const hour = h % 12 || 12
-    return `${hour}${period}`
-  }
-  return `${day} ${fmt(slot.startHour)}–${fmt(slot.endHour)}`
+function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
+  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
+  const period = slot.startHour >= 12 ? 'pm' : 'am'
+  const hour = slot.startHour % 12 || 12
+  return { day, time: `${hour}${period}` }
 }
 
 function scheduleStatusClass(match: Match): string {
@@ -181,20 +178,33 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           <div className="bye-label">BYE</div>
         ) : (
           <>
-            <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-              <span className="match-player-name">
-                {p1}{seed1 && <span className="seed-label"> ({seed1})</span>}
-              </span>
-              {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
-              {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
-            </div>
-            <div className="match-vs">vs</div>
-            <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-              <span className="match-player-name">
-                {p2}{seed2 && <span className="seed-label"> ({seed2})</span>}
-              </span>
-              {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
-              {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
+            <div className="match-players-row">
+              <div className="match-players-names">
+                <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+                  <span className="match-player-name">
+                    {p1}{seed1 && <span className="seed-label"> ({seed1})</span>}
+                  </span>
+                  {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
+                  {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
+                </div>
+                <div className="match-vs">vs</div>
+                <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+                  <span className="match-player-name">
+                    {p2}{seed2 && <span className="seed-label"> ({seed2})</span>}
+                  </span>
+                  {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
+                  {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
+                </div>
+              </div>
+              {!match.completed && isConfirmed && match.schedule?.confirmedSlot && (() => {
+                const st = formatStartTime(match.schedule!.confirmedSlot!)
+                return (
+                  <div className="match-time-slot">
+                    <span className="match-time-day">{st.day}</span>
+                    <span className="match-time-hour">{st.time}</span>
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Win probability bar for upcoming matches */}
@@ -212,18 +222,15 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
             {match.resolution && (
               <div className={`resolution-indicator resolution-${match.resolution.type}`}>
                 {match.resolution.type === 'walkover' ? '⊘ Walkover' :
-                 match.resolution.type === 'forced-match'
-                   ? `⚑ ${match.resolution.forcedSlot ? formatSlot(match.resolution.forcedSlot) : 'Final Match Assigned'}`
-                   : '✕ Match Canceled'}
+                 match.resolution.type === 'forced-match' ? '⚑ Final Match Assigned' :
+                 '✕ Match Canceled'}
               </div>
             )}
 
             {/* Inline scheduling status indicator — only actionable text on your matches */}
-            {!match.completed && !match.resolution && hasSchedule && (
+            {!match.completed && !match.resolution && hasSchedule && !(match.schedule!.status === 'confirmed' && match.schedule!.confirmedSlot) && (
               <div className={`schedule-indicator ${match.schedule!.status}`}>
-                {match.schedule!.status === 'confirmed' && match.schedule!.confirmedSlot
-                  ? `✓ ${formatSlot(match.schedule!.confirmedSlot)}`
-                  : match.schedule!.status === 'confirmed' ? '✓ Scheduled'
+                {match.schedule!.status === 'confirmed' ? '✓ Scheduled'
                   : match.schedule!.status === 'escalated' ? '⚠ Escalated'
                   : isMyMatch ? (match.schedule!.status === 'proposed' ? '◷ Pick a time' : '○ Unscheduled')
                   : '◷ Pending'}

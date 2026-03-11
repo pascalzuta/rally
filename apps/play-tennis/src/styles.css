@@ -816,6 +816,41 @@ select:focus {
   opacity: 0.6;
 }
 
+/* Players row: names on left, scheduled time on right (where scores go post-match) */
+.match-players-row {
+  display: flex;
+  align-items: center;
+}
+
+.match-players-names {
+  flex: 1;
+  min-width: 0;
+}
+
+.match-time-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: var(--space-md);
+  flex-shrink: 0;
+  line-height: 1.1;
+}
+
+.match-time-day {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.match-time-hour {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-positive-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 .match-player {
   display: flex;
   justify-content: space-between;

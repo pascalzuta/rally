@@ -13,14 +13,11 @@ interface Props {
   onFocusConsumed?: () => void
 }
 
-function formatSlot(slot: { day: string; startHour: number; endHour: number }): string {
-  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1)
-  const fmt = (h: number) => {
-    const period = h >= 12 ? 'pm' : 'am'
-    const hour = h % 12 || 12
-    return `${hour}${period}`
-  }
-  return `${day} ${fmt(slot.startHour)}–${fmt(slot.endHour)}`
+function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
+  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
+  const period = slot.startHour >= 12 ? 'pm' : 'am'
+  const hour = slot.startHour % 12 || 12
+  return { day, time: `${hour}${period}` }
 }
 
 function scheduleStatusClass(match: Match): string {
@@ -253,34 +250,47 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
         onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
       >
         <>
-          <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-              {showWinProb && <div className="prob-indicator prob-indicator-p1" />}
-              <span className="match-player-name">
-                {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
-              </span>
-              {scored && (
-                <span className="match-sets">
-                  {match.score1.map((s, i) => (
-                    <span key={i} className={`set-score ${s > match.score2[i] ? 'set-won' : ''}`}>{s}</span>
-                  ))}
+          <div className="match-players-row">
+            <div className="match-players-names">
+              <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+                {showWinProb && <div className="prob-indicator prob-indicator-p1" />}
+                <span className="match-player-name">
+                  {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
                 </span>
-              )}
-              {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
-            </div>
-            <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-              {showWinProb && <div className="prob-indicator prob-indicator-p2" />}
-              <span className="match-player-name">
-                {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
-              </span>
-              {scored && (
-                <span className="match-sets">
-                  {match.score2.map((s, i) => (
-                    <span key={i} className={`set-score ${s > match.score1[i] ? 'set-won' : ''}`}>{s}</span>
-                  ))}
+                {scored && (
+                  <span className="match-sets">
+                    {match.score1.map((s, i) => (
+                      <span key={i} className={`set-score ${s > match.score2[i] ? 'set-won' : ''}`}>{s}</span>
+                    ))}
+                  </span>
+                )}
+                {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
+              </div>
+              <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+                {showWinProb && <div className="prob-indicator prob-indicator-p2" />}
+                <span className="match-player-name">
+                  {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
                 </span>
-              )}
-              {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
+                {scored && (
+                  <span className="match-sets">
+                    {match.score2.map((s, i) => (
+                      <span key={i} className={`set-score ${s > match.score1[i] ? 'set-won' : ''}`}>{s}</span>
+                    ))}
+                  </span>
+                )}
+                {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
+              </div>
             </div>
+            {!match.completed && isConfirmed && match.schedule?.confirmedSlot && (() => {
+              const st = formatStartTime(match.schedule!.confirmedSlot!)
+              return (
+                <div className="match-time-slot">
+                  <span className="match-time-day">{st.day}</span>
+                  <span className="match-time-hour">{st.time}</span>
+                </div>
+              )
+            })()}
+          </div>
 
             {/* Win probability split bar */}
             {showWinProb && (
@@ -298,18 +308,15 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
             {match.resolution && (
               <div className={`resolution-indicator resolution-${match.resolution.type}`}>
                 {match.resolution.type === 'walkover' ? '⊘ Walkover' :
-                 match.resolution.type === 'forced-match'
-                   ? `⚑ ${match.resolution.forcedSlot ? formatSlot(match.resolution.forcedSlot) : 'Final Match Assigned'}`
-                   : '✕ Match Canceled'}
+                 match.resolution.type === 'forced-match' ? '⚑ Final Match Assigned' :
+                 '✕ Match Canceled'}
               </div>
             )}
 
             {/* Inline scheduling status indicator */}
-            {!match.completed && !match.resolution && hasSchedule && (
+            {!match.completed && !match.resolution && hasSchedule && !(match.schedule!.status === 'confirmed' && match.schedule!.confirmedSlot) && (
               <div className={`schedule-indicator ${match.schedule!.status}`}>
-                {match.schedule!.status === 'confirmed' && match.schedule!.confirmedSlot
-                  ? `✓ ${formatSlot(match.schedule!.confirmedSlot)}`
-                  : match.schedule!.status === 'confirmed' ? '✓ Scheduled'
+                {match.schedule!.status === 'confirmed' ? '✓ Scheduled'
                   : match.schedule!.status === 'escalated' ? '⚠ Escalated'
                   : isMyMatch ? (match.schedule!.status === 'proposed' ? '◷ Pick a time' : '○ Unscheduled')
                   : '◷ Pending'}
