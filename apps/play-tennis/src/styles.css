@@ -3355,3 +3355,264 @@ select:focus {
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
 }
+
+.lb-champion-badge {
+  margin-left: 4px;
+  font-size: 12px;
+}
+
+/* ================================================
+   Trophy Cabinet (Profile)
+   ================================================ */
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--space-sm);
+}
+
+.trophy-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-sm);
+  background: none;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.trophy-cell:hover {
+  background: var(--color-neutral-bg);
+}
+
+.trophy-cell-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
+
+/* Trophy Detail Modal */
+.trophy-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-md);
+  animation: fadeIn 0.2s ease;
+}
+
+.trophy-modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+}
+
+.trophy-modal-icon {
+  margin-bottom: var(--space-md);
+}
+
+.trophy-modal-title {
+  font-size: var(--font-title-md);
+  font-weight: var(--weight-bold);
+  margin: 0 0 var(--space-xs);
+}
+
+.trophy-modal-tier {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.trophy-modal-date {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+}
+
+.trophy-modal-match {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.trophy-modal-match-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-xs);
+}
+
+.trophy-modal-match-result {
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+}
+
+.trophy-modal-match-score {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trophy-modal-close {
+  margin-top: var(--space-lg);
+  width: 100%;
+}
+
+/* ================================================
+   Badges (Profile)
+   ================================================ */
+.badge-grid {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.badge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+}
+
+.badge-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  border: 2px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-secondary);
+}
+
+.badge-cell-label {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-weight: var(--weight-medium);
+}
+
+/* ================================================
+   Victory Animation
+   ================================================ */
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.victory-overlay.active {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.victory-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.victory-particle {
+  position: absolute;
+  top: 100%;
+  animation: particleRise 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes particleRise {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.victory-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  transform: scale(0.8);
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.victory-content.active {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.victory-trophy {
+  animation: trophyGlow 1.5s ease infinite alternate;
+}
+
+.victory-trophy.champion {
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+}
+
+.victory-trophy.finalist {
+  filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.4));
+}
+
+.victory-trophy.semifinalist {
+  filter: drop-shadow(0 0 12px rgba(205, 127, 50, 0.3));
+}
+
+@keyframes trophyGlow {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.3));
+  }
+  100% {
+    filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.6));
+  }
+}
+
+.victory-title {
+  font-size: 28px;
+  font-weight: var(--weight-bold);
+  color: white;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.victory-tournament {
+  font-size: var(--font-body-md);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: var(--weight-medium);
+}
+
+.victory-subtitle {
+  font-size: var(--font-body-sm);
+  color: rgba(255, 255, 255, 0.6);
+}

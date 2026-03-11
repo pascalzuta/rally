@@ -21,6 +21,8 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **LobbyEntry**: playerId, playerName, county, joinedAt
 - **AvailabilitySlot**: day, startHour, endHour
 - **UpcomingSlot**: date, dayLabel, playerId, playerName, startHour, endHour (computed from AvailabilitySlot for next 3 days)
+- **Trophy**: id, playerId, playerName, tournamentId, tournamentName, county, tier (champion | finalist | semifinalist), date, awardedAt, finalMatch (optional: opponentName, score, won)
+- **Badge**: id, playerId, type (first-tournament | undefeated-champion | comeback-win | five-tournaments | ten-matches), label, description, awardedAt
 
 ### Match Broadcast Types
 - **MatchBroadcast**: id, playerId, playerName, tournamentId, date, startTime, endTime, location, message, status (active | claimed | expired), createdAt, expiresAt, claimedBy, matchId
@@ -86,6 +88,15 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - Context text: "Rank #N of M players in County"
 - Smart display: shows all for ≤10 players, top 3 + nearby for larger lists
 
+### Trophies & Badges
+- **Trophy system**: Champion (gold), Finalist (silver), Semifinalist (bronze) trophies awarded automatically on tournament completion
+- **Trophy Cabinet**: Grid display on Profile, taps open detail modal with tournament name, tier, date, and final match result
+- **Trophy visual**: Minimal vector trophy icon with metallic gradient per tier (gold #D4AF37, silver #C0C0C0, bronze #CD7F32)
+- **Badges**: Milestone-based medallions — First Tournament, Undefeated Champion, Comeback Win, Veteran (5 tournaments), Seasoned (10 matches)
+- **Victory animations**: Full-screen overlay on tournament completion — confetti particles, trophy scale-in, tier-appropriate text (1.6s duration, cubic easing)
+- **Defending champion marker**: Trophy emoji shown next to name on leaderboard for players who've won a tournament in their county
+- Storage: `play-tennis-trophies`, `play-tennis-badges`
+
 ### Tournament Availability Broadcast ("Play Now")
 - Dedicated "Play Now" tab in bottom navigation (elevated from sub-feature to first-class tab)
 - Creation flow: date, time window (from/to), location, optional message
@@ -104,6 +115,8 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `play-tennis-availability` — Player availability
 - `play-tennis-broadcasts` — Match broadcasts
 - `play-tennis-rating-history` — Rating snapshots over time
+- `play-tennis-trophies` — Player trophies (champion/finalist/semifinalist)
+- `play-tennis-badges` — Player achievement badges
 
 ## Navigation Structure
 Four-tab layout designed around the player's tournament journey:
@@ -158,7 +171,8 @@ Four-tab layout designed around the player's tournament journey:
 - **Standings.tsx** — Round-robin standings table (used by BracketTab)
 - **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
 - **Profile.tsx** — Player identity, rating hero, performance stats, rating chart, availability, rating explainer
-- **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight
+- **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight, defending champion marker
+- **VictoryAnimation.tsx** — Full-screen trophy celebration overlay with confetti and tier-appropriate styling
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
 
 ## Dev Tools

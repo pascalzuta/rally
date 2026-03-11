@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament } from './store'
-import { PlayerProfile, Tournament } from './types'
+import { useState, useEffect, useRef } from 'react'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, getPlayerTrophies } from './store'
+import { PlayerProfile, Tournament, TrophyTier } from './types'
 import Register from './components/Register'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
 import Profile from './components/Profile'
 import Leaderboard from './components/Leaderboard'
+import VictoryAnimation from './components/VictoryAnimation'
 import DevTools from './components/DevTools'
 import './styles.css'
 
@@ -30,6 +31,8 @@ export default function App() {
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [refreshKey, setRefreshKey] = useState(0)
   const [autoJoinLobby, setAutoJoinLobby] = useState(false)
+  const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
+  const prevTournamentStatusRef = useRef<Map<string, string>>(new Map())
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -57,9 +60,25 @@ export default function App() {
     const mine = getPlayerTournaments(profile.id)
     const map = new Map<string, Tournament>()
     for (const t of [...mine, ...county]) map.set(t.id, t)
-    setTournaments(Array.from(map.values()).sort((a, b) =>
+    const sorted = Array.from(map.values()).sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    ))
+    )
+
+    // Detect tournament completion → trigger victory animation
+    const prev = prevTournamentStatusRef.current
+    for (const t of sorted) {
+      const oldStatus = prev.get(t.id)
+      if (oldStatus && oldStatus !== 'completed' && t.status === 'completed') {
+        const trophies = getPlayerTrophies(profile.id)
+        const trophy = trophies.find(tr => tr.tournamentId === t.id)
+        if (trophy) {
+          setVictoryAnim({ tier: trophy.tier, name: t.name })
+        }
+      }
+      prev.set(t.id, t.status)
+    }
+
+    setTournaments(sorted)
   }
 
   function handleRegistered(p: PlayerProfile) {
@@ -223,6 +242,13 @@ export default function App() {
           setActiveTab('bracket')
         }}
       />
+      {victoryAnim && (
+        <VictoryAnimation
+          tier={victoryAnim.tier}
+          tournamentName={victoryAnim.name}
+          onDismiss={() => setVictoryAnim(null)}
+        />
+      )}
     </div>
   )
 }

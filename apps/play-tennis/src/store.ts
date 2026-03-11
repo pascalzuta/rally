@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType } from './types'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
@@ -7,6 +7,8 @@ const LOBBY_KEY = 'play-tennis-lobby'
 const AVAILABILITY_KEY = 'play-tennis-availability'
 const BROADCAST_KEY = 'play-tennis-broadcasts'
 const RATING_HISTORY_KEY = 'play-tennis-rating-history'
+const TROPHIES_KEY = 'play-tennis-trophies'
+const BADGES_KEY = 'play-tennis-badges'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -549,7 +551,13 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
 
   // Check if tournament is complete
   const allDone = tournament.matches.every(m => m.completed)
-  if (allDone) tournament.status = 'completed'
+  if (allDone) {
+    tournament.status = 'completed'
+    awardTournamentTrophies(tournament.id)
+    for (const p of tournament.players) {
+      checkAndAwardBadges(p.id, tournament.id)
+    }
+  }
 }
 
 function advanceWinner(tournament: Tournament, match: Match, winnerId: string): void {
@@ -686,7 +694,13 @@ export function leaveTournament(tournamentId: string, playerId: string): boolean
 
   // Check if tournament is now complete
   const allDone = t.matches.every(m => m.completed)
-  if (allDone) t.status = 'completed'
+  if (allDone) {
+    t.status = 'completed'
+    awardTournamentTrophies(t.id)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id)
+    }
+  }
 
   save(all)
   return true
@@ -1025,6 +1039,10 @@ export function saveMatchScore(
   const allDone = t.matches.every(m => m.completed)
   if (allDone) {
     t.status = 'completed'
+    awardTournamentTrophies(t.id)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id)
+    }
   }
 
   save(all)
@@ -1250,6 +1268,289 @@ export function getPlayerRank(playerName: string, county: string): { rank: numbe
   const rank = entry?.rank ?? total
   const percentile = total > 0 ? Math.round(((total - rank) / total) * 100) : 0
   return { rank, total, percentile }
+}
+
+// --- Trophies ---
+
+function loadTrophies(): Trophy[] {
+  try {
+    const data = localStorage.getItem(TROPHIES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveTrophies(trophies: Trophy[]): void {
+  localStorage.setItem(TROPHIES_KEY, JSON.stringify(trophies))
+}
+
+export function getPlayerTrophies(playerId: string): Trophy[] {
+  return loadTrophies().filter(t => t.playerId === playerId)
+    .sort((a, b) => {
+      const tierOrder: Record<TrophyTier, number> = { champion: 0, finalist: 1, semifinalist: 2 }
+      return tierOrder[a.tier] - tierOrder[b.tier] || b.awardedAt.localeCompare(a.awardedAt)
+    })
+}
+
+export function getAllTrophies(): Trophy[] {
+  return loadTrophies()
+}
+
+function formatMatchScore(score1: number[], score2: number[]): string {
+  return score1.map((s, i) => `${s}-${score2[i]}`).join(' ')
+}
+
+export function awardTournamentTrophies(tournamentId: string): Trophy[] {
+  const tournaments = load()
+  const t = tournaments.find(t => t.id === tournamentId)
+  if (!t || t.status !== 'completed') return []
+
+  const trophies = loadTrophies()
+  // Don't re-award if already done
+  if (trophies.some(tr => tr.tournamentId === tournamentId)) return []
+
+  const newTrophies: Trophy[] = []
+  const now = new Date().toISOString()
+
+  if (t.format === 'single-elimination') {
+    // Find the final match (highest round)
+    const maxRound = Math.max(...t.matches.map(m => m.round))
+    const finalMatch = t.matches.find(m => m.round === maxRound && m.completed)
+    if (!finalMatch || !finalMatch.winnerId) return []
+
+    const champion = t.players.find(p => p.id === finalMatch.winnerId)
+    const finalist = t.players.find(p => p.id === (finalMatch.player1Id === finalMatch.winnerId ? finalMatch.player2Id : finalMatch.player1Id))
+    const scoreStr = formatMatchScore(
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score1 : finalMatch.score2,
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score2 : finalMatch.score1
+    )
+
+    if (champion) {
+      newTrophies.push({
+        id: generateId(), playerId: champion.id, playerName: champion.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'champion', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: finalist?.name ?? 'Unknown', score: scoreStr, won: true }
+      })
+    }
+    if (finalist) {
+      newTrophies.push({
+        id: generateId(), playerId: finalist.id, playerName: finalist.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'finalist', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: champion?.name ?? 'Unknown', score: scoreStr, won: false }
+      })
+    }
+
+    // Semifinalists: lost in the round before the final
+    const semiRound = maxRound - 1
+    if (semiRound >= 1) {
+      const semiMatches = t.matches.filter(m => m.round === semiRound && m.completed)
+      for (const sm of semiMatches) {
+        if (!sm.winnerId) continue
+        const loserId = sm.player1Id === sm.winnerId ? sm.player2Id : sm.player1Id
+        if (!loserId) continue
+        const loser = t.players.find(p => p.id === loserId)
+        if (loser) {
+          newTrophies.push({
+            id: generateId(), playerId: loser.id, playerName: loser.name,
+            tournamentId: t.id, tournamentName: t.name, county: t.county,
+            tier: 'semifinalist', date: t.date, awardedAt: now,
+          })
+        }
+      }
+    }
+  } else if (t.format === 'group-knockout') {
+    // Knockout phase matches
+    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+    const maxRound = Math.max(...knockoutMatches.map(m => m.round))
+    const finalMatch = knockoutMatches.find(m => m.round === maxRound && m.completed)
+
+    if (!finalMatch || !finalMatch.winnerId) return []
+
+    const champion = t.players.find(p => p.id === finalMatch.winnerId)
+    const finalist = t.players.find(p => p.id === (finalMatch.player1Id === finalMatch.winnerId ? finalMatch.player2Id : finalMatch.player1Id))
+    const scoreStr = formatMatchScore(
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score1 : finalMatch.score2,
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score2 : finalMatch.score1
+    )
+
+    if (champion) {
+      newTrophies.push({
+        id: generateId(), playerId: champion.id, playerName: champion.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'champion', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: finalist?.name ?? 'Unknown', score: scoreStr, won: true }
+      })
+    }
+    if (finalist) {
+      newTrophies.push({
+        id: generateId(), playerId: finalist.id, playerName: finalist.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'finalist', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: champion?.name ?? 'Unknown', score: scoreStr, won: false }
+      })
+    }
+
+    // Semifinalists
+    const semiRound = maxRound - 1
+    const semiMatches = knockoutMatches.filter(m => m.round === semiRound && m.completed)
+    for (const sm of semiMatches) {
+      if (!sm.winnerId) continue
+      const loserId = sm.player1Id === sm.winnerId ? sm.player2Id : sm.player1Id
+      if (!loserId) continue
+      const loser = t.players.find(p => p.id === loserId)
+      if (loser) {
+        newTrophies.push({
+          id: generateId(), playerId: loser.id, playerName: loser.name,
+          tournamentId: t.id, tournamentName: t.name, county: t.county,
+          tier: 'semifinalist', date: t.date, awardedAt: now,
+        })
+      }
+    }
+  } else if (t.format === 'round-robin') {
+    // Round-robin: winner is #1 in standings (most wins)
+    const standings = getGroupStandings(t)
+    if (standings.length > 0) {
+      const winner = t.players.find(p => p.name === standings[0].name)
+      if (winner) {
+        newTrophies.push({
+          id: generateId(), playerId: winner.id, playerName: winner.name,
+          tournamentId: t.id, tournamentName: t.name, county: t.county,
+          tier: 'champion', date: t.date, awardedAt: now,
+        })
+      }
+      if (standings.length > 1) {
+        const second = t.players.find(p => p.name === standings[1].name)
+        if (second) {
+          newTrophies.push({
+            id: generateId(), playerId: second.id, playerName: second.name,
+            tournamentId: t.id, tournamentName: t.name, county: t.county,
+            tier: 'finalist', date: t.date, awardedAt: now,
+          })
+        }
+      }
+    }
+  }
+
+  trophies.push(...newTrophies)
+  saveTrophies(trophies)
+  return newTrophies
+}
+
+export function isDefendingChampion(playerName: string, county: string): boolean {
+  const trophies = loadTrophies()
+  return trophies.some(t =>
+    t.playerName.toLowerCase() === playerName.toLowerCase() &&
+    t.county.toLowerCase() === county.toLowerCase() &&
+    t.tier === 'champion'
+  )
+}
+
+export function getLatestChampionTrophy(county: string): Trophy | null {
+  const trophies = loadTrophies()
+  const countyChampions = trophies
+    .filter(t => t.county.toLowerCase() === county.toLowerCase() && t.tier === 'champion')
+    .sort((a, b) => b.awardedAt.localeCompare(a.awardedAt))
+  return countyChampions[0] ?? null
+}
+
+// --- Badges ---
+
+function loadBadges(): Badge[] {
+  try {
+    const data = localStorage.getItem(BADGES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveBadges(badges: Badge[]): void {
+  localStorage.setItem(BADGES_KEY, JSON.stringify(badges))
+}
+
+export function getPlayerBadges(playerId: string): Badge[] {
+  return loadBadges().filter(b => b.playerId === playerId)
+    .sort((a, b) => b.awardedAt.localeCompare(a.awardedAt))
+}
+
+const BADGE_DEFS: Record<BadgeType, { label: string; description: string }> = {
+  'first-tournament': { label: 'First Tournament', description: 'Completed your first tournament' },
+  'undefeated-champion': { label: 'Undefeated', description: 'Won a tournament without losing a match' },
+  'comeback-win': { label: 'Comeback', description: 'Won a match after losing the first set' },
+  'five-tournaments': { label: 'Veteran', description: 'Completed 5 tournaments' },
+  'ten-matches': { label: 'Seasoned', description: 'Played 10 rated matches' },
+}
+
+function awardBadge(playerId: string, type: BadgeType, tournamentId?: string): void {
+  const badges = loadBadges()
+  if (badges.some(b => b.playerId === playerId && b.type === type)) return
+  const def = BADGE_DEFS[type]
+  badges.push({
+    id: generateId(),
+    playerId,
+    type,
+    label: def.label,
+    description: def.description,
+    awardedAt: new Date().toISOString(),
+    tournamentId,
+  })
+  saveBadges(badges)
+}
+
+export function checkAndAwardBadges(playerId: string, tournamentId: string): Badge[] {
+  const before = getPlayerBadges(playerId)
+  const tournaments = load()
+  const completed = tournaments.filter(t =>
+    t.status === 'completed' && t.players.some(p => p.id === playerId)
+  )
+
+  // First tournament
+  if (completed.length >= 1) awardBadge(playerId, 'first-tournament', tournamentId)
+  // Five tournaments
+  if (completed.length >= 5) awardBadge(playerId, 'five-tournaments', tournamentId)
+
+  // Ten matches
+  const rating = getPlayerRating(
+    tournaments.flatMap(t => t.players).find(p => p.id === playerId)?.name ?? ''
+  )
+  if (rating.matchesPlayed >= 10) awardBadge(playerId, 'ten-matches')
+
+  // Undefeated champion
+  const t = tournaments.find(t => t.id === tournamentId)
+  if (t) {
+    const trophies = loadTrophies()
+    const isChamp = trophies.some(tr => tr.playerId === playerId && tr.tournamentId === tournamentId && tr.tier === 'champion')
+    if (isChamp) {
+      const playerMatches = t.matches.filter(m =>
+        m.completed && m.winnerId &&
+        (m.player1Id === playerId || m.player2Id === playerId)
+      )
+      const allWon = playerMatches.every(m => m.winnerId === playerId)
+      if (allWon && playerMatches.length > 0) {
+        awardBadge(playerId, 'undefeated-champion', tournamentId)
+      }
+    }
+  }
+
+  // Comeback win: won match after losing first set
+  if (t) {
+    for (const m of t.matches) {
+      if (!m.completed || m.winnerId !== playerId) continue
+      if ((m.player1Id !== playerId && m.player2Id !== playerId)) continue
+      const isP1 = m.player1Id === playerId
+      const firstSetWon = isP1 ? m.score1[0] > m.score2[0] : m.score2[0] > m.score1[0]
+      if (!firstSetWon && m.winnerId === playerId) {
+        awardBadge(playerId, 'comeback-win', tournamentId)
+        break
+      }
+    }
+  }
+
+  const after = getPlayerBadges(playerId)
+  return after.filter(b => !before.some(bb => bb.id === b.id))
 }
 
 // --- Dev Tools ---

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, logout, getAvailability, saveAvailability } from '../store'
+import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, logout, getAvailability, saveAvailability } from '../store'
 import type { RatingSnapshot } from '../store'
-import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
+import { PlayerProfile, AvailabilitySlot, DayOfWeek, Trophy, TrophyTier, Badge } from '../types'
 
 interface Props {
   profile: PlayerProfile
@@ -121,6 +121,89 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
   )
 }
 
+// --- Trophy helpers ---
+
+const TROPHY_COLORS: Record<TrophyTier, { primary: string; highlight: string; shadow: string }> = {
+  champion: { primary: '#D4AF37', highlight: '#F6E27A', shadow: '#9A7C1E' },
+  finalist: { primary: '#C0C0C0', highlight: '#E4E4E4', shadow: '#8A8A8A' },
+  semifinalist: { primary: '#CD7F32', highlight: '#E0A46C', shadow: '#8C5421' },
+}
+
+const TROPHY_LABEL: Record<TrophyTier, string> = {
+  champion: 'Champion',
+  finalist: 'Finalist',
+  semifinalist: 'Semifinalist',
+}
+
+function TrophyIcon({ tier, size = 40 }: { tier: TrophyTier; size?: number }) {
+  const c = TROPHY_COLORS[tier]
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <defs>
+        <linearGradient id={`trophy-${tier}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={c.highlight} />
+          <stop offset="50%" stopColor={c.primary} />
+          <stop offset="100%" stopColor={c.shadow} />
+        </linearGradient>
+      </defs>
+      {/* Cup body */}
+      <path d="M10 8h20v4c0 7-4 12-10 14-6-2-10-7-10-14V8z" fill={`url(#trophy-${tier})`} />
+      {/* Handles */}
+      <path d="M10 10H7c0 4 1.5 7 3 8" stroke={c.primary} strokeWidth="1.5" fill="none" />
+      <path d="M30 10h3c0 4-1.5 7-3 8" stroke={c.primary} strokeWidth="1.5" fill="none" />
+      {/* Stem */}
+      <rect x="18" y="26" width="4" height="5" rx="1" fill={c.shadow} />
+      {/* Base */}
+      <rect x="13" y="31" width="14" height="3" rx="1.5" fill={c.primary} />
+      {/* Specular highlight */}
+      <ellipse cx="17" cy="14" rx="3" ry="5" fill="white" opacity="0.15" />
+    </svg>
+  )
+}
+
+function TrophyDetailModal({ trophy, onClose }: { trophy: Trophy; onClose: () => void }) {
+  return (
+    <div className="trophy-modal-backdrop" onClick={onClose}>
+      <div className="trophy-modal" onClick={e => e.stopPropagation()}>
+        <div className="trophy-modal-icon">
+          <TrophyIcon tier={trophy.tier} size={64} />
+        </div>
+        <h3 className="trophy-modal-title">{trophy.tournamentName}</h3>
+        <div className="trophy-modal-tier">{TROPHY_LABEL[trophy.tier]}</div>
+        <div className="trophy-modal-date">{trophy.date}</div>
+        {trophy.finalMatch && (
+          <div className="trophy-modal-match">
+            <div className="trophy-modal-match-label">
+              {trophy.tier === 'champion' ? 'Final Match' : 'Final'}
+            </div>
+            <div className="trophy-modal-match-result">
+              {trophy.finalMatch.won
+                ? `${trophy.playerName} def. ${trophy.finalMatch.opponentName}`
+                : `${trophy.finalMatch.opponentName} def. ${trophy.playerName}`
+              }
+            </div>
+            <div className="trophy-modal-match-score">{trophy.finalMatch.score}</div>
+          </div>
+        )}
+        <button className="btn trophy-modal-close" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  )
+}
+
+function BadgeIcon({ type }: { type: Badge['type'] }) {
+  const icons: Record<string, string> = {
+    'first-tournament': '1',
+    'undefeated-champion': '★',
+    'comeback-win': '↺',
+    'five-tournaments': '5',
+    'ten-matches': '10',
+  }
+  return (
+    <div className="badge-icon">{icons[type] ?? '●'}</div>
+  )
+}
+
 // --- Main Profile ---
 
 export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard }: Props) {
@@ -130,7 +213,10 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   const rankInfo = getPlayerRank(profile.name, profile.county)
   const ratingHistory = getRatingHistory(profile.name)
   const weeklyTrend = getRatingTrend(profile.name)
+  const trophies = getPlayerTrophies(profile.id)
+  const badges = getPlayerBadges(profile.id)
 
+  const [selectedTrophy, setSelectedTrophy] = useState<Trophy | null>(null)
   const [showRatingInfo, setShowRatingInfo] = useState(false)
   const [editing, setEditing] = useState(false)
   const [slots, setSlots] = useState<AvailabilitySlot[]>(() => getAvailability(profile.id))
@@ -288,6 +374,36 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
         </div>
       </div>
 
+      {/* Trophy Cabinet */}
+      {trophies.length > 0 && (
+        <div className="card profile-section">
+          <h3 className="profile-section-title"><span>Trophy Cabinet</span></h3>
+          <div className="trophy-grid">
+            {trophies.map(trophy => (
+              <button key={trophy.id} className="trophy-cell" onClick={() => setSelectedTrophy(trophy)}>
+                <TrophyIcon tier={trophy.tier} size={40} />
+                <div className="trophy-cell-label">{TROPHY_LABEL[trophy.tier]}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Badges */}
+      {badges.length > 0 && (
+        <div className="card profile-section">
+          <h3 className="profile-section-title"><span>Badges</span></h3>
+          <div className="badge-grid">
+            {badges.map(badge => (
+              <div key={badge.id} className="badge-cell" title={badge.description}>
+                <BadgeIcon type={badge.type} />
+                <div className="badge-cell-label">{badge.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Performance Section */}
       <div className="card profile-section">
         <h3 className="profile-section-title"><span>Performance</span></h3>
@@ -444,6 +560,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
       {/* Sign Out */}
       <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
+
+      {/* Trophy Detail Modal */}
+      {selectedTrophy && (
+        <TrophyDetailModal trophy={selectedTrophy} onClose={() => setSelectedTrophy(null)} />
+      )}
     </div>
   )
 }

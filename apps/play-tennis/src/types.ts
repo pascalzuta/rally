@@ -118,3 +118,41 @@ export interface MatchBroadcast {
   claimedBy?: string // player ID who claimed
   matchId?: string   // match ID created from the claim
 }
+
+// --- Trophies & Badges ---
+
+export type TrophyTier = 'champion' | 'finalist' | 'semifinalist'
+
+export interface Trophy {
+  id: string
+  playerId: string
+  playerName: string
+  tournamentId: string
+  tournamentName: string
+  county: string
+  tier: TrophyTier
+  date: string              // tournament date
+  awardedAt: string         // ISO timestamp
+  finalMatch?: {            // for champion/finalist: the final match details
+    opponentName: string
+    score: string           // e.g. "6-3 6-4"
+    won: boolean
+  }
+}
+
+export type BadgeType =
+  | 'first-tournament'
+  | 'undefeated-champion'
+  | 'comeback-win'
+  | 'five-tournaments'
+  | 'ten-matches'
+
+export interface Badge {
+  id: string
+  playerId: string
+  type: BadgeType
+  label: string
+  description: string
+  awardedAt: string
+  tournamentId?: string     // optional: which tournament triggered it
+}

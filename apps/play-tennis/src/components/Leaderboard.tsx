@@ -1,4 +1,4 @@
-import { getCountyLeaderboard } from '../store'
+import { getCountyLeaderboard, isDefendingChampion } from '../store'
 import type { LeaderboardEntry } from '../store'
 
 interface Props {
@@ -29,12 +29,16 @@ export default function Leaderboard({ county, currentPlayerName, onBack }: Props
     const isMe = entry.name.toLowerCase() === currentPlayerName.toLowerCase()
     const initial = entry.name[0].toUpperCase()
     const record = entry.wins + entry.losses > 0 ? `${entry.wins}W–${entry.losses}L` : ''
+    const champion = isDefendingChampion(entry.name, county)
     return (
       <div key={entry.name} className={`lb-row ${isMe ? 'lb-row-me' : ''}`}>
         <span className="lb-row-rank">{entry.rank === 1 ? '🥇' : `#${entry.rank}`}</span>
         <span className={`lb-row-avatar ${isMe ? 'lb-avatar-me' : ''}`}>{initial}</span>
         <span className="lb-row-info">
-          <span className="lb-row-name">{entry.name}</span>
+          <span className="lb-row-name">
+            {entry.name}
+            {champion && <span className="lb-champion-badge" title="Defending Champion">🏆</span>}
+          </span>
           {record && <span className="lb-row-record">{record}</span>}
         </span>
         <span className="lb-row-rating">{Math.round(entry.rating)}</span>
