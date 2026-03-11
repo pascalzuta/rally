@@ -349,6 +349,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
         </div>
         <div className="rating-hero-label">{label} Level</div>
+        <div className="rating-level-bar">
+          <div className="rating-level-fill" style={{ width: `${Math.min(100, Math.max(5, ((rating.rating - 800) / 1600) * 100))}%` }} />
+        </div>
         <div className="rating-hero-details">
           {rankInfo.total > 1 && (
             <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
@@ -375,9 +378,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
       </div>
 
       {/* Trophy Cabinet */}
-      {trophies.length > 0 && (
-        <div className="card profile-section">
-          <h3 className="profile-section-title"><span>Trophy Cabinet</span></h3>
+      <div className="card profile-section">
+        <h3 className="profile-section-title"><span>Trophies</span></h3>
+        {trophies.length > 0 ? (
           <div className="trophy-grid">
             {trophies.map(trophy => (
               <button key={trophy.id} className="trophy-cell" onClick={() => setSelectedTrophy(trophy)}>
@@ -386,8 +389,14 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
               </button>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="trophy-empty">
+            <div className="trophy-empty-icon">🏆</div>
+            <p className="trophy-empty-title">Your first trophy awaits</p>
+            <p className="trophy-empty-desc">Win your first match to start collecting</p>
+          </div>
+        )}
+      </div>
 
       {/* Badges */}
       {badges.length > 0 && (

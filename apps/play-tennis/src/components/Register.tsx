@@ -86,7 +86,7 @@ const STATE_ABBREVS: Record<string, string> = {
   'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
 }
 
-type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'availability'
+type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'availability' | 'confirmed'
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
   const [step, setStep] = useState<Step>(inviteCounty ? 'signup' : 'onboard-1')
@@ -107,23 +107,24 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [addingStart, setAddingStart] = useState(18)
   const [addingEnd, setAddingEnd] = useState(21)
 
-  // Attempt geolocation on signup step
-  useEffect(() => {
-    if (step === 'signup' && !inviteCounty && !suggestedCounty && !detectingLocation) {
-      if ('geolocation' in navigator) {
-        setDetectingLocation(true)
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const result = await reverseGeocodeCounty(pos.coords.latitude, pos.coords.longitude)
-            if (result) setSuggestedCounty(result)
-            setDetectingLocation(false)
-          },
-          () => setDetectingLocation(false),
-          { timeout: 5000 }
-        )
-      }
+  function detectLocation() {
+    if (detectingLocation || suggestedCounty) return
+    if ('geolocation' in navigator) {
+      setDetectingLocation(true)
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const result = await reverseGeocodeCounty(pos.coords.latitude, pos.coords.longitude)
+          if (result) {
+            setSuggestedCounty(result)
+            selectCounty(result)
+          }
+          setDetectingLocation(false)
+        },
+        () => setDetectingLocation(false),
+        { timeout: 5000 }
+      )
     }
-  }, [step, inviteCounty, suggestedCounty, detectingLocation])
+  }
 
   // County autocomplete
   useEffect(() => {
@@ -186,8 +187,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     setDetailedSlots(prev => prev.filter((_, i) => i !== idx))
   }
 
+  const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
+
   function handleFinish(skip: boolean) {
-    const profile = createProfile(fullName, county)
+    const p = createProfile(fullName, county)
     if (!skip) {
       let slots: AvailabilitySlot[] = []
       if (detailedMode) {
@@ -198,10 +201,12 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         }
       }
       if (slots.length > 0) {
-        saveAvailability(profile.id, slots)
+        saveAvailability(p.id, slots)
       }
     }
-    onRegistered(profile)
+    setCreatedProfile(p)
+    setStep('confirmed')
+    setTimeout(() => onRegistered(p), 1500)
   }
 
   // Social proof number (deterministic based on county)
@@ -218,17 +223,17 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       <div className="onboard-screen">
         <div className="onboard-content">
           <div className="onboard-visual">
-            <div className="onboard-chat">
+            <div className="onboard-chat onboard-chat-chaotic">
               <div className="onboard-chat-bubble onboard-chat-out">Can you play Tuesday?</div>
               <div className="onboard-chat-bubble onboard-chat-in">Maybe Wednesday?</div>
-              <div className="onboard-chat-bubble onboard-chat-out">I can't that day</div>
-              <div className="onboard-chat-bubble onboard-chat-in">Let's try next week</div>
+              <div className="onboard-chat-bubble onboard-chat-out">Next week?</div>
+              <div className="onboard-chat-bubble onboard-chat-in">Let me check...</div>
             </div>
           </div>
 
-          <h1 className="onboard-title">Scheduling tennis is frustrating</h1>
-          <p className="onboard-subtitle">You message five people just to organize one match.</p>
-          <p className="onboard-tagline">Rally removes the scheduling headache.</p>
+          <h1 className="onboard-title">Scheduling tennis shouldn't take 20 messages</h1>
+          <p className="onboard-subtitle">Organizing matches shouldn't feel like this.</p>
+          <p className="onboard-tagline">Rally schedules matches automatically.</p>
         </div>
 
         <div className="onboard-actions">
@@ -261,18 +266,19 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                 <span className="onboard-match-time">Sat 9am available</span>
               </div>
               <div className="onboard-match-confirmed">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <svg className="onboard-match-check" width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
                   <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Match scheduled
+                <span>Match scheduled</span>
+                <span className="onboard-tennis-ball">🎾</span>
               </div>
             </div>
           </div>
 
           <h1 className="onboard-title">Rally schedules matches automatically</h1>
           <p className="onboard-subtitle">Find local opponents and let Rally coordinate the match time.</p>
-          <p className="onboard-tagline">Just show up and play.</p>
+          <p className="onboard-tagline">You just show up and play.</p>
         </div>
 
         <div className="onboard-actions">
@@ -313,7 +319,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           </div>
 
           <h1 className="onboard-title">Compete in your local tennis ladder</h1>
-          <p className="onboard-subtitle">Play matches, climb the rankings, and win tournaments.</p>
+          <p className="onboard-subtitle">Play matches. Climb the rankings. Win tournaments.</p>
           <p className="onboard-tagline">Every match counts.</p>
         </div>
 
@@ -406,13 +412,21 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               )}
             </div>
 
-            {suggestedCounty && !county && (
+            {!inviteCounty && !county && (
               <div className="county-detected">
-                <span className="county-detected-label">Detected location</span>
-                <button type="button" className="county-detected-btn" onClick={useSuggestedCounty}>
-                  {suggestedCounty}
-                  <span className="county-detected-use">Use this</span>
-                </button>
+                {suggestedCounty ? (
+                  <>
+                    <span className="county-detected-label">Detected location</span>
+                    <button type="button" className="county-detected-btn" onClick={useSuggestedCounty}>
+                      {suggestedCounty}
+                      <span className="county-detected-use">Use this</span>
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="county-detect-btn" onClick={detectLocation} disabled={detectingLocation}>
+                    {detectingLocation ? 'Detecting...' : 'Use my location'}
+                  </button>
+                )}
               </div>
             )}
 
@@ -435,6 +449,25 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     )
   }
 
+  // --- Step: Confirmed ---
+  if (step === 'confirmed') {
+    return (
+      <div className="onboard-screen">
+        <div className="onboard-content confirmed-content">
+          <div className="confirmed-check">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="24" fill="var(--color-positive-primary)" className="confirmed-circle" />
+              <path d="M14 24l7 7 13-13" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="confirmed-path" />
+            </svg>
+          </div>
+          <h1 className="onboard-title">You're in!</h1>
+          <p className="onboard-subtitle">Rally can now schedule matches for you.</p>
+          <div className="confirmed-ball">🎾</div>
+        </div>
+      </div>
+    )
+  }
+
   // --- Step: Availability ---
   return (
     <div className="onboard-screen">
@@ -447,11 +480,12 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         <div className="availability-picker">
           {!detailedMode ? (
             <>
+              <p className="availability-hint">Most players choose:</p>
               <div className="quick-slots">
                 {QUICK_SLOTS.map((slot, idx) => (
                   <button
                     key={idx}
-                    className={`quick-slot-btn ${selectedQuick.has(idx) ? 'selected' : ''}`}
+                    className={`quick-slot-btn ${selectedQuick.has(idx) ? 'selected' : ''} ${idx <= 1 ? 'recommended' : ''}`}
                     onClick={() => toggleQuickSlot(idx)}
                   >
                     <span className="quick-slot-check">{selectedQuick.has(idx) ? '✓' : ''}</span>

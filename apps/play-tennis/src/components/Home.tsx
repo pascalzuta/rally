@@ -413,20 +413,28 @@ export default function Home({
       )}
 
       {/* Tournament Summary Card */}
-      {activeTournaments.map(tournament => (
-        <div key={tournament.id} className="card" onClick={() => onViewTournament(tournament.id)}>
-          <div className="card-top">
-            <h3>{tournament.name}</h3>
-            <span className="badge badge-live">
-              {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'}
-            </span>
+      {activeTournaments.map(tournament => {
+        const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
+        const completedMatches = tournament.matches.filter(m => m.completed).length
+        const progressPct = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
+        return (
+          <div key={tournament.id} className="card tournament-card" onClick={() => onViewTournament(tournament.id)}>
+            <div className="card-top">
+              <h3>{tournament.name}</h3>
+              <span className="badge badge-live">
+                {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'}
+              </span>
+            </div>
+            <div className="card-meta">
+              <span>{tournament.players.length} players</span>
+              <span>{getProgressText(tournament)}</span>
+            </div>
+            <div className="tournament-progress-bar">
+              <div className="tournament-progress-fill" style={{ width: `${progressPct}%` }} />
+            </div>
           </div>
-          <div className="card-meta">
-            <span>{tournament.players.length} players</span>
-            <span>{getProgressText(tournament)}</span>
-          </div>
-        </div>
-      ))}
+        )
+      })}
 
       {/* Action Cards */}
       {actionCards.length > 0 ? (

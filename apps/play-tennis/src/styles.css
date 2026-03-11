@@ -67,8 +67,8 @@
   --radius-button: 10px;
   --radius-chip: 999px;
 
-  /* Shadow - minimal like Polymarket */
-  --shadow: 0 1px 2px rgba(0,0,0,0.04);
+  /* Shadow */
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
 }
 
 body {
@@ -1376,6 +1376,22 @@ select:focus {
   border-bottom-left-radius: 4px;
 }
 
+/* Chaotic stagger for friction emphasis */
+.onboard-chat-chaotic .onboard-chat-bubble:nth-child(1) {
+  transform: rotate(-1.5deg);
+}
+.onboard-chat-chaotic .onboard-chat-bubble:nth-child(2) {
+  transform: rotate(2deg);
+  background: #E8E9EB;
+}
+.onboard-chat-chaotic .onboard-chat-bubble:nth-child(3) {
+  transform: rotate(-2.5deg);
+}
+.onboard-chat-chaotic .onboard-chat-bubble:nth-child(4) {
+  transform: rotate(1.5deg);
+  background: #DFE0E3;
+}
+
 /* Match scheduling visual */
 .onboard-match-visual {
   background: var(--color-bg-surface);
@@ -1424,6 +1440,16 @@ select:focus {
   animation: onboardFadeIn 0.4s ease 0.5s forwards;
 }
 
+.onboard-match-check {
+  animation: greenPulse 2s ease-in-out 1s infinite;
+  filter: drop-shadow(0 0 4px rgba(31, 157, 85, 0.4));
+}
+
+.onboard-tennis-ball {
+  font-size: 16px;
+  margin-left: 2px;
+}
+
 /* Leaderboard visual */
 .onboard-leaderboard {
   background: var(--color-bg-surface);
@@ -1457,12 +1483,13 @@ select:focus {
 }
 
 .onboard-lb-you {
-  background: rgba(37, 99, 235, 0.06);
+  background: rgba(42, 91, 215, 0.12);
   margin: 0 calc(-1 * var(--space-lg));
   padding-left: var(--space-lg);
   padding-right: var(--space-lg);
   border-radius: var(--radius-button);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-primary);
 }
 
 .onboard-lb-rank {
@@ -3999,4 +4026,177 @@ select:focus {
 .victory-subtitle {
   font-size: var(--font-body-sm);
   color: rgba(255, 255, 255, 0.6);
+}
+
+/* ================================================
+   Green Pulse Animation (Screen 2)
+   ================================================ */
+@keyframes greenPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(31, 157, 85, 0.3)); }
+  50% { filter: drop-shadow(0 0 10px rgba(31, 157, 85, 0.6)); }
+}
+
+/* ================================================
+   Location Detect Button
+   ================================================ */
+.county-detect-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-button);
+  font-family: inherit;
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+  color: var(--color-accent-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.county-detect-btn:hover {
+  background: var(--color-accent-primary);
+  color: white;
+}
+
+.county-detect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================================
+   Availability Hint
+   ================================================ */
+.availability-hint {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  margin-bottom: var(--space-sm);
+}
+
+.quick-slot-btn.recommended {
+  border-color: var(--color-accent-primary);
+  background: rgba(42, 91, 215, 0.04);
+}
+
+/* ================================================
+   Confirmed Screen (Micro Reward)
+   ================================================ */
+.confirmed-content {
+  justify-content: center;
+  gap: var(--space-lg);
+}
+
+.confirmed-check {
+  animation: confirmedPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.confirmed-circle {
+  animation: greenPulse 2s ease-in-out infinite;
+}
+
+.confirmed-path {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: confirmedDraw 0.4s ease 0.2s forwards;
+}
+
+.confirmed-ball {
+  font-size: 32px;
+  animation: ballBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+}
+
+@keyframes confirmedPop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes confirmedDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes ballBounce {
+  0% { transform: translateY(30px); opacity: 0; }
+  60% { transform: translateY(-8px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ================================================
+   Tournament Card Enhancements
+   ================================================ */
+.tournament-card {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  overflow: hidden;
+  position: relative;
+}
+
+.tournament-card::before {
+  content: '🎾';
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font-size: 48px;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.tournament-progress-bar {
+  height: 4px;
+  background: var(--color-divider);
+  border-radius: 2px;
+  margin-top: var(--space-md);
+  overflow: hidden;
+}
+
+.tournament-progress-fill {
+  height: 100%;
+  background: var(--color-accent-primary);
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+
+/* ================================================
+   Trophy Empty State
+   ================================================ */
+.trophy-empty {
+  text-align: center;
+  padding: var(--space-lg) 0;
+}
+
+.trophy-empty-icon {
+  font-size: 36px;
+  margin-bottom: var(--space-sm);
+  opacity: 0.4;
+}
+
+.trophy-empty-title {
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.trophy-empty-desc {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
+/* ================================================
+   Rating Level Bar
+   ================================================ */
+.rating-level-bar {
+  height: 6px;
+  background: var(--color-divider);
+  border-radius: 3px;
+  margin-top: var(--space-sm);
+  overflow: hidden;
+}
+
+.rating-level-fill {
+  height: 100%;
+  background: var(--color-accent-primary);
+  border-radius: 3px;
+  transition: width 0.8s ease;
 }
