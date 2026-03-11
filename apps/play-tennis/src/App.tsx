@@ -32,6 +32,27 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [autoJoinLobby, setAutoJoinLobby] = useState(false)
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
+  const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
+  const [showNotifications, setShowNotifications] = useState(false)
+
+  // Count pending actions for notification badge
+  const pendingActionCount = tournaments.reduce((count, t) => {
+    if (t.status !== 'in-progress') return count
+    return count + t.matches.filter(m =>
+      !m.completed &&
+      (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
+      m.player1Id && m.player2Id &&
+      (
+        !m.schedule ||
+        m.schedule.status === 'unscheduled' ||
+        m.schedule.status === 'escalated' ||
+        (m.schedule.status === 'confirmed' && m.schedule.confirmedSlot) ||
+        (m.schedule.status === 'proposed' && m.schedule.proposals.some(
+          p => p.status === 'pending' && p.proposedBy !== profile?.id
+        ))
+      )
+    ).length
+  }, 0)
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -39,6 +60,16 @@ export default function App() {
   ) ?? tournaments.find(t =>
     t.status === 'setup' && t.players.some(p => p.id === profile?.id)
   ) ?? null
+
+  // Auto-redirect to bracket when tournament starts (setup -> in-progress)
+  const [lastTournamentStatus, setLastTournamentStatus] = useState<string | null>(null)
+  const currentStatus = activeTournament?.status ?? null
+  if (currentStatus && currentStatus !== lastTournamentStatus) {
+    if (lastTournamentStatus === 'setup' && currentStatus === 'in-progress') {
+      setActiveTab('bracket')
+    }
+    setLastTournamentStatus(currentStatus)
+  }
 
   // Award trophies for any previously completed tournaments
   useEffect(() => {
@@ -131,12 +162,61 @@ export default function App() {
               </svg>
             </div>
           <div className="top-nav-actions">
-            <button className="top-nav-icon" aria-label="Notifications">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-            </button>
+            <div className="notif-wrapper">
+              <button className="top-nav-icon" aria-label="Notifications" onClick={() => setShowNotifications(!showNotifications)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                {pendingActionCount > 0 && (
+                  <span className="notif-badge">{pendingActionCount}</span>
+                )}
+              </button>
+              {showNotifications && (
+                <div className="notif-dropdown">
+                  <div className="notif-header">Notifications</div>
+                  {pendingActionCount === 0 ? (
+                    <div className="notif-empty">All caught up!</div>
+                  ) : (
+                    <div className="notif-list">
+                      {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
+                        t.matches.filter(m =>
+                          !m.completed &&
+                          (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
+                          m.player1Id && m.player2Id
+                        ).map(m => {
+                          const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
+                          const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+                          let action = ''
+                          let icon = ''
+                          if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️' }
+                          else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾' }
+                          else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = 'Time proposed — respond'; icon = '📩' }
+                          else { action = 'Needs scheduling'; icon = '📅' }
+                          return (
+                            <button
+                              key={`${t.id}-${m.id}`}
+                              className="notif-item"
+                              onClick={() => {
+                                setFocusMatchId(m.id)
+                                setActiveTab('bracket')
+                                setShowNotifications(false)
+                              }}
+                            >
+                              <span className="notif-icon">{icon}</span>
+                              <div className="notif-content">
+                                <div className="notif-action">{action}</div>
+                                <div className="notif-opponent">vs {opponentName}</div>
+                              </div>
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <button className="top-nav-icon" onClick={() => setActiveTab('profile')}>
               <div className="nav-avatar">{profile.name[0].toUpperCase()}</div>
             </button>
@@ -156,6 +236,7 @@ export default function App() {
               }}
               onViewTournament={() => setActiveTab('bracket')}
               onViewMatch={(tournamentId, matchId) => {
+                setFocusMatchId(matchId)
                 setActiveTab('bracket')
               }}
               onViewLeaderboard={() => setActiveTab('leaderboard')}
@@ -167,6 +248,8 @@ export default function App() {
               tournament={activeTournament}
               currentPlayerId={profile.id}
               onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+              focusMatchId={focusMatchId}
+              onFocusConsumed={() => setFocusMatchId(null)}
             />
           )}
 

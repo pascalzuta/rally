@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
@@ -9,6 +9,8 @@ interface Props {
   tournament: Tournament | null
   currentPlayerId: string
   onTournamentUpdated: () => void
+  focusMatchId?: string | null
+  onFocusConsumed?: () => void
 }
 
 function scheduleStatusClass(match: Match): string {
@@ -29,11 +31,28 @@ function scheduleStatusClass(match: Match): string {
   }
 }
 
-export default function BracketTab({ tournament, currentPlayerId, onTournamentUpdated }: Props) {
+export default function BracketTab({ tournament, currentPlayerId, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  const [showOverflow, setShowOverflow] = useState(false)
+  const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
+
+  // Auto-focus a match when navigated from Home action card
+  if (focusMatchId && tournament && tournament.status !== 'setup') {
+    const match = tournament.matches.find(m => m.id === focusMatchId)
+    if (match) {
+      const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
+      const canScore = isMyMatch && !match.completed && match.player1Id && match.player2Id
+      if (canScore && match.schedule?.status === 'confirmed') {
+        if (scoringMatchId !== focusMatchId) setScoringMatchId(focusMatchId)
+      } else if (expandedMatchId !== focusMatchId) {
+        setExpandedMatchId(focusMatchId)
+      }
+    }
+    onFocusConsumed?.()
+  }
 
   if (!tournament) {
     return (
@@ -74,6 +93,21 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
   function handleScoreSaved() {
     setScoringMatchId(null)
     refresh()
+    // Check if player advanced to a new round
+    const updated = getTournament(tournament!.id)
+    if (updated) {
+      const nextMatch = updated.matches.find(m =>
+        !m.completed &&
+        (m.player1Id === currentPlayerId || m.player2Id === currentPlayerId) &&
+        m.player1Id && m.player2Id
+      )
+      if (nextMatch) {
+        const opponentId = nextMatch.player1Id === currentPlayerId ? nextMatch.player2Id : nextMatch.player1Id
+        const opponentName = getPlayerName(updated, opponentId)
+        setAdvancementPrompt({ opponentName, round: nextMatch.round })
+        setTimeout(() => setAdvancementPrompt(null), 4000)
+      }
+    }
   }
 
   function handleLeave() {
@@ -278,6 +312,16 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
         </div>
       </div>
 
+      {/* Advancement prompt after scoring a win */}
+      {advancementPrompt && (
+        <div className="advancement-prompt" onClick={() => setAdvancementPrompt(null)}>
+          <div className="advancement-icon">🎾</div>
+          <div className="advancement-text">
+            <strong>You advanced!</strong> Next up: vs {advancementPrompt.opponentName}
+          </div>
+        </div>
+      )}
+
       {winner && (
         <div className="winner-banner">
           <div className="winner-trophy">🏆</div>
@@ -430,8 +474,17 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
       )}
 
       {isParticipant && tournament.status !== 'completed' && (
-        <div className="bracket-leave-link">
-          <button onClick={() => setShowLeaveConfirm(true)}>Leave this tournament</button>
+        <div className="bracket-overflow-section">
+          <button className="bracket-overflow-btn" onClick={() => setShowOverflow(!showOverflow)}>
+            ···
+          </button>
+          {showOverflow && (
+            <div className="bracket-overflow-menu">
+              <button className="bracket-overflow-item bracket-overflow-danger" onClick={() => { setShowOverflow(false); setShowLeaveConfirm(true) }}>
+                Leave tournament
+              </button>
+            </div>
+          )}
         </div>
       )}
 

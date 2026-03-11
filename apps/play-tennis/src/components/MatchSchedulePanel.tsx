@@ -116,15 +116,72 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
 
   // Escalated state
   if (schedule.status === 'escalated') {
+    const day = schedule.escalationDay ?? 0
+    const daysLeft = Math.max(0, 4 - day)
     return (
       <div className="schedule-panel schedule-escalated">
         <div className="schedule-status-badge badge-escalated">Needs Resolution</div>
-        <p className="subtle">Unable to find a time. Contact your opponent directly.</p>
+        <div className="escalation-timeline">
+          <div className="escalation-bar">
+            <div className="escalation-fill" style={{ width: `${Math.min(100, (day / 4) * 100)}%` }} />
+          </div>
+          <div className="escalation-days">Day {day} of 4</div>
+        </div>
+        <div className="escalation-info">
+          {daysLeft > 0 ? (
+            <p className="escalation-warning">
+              {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining before auto-resolution. Propose a time or accept a proposal to avoid a walkover.
+            </p>
+          ) : (
+            <p className="escalation-warning escalation-critical">
+              Deadline reached. The match will be auto-resolved (walkover, forced time, or double loss).
+            </p>
+          )}
+        </div>
+
+        {/* Still allow proposing during escalation */}
+        {!showPropose ? (
+          <button
+            className="btn btn-primary btn-small"
+            onClick={(e) => { e.stopPropagation(); setShowPropose(true) }}
+          >
+            Propose a time now
+          </button>
+        ) : (
+          <div className="propose-form" onClick={e => e.stopPropagation()}>
+            <div className="propose-row">
+              <select value={propDay} onChange={e => setPropDay(e.target.value as DayOfWeek | '')}>
+                <option value="">Day...</option>
+                {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
+              </select>
+              <select value={propStart} onChange={e => setPropStart(Number(e.target.value))}>
+                {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                  <option key={h} value={h}>{formatHour(h)}</option>
+                ))}
+              </select>
+              <span>–</span>
+              <select value={propEnd} onChange={e => setPropEnd(Number(e.target.value))}>
+                {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
+                  <option key={h} value={h}>{formatHour(h)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="propose-actions">
+              <button className="btn btn-primary btn-small" onClick={handlePropose} disabled={!propDay || propStart >= propEnd}>
+                Send Proposal
+              </button>
+              <button className="btn btn-small" onClick={(e) => { e.stopPropagation(); setShowPropose(false) }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
 
   // Proposed / Unscheduled state
+  const escalationDay = schedule.escalationDay ?? 0
   return (
     <div className="schedule-panel">
       <div className={`schedule-status-badge ${pendingProposals.length > 0 ? 'badge-proposed' : 'badge-unscheduled'}`}>
@@ -132,6 +189,15 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           : myPendingProposals.length > 0 ? 'Waiting for Opponent'
           : 'No Times Available'}
       </div>
+
+      {escalationDay > 0 && (
+        <div className="escalation-timeline escalation-timeline-subtle">
+          <div className="escalation-bar">
+            <div className="escalation-fill" style={{ width: `${Math.min(100, (escalationDay / 4) * 100)}%` }} />
+          </div>
+          <div className="escalation-days">Day {escalationDay} of 4 — respond to avoid auto-resolution</div>
+        </div>
+      )}
 
       {acceptableProposals.length > 0 && (
         <div className="proposal-list">
