@@ -1033,6 +1033,102 @@ select:focus {
   margin-bottom: var(--space-xs);
 }
 
+/* --- Completed Tournament Summary --- */
+
+.completed-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.completed-placement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.completed-trophy-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow);
+}
+
+.completed-trophy-icon {
+  font-size: 36px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.completed-trophy-tier {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.completed-trophy-detail {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.completed-final-card {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.completed-final-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-xs);
+}
+
+.completed-final-result {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.completed-final-score {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--space-xs);
+}
+
+.completed-stats {
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+}
+
+.completed-stat {
+  text-align: center;
+}
+
+.completed-stat-value {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.completed-stat-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
 
 /* ================================================
    Modal

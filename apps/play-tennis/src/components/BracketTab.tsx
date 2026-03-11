@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
@@ -330,14 +330,72 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
         </div>
       )}
 
-      {(tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
+      {/* Completed tournament summary — replaces bracket */}
+      {tournament.status === 'completed' && isParticipant && (() => {
+        const myTrophies = getPlayerTrophies(currentPlayerId).filter(
+          t => t.tournamentName === tournament.name
+        )
+        const finalMatch = tournament.matches.find(m =>
+          m.completed && m.round === Math.max(...tournament.matches.map(mm => mm.round))
+        )
+        return (
+          <div className="completed-summary">
+            {myTrophies.length > 0 && (
+              <div className="completed-placement">
+                {myTrophies.map(trophy => (
+                  <div key={trophy.id} className="completed-trophy-card">
+                    <div className="completed-trophy-icon">
+                      {trophy.tier === 'champion' ? '🥇' : trophy.tier === 'finalist' ? '🥈' : '🥉'}
+                    </div>
+                    <div className="completed-trophy-info">
+                      <div className="completed-trophy-tier">
+                        {trophy.tier === 'champion' ? 'Champion' : trophy.tier === 'finalist' ? 'Finalist' : 'Semifinalist'}
+                      </div>
+                      {trophy.finalMatch && (
+                        <div className="completed-trophy-detail">
+                          vs {trophy.finalMatch.opponentName} · {trophy.finalMatch.score}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {finalMatch && !myTrophies.length && (
+              <div className="completed-final-card">
+                <div className="completed-final-label">Final</div>
+                <div className="completed-final-result">
+                  {getPlayerName(tournament, finalMatch.player1Id)} vs {getPlayerName(tournament, finalMatch.player2Id)}
+                </div>
+                {finalMatch.score1.length > 0 && (
+                  <div className="completed-final-score">
+                    {finalMatch.score1.map((s, i) => `${s}-${finalMatch.score2[i]}`).join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="completed-stats">
+              <div className="completed-stat">
+                <div className="completed-stat-value">{tournament.players.length}</div>
+                <div className="completed-stat-label">Players</div>
+              </div>
+              <div className="completed-stat">
+                <div className="completed-stat-value">{tournament.matches.filter(m => m.completed).length}</div>
+                <div className="completed-stat-label">Matches</div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {tournament.status !== 'completed' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
         <div className="tab-bar">
           <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
           <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
         </div>
       )}
 
-      {tab === 'matches' && (
+      {tournament.status !== 'completed' && tab === 'matches' && (
         <>
           {/* Round progress stepper for single-elimination */}
           {tournament.format === 'single-elimination' && rounds.length > 1 && (
@@ -375,7 +433,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
                 <div className={`round-progress-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
               </div>
               <div className="round-progress-item">
-                <div className={`round-progress-dot ${tournament.status === 'completed' ? 'completed' : 'upcoming'}`} />
+                <div className={`round-progress-dot ${tournament.matches.every(m => m.completed || (!m.player1Id && !m.player2Id)) ? 'completed' : 'upcoming'}`} />
                 <span className={`round-progress-label ${knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`}>
                   Final
                 </span>
@@ -469,7 +527,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
         </>
       )}
 
-      {tab === 'standings' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
+      {tournament.status !== 'completed' && tab === 'standings' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
         <Standings tournament={tournament} />
       )}
 
