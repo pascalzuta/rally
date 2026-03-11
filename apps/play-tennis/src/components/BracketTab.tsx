@@ -182,7 +182,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
 
   // Group-knockout specific
   const groupMatches = tournament.format === 'group-knockout'
-    ? tournament.matches.filter(m => m.phase === 'group')
+    ? tournament.matches.filter(m => m.phase === 'group').sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId))
     : []
   const knockoutMatches = tournament.format === 'group-knockout'
     ? tournament.matches.filter(m => m.phase === 'knockout')
@@ -576,7 +576,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
                   <>
                     <div className="round">
                       <h3 className="round-label">Semifinals</h3>
-                      {knockoutMatches.filter(m => m.round === 2).map(m => renderMatchCard(m))}
+                      {knockoutMatches.filter(m => m.round === 2).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
@@ -591,7 +591,7 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
             ) : (
               <div className="round">
                 <h3 className="round-label">All Matches</h3>
-                {tournament.matches.map(m => renderMatchCard(m))}
+                {[...tournament.matches].sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
               </div>
             )}
           </div>
