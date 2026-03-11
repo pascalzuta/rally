@@ -8,6 +8,16 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **State**: localStorage-based store (no backend)
 - **Styling**: Plain CSS with CSS variables
 
+## Design System
+- **Polymarket-inspired**: Neutral surfaces, minimal color, color only for meaning, strong typography hierarchy
+- **Typography**: Inter font with `font-variant-numeric: tabular-nums` for consistent number rendering (no monospace overrides)
+- **Unified card anatomy**: Eyebrow label → Title → Secondary text → Content module → Action button
+- **Accent stripes**: 4px left border — blue (respond), orange (score), green (confirmed), gray (pending), red (escalated)
+- **Typography scale**: 12px uppercase semibold eyebrow (0.06em letter-spacing), 18px semibold title, 14px secondary
+- **Spacing**: 20px card padding, 16px border-radius, 16px card gap
+- **Action-first sorting**: score > respond > schedule > confirmed > pending > completed
+- **Match time display**: Stacked day/hour layout in the score area of match cards for scheduled matches
+
 ## Data Model
 
 ### Core Types
@@ -179,6 +189,11 @@ Four-tab layout designed around the player's tournament journey:
   - "Up Next" card for confirmed upcoming matches with day/time
   - Tournament progress indicator
   - "You're all caught up" state when nothing needs attention
+- **Inline actions**: Schedule and score matches directly from the Home tab without navigating to the tournament tab
+  - Schedule/respond/escalated cards expand inline `MatchSchedulePanel` within the card
+  - Score cards and up-next cards open `MatchScoreModal` as overlay
+  - After completing an action, the card dismisses and the next action surfaces
+  - Allows processing entire action queue from one screen
 
 ### Bracket Tab
 - Full bracket (elimination) or standings table (round-robin) for the active tournament
@@ -202,14 +217,14 @@ Four-tab layout designed around the player's tournament journey:
 
 ## Components
 - **App.tsx** — Root with 4-tab navigation (Home, Bracket, Play Now, Profile), derives active tournament
-- **Home.tsx** — Dashboard with action cards, lobby fallback, tournament progress
+- **Home.tsx** — Dashboard with action cards (inline scheduling & scoring), lobby fallback, tournament progress
 - **BracketTab.tsx** — Dedicated bracket/standings view with inline scheduling and scoring
 - **PlayNowTab.tsx** — Elevated broadcast/availability as first-class tab
 - **Register.tsx** — Three-screen onboarding + signup with county autocomplete + availability picker
 - **Lobby.tsx** — County lobby with countdown (used by Home tab)
 - **TournamentView.tsx** — Legacy bracket/match display (retained for reference)
-- **MatchSchedulePanel.tsx** — Time negotiation UI (used by BracketTab)
-- **MatchScoreModal.tsx** — Score entry modal (used by BracketTab)
+- **MatchSchedulePanel.tsx** — Time negotiation UI (used by Home and BracketTab)
+- **MatchScoreModal.tsx** — Score entry modal (used by Home and BracketTab)
 - **Standings.tsx** — Round-robin standings table (used by BracketTab)
 - **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
 - **Profile.tsx** — Player identity, rating hero, performance stats, rating chart, availability, rating explainer
