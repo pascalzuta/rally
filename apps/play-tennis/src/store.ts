@@ -1786,11 +1786,16 @@ export function simulateToFinal(playerId: string, county: string): { tournamentI
   const profile = getProfile()
   if (!profile) return null
 
-  // Step 1: Seed lobby to 6 players and force start
+  // Step 1: Ensure player is in lobby, seed to 6+, and create tournament
+  if (!isInLobby(playerId)) {
+    joinLobby(profile)
+  }
   seedLobby(county, 5)
   const lobby = getLobbyByCounty(county)
   if (lobby.length < 6) return null
 
+  // Create tournament from lobby if one doesn't exist yet
+  startTournamentFromLobby(county)
   const setupT = getSetupTournamentForCounty(county)
   if (!setupT) {
     // Need to create tournament via lobby - join lobby first if not in it
@@ -1803,6 +1808,8 @@ export function simulateToFinal(playerId: string, county: string): { tournamentI
     if (updatedLobby.length < 6) {
       seedLobby(county, 6 - updatedLobby.length)
     }
+    // Create the tournament from lobby entries
+    startTournamentFromLobby(county)
     const st = getSetupTournamentForCounty(county)
     if (!st) return null
     const started = forceStartTournament(st.id)
