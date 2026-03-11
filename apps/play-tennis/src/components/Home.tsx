@@ -448,15 +448,10 @@ export default function Home({
         const progressPct = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
         return (
           <div key={tournament.id} className="card tournament-card" onClick={() => onViewTournament(tournament.id)}>
-            <div className="card-top">
-              <h3>{tournament.name}</h3>
-              <span className="badge badge-live">
-                {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'}
-              </span>
-            </div>
-            <div className="card-meta">
-              <span>{tournament.players.length} players</span>
-              <span>{getProgressText(tournament)}</span>
+            <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Tournament</div>
+            <div className="card-title">{tournament.name}</div>
+            <div className="card-secondary">
+              {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'} · {tournament.players.length} players · {getProgressText(tournament)}
             </div>
             <div className="tournament-progress-bar">
               <div className="tournament-progress-fill" style={{ width: `${progressPct}%` }} />
@@ -478,9 +473,10 @@ export default function Home({
                 className="action-card action-respond"
                 onClick={onViewOffers}
               >
-                <div className="action-card-type">Match Offer</div>
+                <div className="action-card-type">Respond</div>
                 <div className="action-card-opponent">{offer.senderName}</div>
                 <div className="action-card-detail">{offer.proposedTime} · {offer.proposedDate}</div>
+                <button className="action-card-btn" onClick={e => { e.stopPropagation(); onViewOffers?.() }}>View Offer</button>
               </div>
             ))}
             {outgoing.map(offer => (
@@ -489,7 +485,7 @@ export default function Home({
                 className="action-card action-schedule"
                 onClick={onViewOffers}
               >
-                <div className="action-card-type">Offer Sent</div>
+                <div className="action-card-type">Pending</div>
                 <div className="action-card-opponent">to {offer.recipientName}</div>
                 <div className="action-card-detail">{offer.proposedTime} · Waiting for response</div>
               </div>
@@ -510,11 +506,14 @@ export default function Home({
               <div className="action-card-type">{card.label}</div>
               <div className="action-card-opponent">vs {card.opponentName}</div>
               <div className="action-card-detail">{card.detail}</div>
+              <button className="action-card-btn" onClick={e => { e.stopPropagation(); onViewMatch(card.tournamentId, card.matchId) }}>
+                {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
+              </button>
             </div>
           ))}
         </div>
       ) : (
-        <div className="card">
+        <div className="card" style={{ cursor: 'default' }}>
           <div className="caught-up">
             <p>You're all caught up</p>
             <p className="caught-up-sub">No matches need your attention right now</p>
@@ -523,24 +522,31 @@ export default function Home({
       )}
 
       {/* Up Next Card */}
-      {upNext && upNext.match.schedule?.confirmedSlot && (
-        <div className="card upnext-card">
-          <div>
-            <div className="upnext-label">Up Next</div>
-            <div className="upnext-opponent">
-              vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
+      {upNext && upNext.match.schedule?.confirmedSlot && (() => {
+        const slot = upNext.match.schedule!.confirmedSlot!
+        const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
+        const period = slot.startHour >= 12 ? 'pm' : 'am'
+        const hour = slot.startHour % 12 || 12
+        return (
+          <div className="card upnext-card" onClick={() => onViewMatch(upNext.tournament.id, upNext.match.id)}>
+            <div>
+              <div className="upnext-label">Confirmed</div>
+              <div className="upnext-opponent">
+                vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
+              </div>
+            </div>
+            <div className="upnext-time">
+              <span className="upnext-time-day">{day}</span>
+              <span className="upnext-time-hour">{hour}{period}</span>
             </div>
           </div>
-          <div className="upnext-time">
-            <div>{formatSlot(upNext.match.schedule.confirmedSlot)}</div>
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Leaderboard Teaser */}
       {topPlayers.length > 1 && (
         <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
-          <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
+          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Leaderboard</div>
           {topPlayers.map(entry => (
             <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
               <span className="leaderboard-rank">#{entry.rank}</span>

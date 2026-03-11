@@ -324,12 +324,11 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
                 <div className="offer-card-header">
-                  <span className="offer-card-label">Match Proposed</span>
+                  <span className="offer-card-label">Respond</span>
                   <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
-                <div className="offer-card-time">{offer.proposedTime}</div>
-                <div className="offer-card-date">{formatDate(offer.proposedDate)}</div>
-                <div className="offer-card-opponent">{offer.senderName}</div>
+                <div className="card-title">{offer.senderName}</div>
+                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
                 <div className="offer-card-actions">
                   <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
                   <button className="btn offer-decline-btn" onClick={() => handleDeclineOffer(offer)}>Decline</button>
@@ -348,11 +347,11 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
                 <div className="offer-card-header">
-                  <span className="offer-card-label">Sent to {offer.recipientName}</span>
+                  <span className="offer-card-label">Pending</span>
                   <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
-                <div className="offer-card-time">{offer.proposedTime}</div>
-                <div className="offer-card-date">{formatDate(offer.proposedDate)}</div>
+                <div className="card-title">to {offer.recipientName}</div>
+                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
                 <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
               </div>
             ))}
@@ -444,7 +443,6 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       {/* === AVAILABLE OPPONENTS === */}
       <div className="pn-section">
         <h3 className="pn-section-title">Available Opponents</h3>
-        <p className="pn-section-helper">Tap a player to propose a match at their available time</p>
 
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">

@@ -19,6 +19,46 @@ function formatStartTime(slot: { day: string; startHour: number }): { day: strin
   return { day, time: `${hour}${period}` }
 }
 
+function matchSortPriority(match: Match, currentPlayerId: string): number {
+  const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
+  if (match.completed) return 5
+  if (!match.player1Id || !match.player2Id) return 4
+  const s = match.schedule
+  if (isMyMatch && s?.status === 'confirmed') return 0
+  if (isMyMatch && s?.status === 'escalated') return 0.5
+  if (isMyMatch && s?.status === 'proposed') return 1
+  if (isMyMatch && (!s || s.status === 'unscheduled')) return 1.5
+  if (s?.status === 'confirmed') return 2
+  return 3
+}
+
+function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string } | null {
+  if (match.completed) return null
+  if (match.resolution) {
+    if (match.resolution.type === 'walkover') return { label: 'Walkover' }
+    if (match.resolution.type === 'double-loss') return { label: 'Canceled' }
+    return { label: 'Resolved' }
+  }
+  if (canScore) return { label: 'Score Match' }
+  if (!match.schedule) return { label: 'Pending' }
+  if (match.schedule.status === 'confirmed') return { label: 'Confirmed' }
+  if (match.schedule.status === 'escalated') return { label: 'Escalated' }
+  if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Respond' }
+  if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Schedule' }
+  return { label: 'Pending' }
+}
+
+function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean): string | null {
+  if (match.completed) return null
+  if (canScore) return 'Enter Score'
+  if (!isMyMatch) return null
+  if (!match.schedule) return null
+  if (match.schedule.status === 'proposed') return 'Pick Time'
+  if (match.schedule.status === 'escalated') return 'Respond Now'
+  if (match.schedule.status === 'unscheduled') return 'Schedule Match'
+  return null
+}
+
 function scheduleStatusClass(match: Match): string {
   if (match.resolution) {
     switch (match.resolution.type) {
@@ -155,15 +195,13 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     const showWinProb = !match.completed && match.player1Id && match.player2Id && r1 && r2
     const p1WinProb = (showWinProb && r1 && r2) ? winProbability(r1.rating, r2.rating) : 0.5
 
-    const tapHint = match.completed ? null
-      : canScore ? 'Tap to score'
-      : (isMyMatch && hasSchedule && !isConfirmed) ? 'Tap to schedule'
-      : null
-
     // Formatted scores
     const formattedScores = match.completed && match.score1.length > 0
       ? formatMatchScores(match.score1, match.score2)
       : null
+
+    const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore)
+    const actionLabel = getMatchActionLabel(match, isMyMatch, !!canScore)
 
     return (
       <div
@@ -178,6 +216,9 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           <div className="bye-label">BYE</div>
         ) : (
           <>
+            {/* Eyebrow label */}
+            {eyebrow && <div className="match-card-eyebrow">{eyebrow.label}</div>}
+
             <div className="match-players-row">
               <div className="match-players-names">
                 <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
@@ -221,23 +262,14 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
             {/* Resolution indicator */}
             {match.resolution && (
               <div className={`resolution-indicator resolution-${match.resolution.type}`}>
-                {match.resolution.type === 'walkover' ? '⊘ Walkover' :
-                 match.resolution.type === 'forced-match' ? '⚑ Final Match Assigned' :
-                 '✕ Match Canceled'}
+                {match.resolution.type === 'walkover' ? 'Walkover' :
+                 match.resolution.type === 'forced-match' ? 'Final Match Assigned' :
+                 'Match Canceled'}
               </div>
             )}
 
-            {/* Inline scheduling status indicator — only actionable text on your matches */}
-            {!match.completed && !match.resolution && hasSchedule && !(match.schedule!.status === 'confirmed' && match.schedule!.confirmedSlot) && (
-              <div className={`schedule-indicator ${match.schedule!.status}`}>
-                {match.schedule!.status === 'confirmed' ? '✓ Scheduled'
-                  : match.schedule!.status === 'escalated' ? '⚠ Escalated'
-                  : isMyMatch ? (match.schedule!.status === 'proposed' ? '◷ Pick a time' : '○ Unscheduled')
-                  : '◷ Pending'}
-              </div>
-            )}
-
-            {tapHint && <div className="tap-hint">{tapHint}</div>}
+            {/* Action button */}
+            {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
 
             {/* Expanded scheduling panel */}
             {isExpanded && !match.completed && match.schedule && (
@@ -313,7 +345,9 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
             {tournament.format === 'single-elimination' ? (
               rounds.map((round, roundIdx) => {
                 const isFinalRound = round === rounds.length
-                const roundMatches = tournament.matches.filter(m => m.round === round)
+                const roundMatches = tournament.matches
+                  .filter(m => m.round === round)
+                  .sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId))
                 return (
                   <div key={round} className={`round ${isFinalRound ? 'round-final' : ''}`}>
                     <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>

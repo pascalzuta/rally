@@ -63,7 +63,7 @@
   --space-xxl: 32px;
 
   /* Border Radius */
-  --radius-card: 12px;
+  --radius-card: 16px;
   --radius-button: 10px;
   --radius-chip: 999px;
 
@@ -370,13 +370,13 @@ body {
 .card-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-lg);
 }
 
 .card {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
-  padding: var(--space-lg);
+  padding: 20px;
   box-shadow: var(--shadow);
   cursor: pointer;
   position: relative;
@@ -385,6 +385,52 @@ body {
 
 .card:active {
   transform: scale(0.98);
+}
+
+/* --- Unified Card Eyebrow Label --- */
+.card-eyebrow {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-xs);
+}
+
+/* --- Unified Card Title --- */
+.card-title {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* --- Unified Card Secondary Text --- */
+.card-secondary {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/* --- Card Action Button --- */
+.card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-chip);
+  background: var(--color-positive-bg);
+  color: var(--color-positive-primary);
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: var(--space-md);
+}
+
+.card-action-btn:active {
+  background: #d0f0db;
 }
 
 .card-top {
@@ -746,19 +792,17 @@ select:focus {
 .match-card {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
-  padding: var(--space-md) var(--space-lg);
+  padding: 20px;
   box-shadow: var(--shadow);
-  border-bottom: 1px solid var(--color-divider);
-  border-left: 3px solid transparent;
+  border-left: 4px solid var(--color-divider);
   transition: border-color 0.2s ease;
 }
 
 /* Final round match card: larger, more prominent */
 .match-card.match-card-final {
-  padding: var(--space-lg) var(--space-xl);
+  padding: 20px var(--space-xl);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  border: 1px solid var(--color-divider);
-  border-left: 3px solid var(--color-accent-primary);
+  border-left: 4px solid var(--color-accent-primary);
 }
 
 .match-card.match-card-final .match-player {
@@ -772,7 +816,7 @@ select:focus {
 
 /* Winner path: green left border on matches the champion won */
 .match-card.winner-path {
-  border-left: 3px solid var(--color-positive-primary);
+  border-left: 4px solid var(--color-positive-primary);
 }
 
 .match-card.completed {
@@ -788,23 +832,30 @@ select:focus {
 }
 
 .match-card.my-match {
-  background: var(--color-accent-bg);
+  background: var(--color-bg-surface);
 }
 
-/* Scheduling status variants */
+/* Scheduling status — accent stripe colors */
 .match-card.sched-proposed {
   cursor: pointer;
+  border-left-color: var(--color-accent-primary);
 }
 
-.match-card.sched-confirmed { }
+.match-card.sched-confirmed {
+  border-left-color: var(--color-positive-primary);
+}
 
 .match-card.sched-proposed.my-match {
-  background: var(--color-accent-bg);
+  background: var(--color-bg-surface);
 }
 
-.match-card.sched-escalated { }
+.match-card.sched-escalated {
+  border-left-color: var(--color-negative-primary);
+}
 
-.match-card.sched-unscheduled { }
+.match-card.sched-unscheduled {
+  border-left-color: var(--color-text-muted);
+}
 
 .match-card.sched-resolved { }
 
@@ -814,6 +865,52 @@ select:focus {
 
 .match-card.sched-double-loss {
   opacity: 0.6;
+}
+
+/* Match card eyebrow label */
+.match-card-eyebrow {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-sm);
+}
+
+.match-card.sched-confirmed .match-card-eyebrow { color: var(--color-positive-primary); }
+.match-card.sched-proposed .match-card-eyebrow { color: var(--color-accent-primary); }
+.match-card.sched-escalated .match-card-eyebrow { color: var(--color-negative-primary); }
+.match-card.sched-unscheduled .match-card-eyebrow { color: var(--color-text-muted); }
+
+/* Match card action button */
+.match-card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-chip);
+  background: var(--color-positive-bg);
+  color: var(--color-positive-primary);
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: var(--space-md);
+}
+
+.match-card-action-btn:active {
+  opacity: 0.8;
+}
+
+.match-card.sched-proposed .match-card-action-btn {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+}
+
+.match-card.sched-escalated .match-card-action-btn {
+  background: var(--color-negative-bg);
+  color: var(--color-negative-primary);
 }
 
 /* Players row: names on left, scheduled time on right (where scores go post-match) */
@@ -938,11 +1035,7 @@ select:focus {
 }
 
 .tap-hint {
-  text-align: center;
-  font-size: var(--font-body-sm);
-  color: var(--color-warning-primary);
-  margin-top: var(--space-xs);
-  font-weight: var(--weight-medium);
+  display: none; /* Replaced by explicit action buttons */
 }
 
 .bye-label {
@@ -2430,18 +2523,10 @@ select:focus {
   gap: 6px;
 }
 
-/* Schedule & Resolution Indicators */
+/* Schedule & Resolution Indicators — replaced by eyebrow labels */
 .schedule-indicator {
-  text-align: center;
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-medium);
-  padding: var(--space-xs) 0 2px;
+  display: none;
 }
-
-.schedule-indicator.confirmed { color: var(--color-positive-primary); }
-.schedule-indicator.proposed { color: var(--color-accent-primary); }
-.schedule-indicator.escalated { color: var(--color-negative-primary); }
-.schedule-indicator.unscheduled { color: var(--color-text-secondary); }
 
 .resolution-indicator {
   text-align: center;
@@ -2832,7 +2917,7 @@ select:focus {
 }
 
 .offer-card {
-  padding: var(--space-lg);
+  padding: 20px;
   cursor: default;
 }
 
@@ -2841,11 +2926,11 @@ select:focus {
 }
 
 .offer-card-incoming {
-  border-left: 3px solid var(--color-accent-primary);
+  border-left: 4px solid var(--color-accent-primary);
 }
 
 .offer-card-outgoing {
-  border-left: 3px solid var(--color-text-muted);
+  border-left: 4px solid var(--color-text-muted);
 }
 
 .offer-card-header {
@@ -3076,7 +3161,7 @@ select:focus {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: var(--space-md);
+  padding: 20px;
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
@@ -3258,13 +3343,13 @@ select:focus {
 .action-cards {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-lg);
 }
 
 .action-card {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
-  padding: var(--space-lg);
+  padding: 20px;
   box-shadow: var(--shadow);
   border-left: 4px solid var(--color-divider);
   cursor: pointer;
@@ -3281,10 +3366,10 @@ select:focus {
 .action-card.action-escalated { border-left-color: var(--color-negative-primary); }
 
 .action-card-type {
-  font-size: 11px;
-  font-weight: var(--weight-bold);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
   margin-bottom: var(--space-xs);
   color: var(--color-text-secondary);
 }
@@ -3295,50 +3380,92 @@ select:focus {
 .action-escalated .action-card-type { color: var(--color-negative-primary); }
 
 .action-card-opponent {
-  font-size: var(--font-body-lg);
+  font-size: var(--font-title-sm);
   font-weight: var(--weight-semibold);
   margin-bottom: 2px;
 }
 
 .action-card-detail {
-  font-size: 13px;
+  font-size: var(--font-body-md);
   color: var(--color-text-secondary);
+}
+
+.action-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-chip);
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: var(--space-md);
+}
+
+.action-score .action-card-btn {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
+}
+
+.action-respond .action-card-btn {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+}
+
+.action-schedule .action-card-btn,
+.action-escalated .action-card-btn {
+  background: var(--color-positive-bg);
+  color: var(--color-positive-primary);
 }
 
 /* Up Next card */
 .upnext-card {
-  background: var(--color-accent-bg);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-card);
-  padding: var(--space-md) var(--space-lg);
+  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-left: 4px solid var(--color-positive-primary);
 }
 
 .upnext-label {
-  font-size: 11px;
-  font-weight: var(--weight-bold);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-accent-primary);
-  margin-bottom: 2px;
+  letter-spacing: 0.06em;
+  color: var(--color-positive-primary);
+  margin-bottom: var(--space-xs);
 }
 
 .upnext-opponent {
-  font-size: var(--font-body-md);
+  font-size: var(--font-title-sm);
   font-weight: var(--weight-semibold);
 }
 
 .upnext-time {
-  font-size: var(--font-body-md);
-  font-weight: var(--weight-semibold);
-  color: var(--color-accent-primary);
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
 }
 
-.upnext-day {
+.upnext-time-day {
   font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.upnext-time-hour {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-positive-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Caught up */
@@ -3870,7 +3997,7 @@ select:focus {
    User Status Card (Home)
    ================================================ */
 .user-status-card {
-  padding: var(--space-lg);
+  padding: 20px;
   cursor: default;
 }
 
@@ -3929,14 +4056,14 @@ select:focus {
    Leaderboard Teaser (Home)
    ================================================ */
 .leaderboard-teaser {
-  padding: var(--space-md) var(--space-lg);
+  padding: 20px;
   cursor: pointer;
 }
 
 .leaderboard-teaser-title {
   font-size: var(--font-body-sm);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
   color: var(--color-text-secondary);
   font-weight: var(--weight-semibold);
   margin-bottom: var(--space-sm);
@@ -4473,19 +4600,10 @@ select:focus {
    Tournament Card Enhancements
    ================================================ */
 .tournament-card {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow);
   overflow: hidden;
   position: relative;
-}
-
-.tournament-card::before {
-  content: '🎾';
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  font-size: 48px;
-  opacity: 0.06;
-  pointer-events: none;
+  padding: 20px;
 }
 
 .tournament-progress-bar {
