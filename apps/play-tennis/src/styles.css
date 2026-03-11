@@ -3544,6 +3544,11 @@ select:focus {
   opacity: 0;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes particleRise {
   0% {
     transform: translateY(0) rotate(0deg);

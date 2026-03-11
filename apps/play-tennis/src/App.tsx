@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, getPlayerTrophies, retroactivelyAwardTrophies } from './store'
+import { useState, useEffect } from 'react'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import Register from './components/Register'
 import Home from './components/Home'
@@ -32,7 +32,6 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [autoJoinLobby, setAutoJoinLobby] = useState(false)
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
-  const prevTournamentStatusRef = useRef<Map<string, string>>(new Map())
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -69,18 +68,11 @@ export default function App() {
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
 
-    // Detect tournament completion → trigger victory animation
-    const prev = prevTournamentStatusRef.current
-    for (const t of sorted) {
-      const oldStatus = prev.get(t.id)
-      if (oldStatus && oldStatus !== 'completed' && t.status === 'completed') {
-        const trophies = getPlayerTrophies(profile.id)
-        const trophy = trophies.find(tr => tr.tournamentId === t.id)
-        if (trophy) {
-          setVictoryAnim({ tier: trophy.tier, name: t.name })
-        }
-      }
-      prev.set(t.id, t.status)
+    // Check for pending victory animation
+    const pending = getPendingVictory(profile.id)
+    if (pending) {
+      setVictoryAnim({ tier: pending.tier, name: pending.tournamentName })
+      clearPendingVictory(profile.id)
     }
 
     setTournaments(sorted)

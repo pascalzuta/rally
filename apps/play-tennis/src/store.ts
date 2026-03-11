@@ -9,6 +9,7 @@ const BROADCAST_KEY = 'play-tennis-broadcasts'
 const RATING_HISTORY_KEY = 'play-tennis-rating-history'
 const TROPHIES_KEY = 'play-tennis-trophies'
 const BADGES_KEY = 'play-tennis-badges'
+const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -1444,6 +1445,12 @@ export function awardTournamentTrophies(tournamentId: string, tournamentObj?: To
 
   trophies.push(...newTrophies)
   saveTrophies(trophies)
+
+  // Set pending victory for each player so UI can show animation
+  for (const trophy of newTrophies) {
+    setPendingVictory(trophy)
+  }
+
   return newTrophies
 }
 
@@ -1569,6 +1576,56 @@ export function checkAndAwardBadges(playerId: string, tournamentId: string, tour
 
   const after = getPlayerBadges(playerId)
   return after.filter(b => !before.some(bb => bb.id === b.id))
+}
+
+// --- Pending Victory (for animation trigger) ---
+
+export interface PendingVictory {
+  tier: TrophyTier
+  tournamentName: string
+  playerId: string
+}
+
+export function getPendingVictory(playerId: string): PendingVictory | null {
+  try {
+    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const all: PendingVictory[] = data ? JSON.parse(data) : []
+    return all.find(v => v.playerId === playerId) ?? null
+  } catch {
+    return null
+  }
+}
+
+export function clearPendingVictory(playerId: string): void {
+  try {
+    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const all: PendingVictory[] = data ? JSON.parse(data) : []
+    const filtered = all.filter(v => v.playerId !== playerId)
+    if (filtered.length > 0) {
+      localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(filtered))
+    } else {
+      localStorage.removeItem(PENDING_VICTORY_KEY)
+    }
+  } catch {
+    localStorage.removeItem(PENDING_VICTORY_KEY)
+  }
+}
+
+function setPendingVictory(trophy: Trophy): void {
+  try {
+    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const all: PendingVictory[] = data ? JSON.parse(data) : []
+    // Don't duplicate
+    if (all.some(v => v.playerId === trophy.playerId && v.tournamentName === trophy.tournamentName)) return
+    all.push({
+      tier: trophy.tier,
+      tournamentName: trophy.tournamentName,
+      playerId: trophy.playerId,
+    })
+    localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(all))
+  } catch {
+    // ignore
+  }
 }
 
 export function retroactivelyAwardTrophies(): void {

@@ -59,7 +59,8 @@ export default function VictoryAnimation({ tier, tournamentName, onDismiss }: Pr
     requestAnimationFrame(() => setVisible(true))
     const timer = setTimeout(onDismiss, 4000)
     return () => clearTimeout(timer)
-  }, [onDismiss])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const particles = Array.from({ length: 24 }, (_, i) => ({
     color: config.colors[i % config.colors.length],
