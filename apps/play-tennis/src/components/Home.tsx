@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers, saveMatchScore, getSeeds, winProbability } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
@@ -268,6 +268,8 @@ function InlineScoreEntry({ tournament, matchId, onSaved }: {
   const p1WinProb = winProbability(r1.rating, r2.rating)
 
   const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])
+  // Refs for auto-advance: order is p1-set0, p2-set0, p1-set1, p2-set1, p1-set2, p2-set2
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   function getScores(): { score1: number[]; score2: number[] } | null {
     const score1: number[] = []
@@ -301,6 +303,17 @@ function InlineScoreEntry({ tournament, matchId, onSaved }: {
     updated[setIndex] = [...updated[setIndex]] as [string, string]
     updated[setIndex][playerIndex] = value
     setSets(updated)
+
+    // Auto-advance: if a digit was entered, jump to the next input
+    // Order: p1-set0(0), p2-set0(1), p1-set1(2), p2-set1(3), p1-set2(4), p2-set2(5)
+    if (value.length === 1) {
+      const currentIdx = setIndex * 2 + playerIndex
+      const nextRef = inputRefs.current[currentIdx + 1]
+      if (nextRef) {
+        nextRef.focus()
+        nextRef.select()
+      }
+    }
   }
 
   function setValidation(setIndex: number): string | null {
@@ -357,6 +370,7 @@ function InlineScoreEntry({ tournament, matchId, onSaved }: {
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
             key={`p1-${i}`}
+            ref={el => { inputRefs.current[i * 2] = el }}
             type="number"
             min="0"
             max="7"
@@ -371,6 +385,7 @@ function InlineScoreEntry({ tournament, matchId, onSaved }: {
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
             key={`p2-${i}`}
+            ref={el => { inputRefs.current[i * 2 + 1] = el }}
             type="number"
             min="0"
             max="7"
