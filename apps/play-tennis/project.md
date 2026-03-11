@@ -12,8 +12,8 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 
 ### Core Types
 - **PlayerProfile**: id, name, county, createdAt
-- **Tournament**: id, name, date, county, format (single-elimination | round-robin), players, matches, status (setup | in-progress | completed)
-- **Match**: id, round, position, player1Id, player2Id, scores, winnerId, completed, schedule, resolution
+- **Tournament**: id, name, date, county, format (single-elimination | round-robin | group-knockout), players, matches, status (setup | in-progress | completed), groupPhaseComplete
+- **Match**: id, round, position, player1Id, player2Id, scores, winnerId, completed, schedule, resolution, phase (group | knockout)
 - **MatchSchedule**: status (unscheduled | proposed | confirmed | escalated | resolved), proposals, confirmedSlot, escalationDay, participationScores, resolution
 - **MatchResolution**: type (walkover | forced-match | double-loss), winnerId, reason, resolvedAt, forcedSlot
 - **MatchProposal**: id, proposedBy, day, startHour, endHour, status (pending | accepted | rejected)
@@ -39,6 +39,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 ### Tournament Formats
 - **Single-elimination**: Seeded bracket by Elo, bye handling, winner advancement
 - **Round-robin**: All-play-all with standings table
+- **Group-knockout** (default): Full round-robin group phase → top 4 advance to single-elimination semis/final. Automatic knockout bracket generation when last group match is scored. Progress stepper shows Group → Semifinals → Final.
 
 ### Match Scheduling
 - System generates proposals from availability overlap
@@ -71,8 +72,19 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - Automatic bracket advancement on score entry
 
 ### Player Ratings
-- Global Elo system with dynamic K-factor
-- Rating labels: Newcomer → Beginner → Club → Strong → Elite → Semi-pro → Pro
+- Global Elo system with dynamic K-factor: `250 / Math.pow(matchesPlayed + 5, 0.4)`
+- Starting rating: 1500
+- Rating labels: Newcomer (<1200) → Beginner (1200) → Club (1400) → Strong (1600) → Elite (1800) → Semi-pro (2000) → Pro (2200+)
+- Rating history tracked per player with snapshots after each match
+- Weekly trend calculation (rating change over last 7 days)
+
+### County Leaderboard
+- Rankings scoped by county, sourced from tournament players and lobby entries
+- Leaderboard rows show avatar initial, name, W-L record, rating
+- Crown emoji for #1 rank
+- Soft highlight (light blue) for current player row
+- Context text: "Rank #N of M players in County"
+- Smart display: shows all for ≤10 players, top 3 + nearby for larger lists
 
 ### Tournament Availability Broadcast ("Play Now")
 - Dedicated "Play Now" tab in bottom navigation (elevated from sub-feature to first-class tab)
@@ -91,6 +103,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `play-tennis-lobby` — Lobby entries
 - `play-tennis-availability` — Player availability
 - `play-tennis-broadcasts` — Match broadcasts
+- `play-tennis-rating-history` — Rating snapshots over time
 
 ## Navigation Structure
 Four-tab layout designed around the player's tournament journey:
@@ -103,6 +116,8 @@ Four-tab layout designed around the player's tournament journey:
 | **Profile** | 👤 | Stats, availability management, tournament history |
 
 ### Home Tab
+- Onboarding card with activation steps (moved from Profile)
+- Leaderboard teaser showing top 3 county players
 - When no active tournament: shows Lobby (join/leave, invite friends, countdown)
 - When active tournament: shows prioritized action cards for matches needing attention
   - Action types (by priority): Escalated > Score Match > Respond to Proposal > Schedule Match
@@ -122,9 +137,13 @@ Four-tab layout designed around the player's tournament journey:
 - Active broadcasts from opponents with "Claim Match" flow
 
 ### Profile Tab
-- Player info, Elo rating, and stats
-- Availability management (edit weekly slots post-registration)
-- Completed tournament history with results
+- **Player identity card**: Name, county, matches played count
+- **Rating hero card**: Large rating number with trend arrow (▲/▼), tier label (e.g. "Club Level"), county rank, last match change, weekly trend, engagement prompt ("One more win could move you to #3"), link to leaderboard
+- **Performance grid**: 4-column grid with Matches, Wins, Losses, Win Rate (%)
+- **Rating progress chart**: SVG line chart with match-based x-axis (Start, M1, M2...), visible data points, tournament history cards below
+- **Availability**: Simplified display with short day names (Sat, Sun), title changes to "Available" when slots exist
+- **Rating explainer**: Collapsible "How ratings work" section at bottom — Elo explanation, tier table, K-factor note
+- Sign out button
 
 ## Components
 - **App.tsx** — Root with 4-tab navigation (Home, Bracket, Play Now, Profile), derives active tournament
@@ -138,7 +157,8 @@ Four-tab layout designed around the player's tournament journey:
 - **MatchScoreModal.tsx** — Score entry modal (used by BracketTab)
 - **Standings.tsx** — Round-robin standings table (used by BracketTab)
 - **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
-- **Profile.tsx** — Player stats, Elo rating, availability management, tournament history
+- **Profile.tsx** — Player identity, rating hero, performance stats, rating chart, availability, rating explainer
+- **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
 
 ## Dev Tools
