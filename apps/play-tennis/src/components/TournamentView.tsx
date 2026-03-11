@@ -132,8 +132,8 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
   function renderMatchCard(match: Match, isFinal = false) {
     const p1 = getPlayerName(tournament!, match.player1Id)
     const p2 = getPlayerName(tournament!, match.player2Id)
-    const r1 = match.player1Id ? getPlayerRating(p1) : null
-    const r2 = match.player2Id ? getPlayerRating(p2) : null
+    const r1 = match.player1Id ? getPlayerRating(match.player1Id, p1) : null
+    const r2 = match.player2Id ? getPlayerRating(match.player2Id, p2) : null
     const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
     const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId

@@ -207,12 +207,12 @@ function BadgeIcon({ type }: { type: Badge['type'] }) {
 // --- Main Profile ---
 
 export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard }: Props) {
-  const rating = getPlayerRating(profile.name)
+  const rating = getPlayerRating(profile.id, profile.name)
   const label = getRatingLabel(rating.rating)
   const tournaments = getPlayerTournaments(profile.id)
   const rankInfo = getPlayerRank(profile.name, profile.county)
-  const ratingHistory = getRatingHistory(profile.name)
-  const weeklyTrend = getRatingTrend(profile.name)
+  const ratingHistory = getRatingHistory(profile.id)
+  const weeklyTrend = getRatingTrend(profile.id)
   const trophies = getPlayerTrophies(profile.id)
   const badges = getPlayerBadges(profile.id)
 

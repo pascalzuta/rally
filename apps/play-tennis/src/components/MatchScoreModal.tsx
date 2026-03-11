@@ -30,8 +30,8 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
   const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
   const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
 
-  const r1 = getPlayerRating(p1Name)
-  const r2 = getPlayerRating(p2Name)
+  const r1 = getPlayerRating(match.player1Id!, p1Name)
+  const r2 = getPlayerRating(match.player2Id!, p2Name)
   const p1WinProb = winProbability(r1.rating, r2.rating)
 
   const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])

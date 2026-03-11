@@ -500,7 +500,7 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
     // Update Elo
     const p1 = tournament.players.find(p => p.id === match.player1Id)
     const p2 = tournament.players.find(p => p.id === match.player2Id)
-    if (p1 && p2) updateRatings(p1.name, p2.name, p1.name)
+    if (p1 && p2) updateRatings(p1, p2, p1.id)
 
     // Advance winner
     advanceWinner(tournament, match, match.player1Id)
@@ -519,7 +519,7 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
 
     const p1 = tournament.players.find(p => p.id === match.player1Id)
     const p2 = tournament.players.find(p => p.id === match.player2Id)
-    if (p1 && p2) updateRatings(p1.name, p2.name, p2.name)
+    if (p1 && p2) updateRatings(p1, p2, p2.id)
 
     advanceWinner(tournament, match, match.player2Id)
   } else if (p1Above && p2Above) {
@@ -731,8 +731,8 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
 
   if (t.format === 'single-elimination') {
     const seeded = [...t.players].sort((a, b) => {
-      const rA = getPlayerRating(a.name).rating
-      const rB = getPlayerRating(b.name).rating
+      const rA = getPlayerRating(a.id, a.name).rating
+      const rB = getPlayerRating(b.id, b.name).rating
       return rB - rA
     })
     const size = Math.pow(2, Math.ceil(Math.log2(seeded.length)))
@@ -992,7 +992,7 @@ export function saveMatchScore(
   const p2 = t.players.find(p => p.id === match.player2Id)
   const winner = t.players.find(p => p.id === winnerId)
   if (p1 && p2 && winner) {
-    updateRatings(p1.name, p2.name, winner.name)
+    updateRatings(p1, p2, winner.id)
   }
 
   // Advance winner in single-elimination
@@ -1059,7 +1059,7 @@ export function getSeeds(tournament: Tournament): Map<string, number> {
   const seeds = new Map<string, number>()
   if (tournament.format === 'single-elimination' || tournament.format === 'group-knockout') {
     const sorted = [...tournament.players].sort((a, b) => {
-      return getPlayerRating(b.name).rating - getPlayerRating(a.name).rating
+      return getPlayerRating(b.id, b.name).rating - getPlayerRating(a.id, a.name).rating
     })
     sorted.forEach((p, i) => seeds.set(p.id, i + 1))
   }
@@ -1074,10 +1074,6 @@ export function getPlayerSeed(tournament: Tournament, playerId: string | null): 
 
 // --- Player Ratings (Global Elo) ---
 
-function normalizePlayerName(name: string): string {
-  return name.trim().toLowerCase()
-}
-
 function loadRatings(): Record<string, PlayerRating> {
   try {
     const data = localStorage.getItem(RATINGS_KEY)
@@ -1091,10 +1087,31 @@ function saveRatings(ratings: Record<string, PlayerRating>): void {
   localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
 }
 
-export function getPlayerRating(playerName: string): PlayerRating {
-  const key = normalizePlayerName(playerName)
+// Legacy: look up by normalized name (for backwards compat with old data)
+function findRatingByName(ratings: Record<string, PlayerRating>, name: string): PlayerRating | null {
+  const normalized = name.trim().toLowerCase()
+  for (const entry of Object.values(ratings)) {
+    if (entry.name.trim().toLowerCase() === normalized) return entry
+  }
+  return null
+}
+
+export function getPlayerRating(playerId: string, playerName?: string): PlayerRating {
   const ratings = loadRatings()
-  return ratings[key] ?? { name: playerName, rating: 1500, matchesPlayed: 0 }
+  // Try by ID first
+  if (ratings[playerId]) return ratings[playerId]
+  // Fallback: try legacy name-based key
+  const displayName = playerName ?? playerId
+  const legacyKey = displayName.trim().toLowerCase()
+  if (ratings[legacyKey]) return ratings[legacyKey]
+  return { name: displayName, rating: 1500, matchesPlayed: 0 }
+}
+
+// Lookup by name for leaderboard (searches all entries)
+export function getPlayerRatingByName(playerName: string): PlayerRating {
+  const ratings = loadRatings()
+  const found = findRatingByName(ratings, playerName)
+  return found ?? { name: playerName, rating: 1500, matchesPlayed: 0 }
 }
 
 export function getAllRatings(): PlayerRating[] {
@@ -1109,21 +1126,25 @@ export function winProbability(ratingA: number, ratingB: number): number {
   return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
 }
 
-export function updateRatings(playerAName: string, playerBName: string, winnerName: string): void {
+export function updateRatings(
+  playerA: { id: string; name: string },
+  playerB: { id: string; name: string },
+  winnerId: string
+): void {
   const ratings = loadRatings()
-  const keyA = normalizePlayerName(playerAName)
-  const keyB = normalizePlayerName(playerBName)
 
-  const a = ratings[keyA] ?? { name: playerAName, rating: 1500, matchesPlayed: 0 }
-  const b = ratings[keyB] ?? { name: playerBName, rating: 1500, matchesPlayed: 0 }
+  const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1500, matchesPlayed: 0 }
+  const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1500, matchesPlayed: 0 }
+  // Keep display name current
+  a.name = playerA.name
+  b.name = playerB.name
 
   const pA = winProbability(a.rating, b.rating)
 
   const kA = kFactor(a.matchesPlayed)
   const kB = kFactor(b.matchesPlayed)
 
-  const winnerKey = normalizePlayerName(winnerName)
-  const sA = winnerKey === keyA ? 1 : 0
+  const sA = winnerId === playerA.id ? 1 : 0
   const sB = 1 - sA
 
   a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
@@ -1131,11 +1152,11 @@ export function updateRatings(playerAName: string, playerBName: string, winnerNa
   a.matchesPlayed += 1
   b.matchesPlayed += 1
 
-  ratings[keyA] = a
-  ratings[keyB] = b
+  ratings[playerA.id] = a
+  ratings[playerB.id] = b
   saveRatings(ratings)
-  recordRatingSnapshot(playerAName, a.rating)
-  recordRatingSnapshot(playerBName, b.rating)
+  recordRatingSnapshot(playerA.id, a.rating)
+  recordRatingSnapshot(playerB.id, b.rating)
 }
 
 // --- Rating History ---
@@ -1158,21 +1179,19 @@ function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
   localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(history))
 }
 
-function recordRatingSnapshot(playerName: string, rating: number): void {
-  const key = normalizePlayerName(playerName)
+function recordRatingSnapshot(playerId: string, rating: number): void {
   const history = loadRatingHistory()
-  if (!history[key]) history[key] = []
-  history[key].push({ rating, timestamp: new Date().toISOString() })
+  if (!history[playerId]) history[playerId] = []
+  history[playerId].push({ rating, timestamp: new Date().toISOString() })
   saveRatingHistory(history)
 }
 
-export function getRatingHistory(playerName: string): RatingSnapshot[] {
-  const key = normalizePlayerName(playerName)
-  return loadRatingHistory()[key] ?? []
+export function getRatingHistory(playerId: string): RatingSnapshot[] {
+  return loadRatingHistory()[playerId] ?? []
 }
 
-export function getRatingTrend(playerName: string): number {
-  const history = getRatingHistory(playerName)
+export function getRatingTrend(playerId: string): number {
+  const history = getRatingHistory(playerId)
   if (history.length < 2) return 0
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
@@ -1213,30 +1232,28 @@ export interface LeaderboardEntry {
 
 export function getCountyLeaderboard(county: string): LeaderboardEntry[] {
   const tournaments = load()
-  const playerNames = new Set<string>()
-  const playerStats: Record<string, { wins: number; losses: number }> = {}
+  // Map player ID -> { name, wins, losses }
+  const playerMap = new Map<string, { name: string; wins: number; losses: number }>()
 
-  // Collect all player names from tournaments in this county
+  // Collect all players from tournaments in this county
   for (const t of tournaments) {
     if (t.county.toLowerCase() !== county.toLowerCase()) continue
     for (const p of t.players) {
-      playerNames.add(p.name)
-      if (!playerStats[p.name]) playerStats[p.name] = { wins: 0, losses: 0 }
+      if (!playerMap.has(p.id)) playerMap.set(p.id, { name: p.name, wins: 0, losses: 0 })
     }
     for (const m of t.matches) {
       if (!m.completed || !m.winnerId) continue
       const p1 = t.players.find(p => p.id === m.player1Id)
       const p2 = t.players.find(p => p.id === m.player2Id)
-      const winner = t.players.find(p => p.id === m.winnerId)
-      if (p1 && winner) {
-        if (!playerStats[p1.name]) playerStats[p1.name] = { wins: 0, losses: 0 }
-        if (m.winnerId === p1.id) playerStats[p1.name].wins++
-        else playerStats[p1.name].losses++
+      if (p1) {
+        const s = playerMap.get(p1.id) ?? { name: p1.name, wins: 0, losses: 0 }
+        if (m.winnerId === p1.id) s.wins++; else s.losses++
+        playerMap.set(p1.id, s)
       }
-      if (p2 && winner) {
-        if (!playerStats[p2.name]) playerStats[p2.name] = { wins: 0, losses: 0 }
-        if (m.winnerId === p2.id) playerStats[p2.name].wins++
-        else playerStats[p2.name].losses++
+      if (p2) {
+        const s = playerMap.get(p2.id) ?? { name: p2.name, wins: 0, losses: 0 }
+        if (m.winnerId === p2.id) s.wins++; else s.losses++
+        playerMap.set(p2.id, s)
       }
     }
   }
@@ -1245,15 +1262,14 @@ export function getCountyLeaderboard(county: string): LeaderboardEntry[] {
   const lobby = loadLobby()
   for (const e of lobby) {
     if (e.county.toLowerCase() === county.toLowerCase()) {
-      playerNames.add(e.playerName)
+      if (!playerMap.has(e.playerId)) playerMap.set(e.playerId, { name: e.playerName, wins: 0, losses: 0 })
     }
   }
 
   const entries: LeaderboardEntry[] = []
-  for (const name of playerNames) {
-    const r = getPlayerRating(name)
-    const stats = playerStats[name] ?? { wins: 0, losses: 0 }
-    entries.push({ name, rating: r.rating, matchesPlayed: r.matchesPlayed, rank: 0, wins: stats.wins, losses: stats.losses })
+  for (const [playerId, stats] of playerMap) {
+    const r = getPlayerRating(playerId, stats.name)
+    entries.push({ name: stats.name, rating: r.rating, matchesPlayed: r.matchesPlayed, rank: 0, wins: stats.wins, losses: stats.losses })
   }
 
   entries.sort((a, b) => b.rating - a.rating)
@@ -1539,7 +1555,7 @@ export function checkAndAwardBadges(playerId: string, tournamentId: string, tour
   // Ten matches
   const playerName = tournaments.flatMap(t => t.players).find(p => p.id === playerId)?.name ?? ''
   if (playerName) {
-    const rating = getPlayerRating(playerName)
+    const rating = getPlayerRating(playerId, playerName)
     if (rating.matchesPlayed >= 10) awardBadge(playerId, 'ten-matches')
   }
 
@@ -1676,11 +1692,11 @@ export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
     const playerIdx = TEST_PLAYERS.indexOf(name)
     lobby.push({ playerId: id, playerName: name, county, joinedAt: new Date().toISOString() })
 
-    // Set up their rating
+    // Set up their rating (keyed by player ID)
     const ratings = loadRatings()
-    const key = normalizePlayerName(name)
-    if (!ratings[key]) {
-      ratings[key] = { name, rating: TEST_RATINGS[key] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
+    const normalizedName = name.trim().toLowerCase()
+    if (!ratings[id]) {
+      ratings[id] = { name, rating: TEST_RATINGS[normalizedName] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
       saveRatings(ratings)
     }
 
