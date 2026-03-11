@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
+import { initSync, SYNC_EVENT } from './sync'
 import Register from './components/Register'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
@@ -80,6 +81,15 @@ export default function App() {
   useEffect(() => {
     retroactivelyAwardTrophies()
   }, [])
+
+  // Initialize Firebase sync when profile is available
+  useEffect(() => {
+    if (!profile) return
+    initSync(profile.county)
+    const handler = () => setRefreshKey(r => r + 1)
+    window.addEventListener(SYNC_EVENT, handler)
+    return () => window.removeEventListener(SYNC_EVENT, handler)
+  }, [profile?.id])
 
   // Auto-join lobby when an existing user opens an invite link
   useEffect(() => {

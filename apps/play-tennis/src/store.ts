@@ -1,4 +1,5 @@
 import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType } from './types'
+import { syncTournaments, syncLobbyForCounty, syncRatings, syncAvailability } from './sync'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
@@ -56,6 +57,16 @@ function loadLobby(): LobbyEntry[] {
 
 function saveLobby(lobby: LobbyEntry[]): void {
   localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
+  // Sync each county's lobby entries to Firebase
+  const byCounty = new Map<string, LobbyEntry[]>()
+  for (const e of lobby) {
+    const key = e.county.toLowerCase()
+    if (!byCounty.has(key)) byCounty.set(key, [])
+    byCounty.get(key)!.push(e)
+  }
+  for (const [county, entries] of byCounty) {
+    syncLobbyForCounty(county, entries)
+  }
 }
 
 export function getLobbyByCounty(county: string): LobbyEntry[] {
@@ -212,6 +223,7 @@ export function saveAvailability(playerId: string, slots: AvailabilitySlot[]): v
   const all = loadAllAvailability()
   all[playerId] = slots
   saveAllAvailability(all)
+  syncAvailability(playerId, slots)
 }
 
 export function getAvailability(playerId: string): AvailabilitySlot[] {
@@ -615,6 +627,7 @@ function load(): Tournament[] {
 
 function save(tournaments: Tournament[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tournaments))
+  syncTournaments(tournaments)
 }
 
 export function getTournaments(): Tournament[] {
@@ -1087,6 +1100,7 @@ function loadRatings(): Record<string, PlayerRating> {
 
 function saveRatings(ratings: Record<string, PlayerRating>): void {
   localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
+  syncRatings(ratings)
 }
 
 // Legacy: look up by normalized name (for backwards compat with old data)
