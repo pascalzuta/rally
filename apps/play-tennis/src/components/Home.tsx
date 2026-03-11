@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers, saveMatchScore, getSeeds, winProbability } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
-import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 
 interface Props {
@@ -240,6 +239,167 @@ function getUpNextMatch(
   return null
 }
 
+// --- Inline Score Entry ---
+
+function isValidSet(s1: number, s2: number): boolean {
+  if (s1 === 6 && s2 <= 4) return true
+  if (s2 === 6 && s1 <= 4) return true
+  if (s1 === 7 && s2 === 5) return true
+  if (s2 === 7 && s1 === 5) return true
+  if (s1 === 7 && s2 === 6) return true
+  if (s2 === 7 && s1 === 6) return true
+  return false
+}
+
+function InlineScoreEntry({ tournament, matchId, onSaved }: {
+  tournament: Tournament
+  matchId: string
+  onSaved: () => void
+}) {
+  const match = tournament.matches.find(m => m.id === matchId)!
+  const p1Name = getPlayerName(tournament, match.player1Id)
+  const p2Name = getPlayerName(tournament, match.player2Id)
+  const seeds = getSeeds(tournament)
+  const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
+  const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
+
+  const r1 = getPlayerRating(match.player1Id!, p1Name)
+  const r2 = getPlayerRating(match.player2Id!, p2Name)
+  const p1WinProb = winProbability(r1.rating, r2.rating)
+
+  const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])
+
+  function getScores(): { score1: number[]; score2: number[] } | null {
+    const score1: number[] = []
+    const score2: number[] = []
+    for (const [s1, s2] of sets) {
+      if (s1 === '' && s2 === '') continue
+      const n1 = parseInt(s1, 10)
+      const n2 = parseInt(s2, 10)
+      if (isNaN(n1) || isNaN(n2) || n1 < 0 || n2 < 0) return null
+      if (!isValidSet(n1, n2)) return null
+      score1.push(n1)
+      score2.push(n2)
+    }
+    return score1.length > 0 ? { score1, score2 } : null
+  }
+
+  function determineWinner(score1: number[], score2: number[]): string | null {
+    let sets1 = 0
+    let sets2 = 0
+    for (let i = 0; i < score1.length; i++) {
+      if (score1[i] > score2[i]) sets1++
+      else if (score2[i] > score1[i]) sets2++
+    }
+    if (sets1 >= 2) return match.player1Id
+    if (sets2 >= 2) return match.player2Id
+    return null
+  }
+
+  function updateSet(setIndex: number, playerIndex: 0 | 1, value: string) {
+    const updated = [...sets] as Array<[string, string]>
+    updated[setIndex] = [...updated[setIndex]] as [string, string]
+    updated[setIndex][playerIndex] = value
+    setSets(updated)
+  }
+
+  function setValidation(setIndex: number): string | null {
+    const [s1, s2] = sets[setIndex]
+    if (s1 === '' && s2 === '') return null
+    if (s1 === '' || s2 === '') return 'Enter both scores'
+    const n1 = parseInt(s1, 10)
+    const n2 = parseInt(s2, 10)
+    if (isNaN(n1) || isNaN(n2)) return 'Invalid number'
+    if (!isValidSet(n1, n2)) return 'Invalid score (e.g. 6-4, 7-5, 7-6)'
+    return null
+  }
+
+  const scores = getScores()
+  const winnerId = scores ? determineWinner(scores.score1, scores.score2) : null
+  const canSave = scores && winnerId
+
+  const showThirdSet = (() => {
+    const s1a = parseInt(sets[0][0], 10)
+    const s1b = parseInt(sets[0][1], 10)
+    const s2a = parseInt(sets[1][0], 10)
+    const s2b = parseInt(sets[1][1], 10)
+    if (isNaN(s1a) || isNaN(s1b) || isNaN(s2a) || isNaN(s2b)) return false
+    if (!isValidSet(s1a, s1b) || !isValidSet(s2a, s2b)) return false
+    return (s1a > s1b ? 1 : 2) !== (s2a > s2b ? 1 : 2)
+  })()
+
+  const visibleSets = showThirdSet ? 3 : 2
+
+  function handleSave() {
+    if (!scores || !winnerId) return
+    saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
+    onSaved()
+  }
+
+  return (
+    <div className="inline-score-entry">
+      <div className="prob-split">
+        <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
+        <div className="prob-split-bar">
+          <div className="prob-split-fill-left" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
+          <div className="prob-split-fill-right" style={{ width: `${Math.round((1 - p1WinProb) * 100)}%` }} />
+        </div>
+        <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
+      </div>
+
+      <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>
+        <div className="score-header"></div>
+        {sets.slice(0, visibleSets).map((_, i) => (
+          <div key={i} className="score-header">Set {i + 1}</div>
+        ))}
+
+        <div className="score-player-name">{p1Name}{seed1 != null && <span className="seed-label"> ({seed1})</span>}</div>
+        {sets.slice(0, visibleSets).map((set, i) => (
+          <input
+            key={`p1-${i}`}
+            type="number"
+            min="0"
+            max="7"
+            className={`score-input ${setValidation(i) ? 'score-invalid' : ''}`}
+            value={set[0]}
+            onChange={e => updateSet(i, 0, e.target.value)}
+            inputMode="numeric"
+          />
+        ))}
+
+        <div className="score-player-name">{p2Name}{seed2 != null && <span className="seed-label"> ({seed2})</span>}</div>
+        {sets.slice(0, visibleSets).map((set, i) => (
+          <input
+            key={`p2-${i}`}
+            type="number"
+            min="0"
+            max="7"
+            className={`score-input ${setValidation(i) ? 'score-invalid' : ''}`}
+            value={set[1]}
+            onChange={e => updateSet(i, 1, e.target.value)}
+            inputMode="numeric"
+          />
+        ))}
+      </div>
+
+      {sets.slice(0, visibleSets).map((_, i) => {
+        const err = setValidation(i)
+        return err ? <div key={i} className="score-error">Set {i + 1}: {err}</div> : null
+      })}
+
+      {winnerId && (
+        <div className="winner-preview">
+          Winner: <strong>{getPlayerName(tournament, winnerId)}{winnerId && seeds.get(winnerId) != null && <span className="seed-label"> ({seeds.get(winnerId)})</span>}</strong>
+        </div>
+      )}
+
+      <button className="btn btn-primary" onClick={handleSave} disabled={!canSave} style={{ width: '100%', marginTop: '0.5rem' }}>
+        Save Score
+      </button>
+    </div>
+  )
+}
+
 export default function Home({
   profile,
   tournaments,
@@ -253,7 +413,6 @@ export default function Home({
   onDataChanged,
 }: Props) {
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
-  const [scoringMatchInfo, setScoringMatchInfo] = useState<{ tournamentId: string; matchId: string } | null>(null)
 
   const activeTournaments = useMemo(
     () => tournaments.filter(
@@ -504,13 +663,7 @@ export default function Home({
               <div
                 key={cardKey}
                 className={`action-card action-${card.type}`}
-                onClick={() => {
-                  if (card.type === 'score') {
-                    setScoringMatchInfo({ tournamentId: card.tournamentId, matchId: card.matchId })
-                  } else {
-                    setExpandedCardKey(isExpanded ? null : cardKey)
-                  }
-                }}
+                onClick={() => setExpandedCardKey(isExpanded ? null : cardKey)}
               >
                 <div className="action-card-type">{card.label}</div>
                 <div className="action-card-opponent">vs {card.opponentName}</div>
@@ -518,26 +671,33 @@ export default function Home({
                 {!isExpanded && (
                   <button className="action-card-btn" onClick={e => {
                     e.stopPropagation()
-                    if (card.type === 'score') {
-                      setScoringMatchInfo({ tournamentId: card.tournamentId, matchId: card.matchId })
-                    } else {
-                      setExpandedCardKey(cardKey)
-                    }
+                    setExpandedCardKey(cardKey)
                   }}>
                     {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
                   </button>
                 )}
-                {isExpanded && cardTournament && cardMatch?.schedule && (
+                {isExpanded && cardTournament && cardMatch && (
                   <div onClick={e => e.stopPropagation()}>
-                    <MatchSchedulePanel
-                      tournament={cardTournament}
-                      match={cardMatch}
-                      currentPlayerId={profile.id}
-                      onUpdated={() => {
-                        setExpandedCardKey(null)
-                        onDataChanged?.()
-                      }}
-                    />
+                    {card.type === 'score' ? (
+                      <InlineScoreEntry
+                        tournament={cardTournament}
+                        matchId={cardMatch.id}
+                        onSaved={() => {
+                          setExpandedCardKey(null)
+                          onDataChanged?.()
+                        }}
+                      />
+                    ) : cardMatch.schedule ? (
+                      <MatchSchedulePanel
+                        tournament={cardTournament}
+                        match={cardMatch}
+                        currentPlayerId={profile.id}
+                        onUpdated={() => {
+                          setExpandedCardKey(null)
+                          onDataChanged?.()
+                        }}
+                      />
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -553,31 +713,16 @@ export default function Home({
         </div>
       )}
 
-      {/* Score Modal */}
-      {scoringMatchInfo && (() => {
-        const t = activeTournaments.find(tr => tr.id === scoringMatchInfo.tournamentId)
-        if (!t) return null
-        return (
-          <MatchScoreModal
-            tournament={t}
-            matchId={scoringMatchInfo.matchId}
-            onClose={() => setScoringMatchInfo(null)}
-            onSaved={() => {
-              setScoringMatchInfo(null)
-              onDataChanged?.()
-            }}
-          />
-        )
-      })()}
-
       {/* Up Next Card */}
       {upNext && upNext.match.schedule?.confirmedSlot && (() => {
         const slot = upNext.match.schedule!.confirmedSlot!
         const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
         const period = slot.startHour >= 12 ? 'pm' : 'am'
         const hour = slot.startHour % 12 || 12
+        const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
+        const upNextExpanded = expandedCardKey === upNextKey
         return (
-          <div className="card upnext-card" onClick={() => setScoringMatchInfo({ tournamentId: upNext.tournament.id, matchId: upNext.match.id })}>
+          <div className="card upnext-card" onClick={() => setExpandedCardKey(upNextExpanded ? null : upNextKey)}>
             <div>
               <div className="upnext-label">Confirmed</div>
               <div className="upnext-opponent">
@@ -588,6 +733,18 @@ export default function Home({
               <span className="upnext-time-day">{day}</span>
               <span className="upnext-time-hour">{hour}{period}</span>
             </div>
+            {upNextExpanded && (
+              <div onClick={e => e.stopPropagation()} style={{ gridColumn: '1 / -1' }}>
+                <InlineScoreEntry
+                  tournament={upNext.tournament}
+                  matchId={upNext.match.id}
+                  onSaved={() => {
+                    setExpandedCardKey(null)
+                    onDataChanged?.()
+                  }}
+                />
+              </div>
+            )}
           </div>
         )
       })()}
