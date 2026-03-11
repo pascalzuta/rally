@@ -1099,10 +1099,9 @@ select:focus {
 }
 
 .completed-final-score {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-body-md);
   color: var(--color-text-secondary);
-  font-variant-numeric: tabular-nums;
   margin-top: var(--space-xs);
 }
 
@@ -1117,11 +1116,10 @@ select:focus {
 }
 
 .completed-stat-value {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
 }
 
 .completed-stat-label {
@@ -1988,15 +1986,14 @@ select:focus {
 }
 
 .formation-count-mono {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
 }
 
 .formation-count-sep {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-body-lg);
   color: var(--color-text-muted);
   margin: 0 1px;
@@ -2068,11 +2065,10 @@ select:focus {
 }
 
 .formation-countdown-timer {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-title-md);
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
-  font-variant-numeric: tabular-nums;
 }
 
 .formation-players {
@@ -2839,11 +2835,10 @@ select:focus {
 }
 
 .offer-card-time {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
 }
 
 .offer-card-date {
@@ -2880,11 +2875,10 @@ select:focus {
 
 /* Offer confirmation modal additions */
 .offer-confirm-time {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
@@ -3881,11 +3875,10 @@ select:focus {
 }
 
 .user-status-rating-value {
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
-  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
