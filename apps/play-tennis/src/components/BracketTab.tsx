@@ -13,6 +13,16 @@ interface Props {
   onFocusConsumed?: () => void
 }
 
+function formatSlot(slot: { day: string; startHour: number; endHour: number }): string {
+  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1)
+  const fmt = (h: number) => {
+    const period = h >= 12 ? 'pm' : 'am'
+    const hour = h % 12 || 12
+    return `${hour}${period}`
+  }
+  return `${day} ${fmt(slot.startHour)}–${fmt(slot.endHour)}`
+}
+
 function scheduleStatusClass(match: Match): string {
   if (match.resolution) {
     switch (match.resolution.type) {
@@ -288,18 +298,21 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
             {match.resolution && (
               <div className={`resolution-indicator resolution-${match.resolution.type}`}>
                 {match.resolution.type === 'walkover' ? '⊘ Walkover' :
-                 match.resolution.type === 'forced-match' ? '⚑ Final Match Assigned' :
-                 '✕ Match Canceled'}
+                 match.resolution.type === 'forced-match'
+                   ? `⚑ ${match.resolution.forcedSlot ? formatSlot(match.resolution.forcedSlot) : 'Final Match Assigned'}`
+                   : '✕ Match Canceled'}
               </div>
             )}
 
             {/* Inline scheduling status indicator */}
             {!match.completed && !match.resolution && hasSchedule && (
               <div className={`schedule-indicator ${match.schedule!.status}`}>
-                {match.schedule!.status === 'confirmed' ? '✓ Scheduled' :
-                 match.schedule!.status === 'escalated' ? '⚠ Escalated' :
-                 isMyMatch ? (match.schedule!.status === 'proposed' ? '◷ Pick a time' : '○ Unscheduled') :
-                 '◷ Pending'}
+                {match.schedule!.status === 'confirmed' && match.schedule!.confirmedSlot
+                  ? `✓ ${formatSlot(match.schedule!.confirmedSlot)}`
+                  : match.schedule!.status === 'confirmed' ? '✓ Scheduled'
+                  : match.schedule!.status === 'escalated' ? '⚠ Escalated'
+                  : isMyMatch ? (match.schedule!.status === 'proposed' ? '◷ Pick a time' : '○ Unscheduled')
+                  : '◷ Pending'}
               </div>
             )}
 
