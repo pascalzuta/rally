@@ -1,5 +1,5 @@
-import { ref, set, onValue, get, Unsubscribe } from 'firebase/database'
-import { initFirebase, isFirebaseConfigured, getDb } from './firebase'
+import { RealtimeChannel } from '@supabase/supabase-js'
+import { initSupabase, getClient } from './supabase'
 import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot } from './types'
 
 // Custom event dispatched when remote data arrives
@@ -12,208 +12,180 @@ function dispatchSync() {
 const STORAGE_KEY = 'play-tennis-data'
 const LOBBY_KEY = 'play-tennis-lobby'
 const RATINGS_KEY = 'play-tennis-ratings'
-const AVAILABILITY_KEY = 'play-tennis-availability'
 
-// --- Firebase write helpers ---
+// --- Supabase write helpers ---
 
 export function syncTournaments(tournaments: Tournament[]): void {
-  const db = getDb()
-  if (!db) return
-  // Group tournaments by county for efficient querying
-  const byCounty: Record<string, Tournament[]> = {}
+  const client = getClient()
+  if (!client) return
   for (const t of tournaments) {
-    const key = t.county.toLowerCase().replace(/[^a-z0-9]/g, '_')
-    if (!byCounty[key]) byCounty[key] = []
-    byCounty[key].push(t)
-  }
-  for (const [county, ts] of Object.entries(byCounty)) {
-    const tournamentsRef = ref(db, `tournaments/${county}`)
-    const map: Record<string, Tournament> = {}
-    for (const t of ts) map[t.id] = t
-    set(tournamentsRef, map)
-  }
-}
-
-export function syncLobby(lobby: LobbyEntry[]): void {
-  const db = getDb()
-  if (!db) return
-  const byCounty: Record<string, Record<string, LobbyEntry>> = {}
-  for (const e of lobby) {
-    const key = e.county.toLowerCase().replace(/[^a-z0-9]/g, '_')
-    if (!byCounty[key]) byCounty[key] = {}
-    byCounty[key][e.playerId] = e
-  }
-  // Write each county's lobby
-  for (const [county, entries] of Object.entries(byCounty)) {
-    set(ref(db, `lobby/${county}`), entries)
+    client.from('tournaments').upsert({
+      id: t.id,
+      county: t.county.toLowerCase(),
+      data: t,
+    }, { onConflict: 'id' }).then()
   }
 }
 
 export function syncLobbyForCounty(county: string, entries: LobbyEntry[]): void {
-  const db = getDb()
-  if (!db) return
-  const key = county.toLowerCase().replace(/[^a-z0-9]/g, '_')
-  const map: Record<string, LobbyEntry> = {}
-  for (const e of entries) map[e.playerId] = e
-  set(ref(db, `lobby/${key}`), map)
-}
-
-export function syncTournament(tournament: Tournament): void {
-  const db = getDb()
-  if (!db) return
-  const key = tournament.county.toLowerCase().replace(/[^a-z0-9]/g, '_')
-  set(ref(db, `tournaments/${key}/${tournament.id}`), tournament)
+  const client = getClient()
+  if (!client) return
+  const countyKey = county.toLowerCase()
+  // Delete removed entries, then upsert current ones
+  const playerIds = entries.map(e => e.playerId)
+  client.from('lobby').delete()
+    .eq('county', countyKey)
+    .not('player_id', 'in', `(${playerIds.join(',')})`)
+    .then(() => {
+      if (entries.length > 0) {
+        client.from('lobby').upsert(
+          entries.map(e => ({
+            player_id: e.playerId,
+            player_name: e.playerName,
+            county: countyKey,
+            joined_at: e.joinedAt,
+          })),
+          { onConflict: 'player_id' }
+        ).then()
+      }
+    })
 }
 
 export function syncRatings(ratings: Record<string, PlayerRating>): void {
-  const db = getDb()
-  if (!db) return
-  set(ref(db, 'ratings'), ratings)
+  const client = getClient()
+  if (!client) return
+  const rows = Object.entries(ratings).map(([id, r]) => ({
+    player_id: id,
+    data: r,
+  }))
+  if (rows.length > 0) {
+    client.from('ratings').upsert(rows, { onConflict: 'player_id' }).then()
+  }
 }
 
 export function syncAvailability(playerId: string, slots: AvailabilitySlot[]): void {
-  const db = getDb()
-  if (!db) return
-  set(ref(db, `availability/${playerId}`), slots)
+  // Availability stays local-only (not critical for cross-device discovery)
 }
 
-// --- Firebase subscribe helpers ---
+// --- Supabase Realtime subscriptions ---
 
-let unsubscribers: Unsubscribe[] = []
+let channel: RealtimeChannel | null = null
 
-export function subscribeToCounty(county: string): void {
-  const db = getDb()
-  if (!db) return
+function subscribeToCounty(county: string): void {
+  const client = getClient()
+  if (!client) return
 
-  const key = county.toLowerCase().replace(/[^a-z0-9]/g, '_')
+  const countyKey = county.toLowerCase()
 
-  // Subscribe to lobby for this county
-  const lobbyRef = ref(db, `lobby/${key}`)
-  const unsubLobby = onValue(lobbyRef, (snapshot) => {
-    const data = snapshot.val()
-    if (!data) return
-    const remoteEntries: LobbyEntry[] = Object.values(data)
-    // Merge with local lobby: keep local entries from other counties, replace this county's
-    const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
-    const otherCounties = localLobby.filter(
-      e => e.county.toLowerCase().replace(/[^a-z0-9]/g, '_') !== key
-    )
-    const merged = [...otherCounties, ...remoteEntries]
-    localStorage.setItem(LOBBY_KEY, JSON.stringify(merged))
-    dispatchSync()
-  })
-  unsubscribers.push(unsubLobby)
-
-  // Subscribe to tournaments for this county
-  const tournamentsRef = ref(db, `tournaments/${key}`)
-  const unsubTournaments = onValue(tournamentsRef, (snapshot) => {
-    const data = snapshot.val()
-    if (!data) return
-    const remoteTournaments: Tournament[] = Object.values(data)
-    // Merge with local: replace tournaments from this county, keep others
-    const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
-    const remoteIds = new Set(remoteTournaments.map(t => t.id))
-    const otherTournaments = localTournaments.filter(
-      t => !remoteIds.has(t.id) && t.county.toLowerCase().replace(/[^a-z0-9]/g, '_') !== key
-    )
-    const merged = [...remoteTournaments, ...otherTournaments]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
-    dispatchSync()
-  })
-  unsubscribers.push(unsubTournaments)
-
-  // Subscribe to ratings
-  const ratingsRef = ref(db, 'ratings')
-  const unsubRatings = onValue(ratingsRef, (snapshot) => {
-    const data = snapshot.val()
-    if (!data) return
-    // Merge: remote wins for conflicts
-    const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
-    const merged = { ...localRatings, ...data }
-    localStorage.setItem(RATINGS_KEY, JSON.stringify(merged))
-    dispatchSync()
-  })
-  unsubscribers.push(unsubRatings)
+  // Subscribe to all table changes via a single Realtime channel
+  channel = client.channel(`county-${countyKey}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby', filter: `county=eq.${countyKey}` }, () => {
+      refreshLobbyFromRemote(countyKey)
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `county=eq.${countyKey}` }, () => {
+      refreshTournamentsFromRemote(countyKey)
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {
+      refreshRatingsFromRemote()
+    })
+    .subscribe()
 }
 
-export function unsubscribeAll(): void {
-  for (const unsub of unsubscribers) unsub()
-  unsubscribers = []
+async function refreshLobbyFromRemote(countyKey: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client.from('lobby').select('*').eq('county', countyKey)
+  if (!data) return
+  const remoteEntries: LobbyEntry[] = data.map(row => ({
+    playerId: row.player_id,
+    playerName: row.player_name,
+    county: row.county,
+    joinedAt: row.joined_at,
+  }))
+  const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
+  const otherCounties = localLobby.filter(e => e.county.toLowerCase() !== countyKey)
+  localStorage.setItem(LOBBY_KEY, JSON.stringify([...otherCounties, ...remoteEntries]))
+  dispatchSync()
 }
 
-// --- Init: push local data to Firebase on first connect, then subscribe ---
+async function refreshTournamentsFromRemote(countyKey: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client.from('tournaments').select('*').eq('county', countyKey)
+  if (!data) return
+  const remoteTournaments: Tournament[] = data.map(row => row.data as Tournament)
+  const remoteIds = new Set(remoteTournaments.map(t => t.id))
+  const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
+  const others = localTournaments.filter(t => !remoteIds.has(t.id) && t.county.toLowerCase() !== countyKey)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...remoteTournaments, ...others]))
+  dispatchSync()
+}
+
+async function refreshRatingsFromRemote(): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client.from('ratings').select('*')
+  if (!data) return
+  const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
+  const remoteRatings: Record<string, PlayerRating> = {}
+  for (const row of data) remoteRatings[row.player_id] = row.data as PlayerRating
+  localStorage.setItem(RATINGS_KEY, JSON.stringify({ ...localRatings, ...remoteRatings }))
+  dispatchSync()
+}
+
+// --- Init ---
 
 export async function initSync(county: string): Promise<void> {
-  const db = initFirebase()
-  if (!db) return
+  const client = initSupabase()
+  if (!client) return
 
-  const key = county.toLowerCase().replace(/[^a-z0-9]/g, '_')
+  const countyKey = county.toLowerCase()
 
-  // Check if remote has data for this county
-  const lobbySnap = await get(ref(db, `lobby/${key}`))
-  const tournamentsSnap = await get(ref(db, `tournaments/${key}`))
-
-  // Merge local lobby entries INTO remote (don't overwrite remote)
+  // Push local lobby entries to remote
   const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
-  const localCountyLobby = localLobby.filter(
-    e => e.county.toLowerCase().replace(/[^a-z0-9]/g, '_') === key
-  )
-
-  if (lobbySnap.exists()) {
-    const remoteLobby: Record<string, LobbyEntry> = lobbySnap.val()
-    // Add local entries that aren't already remote
-    for (const entry of localCountyLobby) {
-      if (!remoteLobby[entry.playerId]) {
-        remoteLobby[entry.playerId] = entry
-      }
-    }
-    await set(ref(db, `lobby/${key}`), remoteLobby)
-  } else if (localCountyLobby.length > 0) {
-    // No remote data, push local
-    const map: Record<string, LobbyEntry> = {}
-    for (const e of localCountyLobby) map[e.playerId] = e
-    await set(ref(db, `lobby/${key}`), map)
+  const localCountyLobby = localLobby.filter(e => e.county.toLowerCase() === countyKey)
+  if (localCountyLobby.length > 0) {
+    await client.from('lobby').upsert(
+      localCountyLobby.map(e => ({
+        player_id: e.playerId,
+        player_name: e.playerName,
+        county: countyKey,
+        joined_at: e.joinedAt,
+      })),
+      { onConflict: 'player_id' }
+    )
   }
 
-  // Merge local tournaments INTO remote
+  // Push local tournaments to remote
   const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
-  const localCountyTournaments = localTournaments.filter(
-    t => t.county.toLowerCase().replace(/[^a-z0-9]/g, '_') === key
-  )
-
-  if (tournamentsSnap.exists()) {
-    const remoteTournaments: Record<string, Tournament> = tournamentsSnap.val()
-    for (const t of localCountyTournaments) {
-      if (!remoteTournaments[t.id]) {
-        remoteTournaments[t.id] = t
-      }
-    }
-    await set(ref(db, `tournaments/${key}`), remoteTournaments)
-  } else if (localCountyTournaments.length > 0) {
-    const map: Record<string, Tournament> = {}
-    for (const t of localCountyTournaments) map[t.id] = t
-    await set(ref(db, `tournaments/${key}`), map)
+  const localCountyTournaments = localTournaments.filter(t => t.county.toLowerCase() === countyKey)
+  if (localCountyTournaments.length > 0) {
+    await client.from('tournaments').upsert(
+      localCountyTournaments.map(t => ({
+        id: t.id,
+        county: countyKey,
+        data: t,
+      })),
+      { onConflict: 'id' }
+    )
   }
 
   // Push local ratings
   const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
-  if (Object.keys(localRatings).length > 0) {
-    const ratingsSnap = await get(ref(db, 'ratings'))
-    if (ratingsSnap.exists()) {
-      const remote = ratingsSnap.val()
-      // Merge: keep whichever has more matches played
-      for (const [id, local] of Object.entries(localRatings)) {
-        if (!remote[id] || local.matchesPlayed > (remote[id]?.matchesPlayed ?? 0)) {
-          remote[id] = local
-        }
-      }
-      await set(ref(db, 'ratings'), remote)
-    } else {
-      await set(ref(db, 'ratings'), localRatings)
-    }
+  const ratingRows = Object.entries(localRatings).map(([id, r]) => ({
+    player_id: id,
+    data: r,
+  }))
+  if (ratingRows.length > 0) {
+    await client.from('ratings').upsert(ratingRows, { onConflict: 'player_id' })
   }
 
-  // Now subscribe to real-time updates
+  // Fetch remote data into localStorage
+  await refreshLobbyFromRemote(countyKey)
+  await refreshTournamentsFromRemote(countyKey)
+  await refreshRatingsFromRemote()
+
+  // Subscribe to real-time changes
   subscribeToCounty(county)
 }
 

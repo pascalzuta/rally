@@ -10,7 +10,7 @@
     "preview": "vite preview --port 5180"
   },
   "dependencies": {
-    "firebase": "^12.10.0",
+    "@supabase/supabase-js": "^2.99.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
