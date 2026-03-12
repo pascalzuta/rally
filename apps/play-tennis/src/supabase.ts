@@ -1,19 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-let client: SupabaseClient | null = null
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://gxiflulfgqahlvdirecz.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
 
-export function isSupabaseConfigured(): boolean {
-  return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
-}
+let client: SupabaseClient | null = null
 
 export function initSupabase(): SupabaseClient | null {
   if (client) return client
-  if (!isSupabaseConfigured()) return null
 
-  client = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY
-  )
+  client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   return client
 }
 
