@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers, saveMatchScore, getSeeds, winProbability } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers, saveMatchScore, getSeeds, winProbability, getRecentResults } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -474,6 +474,8 @@ export default function Home({
   )
   const myRating = getPlayerRating(profile.id, profile.name)
 
+  const recentResults = useMemo(() => getRecentResults(profile.county, 5), [profile.county, tournaments])
+
   // No active or setup tournament: show lobby + status + leaderboard
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
@@ -527,6 +529,25 @@ export default function Home({
               </>
             )}
             <button className="btn-link leaderboard-see-all">See full leaderboard</button>
+          </div>
+        )}
+
+        {/* Recent Activity Feed */}
+        {recentResults.length > 0 && (
+          <div className="card recent-activity">
+            <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Recent Matches</div>
+            <div className="recent-results-list">
+              {recentResults.map(result => (
+                <div key={result.matchId} className="recent-result-item" onClick={() => onViewTournament(result.tournamentId)}>
+                  <div className="recent-result-players">
+                    <span className={`recent-result-name ${result.winnerId === profile.id ? 'is-me' : ''}`}>{result.winnerName}</span>
+                    <span className="recent-result-def">def.</span>
+                    <span className={`recent-result-name ${result.loserId === profile.id ? 'is-me' : ''}`}>{result.loserName}</span>
+                  </div>
+                  <div className="recent-result-score">{result.score}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, logout, getAvailability, saveAvailability } from '../store'
-import type { RatingSnapshot } from '../store'
+import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability } from '../store'
+import type { RatingSnapshot, MatchHistoryEntry } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, Trophy, TrophyTier, Badge } from '../types'
 
 interface Props {
@@ -250,6 +250,10 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
     : 0
 
   const completedTournaments = tournaments.filter(t => t.status === 'completed')
+  const matchHistory = getMatchHistory(profile.id)
+  const [showAllMatches, setShowAllMatches] = useState(false)
+  const [h2hOpponent, setH2hOpponent] = useState<string | null>(null)
+  const visibleMatches = showAllMatches ? matchHistory : matchHistory.slice(0, 5)
 
   function handleLogout() {
     if (confirm('Sign out? You can sign back in with the same name.')) {
@@ -435,6 +439,67 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
         </div>
       </div>
+
+      {/* Match History */}
+      {matchHistory.length > 0 && (
+        <div className="card profile-section">
+          <h3 className="profile-section-title"><span>Match History</span></h3>
+
+          {/* Head-to-head overlay */}
+          {h2hOpponent && (() => {
+            const h2h = getHeadToHead(profile.id, h2hOpponent)
+            const oppName = h2h.matches[0]?.opponentName ?? 'Opponent'
+            return (
+              <div className="h2h-card">
+                <div className="h2h-header">
+                  <span className="h2h-title">vs {oppName}</span>
+                  <button className="btn-icon" onClick={() => setH2hOpponent(null)}>✕</button>
+                </div>
+                <div className="h2h-record">
+                  <span className="h2h-wins">{h2h.wins}W</span>
+                  <span className="h2h-divider">–</span>
+                  <span className="h2h-losses">{h2h.losses}L</span>
+                </div>
+                <div className="h2h-matches">
+                  {h2h.matches.map(m => (
+                    <div key={m.matchId} className={`h2h-match-row ${m.won ? 'won' : 'lost'}`}>
+                      <span className="h2h-result">{m.won ? 'W' : 'L'}</span>
+                      <span className="h2h-score">{m.score}</span>
+                      <span className="h2h-tournament">{m.tournamentName}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
+          <div className="match-history-list">
+            {visibleMatches.map(match => (
+              <div
+                key={match.matchId}
+                className={`match-history-item ${match.won ? 'won' : 'lost'}`}
+                onClick={() => setH2hOpponent(match.opponentId === h2hOpponent ? null : match.opponentId)}
+              >
+                <div className="match-history-result">
+                  <span className={`match-result-badge ${match.won ? 'win' : 'loss'}`}>
+                    {match.won ? 'W' : 'L'}
+                  </span>
+                </div>
+                <div className="match-history-info">
+                  <div className="match-history-opponent">vs {match.opponentName}</div>
+                  <div className="match-history-meta">{match.tournamentName} · R{match.round}</div>
+                </div>
+                <div className="match-history-score">{match.score}</div>
+              </div>
+            ))}
+          </div>
+          {matchHistory.length > 5 && (
+            <button className="btn-link match-history-toggle" onClick={() => setShowAllMatches(!showAllMatches)}>
+              {showAllMatches ? 'Show less' : `Show all ${matchHistory.length} matches`}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Rating History */}
       <div className="card profile-section">
