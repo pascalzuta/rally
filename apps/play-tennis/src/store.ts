@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType } from './types'
+import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, Sex, AgeRange, ExperienceLevel } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -26,6 +26,77 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 }
 
+// --- Match Result (post-match feedback) ---
+
+export interface MatchResult {
+  tournament: Tournament
+  winnerId: string
+  currentPlayerWon: boolean | null  // null if current player wasn't in the match
+  winnerName: string
+  loserName: string
+  score: string  // formatted, e.g. "6-4, 7-5"
+}
+
+export function formatMatchScore(score1: number[], score2: number[]): string {
+  return score1.map((s, i) => `${s}-${score2[i]}`).join(', ')
+}
+
+// --- Recent Match History ---
+
+export interface RecentMatch {
+  matchId: string
+  tournamentId: string
+  tournamentName: string
+  opponentName: string
+  score: string
+  won: boolean
+  ratingChange: number | null
+  date: string  // tournament date
+}
+
+export function getRecentMatchResults(playerId: string, limit = 10): RecentMatch[] {
+  const tournaments: Tournament[] = getTournaments()
+  const ratings = loadRatings()
+  const results: RecentMatch[] = []
+
+  for (const t of tournaments) {
+    for (const m of t.matches) {
+      if (!m.completed || !m.winnerId) continue
+      if (m.player1Id !== playerId && m.player2Id !== playerId) continue
+
+      const won = m.winnerId === playerId
+      const opponentId = m.player1Id === playerId ? m.player2Id : m.player1Id
+      const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Unknown'
+      const score = formatMatchScore(m.score1, m.score2)
+
+      // Estimate rating change (simplified — actual Elo calc not replayed here)
+      let ratingChange: number | null = null
+      const playerRating = ratings[playerId]
+      const opponentRating = ratings[opponentId ?? '']
+      if (playerRating && opponentRating) {
+        const expected = 1 / (1 + Math.pow(10, (opponentRating.rating - playerRating.rating) / 400))
+        const k = playerRating.matchesPlayed < 10 ? 40 : 20
+        ratingChange = Math.round(k * ((won ? 1 : 0) - expected))
+      }
+
+      results.push({
+        matchId: m.id,
+        tournamentId: t.id,
+        tournamentName: t.name,
+        opponentName,
+        score,
+        won,
+        ratingChange,
+        date: t.date,
+      })
+    }
+  }
+
+  // Sort by tournament date descending (most recent first)
+  results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return results.slice(0, limit)
+}
+
 // --- Profile ---
 
 export function getProfile(): PlayerProfile | null {
@@ -37,7 +108,18 @@ export function getProfile(): PlayerProfile | null {
   }
 }
 
-export function createProfile(name: string, county: string): PlayerProfile {
+const EXPERIENCE_ELO: Record<ExperienceLevel, number> = {
+  beginner: 1300,
+  intermediate: 1500,
+  advanced: 1650,
+  competitive: 1800,
+}
+
+export function createProfile(
+  name: string,
+  county: string,
+  details?: { sex?: Sex; ageRange?: AgeRange; experienceLevel?: ExperienceLevel }
+): PlayerProfile {
   // Duplicate guard: return existing profile if one exists
   const existing = getProfile()
   if (existing) return existing
@@ -47,9 +129,29 @@ export function createProfile(name: string, county: string): PlayerProfile {
     name: name.trim(),
     county: county.trim(),
     createdAt: new Date().toISOString(),
+    ...(details?.sex && { sex: details.sex }),
+    ...(details?.ageRange && { ageRange: details.ageRange }),
+    ...(details?.experienceLevel && { experienceLevel: details.experienceLevel }),
   }
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+
+  // Set initial rating based on experience level
+  if (details?.experienceLevel) {
+    const initialRating = EXPERIENCE_ELO[details.experienceLevel]
+    const ratings = loadRatings()
+    ratings[profile.id] = { name: profile.name, rating: initialRating, matchesPlayed: 0 }
+    saveRatings(ratings)
+  }
+
   return profile
+}
+
+export function updateProfileDetails(details: { sex?: Sex; ageRange?: AgeRange; experienceLevel?: ExperienceLevel }): PlayerProfile | null {
+  const profile = getProfile()
+  if (!profile) return null
+  const updated = { ...profile, ...details }
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(updated))
+  return updated
 }
 
 export function logout(): void {
@@ -1166,7 +1268,7 @@ export async function saveMatchScore(
   score1: number[],
   score2: number[],
   winnerId: string
-): Promise<Tournament | undefined> {
+): Promise<MatchResult | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
@@ -1174,13 +1276,31 @@ export async function saveMatchScore(
   const match = t.matches.find(m => m.id === matchId)
   if (!match) return undefined
 
-  // Update ELO ratings (tries RPC internally)
+  // Build result metadata for post-match feedback
+  const currentProfile = getProfile()
   const p1 = t.players.find(p => p.id === match.player1Id)
   const p2 = t.players.find(p => p.id === match.player2Id)
-  const winner = t.players.find(p => p.id === winnerId)
-  if (p1 && p2 && winner) {
-    await updateRatings(p1, p2, winner.id)
+  const loserId = match.player1Id === winnerId ? match.player2Id : match.player1Id
+  const winnerName = t.players.find(p => p.id === winnerId)?.name ?? 'Unknown'
+  const loserName = t.players.find(p => p.id === loserId)?.name ?? 'Unknown'
+  const currentPlayerWon = currentProfile
+    ? (currentProfile.id === winnerId ? true : (currentProfile.id === loserId ? false : null))
+    : null
+  const formattedScore = formatMatchScore(score1, score2)
+
+  // Update ELO ratings (tries RPC internally)
+  if (p1 && p2) {
+    await updateRatings(p1, p2, winnerId)
   }
+
+  const buildResult = (resultTournament: Tournament): MatchResult => ({
+    tournament: resultTournament,
+    winnerId,
+    currentPlayerWon,
+    winnerName,
+    loserName,
+    score: formattedScore,
+  })
 
   // Try RPC for atomic score submission + bracket advancement
   if (SUPABASE_PRIMARY) {
@@ -1229,7 +1349,7 @@ export async function saveMatchScore(
           if (idx >= 0) all[idx] = serverTournament
           else all.unshift(serverTournament)
           save(all)
-          return serverTournament
+          return buildResult(serverTournament)
         }
       } catch {
         // RPC failed, fall through to local logic
@@ -1295,7 +1415,7 @@ export async function saveMatchScore(
   }
 
   await saveAndSync(all, t)
-  return t
+  return buildResult(t)
 }
 
 export function getPlayerName(tournament: Tournament, playerId: string | null): string {
@@ -1618,10 +1738,6 @@ export function getPlayerTrophies(playerId: string): Trophy[] {
 
 export function getAllTrophies(): Trophy[] {
   return loadTrophies()
-}
-
-function formatMatchScore(score1: number[], score2: number[]): string {
-  return score1.map((s, i) => `${s}-${score2[i]}`).join(' ')
 }
 
 export function awardTournamentTrophies(tournamentId: string, tournamentObj?: Tournament): Trophy[] {
@@ -2097,7 +2213,7 @@ export async function simulateRoundScores(tournamentId: string): Promise<Tournam
     const pick = SCORES[Math.floor(Math.random() * SCORES.length)]
     const winnerId = pick.w === 1 ? match.player1Id! : match.player2Id!
     const result = await saveMatchScore(tournamentId, match.id, pick.s1, pick.s2, winnerId)
-    if (result) updated = result
+    if (result) updated = result.tournament
   }
 
   return updated

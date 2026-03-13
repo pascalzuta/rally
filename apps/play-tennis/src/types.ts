@@ -3,11 +3,18 @@ export interface Player {
   name: string
 }
 
+export type Sex = 'male' | 'female' | 'prefer-not-to-say'
+export type AgeRange = '18-24' | '25-34' | '35-44' | '45-54' | '55+'
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'competitive'
+
 export interface PlayerProfile {
   id: string
   name: string
   county: string
   createdAt: string
+  sex?: Sex
+  ageRange?: AgeRange
+  experienceLevel?: ExperienceLevel
 }
 
 export interface PlayerRating {

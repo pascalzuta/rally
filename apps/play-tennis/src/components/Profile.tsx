@@ -8,6 +8,7 @@ interface Props {
   onLogout: () => void
   onNavigate: (tab: 'home' | 'bracket' | 'playnow') => void
   onViewLeaderboard?: () => void
+  onViewHelp?: () => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -206,7 +207,7 @@ function BadgeIcon({ type }: { type: Badge['type'] }) {
 
 // --- Main Profile ---
 
-export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard }: Props) {
+export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard, onViewHelp }: Props) {
   const rating = getPlayerRating(profile.id, profile.name)
   const label = getRatingLabel(rating.rating)
   const tournaments = getPlayerTournaments(profile.id)
@@ -332,6 +333,18 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
           <h2 className="profile-name">{profile.name}</h2>
           <p className="profile-county">{profile.county}</p>
+          {(profile.experienceLevel || profile.ageRange) && (
+            <div className="profile-details-chips">
+              {profile.experienceLevel && (
+                <span className="profile-detail-chip">
+                  {profile.experienceLevel === 'beginner' ? 'Just started' :
+                   profile.experienceLevel === 'intermediate' ? 'Regular player' :
+                   profile.experienceLevel === 'advanced' ? 'Club player' : 'Tournament player'}
+                </span>
+              )}
+              {profile.ageRange && <span className="profile-detail-chip">{profile.ageRange}</span>}
+            </div>
+          )}
           {totalMatches > 0 && <p className="profile-matches-played">{totalMatches} matches played</p>}
         </div>
       </div>
@@ -566,6 +579,13 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
         )}
       </div>
+
+      {/* Help & FAQ */}
+      {onViewHelp && (
+        <button className="btn btn-large help-link-btn" onClick={onViewHelp}>
+          Help &amp; FAQ
+        </button>
+      )}
 
       {/* Sign Out */}
       <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>

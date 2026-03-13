@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability } from '../store'
-import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
+import { PlayerProfile, AvailabilitySlot, DayOfWeek, Sex, AgeRange, ExperienceLevel } from '../types'
 import { searchCounties } from '../counties'
 
 interface Props {
@@ -86,7 +86,7 @@ const STATE_ABBREVS: Record<string, string> = {
   'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
 }
 
-type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'availability' | 'confirmed'
+type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'details' | 'availability' | 'confirmed'
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
   const [step, setStep] = useState<Step>(inviteCounty ? 'signup' : 'onboard-1')
@@ -99,6 +99,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [suggestedCounty, setSuggestedCounty] = useState<string | null>(null)
   const [detectingLocation, setDetectingLocation] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
+
+  const [sex, setSex] = useState<Sex | ''>('')
+  const [ageRange, setAgeRange] = useState<AgeRange | ''>('')
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | ''>('')
 
   const [selectedQuick, setSelectedQuick] = useState<Set<number>>(new Set())
   const [detailedMode, setDetailedMode] = useState(false)
@@ -167,7 +171,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     if (!firstName.trim() || !lastName.trim() || !county) return
-    setStep('availability')
+    setStep('details')
   }
 
   function toggleQuickSlot(idx: number) {
@@ -190,7 +194,12 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
 
   function handleFinish(skip: boolean) {
-    const p = createProfile(fullName, county)
+    const details = {
+      ...(sex && { sex: sex as Sex }),
+      ...(ageRange && { ageRange: ageRange as AgeRange }),
+      ...(experienceLevel && { experienceLevel: experienceLevel as ExperienceLevel }),
+    }
+    const p = createProfile(fullName, county, Object.keys(details).length > 0 ? details : undefined)
     if (!skip) {
       let slots: AvailabilitySlot[] = []
       if (detailedMode) {
@@ -444,6 +453,90 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               {getPlayerCount(county)} players competing in {county.split(',')[0]}
             </p>
           )}
+        </div>
+      </div>
+    )
+  }
+
+  // --- Step: Details (optional profile fields) ---
+  if (step === 'details') {
+    const EXPERIENCE_OPTIONS: { key: ExperienceLevel; label: string; desc: string }[] = [
+      { key: 'beginner', label: 'Just started', desc: 'Learning the basics' },
+      { key: 'intermediate', label: 'Play regularly', desc: 'Comfortable rallying' },
+      { key: 'advanced', label: 'Club player', desc: 'Strong serve & strategy' },
+      { key: 'competitive', label: 'Tournament player', desc: 'Compete seriously' },
+    ]
+
+    const AGE_OPTIONS: AgeRange[] = ['18-24', '25-34', '35-44', '45-54', '55+']
+
+    const SEX_OPTIONS: { key: Sex; label: string }[] = [
+      { key: 'male', label: 'Male' },
+      { key: 'female', label: 'Female' },
+      { key: 'prefer-not-to-say', label: 'Prefer not to say' },
+    ]
+
+    return (
+      <div className="onboard-screen signup-screen">
+        <div className="signup-content">
+          <div className="signup-header">
+            <h1 className="signup-title">About You</h1>
+            <p className="signup-desc">Helps us find you the right opponents</p>
+          </div>
+
+          <div className="details-field-group">
+            <span className="field-label">Experience level</span>
+            <div className="experience-cards">
+              {EXPERIENCE_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  className={`experience-card ${experienceLevel === opt.key ? 'selected' : ''}`}
+                  onClick={() => setExperienceLevel(experienceLevel === opt.key ? '' : opt.key)}
+                >
+                  <span className="experience-card-label">{opt.label}</span>
+                  <span className="experience-card-desc">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="details-field-group">
+            <span className="field-label">Age range</span>
+            <div className="chip-select">
+              {AGE_OPTIONS.map(age => (
+                <button
+                  key={age}
+                  className={`chip-btn ${ageRange === age ? 'selected' : ''}`}
+                  onClick={() => setAgeRange(ageRange === age ? '' : age)}
+                >
+                  {age}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="details-field-group">
+            <span className="field-label">Sex</span>
+            <div className="chip-select">
+              {SEX_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  className={`chip-btn ${sex === opt.key ? 'selected' : ''}`}
+                  onClick={() => setSex(sex === opt.key ? '' : opt.key)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="availability-actions">
+            <button className="btn btn-primary btn-large" onClick={() => setStep('availability')}>
+              Continue
+            </button>
+            <button className="btn-link" onClick={() => setStep('availability')}>
+              Skip
+            </button>
+          </div>
         </div>
       </div>
     )

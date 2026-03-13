@@ -366,6 +366,9 @@ async function linkProfileToAuth(client: ReturnType<typeof getClient>, county: s
       auth_id: authId,
       player_name: profile.name,
       county: county.toLowerCase(),
+      ...(profile.sex && { sex: profile.sex }),
+      ...(profile.age_range || profile.ageRange ? { age_range: profile.ageRange ?? profile.age_range } : {}),
+      ...(profile.experience_level || profile.experienceLevel ? { experience_level: profile.experienceLevel ?? profile.experience_level } : {}),
     }, { onConflict: 'player_id' })
 
     // Backfill auth_id on lobby row (if exists)

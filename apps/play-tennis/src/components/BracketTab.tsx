@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, MatchResult } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
@@ -11,6 +11,7 @@ interface Props {
   onTournamentUpdated: () => void
   focusMatchId?: string | null
   onFocusConsumed?: () => void
+  onMatchResult?: (result: MatchResult) => void
 }
 
 function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
@@ -51,7 +52,7 @@ function scheduleStatusClass(match: Match): string {
   }
 }
 
-export default function BracketTab({ tournament, currentPlayerId, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
+export default function BracketTab({ tournament, currentPlayerId, onTournamentUpdated, focusMatchId, onFocusConsumed, onMatchResult }: Props) {
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
@@ -127,8 +128,9 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
     onTournamentUpdated()
   }
 
-  function handleScoreSaved() {
+  function handleScoreSaved(result?: MatchResult) {
     setScoringMatchId(null)
+    if (result && onMatchResult) onMatchResult(result)
     refresh()
     // Check if player advanced to a new round
     const updated = getTournament(tournament!.id)

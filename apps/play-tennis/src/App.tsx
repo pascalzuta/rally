@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, MatchResult } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
@@ -11,10 +11,11 @@ import PlayNowTab from './components/PlayNowTab'
 import Profile from './components/Profile'
 import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
+import Help from './components/Help'
 import DevTools from './components/DevTools'
 import './styles.css'
 
-type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard'
+type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
 
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
@@ -37,6 +38,18 @@ export default function App() {
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [postMatchMsg, setPostMatchMsg] = useState<{ type: 'win' | 'loss'; message: string } | null>(null)
+
+  function handleMatchResult(result: MatchResult) {
+    if (result.currentPlayerWon === null) return
+    if (result.currentPlayerWon) {
+      setPostMatchMsg({ type: 'win', message: `Great match! You beat ${result.loserName} ${result.score}` })
+    } else {
+      setPostMatchMsg({ type: 'loss', message: `Good fight. ${result.winnerName} takes the match ${result.score}` })
+    }
+    setTimeout(() => setPostMatchMsg(null), 3500)
+    setRefreshKey(r => r + 1)
+  }
 
   // Count pending actions for notification badge
   const matchActionCount = tournaments.reduce((count, t) => {
@@ -186,6 +199,13 @@ export default function App() {
               </svg>
             </div>
           <div className="top-nav-actions">
+            <button className="top-nav-icon" aria-label="Help" onClick={() => setActiveTab('help')}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </button>
             <div className="notif-wrapper">
               <button className="top-nav-icon" aria-label="Notifications" onClick={() => setShowNotifications(!showNotifications)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -299,6 +319,7 @@ export default function App() {
               onViewLeaderboard={() => setActiveTab('leaderboard')}
               onViewOffers={() => setActiveTab('playnow')}
               onDataChanged={() => setRefreshKey(r => r + 1)}
+              onMatchResult={handleMatchResult}
             />
           )}
 
@@ -307,6 +328,7 @@ export default function App() {
               tournament={activeTournament}
               currentPlayerId={profile.id}
               onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+              onMatchResult={handleMatchResult}
               focusMatchId={focusMatchId}
               onFocusConsumed={() => setFocusMatchId(null)}
             />
@@ -338,7 +360,12 @@ export default function App() {
                 setActiveTab(tab)
               }}
               onViewLeaderboard={() => setActiveTab('leaderboard')}
+              onViewHelp={() => setActiveTab('help')}
             />
+          )}
+
+          {activeTab === 'help' && (
+            <Help onBack={() => setActiveTab('home')} />
           )}
         </main>
 
@@ -372,6 +399,12 @@ export default function App() {
           </button>
         </nav>
       </div>
+      {postMatchMsg && (
+        <div className={`post-match-toast ${postMatchMsg.type}`} onClick={() => setPostMatchMsg(null)}>
+          <span className="post-match-icon">{postMatchMsg.type === 'win' ? '✓' : 'ℹ'}</span>
+          <span className="post-match-text">{postMatchMsg.message}</span>
+        </div>
+      )}
       <DevTools
         onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}
         activeTournamentId={activeTournament?.id ?? null}
