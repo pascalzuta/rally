@@ -111,6 +111,38 @@ export function getSetupTournamentForCounty(county: string): Tournament | undefi
   )
 }
 
+function getNextTournamentNumber(county: string, extraTournaments: Tournament[] = []): number {
+  const persisted = load()
+  const all = [...persisted, ...extraTournaments]
+  const countyTournaments = all.filter(
+    t => t.county.toLowerCase() === county.toLowerCase()
+  )
+  let maxNum = 0
+  for (const t of countyTournaments) {
+    const match = t.name.match(/#(\d+)$/)
+    if (match) {
+      maxNum = Math.max(maxNum, parseInt(match[1], 10))
+    }
+  }
+  return maxNum + 1
+}
+
+function createTournament(county: string, players: LobbyEntry[], extraTournaments: Tournament[] = []): Tournament {
+  const num = getNextTournamentNumber(county, extraTournaments)
+  return {
+    id: generateId(),
+    name: `${county} Open #${num}`,
+    date: new Date().toISOString().split('T')[0],
+    county,
+    format: 'group-knockout',
+    players: players.map(e => ({ id: e.playerId, name: e.playerName })),
+    matches: [],
+    status: 'setup',
+    createdAt: new Date().toISOString(),
+    countdownStartedAt: new Date().toISOString(),
+  }
+}
+
 export function startTournamentFromLobby(county: string): Tournament | null {
   const lobby = loadLobby()
   const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
@@ -126,24 +158,47 @@ export function startTournamentFromLobby(county: string): Tournament | null {
     if (newPlayers.length > 0) {
       const all = load()
       const t = all.find(x => x.id === existing.id)!
+      const overflow: LobbyEntry[] = []
       for (const e of newPlayers) {
-        if (t.players.length >= MAX_PLAYERS) break
-        t.players.push({ id: e.playerId, name: e.playerName })
+        if (t.players.length >= MAX_PLAYERS) {
+          overflow.push(e)
+        } else {
+          t.players.push({ id: e.playerId, name: e.playerName })
+        }
       }
-
-      // Remove added players from lobby
-      const takenIds = new Set(t.players.map(p => p.id))
-      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
-      saveLobby(remainingLobby)
 
       // If we hit max, start immediately
       if (t.players.length >= MAX_PLAYERS) {
         save(all)
-        return generateBracket(t.id) ?? t
+        generateBracket(t.id)
+      } else {
+        save(all)
       }
 
-      save(all)
-      return t
+      // Create overflow tournaments for remaining players
+      const takenIds = new Set(t.players.map(p => p.id))
+      if (overflow.length >= MIN_PLAYERS) {
+        const currentAll = load()
+        const newlyCreated: Tournament[] = []
+        while (overflow.length >= MIN_PLAYERS) {
+          const batch = overflow.splice(0, MAX_PLAYERS)
+          const newTournament = createTournament(county, batch, newlyCreated)
+          currentAll.unshift(newTournament)
+          newlyCreated.push(newTournament)
+          for (const e of batch) takenIds.add(e.playerId)
+          if (batch.length >= MAX_PLAYERS) {
+            save(currentAll)
+            generateBracket(newTournament.id)
+          }
+        }
+        save(currentAll)
+      }
+
+      // Remove all assigned players from lobby
+      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
+      saveLobby(remainingLobby)
+
+      return getTournament(t.id) ?? t
     }
     return existing
   }
@@ -151,36 +206,36 @@ export function startTournamentFromLobby(county: string): Tournament | null {
   // Need at least MIN_PLAYERS to create a tournament
   if (allCounty.length < MIN_PLAYERS) return null
 
-  // Take up to MAX_PLAYERS
-  const countyPlayers = allCounty.slice(0, MAX_PLAYERS)
-  const tournament: Tournament = {
-    id: generateId(),
-    name: `${county} Open`,
-    date: new Date().toISOString().split('T')[0],
-    county,
-    format: 'group-knockout',
-    players: countyPlayers.map(e => ({ id: e.playerId, name: e.playerName })),
-    matches: [],
-    status: 'setup',
-    createdAt: new Date().toISOString(),
-    countdownStartedAt: new Date().toISOString(),
+  // Create tournaments in batches of MAX_PLAYERS
+  const all = load()
+  const remaining = [...allCounty]
+  let firstTournament: Tournament | null = null
+  const takenIds = new Set<string>()
+  const newlyCreated: Tournament[] = []
+
+  while (remaining.length >= MIN_PLAYERS) {
+    const batch = remaining.splice(0, MAX_PLAYERS)
+    const tournament = createTournament(county, batch, newlyCreated)
+    all.unshift(tournament)
+    newlyCreated.push(tournament)
+    for (const e of batch) takenIds.add(e.playerId)
+    if (!firstTournament) firstTournament = tournament
   }
 
-  const all = load()
-  all.unshift(tournament)
   save(all)
 
-  // Remove players who entered the tournament from lobby
-  const takenIds = new Set(countyPlayers.map(e => e.playerId))
+  // Remove players who entered tournaments from lobby
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
   saveLobby(remainingLobby)
 
-  // If we already have max players, start immediately
-  if (countyPlayers.length >= MAX_PLAYERS) {
-    return generateBracket(tournament.id) ?? tournament
+  // Start any tournaments that are already at max capacity
+  for (const t of load()) {
+    if (t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup' && t.players.length >= MAX_PLAYERS) {
+      generateBracket(t.id)
+    }
   }
 
-  return tournament
+  return firstTournament ? (getTournament(firstTournament.id) ?? firstTournament) : null
 }
 
 // Check countdown and start tournament if expired
