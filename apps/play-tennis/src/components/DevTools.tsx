@@ -34,9 +34,9 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
-  function handleAutoConfirm() {
+  async function handleAutoConfirm() {
     if (!activeTournamentId) return
-    const result = autoConfirmAllSchedules(activeTournamentId)
+    const result = await autoConfirmAllSchedules(activeTournamentId)
     if (result) {
       const confirmed = result.matches.filter(m => m.schedule?.status === 'confirmed').length
       setMessage(`${confirmed} matches confirmed`)
@@ -47,12 +47,12 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
-  function handleSimulate() {
+  async function handleSimulate() {
     if (!activeTournamentId) {
       setMessage('No active tournament')
       return
     }
-    const result = simulateRoundScores(activeTournamentId)
+    const result = await simulateRoundScores(activeTournamentId)
     if (!result) {
       setMessage('Could not simulate scores')
     } else if (result.status === 'completed') {
@@ -65,7 +65,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
-  function handleEscalateAll() {
+  async function handleEscalateAll() {
     if (!activeTournamentId) return
     const t = getTournament(activeTournamentId)
     if (!t) { setMessage('No tournament found'); return }
@@ -83,7 +83,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     let confirmed = 0
     let resolved = 0
     for (const match of unconfirmed) {
-      const result = escalateMatch(activeTournamentId, match.id)
+      const result = await escalateMatch(activeTournamentId, match.id)
       if (result) {
         const updated = result.matches.find(m => m.id === match.id)
         if (updated?.schedule?.status === 'confirmed') confirmed++
@@ -101,12 +101,12 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
     setTimeout(() => setMessage(''), 2000)
   }
 
-  function handleSimulateToFinal() {
+  async function handleSimulateToFinal() {
     if (!profile) {
       setMessage('Register first')
       return
     }
-    const result = simulateToFinal(profile.id, county)
+    const result = await simulateToFinal(profile.id, county)
     if (result) {
       setMessage('Tournament ready — score the final!')
       onTournamentCreated?.(result.tournamentId)
@@ -119,10 +119,10 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
 
   const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
 
-  function handleForceStart() {
+  async function handleForceStart() {
     const t = setupTournament
     if (!t) return
-    const result = forceStartTournament(t.id)
+    const result = await forceStartTournament(t.id)
     if (result && result.status === 'in-progress') {
       setMessage(`Tournament started with ${result.players.length} players!`)
       onTournamentCreated?.(result.id)

@@ -140,8 +140,8 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
     setTick(t => t + 1)
   }
 
-  function handleClaim(broadcast: MatchBroadcast) {
-    const result = claimBroadcast(broadcast.id, currentPlayerId)
+  async function handleClaim(broadcast: MatchBroadcast) {
+    const result = await claimBroadcast(broadcast.id, currentPlayerId)
     if (result) {
       setFeedback('Match confirmed!')
       setClaimingId(null)

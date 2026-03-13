@@ -343,9 +343,9 @@ function InlineScoreEntry({ tournament, matchId, onSaved }: {
 
   const visibleSets = showThirdSet ? 3 : 2
 
-  function handleSave() {
+  async function handleSave() {
     if (!scores || !winnerId) return
-    saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
+    await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
     onSaved()
   }
 

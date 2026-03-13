@@ -268,8 +268,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     setTick(t => t + 1)
   }
 
-  function handleAcceptOffer(offer: MatchOffer) {
-    const result = acceptMatchOffer(offer.offerId, currentPlayerId)
+  async function handleAcceptOffer(offer: MatchOffer) {
+    const result = await acceptMatchOffer(offer.offerId, currentPlayerId)
     if ('error' in result) {
       setFeedback(result.error)
     } else {
