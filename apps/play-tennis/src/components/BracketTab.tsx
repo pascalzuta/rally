@@ -147,8 +147,8 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
     }
   }
 
-  function handleLeave() {
-    leaveTournament(tournament!.id, currentPlayerId)
+  async function handleLeave() {
+    await leaveTournament(tournament!.id, currentPlayerId)
     setShowLeaveConfirm(false)
     refresh()
   }

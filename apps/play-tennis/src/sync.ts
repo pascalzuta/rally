@@ -1,6 +1,9 @@
 import { RealtimeChannel } from '@supabase/supabase-js'
-import { initSupabase, getClient } from './supabase'
+import { initSupabase, getClient, getAuthUserId } from './supabase'
 import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot } from './types'
+
+// Feature flag: set to false to revert to localStorage-first (old behavior)
+export const SUPABASE_PRIMARY = true
 
 // Custom event dispatched when remote data arrives
 export const SYNC_EVENT = 'rally-sync-update'
@@ -13,8 +16,124 @@ const STORAGE_KEY = 'play-tennis-data'
 const LOBBY_KEY = 'play-tennis-lobby'
 const RATINGS_KEY = 'play-tennis-ratings'
 
-// --- Supabase write helpers ---
+// --- Sync result type ---
 
+export interface SyncResult {
+  success: boolean
+  error?: string
+  conflict?: boolean
+}
+
+// --- Tournament timestamp tracking for optimistic locking ---
+
+const tournamentTimestamps = new Map<string, string>()
+
+export function getTournamentTimestamp(id: string): string | undefined {
+  return tournamentTimestamps.get(id)
+}
+
+export function setTournamentTimestamp(id: string, ts: string): void {
+  tournamentTimestamps.set(id, ts)
+}
+
+// --- Supabase-first write helpers (Phase 1) ---
+
+export async function syncTournament(tournament: Tournament, expectedUpdatedAt?: string): Promise<SyncResult> {
+  const client = getClient()
+  if (!client) return { success: true } // offline: fall through to localStorage
+
+  const row = {
+    id: tournament.id,
+    county: tournament.county.toLowerCase(),
+    data: tournament,
+  }
+
+  if (expectedUpdatedAt) {
+    // Optimistic lock: only update if updated_at matches
+    const { error, count } = await client
+      .from('tournaments')
+      .update({ data: tournament })
+      .eq('id', tournament.id)
+      .eq('updated_at', expectedUpdatedAt)
+
+    if (error) return { success: false, error: error.message }
+    if (count === 0) {
+      // Could be a conflict OR the row doesn't exist yet
+      // Check if row exists
+      const { data: existing } = await client
+        .from('tournaments')
+        .select('id')
+        .eq('id', tournament.id)
+        .single()
+
+      if (existing) {
+        return { success: false, conflict: true }
+      }
+      // Row doesn't exist — insert it
+      const { error: insertError } = await client
+        .from('tournaments')
+        .insert(row)
+      if (insertError) return { success: false, error: insertError.message }
+    }
+  } else {
+    // No expected timestamp — upsert (new tournament or first sync)
+    const { error } = await client
+      .from('tournaments')
+      .upsert(row, { onConflict: 'id' })
+    if (error) return { success: false, error: error.message }
+  }
+
+  // Fetch the new updated_at after write
+  const { data: refreshed } = await client
+    .from('tournaments')
+    .select('updated_at')
+    .eq('id', tournament.id)
+    .single()
+  if (refreshed) {
+    tournamentTimestamps.set(tournament.id, refreshed.updated_at)
+  }
+
+  return { success: true }
+}
+
+export async function syncLobbyEntry(entry: LobbyEntry): Promise<SyncResult> {
+  const client = getClient()
+  if (!client) return { success: true }
+
+  const { error } = await client.from('lobby').upsert({
+    player_id: entry.playerId,
+    player_name: entry.playerName,
+    county: entry.county.toLowerCase(),
+    joined_at: entry.joinedAt,
+  }, { onConflict: 'player_id' })
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function syncRemoveLobbyEntry(playerId: string): Promise<SyncResult> {
+  const client = getClient()
+  if (!client) return { success: true }
+
+  const { error } = await client.from('lobby').delete().eq('player_id', playerId)
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function syncRatingsForPlayer(playerId: string, rating: PlayerRating): Promise<SyncResult> {
+  const client = getClient()
+  if (!client) return { success: true }
+
+  const { error } = await client.from('ratings').upsert({
+    player_id: playerId,
+    data: rating,
+  }, { onConflict: 'player_id' })
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+// Legacy fire-and-forget functions (used when SUPABASE_PRIMARY is false)
 export function syncTournaments(tournaments: Tournament[]): void {
   const client = getClient()
   if (!client) return
@@ -31,7 +150,6 @@ export function syncLobbyForCounty(county: string, entries: LobbyEntry[]): void 
   const client = getClient()
   if (!client) return
   const countyKey = county.toLowerCase()
-  // Delete removed entries, then upsert current ones
   const playerIds = entries.map(e => e.playerId)
   client.from('lobby').delete()
     .eq('county', countyKey)
@@ -64,7 +182,7 @@ export function syncRatings(ratings: Record<string, PlayerRating>): void {
 }
 
 export function syncAvailability(playerId: string, slots: AvailabilitySlot[]): void {
-  // Availability stays local-only (not critical for cross-device discovery)
+  // Availability stays local-only
 }
 
 // --- Supabase Realtime subscriptions ---
@@ -77,7 +195,6 @@ function subscribeToCounty(county: string): void {
 
   const countyKey = county.toLowerCase()
 
-  // Subscribe to all table changes via a single Realtime channel
   channel = client.channel(`county-${countyKey}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby', filter: `county=eq.${countyKey}` }, () => {
       refreshLobbyFromRemote(countyKey)
@@ -113,12 +230,42 @@ async function refreshTournamentsFromRemote(countyKey: string): Promise<void> {
   if (!client) return
   const { data } = await client.from('tournaments').select('*').eq('county', countyKey)
   if (!data) return
-  const remoteTournaments: Tournament[] = data.map(row => row.data as Tournament)
+  const remoteTournaments: Tournament[] = data.map(row => {
+    // Track updated_at for optimistic locking
+    if (row.updated_at) {
+      tournamentTimestamps.set(row.id, row.updated_at)
+    }
+    return row.data as Tournament
+  })
   const remoteIds = new Set(remoteTournaments.map(t => t.id))
   const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
   const others = localTournaments.filter(t => !remoteIds.has(t.id) && t.county.toLowerCase() !== countyKey)
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...remoteTournaments, ...others]))
   dispatchSync()
+}
+
+export async function refreshTournamentById(tournamentId: string): Promise<Tournament | null> {
+  const client = getClient()
+  if (!client) return null
+  const { data } = await client.from('tournaments').select('*').eq('id', tournamentId).single()
+  if (!data) return null
+
+  if (data.updated_at) {
+    tournamentTimestamps.set(data.id, data.updated_at)
+  }
+  const tournament = data.data as Tournament
+
+  // Update localStorage cache
+  const local: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
+  const idx = local.findIndex(t => t.id === tournamentId)
+  if (idx >= 0) {
+    local[idx] = tournament
+  } else {
+    local.unshift(tournament)
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(local))
+  dispatchSync()
+  return tournament
 }
 
 async function refreshRatingsFromRemote(): Promise<void> {
@@ -141,52 +288,100 @@ export async function initSync(county: string): Promise<void> {
 
   const countyKey = county.toLowerCase()
 
-  // Push local lobby entries to remote
-  const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
-  const localCountyLobby = localLobby.filter(e => e.county.toLowerCase() === countyKey)
-  if (localCountyLobby.length > 0) {
-    await client.from('lobby').upsert(
-      localCountyLobby.map(e => ({
-        player_id: e.playerId,
-        player_name: e.playerName,
-        county: countyKey,
-        joined_at: e.joinedAt,
-      })),
-      { onConflict: 'player_id' }
-    )
+  // Flush any offline writes first
+  const { flushQueue } = await import('./offline-queue')
+  await flushQueue()
+
+  if (!SUPABASE_PRIMARY) {
+    // Legacy mode: push local data to remote (old behavior)
+    const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
+    const localCountyLobby = localLobby.filter(e => e.county.toLowerCase() === countyKey)
+    if (localCountyLobby.length > 0) {
+      await client.from('lobby').upsert(
+        localCountyLobby.map(e => ({
+          player_id: e.playerId,
+          player_name: e.playerName,
+          county: countyKey,
+          joined_at: e.joinedAt,
+        })),
+        { onConflict: 'player_id' }
+      )
+    }
+
+    const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
+    const localCountyTournaments = localTournaments.filter(t => t.county.toLowerCase() === countyKey)
+    if (localCountyTournaments.length > 0) {
+      await client.from('tournaments').upsert(
+        localCountyTournaments.map(t => ({
+          id: t.id,
+          county: countyKey,
+          data: t,
+        })),
+        { onConflict: 'id' }
+      )
+    }
+
+    const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
+    const ratingRows = Object.entries(localRatings).map(([id, r]) => ({
+      player_id: id,
+      data: r,
+    }))
+    if (ratingRows.length > 0) {
+      await client.from('ratings').upsert(ratingRows, { onConflict: 'player_id' })
+    }
   }
 
-  // Push local tournaments to remote
-  const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
-  const localCountyTournaments = localTournaments.filter(t => t.county.toLowerCase() === countyKey)
-  if (localCountyTournaments.length > 0) {
-    await client.from('tournaments').upsert(
-      localCountyTournaments.map(t => ({
-        id: t.id,
-        county: countyKey,
-        data: t,
-      })),
-      { onConflict: 'id' }
-    )
-  }
-
-  // Push local ratings
-  const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
-  const ratingRows = Object.entries(localRatings).map(([id, r]) => ({
-    player_id: id,
-    data: r,
-  }))
-  if (ratingRows.length > 0) {
-    await client.from('ratings').upsert(ratingRows, { onConflict: 'player_id' })
-  }
-
-  // Fetch remote data into localStorage
+  // Fetch remote data into localStorage (both modes)
   await refreshLobbyFromRemote(countyKey)
   await refreshTournamentsFromRemote(countyKey)
   await refreshRatingsFromRemote()
 
+  // Link existing localStorage profile to auth session (Phase 3 migration)
+  await linkProfileToAuth(client, county)
+
   // Subscribe to real-time changes
   subscribeToCounty(county)
+}
+
+/**
+ * Phase 3: Link existing localStorage profile to Supabase auth.
+ * On first run after auth is enabled, this upserts the player into the
+ * `players` table and backfills `auth_id` on lobby/ratings rows.
+ */
+async function linkProfileToAuth(client: ReturnType<typeof getClient>, county: string): Promise<void> {
+  if (!client) return
+  const authId = await getAuthUserId()
+  if (!authId) return
+
+  const PROFILE_KEY = 'play-tennis-profile'
+  try {
+    const profileStr = localStorage.getItem(PROFILE_KEY)
+    if (!profileStr) return
+    const profile = JSON.parse(profileStr)
+    if (!profile?.id || !profile?.name) return
+
+    // Upsert into players table (idempotent)
+    await client.from('players').upsert({
+      player_id: profile.id,
+      auth_id: authId,
+      player_name: profile.name,
+      county: county.toLowerCase(),
+    }, { onConflict: 'player_id' })
+
+    // Backfill auth_id on lobby row (if exists)
+    await client.from('lobby')
+      .update({ auth_id: authId })
+      .eq('player_id', profile.id)
+      .is('auth_id', null)
+
+    // Backfill auth_id on ratings row (if exists)
+    await client.from('ratings')
+      .update({ auth_id: authId })
+      .eq('player_id', profile.id)
+      .is('auth_id', null)
+  } catch {
+    // Migration is best-effort — don't block app startup
+  }
 }
 
 function safeParseJSON<T>(data: string | null, fallback: T): T {

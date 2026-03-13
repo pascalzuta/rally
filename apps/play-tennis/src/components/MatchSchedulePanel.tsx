@@ -116,14 +116,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const acceptableProposals = pendingProposals.filter(p => p.proposedBy !== currentPlayerId)
   const myPendingProposals = pendingProposals.filter(p => p.proposedBy === currentPlayerId)
 
-  function handleAccept(proposalId: string) {
-    acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
+  async function handleAccept(proposalId: string) {
+    await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
     onUpdated()
   }
 
-  function handlePropose() {
+  async function handlePropose() {
     if (!propDay || propStart >= propEnd) return
-    proposeNewSlots(tournament.id, match.id, currentPlayerId, [
+    await proposeNewSlots(tournament.id, match.id, currentPlayerId, [
       { day: propDay as DayOfWeek, startHour: propStart, endHour: propEnd }
     ])
     setShowPropose(false)

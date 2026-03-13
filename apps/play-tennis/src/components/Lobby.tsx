@@ -68,10 +68,11 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
         return
       }
       if (remaining <= 0) {
-        const started = checkCountdownExpired(setupTournament.id)
-        if (started && started.status === 'in-progress') {
-          onTournamentCreated(started.id)
-        }
+        checkCountdownExpired(setupTournament.id).then(started => {
+          if (started && started.status === 'in-progress') {
+            onTournamentCreated(started.id)
+          }
+        })
         setCountdown(null)
         if (timerRef.current) clearInterval(timerRef.current)
         return
@@ -89,13 +90,13 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
     setSetupTournament(t ?? null)
   }
 
-  function handleJoin() {
-    const updated = joinLobby(profile)
+  async function handleJoin() {
+    const updated = await joinLobby(profile)
     setEntries(updated)
     setJoined(true)
 
     if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
-      const tournament = startTournamentFromLobby(profile.county)
+      const tournament = await startTournamentFromLobby(profile.county)
       if (tournament) {
         if (tournament.status === 'in-progress') {
           onTournamentCreated(tournament.id)
@@ -108,8 +109,8 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
     }
   }
 
-  function handleLeave() {
-    leaveLobby(profile.id)
+  async function handleLeave() {
+    await leaveLobby(profile.id)
     setEntries(getLobbyByCounty(profile.county))
     setJoined(false)
   }

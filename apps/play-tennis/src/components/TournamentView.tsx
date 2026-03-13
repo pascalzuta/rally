@@ -100,8 +100,8 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     refresh()
   }
 
-  function handleLeave() {
-    leaveTournament(tournamentId, currentPlayerId)
+  async function handleLeave() {
+    await leaveTournament(tournamentId, currentPlayerId)
     setShowLeaveConfirm(false)
     onBack()
   }

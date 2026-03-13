@@ -1,5 +1,13 @@
 import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType } from './types'
-import { syncTournaments, syncLobbyForCounty, syncRatings, syncAvailability } from './sync'
+import {
+  SUPABASE_PRIMARY,
+  syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
+  syncTournaments, syncLobbyForCounty, syncRatings, syncAvailability,
+  getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
+  SyncResult,
+} from './sync'
+import { getClient } from './supabase'
+import { enqueue } from './offline-queue'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
@@ -31,6 +39,10 @@ export function getProfile(): PlayerProfile | null {
 }
 
 export function createProfile(name: string, county: string): PlayerProfile {
+  // Duplicate guard: return existing profile if one exists
+  const existing = getProfile()
+  if (existing) return existing
+
   const profile: PlayerProfile = {
     id: generateId(),
     name: name.trim(),
@@ -58,15 +70,16 @@ function loadLobby(): LobbyEntry[] {
 
 function saveLobby(lobby: LobbyEntry[]): void {
   localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
-  // Sync each county's lobby entries to Firebase
-  const byCounty = new Map<string, LobbyEntry[]>()
-  for (const e of lobby) {
-    const key = e.county.toLowerCase()
-    if (!byCounty.has(key)) byCounty.set(key, [])
-    byCounty.get(key)!.push(e)
-  }
-  for (const [county, entries] of byCounty) {
-    syncLobbyForCounty(county, entries)
+  if (!SUPABASE_PRIMARY) {
+    const byCounty = new Map<string, LobbyEntry[]>()
+    for (const e of lobby) {
+      const key = e.county.toLowerCase()
+      if (!byCounty.has(key)) byCounty.set(key, [])
+      byCounty.get(key)!.push(e)
+    }
+    for (const [county, entries] of byCounty) {
+      syncLobbyForCounty(county, entries)
+    }
   }
 }
 
@@ -78,21 +91,84 @@ export function isInLobby(playerId: string): boolean {
   return loadLobby().some(e => e.playerId === playerId)
 }
 
-export function joinLobby(profile: PlayerProfile): LobbyEntry[] {
+export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   const lobby = loadLobby()
   if (lobby.some(e => e.playerId === profile.id)) return getLobbyByCounty(profile.county)
-  lobby.push({
+  const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
     county: profile.county,
     joinedAt: new Date().toISOString(),
-  })
+  }
+  lobby.push(entry)
+
+  if (SUPABASE_PRIMARY) {
+    // Try RPC first for atomic operation
+    const client = getClient()
+    if (client) {
+      try {
+        const { data, error } = await client.rpc('rpc_join_lobby', {
+          p_player_id: entry.playerId,
+          p_player_name: entry.playerName,
+          p_county: entry.county,
+          p_joined_at: entry.joinedAt,
+        })
+        if (!error && data) {
+          // Update local lobby from RPC response
+          const entries: LobbyEntry[] = (data.entries ?? []).map((e: any) => ({
+            playerId: e.playerId,
+            playerName: e.playerName,
+            county: e.county,
+            joinedAt: e.joinedAt,
+          }))
+          const otherCounties = loadLobby().filter(e => e.county.toLowerCase() !== profile.county.toLowerCase())
+          saveLobby([...otherCounties, ...entries])
+          return getLobbyByCounty(profile.county)
+        }
+      } catch {
+        // RPC failed, fall through to Phase 1 pattern
+      }
+    }
+
+    // Phase 1 fallback: direct sync
+    const result = await syncLobbyEntry(entry)
+    if (!result.success) {
+      // Network error: save locally + queue
+      localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
+      enqueue('lobby_add', entry)
+      return getLobbyByCounty(profile.county)
+    }
+  }
   saveLobby(lobby)
   return getLobbyByCounty(profile.county)
 }
 
-export function leaveLobby(playerId: string): void {
+export async function leaveLobby(playerId: string): Promise<void> {
   const lobby = loadLobby().filter(e => e.playerId !== playerId)
+
+  if (SUPABASE_PRIMARY) {
+    // Try RPC first
+    const client = getClient()
+    if (client) {
+      try {
+        const { error } = await client.rpc('rpc_leave_lobby', { p_player_id: playerId })
+        if (!error) {
+          saveLobby(lobby)
+          return
+        }
+      } catch {
+        // RPC failed, fall through
+      }
+    }
+
+    // Phase 1 fallback
+    const result = await syncRemoveLobbyEntry(playerId)
+    if (!result.success) {
+      localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
+      enqueue('lobby_remove', { playerId })
+      return
+    }
+  }
   saveLobby(lobby)
 }
 
@@ -112,7 +188,39 @@ export function getSetupTournamentForCounty(county: string): Tournament | undefi
   )
 }
 
-export function startTournamentFromLobby(county: string): Tournament | null {
+function getNextTournamentNumber(county: string, extraTournaments: Tournament[] = []): number {
+  const persisted = load()
+  const all = [...persisted, ...extraTournaments]
+  const countyTournaments = all.filter(
+    t => t.county.toLowerCase() === county.toLowerCase()
+  )
+  let maxNum = 0
+  for (const t of countyTournaments) {
+    const match = t.name.match(/#(\d+)$/)
+    if (match) {
+      maxNum = Math.max(maxNum, parseInt(match[1], 10))
+    }
+  }
+  return maxNum + 1
+}
+
+function createTournament(county: string, players: LobbyEntry[], extraTournaments: Tournament[] = []): Tournament {
+  const num = getNextTournamentNumber(county, extraTournaments)
+  return {
+    id: generateId(),
+    name: `${county} Open #${num}`,
+    date: new Date().toISOString().split('T')[0],
+    county,
+    format: 'group-knockout',
+    players: players.map(e => ({ id: e.playerId, name: e.playerName })),
+    matches: [],
+    status: 'setup',
+    createdAt: new Date().toISOString(),
+    countdownStartedAt: new Date().toISOString(),
+  }
+}
+
+export async function startTournamentFromLobby(county: string): Promise<Tournament | null> {
   const lobby = loadLobby()
   const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
 
@@ -127,24 +235,47 @@ export function startTournamentFromLobby(county: string): Tournament | null {
     if (newPlayers.length > 0) {
       const all = load()
       const t = all.find(x => x.id === existing.id)!
+      const overflow: LobbyEntry[] = []
       for (const e of newPlayers) {
-        if (t.players.length >= MAX_PLAYERS) break
-        t.players.push({ id: e.playerId, name: e.playerName })
+        if (t.players.length >= MAX_PLAYERS) {
+          overflow.push(e)
+        } else {
+          t.players.push({ id: e.playerId, name: e.playerName })
+        }
       }
-
-      // Remove added players from lobby
-      const takenIds = new Set(t.players.map(p => p.id))
-      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
-      saveLobby(remainingLobby)
 
       // If we hit max, start immediately
       if (t.players.length >= MAX_PLAYERS) {
-        save(all)
-        return generateBracket(t.id) ?? t
+        await saveAndSync(all, t)
+        await generateBracket(t.id)
+      } else {
+        await saveAndSync(all, t)
       }
 
-      save(all)
-      return t
+      // Create overflow tournaments for remaining players
+      const takenIds = new Set(t.players.map(p => p.id))
+      if (overflow.length >= MIN_PLAYERS) {
+        const currentAll = load()
+        const newlyCreated: Tournament[] = []
+        while (overflow.length >= MIN_PLAYERS) {
+          const batch = overflow.splice(0, MAX_PLAYERS)
+          const newTournament = createTournament(county, batch, newlyCreated)
+          currentAll.unshift(newTournament)
+          newlyCreated.push(newTournament)
+          for (const e of batch) takenIds.add(e.playerId)
+          if (batch.length >= MAX_PLAYERS) {
+            await saveAndSync(currentAll, newTournament)
+            await generateBracket(newTournament.id)
+          }
+        }
+        save(currentAll)
+      }
+
+      // Remove all assigned players from lobby
+      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
+      saveLobby(remainingLobby)
+
+      return getTournament(t.id) ?? t
     }
     return existing
   }
@@ -152,40 +283,49 @@ export function startTournamentFromLobby(county: string): Tournament | null {
   // Need at least MIN_PLAYERS to create a tournament
   if (allCounty.length < MIN_PLAYERS) return null
 
-  // Take up to MAX_PLAYERS
-  const countyPlayers = allCounty.slice(0, MAX_PLAYERS)
-  const tournament: Tournament = {
-    id: generateId(),
-    name: `${county} Open`,
-    date: new Date().toISOString().split('T')[0],
-    county,
-    format: 'group-knockout',
-    players: countyPlayers.map(e => ({ id: e.playerId, name: e.playerName })),
-    matches: [],
-    status: 'setup',
-    createdAt: new Date().toISOString(),
-    countdownStartedAt: new Date().toISOString(),
+  // Create tournaments in batches of MAX_PLAYERS
+  const all = load()
+  const remaining = [...allCounty]
+  let firstTournament: Tournament | null = null
+  const takenIds = new Set<string>()
+  const newlyCreated: Tournament[] = []
+
+  while (remaining.length >= MIN_PLAYERS) {
+    const batch = remaining.splice(0, MAX_PLAYERS)
+    const tournament = createTournament(county, batch, newlyCreated)
+    all.unshift(tournament)
+    newlyCreated.push(tournament)
+    for (const e of batch) takenIds.add(e.playerId)
+    if (!firstTournament) firstTournament = tournament
   }
 
-  const all = load()
-  all.unshift(tournament)
+  // Sync each new tournament to Supabase
+  for (const t of newlyCreated) {
+    await saveAndSync(all, t)
+  }
   save(all)
 
-  // Remove players who entered the tournament from lobby
-  const takenIds = new Set(countyPlayers.map(e => e.playerId))
+  // Remove players who entered tournaments from lobby
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
   saveLobby(remainingLobby)
-
-  // If we already have max players, start immediately
-  if (countyPlayers.length >= MAX_PLAYERS) {
-    return generateBracket(tournament.id) ?? tournament
+  if (SUPABASE_PRIMARY) {
+    for (const id of takenIds) {
+      syncRemoveLobbyEntry(id).catch(() => enqueue('lobby_remove', { playerId: id }))
+    }
   }
 
-  return tournament
+  // Start any tournaments that are already at max capacity
+  for (const t of load()) {
+    if (t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup' && t.players.length >= MAX_PLAYERS) {
+      await generateBracket(t.id)
+    }
+  }
+
+  return firstTournament ? (getTournament(firstTournament.id) ?? firstTournament) : null
 }
 
 // Check countdown and start tournament if expired
-export function checkCountdownExpired(tournamentId: string): Tournament | undefined {
+export async function checkCountdownExpired(tournamentId: string): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t || t.status !== 'setup' || !t.countdownStartedAt) return undefined
@@ -193,16 +333,16 @@ export function checkCountdownExpired(tournamentId: string): Tournament | undefi
   const remaining = getCountdownRemaining(t)
   if (remaining !== null && remaining <= 0 && t.players.length >= MIN_PLAYERS) {
     save(all)
-    return generateBracket(t.id)
+    return await generateBracket(t.id)
   }
   return undefined
 }
 
 // Force-start a setup tournament (dev tool)
-export function forceStartTournament(tournamentId: string): Tournament | undefined {
+export async function forceStartTournament(tournamentId: string): Promise<Tournament | undefined> {
   const t = getTournament(tournamentId)
   if (!t || t.status !== 'setup') return undefined
-  return generateBracket(tournamentId)
+  return await generateBracket(tournamentId)
 }
 
 // --- Availability ---
@@ -364,12 +504,12 @@ export function generateMatchSchedule(
   }
 }
 
-export function acceptProposal(
+export async function acceptProposal(
   tournamentId: string,
   matchId: string,
   proposalId: string,
   acceptedBy: string
-): Tournament | undefined {
+): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
@@ -396,16 +536,16 @@ export function acceptProposal(
   if (!match.schedule.participationScores) match.schedule.participationScores = {}
   match.schedule.participationScores[acceptedBy] = (match.schedule.participationScores[acceptedBy] ?? 0) + 4
 
-  save(all)
+  await saveAndSync(all, t)
   return t
 }
 
-export function proposeNewSlots(
+export async function proposeNewSlots(
   tournamentId: string,
   matchId: string,
   proposedBy: string,
   slots: { day: DayOfWeek; startHour: number; endHour: number }[]
-): Tournament | undefined {
+): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
@@ -432,14 +572,14 @@ export function proposeNewSlots(
   if (!match.schedule.participationScores) match.schedule.participationScores = {}
   match.schedule.participationScores[proposedBy] = (match.schedule.participationScores[proposedBy] ?? 0) + 3
 
-  save(all)
+  await saveAndSync(all, t)
   return t
 }
 
-export function escalateMatch(
+export async function escalateMatch(
   tournamentId: string,
   matchId: string
-): Tournament | undefined {
+): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
@@ -467,10 +607,10 @@ export function escalateMatch(
 
   // Day 4+: trigger resolution based on participation scores
   if (match.schedule.escalationDay >= 4 && match.schedule.status === 'escalated') {
-    resolveMatchByParticipation(t, match)
+    await resolveMatchByParticipation(t, match)
   }
 
-  save(all)
+  await saveAndSync(all, t)
   return t
 }
 
@@ -487,7 +627,7 @@ export function getParticipationLabel(score: number): string {
   return 'Inactive'
 }
 
-function resolveMatchByParticipation(tournament: Tournament, match: Match): void {
+async function resolveMatchByParticipation(tournament: Tournament, match: Match): Promise<void> {
   if (!match.schedule || !match.player1Id || !match.player2Id) return
 
   const scores = match.schedule.participationScores ?? {}
@@ -515,7 +655,7 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
     // Update Elo
     const p1 = tournament.players.find(p => p.id === match.player1Id)
     const p2 = tournament.players.find(p => p.id === match.player2Id)
-    if (p1 && p2) updateRatings(p1, p2, p1.id)
+    if (p1 && p2) await updateRatings(p1, p2, p1.id)
 
     // Advance winner
     advanceWinner(tournament, match, match.player1Id)
@@ -534,7 +674,7 @@ function resolveMatchByParticipation(tournament: Tournament, match: Match): void
 
     const p1 = tournament.players.find(p => p.id === match.player1Id)
     const p2 = tournament.players.find(p => p.id === match.player2Id)
-    if (p1 && p2) updateRatings(p1, p2, p2.id)
+    if (p1 && p2) await updateRatings(p1, p2, p2.id)
 
     advanceWinner(tournament, match, match.player2Id)
   } else if (p1Above && p2Above) {
@@ -628,7 +768,29 @@ function load(): Tournament[] {
 
 function save(tournaments: Tournament[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tournaments))
-  syncTournaments(tournaments)
+  if (!SUPABASE_PRIMARY) {
+    syncTournaments(tournaments)
+  }
+}
+
+/** Supabase-first save: syncs a specific tournament, then updates localStorage */
+async function saveAndSync(all: Tournament[], changedTournament: Tournament): Promise<SyncResult> {
+  if (SUPABASE_PRIMARY) {
+    const result = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
+    if (!result.success) {
+      if (result.conflict) {
+        // Refresh from remote — caller should re-read
+        await refreshTournamentById(changedTournament.id)
+        return result
+      }
+      // Network error: save locally + queue
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+      enqueue('tournament', changedTournament)
+      return { success: true }
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  return { success: true }
 }
 
 export function getTournaments(): Tournament[] {
@@ -647,12 +809,20 @@ export function getTournament(id: string): Tournament | undefined {
   return load().find(t => t.id === id)
 }
 
-export function deleteTournament(tournamentId: string): void {
+export async function deleteTournament(tournamentId: string): Promise<void> {
   const all = load().filter(t => t.id !== tournamentId)
   save(all)
+  // Also delete from Supabase
+  if (SUPABASE_PRIMARY) {
+    const { getClient } = await import('./supabase')
+    const client = getClient()
+    if (client) {
+      await client.from('tournaments').delete().eq('id', tournamentId)
+    }
+  }
 }
 
-export function leaveTournament(tournamentId: string, playerId: string): boolean {
+export async function leaveTournament(tournamentId: string, playerId: string): Promise<boolean> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return false
@@ -666,8 +836,15 @@ export function leaveTournament(tournamentId: string, playerId: string): boolean
     if (t.players.length === 0) {
       // Remove empty tournament
       save(all.filter(x => x.id !== tournamentId))
+      if (SUPABASE_PRIMARY) {
+        const { getClient } = await import('./supabase')
+        const client = getClient()
+        if (client) {
+          await client.from('tournaments').delete().eq('id', tournamentId)
+        }
+      }
     } else {
-      save(all)
+      await saveAndSync(all, t)
     }
     return true
   }
@@ -719,7 +896,7 @@ export function leaveTournament(tournamentId: string, playerId: string): boolean
     }
   }
 
-  save(all)
+  await saveAndSync(all, t)
   return true
 }
 
@@ -740,7 +917,7 @@ function getSeedPositions(size: number): number[] {
   return positions
 }
 
-export function generateBracket(tournamentId: string): Tournament | undefined {
+export async function generateBracket(tournamentId: string): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t || t.players.length < 2) return undefined
@@ -848,7 +1025,7 @@ export function generateBracket(tournamentId: string): Tournament | undefined {
   }
 
   t.status = 'in-progress'
-  save(all)
+  await saveAndSync(all, t)
   return t
 }
 
@@ -984,13 +1161,13 @@ function advanceByes(matches: Match[]): void {
   }
 }
 
-export function saveMatchScore(
+export async function saveMatchScore(
   tournamentId: string,
   matchId: string,
   score1: number[],
   score2: number[],
   winnerId: string
-): Tournament | undefined {
+): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
@@ -998,18 +1175,74 @@ export function saveMatchScore(
   const match = t.matches.find(m => m.id === matchId)
   if (!match) return undefined
 
-  match.score1 = score1
-  match.score2 = score2
-  match.winnerId = winnerId
-  match.completed = true
-
-  // Update global Elo ratings
+  // Update ELO ratings (tries RPC internally)
   const p1 = t.players.find(p => p.id === match.player1Id)
   const p2 = t.players.find(p => p.id === match.player2Id)
   const winner = t.players.find(p => p.id === winnerId)
   if (p1 && p2 && winner) {
-    updateRatings(p1, p2, winner.id)
+    await updateRatings(p1, p2, winner.id)
   }
+
+  // Try RPC for atomic score submission + bracket advancement
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        const { data, error } = await client.rpc('rpc_submit_score', {
+          p_tournament_id: tournamentId,
+          p_match_id: matchId,
+          p_score1: score1,
+          p_score2: score2,
+          p_winner_id: winnerId,
+        })
+        if (!error && data?.success) {
+          // Server handled score + advancement atomically
+          const serverTournament = data.tournament as Tournament
+          if (data.updated_at) {
+            setTournamentTimestamp(tournamentId, data.updated_at)
+          }
+
+          // Handle group-knockout phase transition (complex client logic)
+          if (serverTournament.format === 'group-knockout') {
+            const serverMatch = serverTournament.matches.find((m: Match) => m.id === matchId)
+            if (serverMatch?.phase === 'group') {
+              const groupMatches = serverTournament.matches.filter((m: Match) => m.phase === 'group')
+              const allGroupDone = groupMatches.every((m: Match) => m.completed)
+              if (allGroupDone && !serverTournament.groupPhaseComplete) {
+                generateKnockoutPhase(serverTournament)
+                // Re-sync the updated tournament with knockout phase
+                await syncTournament(serverTournament, data.updated_at)
+              }
+            }
+          }
+
+          // Award trophies/badges locally
+          const allDone = serverTournament.matches.every((m: Match) => m.completed)
+          if (allDone && serverTournament.status === 'completed') {
+            awardTournamentTrophies(serverTournament.id, serverTournament)
+            for (const p of serverTournament.players) {
+              checkAndAwardBadges(p.id, serverTournament.id, serverTournament)
+            }
+          }
+
+          // Update local cache
+          const idx = all.findIndex(x => x.id === tournamentId)
+          if (idx >= 0) all[idx] = serverTournament
+          else all.unshift(serverTournament)
+          save(all)
+          return serverTournament
+        }
+      } catch {
+        // RPC failed, fall through to local logic
+      }
+    }
+  }
+
+  // Phase 1 fallback: local score + advancement
+  match.score1 = score1
+  match.score2 = score2
+  match.winnerId = winnerId
+  match.completed = true
 
   // Advance winner in single-elimination
   if (t.format === 'single-elimination') {
@@ -1062,7 +1295,7 @@ export function saveMatchScore(
     }
   }
 
-  save(all)
+  await saveAndSync(all, t)
   return t
 }
 
@@ -1101,7 +1334,25 @@ function loadRatings(): Record<string, PlayerRating> {
 
 function saveRatings(ratings: Record<string, PlayerRating>): void {
   localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
-  syncRatings(ratings)
+  if (!SUPABASE_PRIMARY) {
+    syncRatings(ratings)
+  }
+}
+
+/** Sync specific player ratings to Supabase */
+async function saveRatingsAndSync(ratings: Record<string, PlayerRating>, ...playerIds: string[]): Promise<void> {
+  saveRatings(ratings)
+  if (SUPABASE_PRIMARY) {
+    for (const id of playerIds) {
+      const rating = ratings[id]
+      if (rating) {
+        const result = await syncRatingsForPlayer(id, rating)
+        if (!result.success) {
+          enqueue('rating', { playerId: id, rating })
+        }
+      }
+    }
+  }
 }
 
 // Legacy: look up by normalized name (for backwards compat with old data)
@@ -1143,11 +1394,48 @@ export function winProbability(ratingA: number, ratingB: number): number {
   return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
 }
 
-export function updateRatings(
+export async function updateRatings(
   playerA: { id: string; name: string },
   playerB: { id: string; name: string },
   winnerId: string
-): void {
+): Promise<void> {
+  // Try RPC first for atomic server-side calculation
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        const { data, error } = await client.rpc('rpc_update_ratings', {
+          p_player_a_id: playerA.id,
+          p_player_a_name: playerA.name,
+          p_player_b_id: playerB.id,
+          p_player_b_name: playerB.name,
+          p_winner_id: winnerId,
+        })
+        if (!error && data?.success) {
+          // Update local ratings from server response
+          const ratings = loadRatings()
+          ratings[playerA.id] = {
+            name: playerA.name,
+            rating: data.playerA.rating,
+            matchesPlayed: data.playerA.matchesPlayed,
+          }
+          ratings[playerB.id] = {
+            name: playerB.name,
+            rating: data.playerB.rating,
+            matchesPlayed: data.playerB.matchesPlayed,
+          }
+          saveRatings(ratings)
+          recordRatingSnapshot(playerA.id, data.playerA.rating)
+          recordRatingSnapshot(playerB.id, data.playerB.rating)
+          return
+        }
+      } catch {
+        // RPC failed, fall through to local calculation
+      }
+    }
+  }
+
+  // Phase 1 fallback: local ELO calculation
   const ratings = loadRatings()
 
   const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1500, matchesPlayed: 0 }
@@ -1171,7 +1459,7 @@ export function updateRatings(
 
   ratings[playerA.id] = a
   ratings[playerB.id] = b
-  saveRatings(ratings)
+  await saveRatingsAndSync(ratings, playerA.id, playerB.id)
   recordRatingSnapshot(playerA.id, a.rating)
   recordRatingSnapshot(playerB.id, b.rating)
 }
@@ -1226,14 +1514,16 @@ export function getRatingTrend(playerId: string): number {
   return Math.round(currentRating - baseRating)
 }
 
-export function getRatingLabel(rating: number): string {
-  if (rating >= 2200) return 'Pro'
-  if (rating >= 2000) return 'Semi-pro'
-  if (rating >= 1800) return 'Elite'
-  if (rating >= 1600) return 'Strong'
-  if (rating >= 1400) return 'Club'
-  if (rating >= 1200) return 'Beginner'
-  return 'Newcomer'
+export function getRatingLabel(rating: number, matchesPlayed?: number): string {
+  // Placement period: first 5 matches
+  if (matchesPlayed !== undefined && matchesPlayed < 5) {
+    return `Placement (${matchesPlayed}/5)`
+  }
+  if (rating >= 1800) return 'Diamond'
+  if (rating >= 1600) return 'Platinum'
+  if (rating >= 1400) return 'Gold'
+  if (rating >= 1200) return 'Silver'
+  return 'Bronze'
 }
 
 // --- Match History ---
@@ -1876,7 +2166,7 @@ export function switchProfile(profile: PlayerProfile): void {
 }
 
 // Auto-confirm all pending schedules (dev tool)
-export function autoConfirmAllSchedules(tournamentId: string): Tournament | undefined {
+export async function autoConfirmAllSchedules(tournamentId: string): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
@@ -1895,12 +2185,12 @@ export function autoConfirmAllSchedules(tournamentId: string): Tournament | unde
     }
   }
 
-  save(all)
+  await saveAndSync(all, t)
   return t
 }
 
 // Simulate random scores for the current round of a tournament
-export function simulateRoundScores(tournamentId: string): Tournament | undefined {
+export async function simulateRoundScores(tournamentId: string): Promise<Tournament | undefined> {
   const t = getTournament(tournamentId)
   if (!t || t.status !== 'in-progress') return undefined
 
@@ -1928,7 +2218,7 @@ export function simulateRoundScores(tournamentId: string): Tournament | undefine
   for (const match of roundMatches) {
     const pick = SCORES[Math.floor(Math.random() * SCORES.length)]
     const winnerId = pick.w === 1 ? match.player1Id! : match.player2Id!
-    const result = saveMatchScore(tournamentId, match.id, pick.s1, pick.s2, winnerId)
+    const result = await saveMatchScore(tournamentId, match.id, pick.s1, pick.s2, winnerId)
     if (result) updated = result
   }
 
@@ -1936,26 +2226,26 @@ export function simulateRoundScores(tournamentId: string): Tournament | undefine
 }
 
 // Simulate a tournament all the way to the final, with the given player as a finalist
-export function simulateToFinal(playerId: string, county: string): { tournamentId: string } | null {
+export async function simulateToFinal(playerId: string, county: string): Promise<{ tournamentId: string } | null> {
   const profile = getProfile()
   if (!profile) return null
 
   // Step 1: Ensure player is in lobby, seed to 6+, and create tournament
   if (!isInLobby(playerId)) {
-    joinLobby(profile)
+    await joinLobby(profile)
   }
   seedLobby(county, 5)
   const lobby = getLobbyByCounty(county)
   if (lobby.length < 6) return null
 
   // Create tournament from lobby if one doesn't exist yet
-  startTournamentFromLobby(county)
+  await startTournamentFromLobby(county)
   const setupT = getSetupTournamentForCounty(county)
   if (!setupT) {
     // Need to create tournament via lobby - join lobby first if not in it
     const inLobby = lobby.find(e => e.playerId === playerId)
     if (!inLobby) {
-      joinLobby(profile)
+      await joinLobby(profile)
     }
     // Still need 6 in lobby for tournament creation
     const updatedLobby = getLobbyByCounty(county)
@@ -1963,20 +2253,20 @@ export function simulateToFinal(playerId: string, county: string): { tournamentI
       seedLobby(county, 6 - updatedLobby.length)
     }
     // Create the tournament from lobby entries
-    startTournamentFromLobby(county)
+    await startTournamentFromLobby(county)
     const st = getSetupTournamentForCounty(county)
     if (!st) return null
-    const started = forceStartTournament(st.id)
+    const started = await forceStartTournament(st.id)
     if (!started) return null
-    return simulateToFinalInner(started.id, playerId)
+    return await simulateToFinalInner(started.id, playerId)
   }
 
-  const started = forceStartTournament(setupT.id)
+  const started = await forceStartTournament(setupT.id)
   if (!started) return null
-  return simulateToFinalInner(started.id, playerId)
+  return await simulateToFinalInner(started.id, playerId)
 }
 
-function simulateToFinalInner(tournamentId: string, playerId: string): { tournamentId: string } | null {
+async function simulateToFinalInner(tournamentId: string, playerId: string): Promise<{ tournamentId: string } | null> {
   let t = getTournament(tournamentId)
   if (!t) return null
 
@@ -1996,9 +2286,9 @@ function simulateToFinalInner(tournamentId: string, playerId: string): { tournam
       }
       // Set scores so the winner wins
       if (winnerId === match.player1Id) {
-        saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+        await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
       } else {
-        saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+        await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
       }
     }
 
@@ -2021,9 +2311,9 @@ function simulateToFinalInner(tournamentId: string, playerId: string): { tournam
         winnerId = semi.player1Id!
       }
       if (winnerId === semi.player1Id) {
-        saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
+        await saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
       } else {
-        saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
+        await saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
       }
     }
 
@@ -2048,9 +2338,9 @@ function simulateToFinalInner(tournamentId: string, playerId: string): { tournam
           winnerId = match.player1Id!
         }
         if (winnerId === match.player1Id) {
-          saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+          await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
         } else {
-          saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+          await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
         }
       }
     }
@@ -2063,16 +2353,16 @@ function simulateToFinalInner(tournamentId: string, playerId: string): { tournam
   // Score all other matches
   for (const match of otherMatches) {
     if (match.completed || !match.player1Id || !match.player2Id) continue
-    saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], match.player1Id!)
+    await saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], match.player1Id!)
   }
   // Score all my matches except the last
   for (let i = 0; i < myMatches.length - 1; i++) {
     const match = myMatches[i]
     if (match.completed || !match.player1Id || !match.player2Id) continue
     if (match.player1Id === playerId) {
-      saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], playerId)
+      await saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], playerId)
     } else {
-      saveMatchScore(tournamentId, match.id, [3, 4], [6, 6], playerId)
+      await saveMatchScore(tournamentId, match.id, [3, 4], [6, 6], playerId)
     }
   }
 
@@ -2179,10 +2469,10 @@ export function getPlayerActiveBroadcast(playerId: string): MatchBroadcast | und
   return loadBroadcasts().find(b => b.playerId === playerId && b.status === 'active')
 }
 
-export function claimBroadcast(
+export async function claimBroadcast(
   broadcastId: string,
   claimingPlayerId: string
-): { broadcast: MatchBroadcast; tournament: Tournament } | null {
+): Promise<{ broadcast: MatchBroadcast; tournament: Tournament } | null> {
   cleanExpiredBroadcasts()
   const broadcasts = loadBroadcasts()
   const broadcast = broadcasts.find(b => b.id === broadcastId)
@@ -2232,7 +2522,7 @@ export function claimBroadcast(
       m.schedule.status = 'confirmed'
       m.schedule.confirmedSlot = { day, startHour: hour, endHour: hour + 1 }
     }
-    save(all)
+    await saveAndSync(all, t)
   }
 
   return { broadcast, tournament: t }
@@ -2385,7 +2675,7 @@ export function getOutgoingOffers(playerId: string): MatchOffer[] {
 }
 
 /** Accept a match offer */
-export function acceptMatchOffer(offerId: string, acceptorId: string): { offer: MatchOffer; matchConfirmed: boolean } | { error: string } {
+export async function acceptMatchOffer(offerId: string, acceptorId: string): Promise<{ offer: MatchOffer; matchConfirmed: boolean } | { error: string }> {
   cleanExpiredOffers()
   const offers = loadOffers()
   const offer = offers.find(o => o.offerId === offerId)
@@ -2432,7 +2722,7 @@ export function acceptMatchOffer(offerId: string, acceptorId: string): { offer: 
         }
       }
       matchConfirmed = true
-      save(all)
+      await saveAndSync(all, tournament!)
     }
   }
 

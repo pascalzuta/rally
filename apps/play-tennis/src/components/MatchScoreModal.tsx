@@ -66,14 +66,14 @@ export default function MatchScoreModal({ tournament, matchId, onClose, onSaved 
     return null
   }
 
-  function handleSave() {
+  async function handleSave() {
     const scores = getScores()
     if (!scores) return
 
     const winnerId = determineWinner(scores.score1, scores.score2)
     if (!winnerId) return
 
-    saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
+    await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
     onSaved()
   }
 

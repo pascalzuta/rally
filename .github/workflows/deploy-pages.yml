@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - claude/tennis-tournament-app-wqHUw
+      - claude/rally-tennis-app-uuWbC
       - main
 
 permissions:
