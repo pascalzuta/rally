@@ -289,14 +289,6 @@ export default function App() {
             <button className="top-nav-icon" onClick={() => { setActiveTab('profile'); setShowInbox(false); setShowNotifications(false) }}>
               <div className="nav-avatar">{profile.name[0].toUpperCase()}</div>
             </button>
-            {showInbox && (
-              <Inbox
-                currentPlayerId={profile.id}
-                currentPlayerName={profile.name}
-                tournaments={tournaments}
-                onClose={() => setShowInbox(false)}
-              />
-            )}
           </div>
         </nav>
 
@@ -394,6 +386,14 @@ export default function App() {
           </button>
         </nav>
       </div>
+      {showInbox && (
+        <Inbox
+          currentPlayerId={profile.id}
+          currentPlayerName={profile.name}
+          tournaments={tournaments}
+          onClose={() => setShowInbox(false)}
+        />
+      )}
       <DevTools
         onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}
         activeTournamentId={activeTournament?.id ?? null}
