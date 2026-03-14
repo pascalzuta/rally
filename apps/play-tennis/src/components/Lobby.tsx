@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired } from '../store'
+import { SYNC_EVENT } from '../sync'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
 interface Props {
@@ -41,6 +42,17 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
     setJoined(isInLobby(profile.id))
     checkForSetupTournament()
   }, [profile])
+
+  // Re-read lobby when Supabase realtime sync updates localStorage
+  useEffect(() => {
+    const handler = () => {
+      setEntries(getLobbyByCounty(profile.county))
+      setJoined(isInLobby(profile.id))
+      checkForSetupTournament()
+    }
+    window.addEventListener(SYNC_EVENT, handler)
+    return () => window.removeEventListener(SYNC_EVENT, handler)
+  }, [profile.county, profile.id])
 
   // Auto-join when coming from "Start Tournament"
   useEffect(() => {

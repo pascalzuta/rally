@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty, escalateMatch, getTournament, simulateToFinal } from '../store'
+import { SYNC_EVENT } from '../sync'
 import { PlayerProfile } from '../types'
 
 interface Props {
@@ -23,6 +24,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
       return
     }
     const entries = await seedLobby(county, count)
+    window.dispatchEvent(new Event(SYNC_EVENT))
     setMessage(`Lobby now has ${entries.length} players in ${county}`)
     setTimeout(() => setMessage(''), 2000)
   }
