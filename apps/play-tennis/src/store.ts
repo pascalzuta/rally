@@ -124,15 +124,20 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
           p_joined_at: entry.joinedAt,
         })
         if (!error && data) {
-          // Update local lobby from RPC response
-          const entries: LobbyEntry[] = (data.entries ?? []).map((e: any) => ({
+          // Merge RPC response with local lobby (preserves local-only entries like dev seeds)
+          const remoteEntries: LobbyEntry[] = (data.entries ?? []).map((e: any) => ({
             playerId: e.playerId,
             playerName: e.playerName,
             county: e.county,
             joinedAt: e.joinedAt,
           }))
-          const otherCounties = loadLobby().filter(e => e.county.toLowerCase() !== profile.county.toLowerCase())
-          saveLobby([...otherCounties, ...entries])
+          const currentLobby = loadLobby()
+          const remoteIds = new Set(remoteEntries.map(e => e.playerId))
+          const localOnlyCounty = currentLobby.filter(
+            e => e.county.toLowerCase() === profile.county.toLowerCase() && !remoteIds.has(e.playerId)
+          )
+          const otherCounties = currentLobby.filter(e => e.county.toLowerCase() !== profile.county.toLowerCase())
+          saveLobby([...otherCounties, ...remoteEntries, ...localOnlyCounty])
           return getLobbyByCounty(profile.county)
         }
       } catch {
