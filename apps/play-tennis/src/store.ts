@@ -21,7 +21,6 @@ const BADGES_KEY = 'play-tennis-badges'
 const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
 const OFFERS_KEY = 'rally-match-offers'
 const NOTIFICATIONS_KEY = 'rally-notifications'
-const MATCH_NOTES_KEY = 'rally-match-notes'
 const MESSAGES_KEY = 'rally-direct-messages'
 
 function generateId(): string {
@@ -2845,53 +2844,6 @@ export function markNotificationsRead(playerId: string): void {
 /** Get an offer by ID */
 export function getMatchOffer(offerId: string): MatchOffer | null {
   return loadOffers().find(o => o.offerId === offerId) ?? null
-}
-
-// --- Match Notes ---
-
-export interface MatchNote {
-  id: string
-  matchId: string
-  tournamentId: string
-  playerId: string
-  playerName: string
-  text: string
-  createdAt: string
-}
-
-function loadMatchNotes(): MatchNote[] {
-  try {
-    const data = localStorage.getItem(MATCH_NOTES_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
-}
-
-function saveMatchNotes(notes: MatchNote[]): void {
-  localStorage.setItem(MATCH_NOTES_KEY, JSON.stringify(notes))
-}
-
-export function getMatchNotes(tournamentId: string, matchId: string): MatchNote[] {
-  return loadMatchNotes()
-    .filter(n => n.tournamentId === tournamentId && n.matchId === matchId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-}
-
-export function addMatchNote(tournamentId: string, matchId: string, playerId: string, playerName: string, text: string): MatchNote {
-  const notes = loadMatchNotes()
-  const note: MatchNote = {
-    id: generateId(),
-    matchId,
-    tournamentId,
-    playerId,
-    playerName,
-    text: text.trim(),
-    createdAt: new Date().toISOString(),
-  }
-  notes.push(note)
-  saveMatchNotes(notes)
-  return note
 }
 
 // --- Direct Messages ---

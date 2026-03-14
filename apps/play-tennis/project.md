@@ -5,7 +5,10 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 
 ## Architecture
 - **Framework**: React + TypeScript + Vite
-- **State**: localStorage-based store (no backend)
+- **State**: localStorage (fast local cache) + Supabase (shared persistence via realtime sync)
+- **Sync layer**: `sync.ts` provides bi-directional Supabase sync; `SUPABASE_PRIMARY = true` makes Supabase the primary store
+- **Auth**: `supabase.ts` with `ensureAuth()` called on app mount before sync init
+- **Offline**: `offline-queue.ts` queues writes when offline, flushes on reconnect
 - **Styling**: Plain CSS with CSS variables
 
 ## Design System
@@ -41,6 +44,11 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **MatchOffer**: offerId, senderId, senderName, recipientId, recipientName, tournamentId, proposedDate, proposedTime, createdAt, expiresAt, status (proposed | accepted | declined | expired), matchId
 - **RallyNotification**: id, type (match_offer | offer_accepted | offer_declined | offer_expired | match_reminder), recipientId, message, detail, relatedOfferId, createdAt, read
 - **DirectMessage**: id, senderId, senderName, recipientId, recipientName, text, createdAt, read
+- **RatingSnapshot**: rating, timestamp (used for rating history chart)
+- **MatchHistoryEntry**: matchId, tournamentId, tournamentName, opponentId, opponentName, score, won, date, round, format, phase
+- **RecentResult**: matchId, tournamentId, tournamentName, winnerId, winnerName, loserId, loserName, score, round, date (used for leaderboard recent activity)
+- **LeaderboardEntry**: name, rating, matchesPlayed, rank, wins, losses
+- **PendingVictory**: tier, tournamentName, playerId (triggers victory animation on next load)
 
 ## Features
 
@@ -192,6 +200,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `play-tennis-rating-history` — Rating snapshots over time
 - `play-tennis-trophies` — Player trophies (champion/finalist/semifinalist)
 - `play-tennis-badges` — Player achievement badges
+- `play-tennis-pending-victory` — Pending victory animation trigger
 - `rally-match-offers` — Match offers (proposed/accepted/declined/expired)
 - `rally-notifications` — In-app notification entries
 - `rally-direct-messages` — Player-to-player direct messages
@@ -203,10 +212,10 @@ Four-tab layout designed around the player's tournament journey.
 
 | Tab | Icon | Purpose |
 |-----|------|---------|
-| **Home** | 🏠 | Dashboard with action cards — answers "what should I do next?" |
-| **Bracket** | 🏆 | Dedicated bracket/standings view, always one tap away |
-| **Play Now** | ⚡ | Broadcast availability & find opponents |
-| **Profile** | 👤 | Stats, availability management, tournament history |
+| **Home** | House SVG | Dashboard with action cards — answers "what should I do next?" |
+| **Tournament** | Trophy SVG | Dedicated bracket/standings view, always one tap away |
+| **Find Match** | Lightning SVG | Broadcast availability & find opponents |
+| **Profile** | User SVG | Stats, availability management, tournament history |
 
 ### Home Tab
 - Onboarding card with activation steps (moved from Profile)
@@ -224,14 +233,14 @@ Four-tab layout designed around the player's tournament journey.
   - After completing an action, the card dismisses and the next action surfaces
   - Allows processing entire action queue from one screen
 
-### Bracket Tab
+### Tournament Tab (Bracket)
 - Full bracket (elimination) or standings table (round-robin) for the active tournament
 - Match cards with inline scheduling, scoring, and messaging (tap to expand/score/message)
 - Match sort priority: Escalated > Confirmed/Score > Proposed/Respond > Unscheduled > Others > Completed
 - **Inline messaging**: Message icon on match cards opens conversation with opponent
 - "Leave this tournament" link at bottom (replaces header button)
 
-### Play Now Tab
+### Find Match Tab
 - Broadcast creation form (date, time, location, message)
 - Active broadcast management
 - Availability timeline always visible (not behind a toggle)
@@ -274,6 +283,7 @@ Four-tab layout designed around the player's tournament journey.
 - Seed lobby with test players (+1, +3, +5)
 - Force start tournaments
 - Simulate round scores
+- Simulate to final (auto-scores all rounds through to completion)
 - Auto-confirm all schedules
 - Escalate all unconfirmed matches
 - Switch between test profiles
