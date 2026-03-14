@@ -265,14 +265,15 @@ export default function App() {
                             const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
                             let action = ''
                             let icon = ''
-                            if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️' }
-                            else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾' }
-                            else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = 'Time proposed — respond'; icon = '📩' }
-                            else { action = 'Needs scheduling'; icon = '📅' }
+                            let urgency = ''
+                            if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️'; urgency = 'notif-urgent' }
+                            else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾'; urgency = 'notif-ready' }
+                            else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = 'Time proposed — respond'; icon = '📩'; urgency = 'notif-pending' }
+                            else { action = 'Needs scheduling'; icon = '📅'; urgency = '' }
                             return (
                               <button
                                 key={`${t.id}-${m.id}`}
-                                className="notif-item"
+                                className={`notif-item ${urgency}`}
                                 onClick={() => {
                                   setFocusMatchId(m.id)
                                   setActiveTab('bracket')
@@ -283,6 +284,7 @@ export default function App() {
                                 <div className="notif-content">
                                   <div className="notif-action">{action}</div>
                                   <div className="notif-opponent">vs {opponentName}</div>
+                                  <div className="notif-time">{t.name}</div>
                                 </div>
                               </button>
                             )

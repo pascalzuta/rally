@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, Sex, AgeRange, ExperienceLevel } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, Sex, AgeRange, ExperienceLevel } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -21,6 +21,7 @@ const BADGES_KEY = 'play-tennis-badges'
 const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
 const OFFERS_KEY = 'rally-match-offers'
 const NOTIFICATIONS_KEY = 'rally-notifications'
+const MATCH_NOTES_KEY = 'rally-match-notes'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -1645,6 +1646,127 @@ export function getRatingLabel(rating: number, matchesPlayed?: number): string {
   return 'Bronze'
 }
 
+// --- Match History ---
+
+export interface MatchHistoryEntry {
+  matchId: string
+  tournamentId: string
+  tournamentName: string
+  opponentId: string
+  opponentName: string
+  score: string        // e.g. "6-3 6-4" or "4-6 6-3 7-5"
+  won: boolean
+  date: string         // tournament date
+  round: number
+  format: Tournament['format']
+  phase?: MatchPhase
+}
+
+export function getMatchHistory(playerId: string): MatchHistoryEntry[] {
+  const tournaments = load()
+  const entries: MatchHistoryEntry[] = []
+
+  for (const tournament of tournaments) {
+    for (const match of tournament.matches) {
+      if (!match.completed || !match.winnerId) continue
+      if (match.player1Id !== playerId && match.player2Id !== playerId) continue
+      if (!match.player1Id || !match.player2Id) continue
+
+      const isPlayer1 = match.player1Id === playerId
+      const opponentId = isPlayer1 ? match.player2Id : match.player1Id
+      const opponentName = getPlayerName(tournament, opponentId)
+      const won = match.winnerId === playerId
+
+      // Format score from player's perspective
+      const sets: string[] = []
+      for (let i = 0; i < match.score1.length; i++) {
+        const myScore = isPlayer1 ? match.score1[i] : match.score2[i]
+        const theirScore = isPlayer1 ? match.score2[i] : match.score1[i]
+        sets.push(`${myScore}-${theirScore}`)
+      }
+
+      entries.push({
+        matchId: match.id,
+        tournamentId: tournament.id,
+        tournamentName: tournament.name,
+        opponentId,
+        opponentName,
+        score: sets.join(' '),
+        won,
+        date: tournament.date,
+        round: match.round,
+        format: tournament.format,
+        phase: match.phase,
+      })
+    }
+  }
+
+  // Most recent first
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return entries
+}
+
+export function getHeadToHead(playerId: string, opponentId: string): { wins: number; losses: number; matches: MatchHistoryEntry[] } {
+  const history = getMatchHistory(playerId)
+  const h2h = history.filter(m => m.opponentId === opponentId)
+  return {
+    wins: h2h.filter(m => m.won).length,
+    losses: h2h.filter(m => !m.won).length,
+    matches: h2h,
+  }
+}
+
+export interface RecentResult {
+  matchId: string
+  tournamentId: string
+  tournamentName: string
+  winnerId: string
+  winnerName: string
+  loserId: string
+  loserName: string
+  score: string
+  round: number
+  date: string
+}
+
+export function getRecentResults(county: string, limit: number = 10): RecentResult[] {
+  const tournaments = load().filter(t => t.county === county)
+  const results: RecentResult[] = []
+
+  for (const tournament of tournaments) {
+    for (const match of tournament.matches) {
+      if (!match.completed || !match.winnerId || !match.player1Id || !match.player2Id) continue
+
+      const loserId = match.winnerId === match.player1Id ? match.player2Id : match.player1Id
+      const winnerName = getPlayerName(tournament, match.winnerId)
+      const loserName = getPlayerName(tournament, loserId)
+
+      const sets: string[] = []
+      for (let i = 0; i < match.score1.length; i++) {
+        const ws = match.winnerId === match.player1Id ? match.score1[i] : match.score2[i]
+        const ls = match.winnerId === match.player1Id ? match.score2[i] : match.score1[i]
+        sets.push(`${ws}-${ls}`)
+      }
+
+      results.push({
+        matchId: match.id,
+        tournamentId: tournament.id,
+        tournamentName: tournament.name,
+        winnerId: match.winnerId,
+        winnerName,
+        loserId,
+        loserName,
+        score: sets.join(' '),
+        round: match.round,
+        date: tournament.date,
+      })
+    }
+  }
+
+  results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return results.slice(0, limit)
+}
+
 // --- Leaderboard ---
 
 export interface LeaderboardEntry {
@@ -2842,4 +2964,51 @@ export function markNotificationsRead(playerId: string): void {
 /** Get an offer by ID */
 export function getMatchOffer(offerId: string): MatchOffer | null {
   return loadOffers().find(o => o.offerId === offerId) ?? null
+}
+
+// --- Match Notes ---
+
+export interface MatchNote {
+  id: string
+  matchId: string
+  tournamentId: string
+  playerId: string
+  playerName: string
+  text: string
+  createdAt: string
+}
+
+function loadMatchNotes(): MatchNote[] {
+  try {
+    const data = localStorage.getItem(MATCH_NOTES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveMatchNotes(notes: MatchNote[]): void {
+  localStorage.setItem(MATCH_NOTES_KEY, JSON.stringify(notes))
+}
+
+export function getMatchNotes(tournamentId: string, matchId: string): MatchNote[] {
+  return loadMatchNotes()
+    .filter(n => n.tournamentId === tournamentId && n.matchId === matchId)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+}
+
+export function addMatchNote(tournamentId: string, matchId: string, playerId: string, playerName: string, text: string): MatchNote {
+  const notes = loadMatchNotes()
+  const note: MatchNote = {
+    id: generateId(),
+    matchId,
+    tournamentId,
+    playerId,
+    playerName,
+    text: text.trim(),
+    createdAt: new Date().toISOString(),
+  }
+  notes.push(note)
+  saveMatchNotes(notes)
+  return note
 }
