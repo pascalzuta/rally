@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
@@ -17,6 +17,13 @@ import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard'
 
+const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard']
+
+function getTabFromHash(): Tab {
+  const hash = window.location.hash.replace('#', '')
+  return VALID_TABS.includes(hash as Tab) ? (hash as Tab) : 'home'
+}
+
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
   return params.get('join')
@@ -30,7 +37,7 @@ function clearInviteParam() {
 
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
-  const [activeTab, setActiveTab] = useState<Tab>('home')
+  const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -39,6 +46,27 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showInbox, setShowInbox] = useState(false)
+
+  // Navigate tabs via hash so browser back/forward buttons work
+  const setActiveTab = useCallback((tab: Tab) => {
+    setActiveTabRaw(tab)
+    const currentHash = window.location.hash.replace('#', '')
+    if (currentHash !== tab) {
+      window.history.pushState({ tab }, '', `#${tab}`)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Set initial hash if not present
+    if (!window.location.hash) {
+      window.history.replaceState({ tab: 'home' }, '', '#home')
+    }
+    const onPopState = () => {
+      setActiveTabRaw(getTabFromHash())
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   // Count pending actions for notification badge
   const matchActionCount = tournaments.reduce((count, t) => {
