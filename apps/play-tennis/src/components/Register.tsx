@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability } from '../store'
-import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
+import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
 
 interface Props {
@@ -86,7 +86,7 @@ const STATE_ABBREVS: Record<string, string> = {
   'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
 }
 
-type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'availability' | 'confirmed'
+type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
   const [step, setStep] = useState<Step>(inviteCounty ? 'signup' : 'onboard-1')
@@ -99,6 +99,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [suggestedCounty, setSuggestedCounty] = useState<string | null>(null)
   const [detectingLocation, setDetectingLocation] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
+
+  const [skillLevel, setSkillLevel] = useState<SkillLevel | ''>('')
+  const [gender, setGender] = useState<Gender | ''>('')
 
   const [selectedQuick, setSelectedQuick] = useState<Set<number>>(new Set())
   const [detailedMode, setDetailedMode] = useState(false)
@@ -167,7 +170,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     if (!firstName.trim() || !lastName.trim() || !county) return
-    setStep('availability')
+    setStep('skill-gender')
   }
 
   function toggleQuickSlot(idx: number) {
@@ -190,7 +193,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
 
   function handleFinish(skip: boolean) {
-    const p = createProfile(fullName, county)
+    const p = createProfile(fullName, county, {
+      skillLevel: skillLevel || undefined,
+      gender: gender || undefined,
+    })
     if (!skip) {
       let slots: AvailabilitySlot[] = []
       if (detailedMode) {
@@ -444,6 +450,71 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               {getPlayerCount(county)} players competing in {county.split(',')[0]}
             </p>
           )}
+        </div>
+      </div>
+    )
+  }
+
+  // --- Step: Skill Level & Gender ---
+  if (step === 'skill-gender') {
+    return (
+      <div className="onboard-screen signup-screen">
+        <div className="signup-content">
+          <div className="signup-header">
+            <h1 className="signup-title">About your game</h1>
+            <p className="signup-desc">Helps us match you with the right players</p>
+          </div>
+
+          <div className="skill-gender-form">
+            <div className="field">
+              <span className="field-label">Skill level</span>
+              <div className="skill-options">
+                {([
+                  { value: 'beginner' as SkillLevel, label: 'Beginner', desc: 'Learning the basics' },
+                  { value: 'intermediate' as SkillLevel, label: 'Intermediate', desc: 'Consistent rallies' },
+                  { value: 'advanced' as SkillLevel, label: 'Advanced', desc: 'Tournament experience' },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.value}
+                    className={`skill-option ${skillLevel === opt.value ? 'selected' : ''}`}
+                    onClick={() => setSkillLevel(opt.value)}
+                  >
+                    <span className="skill-option-label">{opt.label}</span>
+                    <span className="skill-option-desc">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Gender</span>
+              <div className="gender-options">
+                {([
+                  { value: 'male' as Gender, label: 'Male' },
+                  { value: 'female' as Gender, label: 'Female' },
+                  { value: 'other' as Gender, label: 'Other' },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.value}
+                    className={`gender-option ${gender === opt.value ? 'selected' : ''}`}
+                    onClick={() => setGender(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="availability-actions">
+            <button
+              className="btn btn-primary btn-large"
+              onClick={() => setStep('availability')}
+              disabled={!skillLevel || !gender}
+            >
+              Continue
+            </button>
+          </div>
         </div>
       </div>
     )

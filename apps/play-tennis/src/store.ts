@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SchedulingTier, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -39,7 +39,7 @@ export function getProfile(): PlayerProfile | null {
   }
 }
 
-export function createProfile(name: string, county: string): PlayerProfile {
+export function createProfile(name: string, county: string, options?: { skillLevel?: SkillLevel; gender?: Gender }): PlayerProfile {
   // Duplicate guard: return existing profile if one exists
   const existing = getProfile()
   if (existing) return existing
@@ -48,6 +48,8 @@ export function createProfile(name: string, county: string): PlayerProfile {
     id: generateId(),
     name: name.trim(),
     county: county.trim(),
+    skillLevel: options?.skillLevel,
+    gender: options?.gender,
     createdAt: new Date().toISOString(),
   }
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
@@ -92,18 +94,9 @@ export function isInLobby(playerId: string): boolean {
   return loadLobby().some(e => e.playerId === playerId)
 }
 
-export const MIN_AVAILABILITY_SLOTS = 3
-
 export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   const lobby = loadLobby()
   if (lobby.some(e => e.playerId === profile.id)) return getLobbyByCounty(profile.county)
-
-  // Require availability before joining
-  const slots = getAvailability(profile.id)
-  if (slots.length < MIN_AVAILABILITY_SLOTS) {
-    throw new Error('Please add at least 3 availability time slots before joining')
-  }
-
   const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
@@ -2205,7 +2198,7 @@ const TEST_AVAILABILITY: AvailabilitySlot[][] = [
   [{ day: 'tuesday', startHour: 18, endHour: 21 }, { day: 'sunday', startHour: 10, endHour: 14 }],
 ]
 
-export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
+export async function seedLobby(county: string, count: number = 3): Promise<LobbyEntry[]> {
   const lobby = loadLobby()
   const existing = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
   const existingNames = new Set(existing.map(e => e.playerName.toLowerCase()))
@@ -2216,13 +2209,15 @@ export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
   for (const name of toAdd) {
     const id = generateId()
     const playerIdx = TEST_PLAYERS.indexOf(name)
-    lobby.push({ playerId: id, playerName: name, county, joinedAt: new Date().toISOString() })
+    const entry: LobbyEntry = { playerId: id, playerName: name, county, joinedAt: new Date().toISOString() }
+    lobby.push(entry)
 
     // Set up their rating (keyed by player ID)
     const ratings = loadRatings()
     const normalizedName = name.trim().toLowerCase()
+    const rating: PlayerRating = { name, rating: TEST_RATINGS[normalizedName] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
     if (!ratings[id]) {
-      ratings[id] = { name, rating: TEST_RATINGS[normalizedName] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
+      ratings[id] = rating
       saveRatings(ratings)
     }
 
@@ -2230,6 +2225,10 @@ export function seedLobby(county: string, count: number = 3): LobbyEntry[] {
     if (playerIdx >= 0 && TEST_AVAILABILITY[playerIdx]) {
       saveAvailability(id, TEST_AVAILABILITY[playerIdx])
     }
+
+    // Sync to Supabase
+    await syncLobbyEntry(entry)
+    await syncRatingsForPlayer(id, rating)
   }
 
   saveLobby(lobby)
@@ -2332,7 +2331,7 @@ export async function simulateToFinal(playerId: string, county: string): Promise
   if (!isInLobby(playerId)) {
     await joinLobby(profile)
   }
-  seedLobby(county, 5)
+  await seedLobby(county, 5)
   const lobby = getLobbyByCounty(county)
   if (lobby.length < 6) return null
 
@@ -2348,7 +2347,7 @@ export async function simulateToFinal(playerId: string, county: string): Promise
     // Still need 6 in lobby for tournament creation
     const updatedLobby = getLobbyByCounty(county)
     if (updatedLobby.length < 6) {
-      seedLobby(county, 6 - updatedLobby.length)
+      await seedLobby(county, 6 - updatedLobby.length)
     }
     // Create the tournament from lobby entries
     await startTournamentFromLobby(county)

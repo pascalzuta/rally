@@ -3,10 +3,15 @@ export interface Player {
   name: string
 }
 
+export type SkillLevel = 'beginner' | 'intermediate' | 'advanced'
+export type Gender = 'male' | 'female' | 'other'
+
 export interface PlayerProfile {
   id: string
   name: string
   county: string
+  skillLevel?: SkillLevel
+  gender?: Gender
   createdAt: string
 }
 

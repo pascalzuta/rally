@@ -336,6 +336,13 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
           <h2 className="profile-name">{profile.name}</h2>
           <p className="profile-county">{profile.county}</p>
+          {(profile.skillLevel || profile.gender) && (
+            <p className="profile-details">
+              {profile.skillLevel && <span className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}</span>}
+              {profile.skillLevel && profile.gender && <span className="profile-detail-sep"> · </span>}
+              {profile.gender && <span className="profile-gender">{profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}</span>}
+            </p>
+          )}
           {totalMatches > 0 && <p className="profile-matches-played">{totalMatches} matches played</p>}
         </div>
       </div>

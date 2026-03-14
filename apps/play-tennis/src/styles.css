@@ -1906,6 +1906,79 @@ select:focus {
   font-size: var(--font-body-sm);
 }
 
+/* Skill & Gender Picker */
+.skill-gender-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.skill-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.skill-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border-secondary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-primary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+
+.skill-option:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.skill-option.selected {
+  border-color: var(--color-accent-primary);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.skill-option-label {
+  font-weight: var(--weight-semibold);
+  font-size: var(--font-body-md);
+}
+
+.skill-option-desc {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
+.gender-options {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.gender-option {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border-secondary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-primary);
+  cursor: pointer;
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.gender-option:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.gender-option.selected {
+  border-color: var(--color-accent-primary);
+  background: rgba(59, 130, 246, 0.06);
+}
+
 /* Availability Picker */
 .availability-picker {
   margin-bottom: 20px;
@@ -2290,6 +2363,12 @@ select:focus {
   color: var(--color-text-secondary);
   font-size: var(--font-body-md);
   margin-top: var(--space-xs);
+}
+
+.profile-details {
+  color: var(--color-text-muted);
+  font-size: var(--font-body-sm);
+  margin-top: 2px;
 }
 
 .rating-card {
