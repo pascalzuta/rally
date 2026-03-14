@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SchedulingTier, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -8,6 +8,7 @@ import {
 } from './sync'
 import { getClient } from './supabase'
 import { enqueue } from './offline-queue'
+import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
 
 const STORAGE_KEY = 'play-tennis-data'
 const RATINGS_KEY = 'play-tennis-ratings'
@@ -91,9 +92,18 @@ export function isInLobby(playerId: string): boolean {
   return loadLobby().some(e => e.playerId === playerId)
 }
 
+export const MIN_AVAILABILITY_SLOTS = 3
+
 export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   const lobby = loadLobby()
   if (lobby.some(e => e.playerId === profile.id)) return getLobbyByCounty(profile.county)
+
+  // Require availability before joining
+  const slots = getAvailability(profile.id)
+  if (slots.length < MIN_AVAILABILITY_SLOTS) {
+    throw new Error('Please add at least 3 availability time slots before joining')
+  }
+
   const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
@@ -211,7 +221,7 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
     name: `${county} Open #${num}`,
     date: new Date().toISOString().split('T')[0],
     county,
-    format: 'group-knockout',
+    format: 'round-robin',
     players: players.map(e => ({ id: e.playerId, name: e.playerName })),
     matches: [],
     status: 'setup',
@@ -283,15 +293,26 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
   // Need at least MIN_PLAYERS to create a tournament
   if (allCounty.length < MIN_PLAYERS) return null
 
-  // Create tournaments in batches of MAX_PLAYERS
+  // Cluster players by availability overlap, then create tournaments per group
   const all = load()
-  const remaining = [...allCounty]
   let firstTournament: Tournament | null = null
   const takenIds = new Set<string>()
   const newlyCreated: Tournament[] = []
 
-  while (remaining.length >= MIN_PLAYERS) {
-    const batch = remaining.splice(0, MAX_PLAYERS)
+  const playerAvailabilities: PlayerAvailability[] = allCounty.map(e => ({
+    playerId: e.playerId,
+    playerName: e.playerName,
+    slots: getAvailability(e.playerId),
+  }))
+
+  const clusterResult = clusterPlayersByAvailability(playerAvailabilities)
+
+  for (const group of clusterResult.groups) {
+    if (group.players.length < MIN_PLAYERS) continue
+    const batch: LobbyEntry[] = group.players.map(p => {
+      const entry = allCounty.find(e => e.playerId === p.playerId)!
+      return entry
+    })
     const tournament = createTournament(county, batch, newlyCreated)
     all.unshift(tournament)
     newlyCreated.push(tournament)
@@ -1025,10 +1046,74 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
     t.matches = matches
   }
 
-  // Generate schedules for all matches with both players assigned
-  for (const m of t.matches) {
-    if (m.player1Id && m.player2Id && !m.completed) {
+  // Bulk-schedule all matches with both players assigned
+  const matchesToSchedule: MatchToSchedule[] = t.matches
+    .filter(m => m.player1Id && m.player2Id && !m.completed)
+    .map(m => ({ matchId: m.id, player1Id: m.player1Id!, player2Id: m.player2Id! }))
+
+  const allAvailability: Record<string, SimpleAvailabilitySlot[]> = {}
+  for (const p of t.players) {
+    allAvailability[p.id] = getAvailability(p.id)
+  }
+
+  const scheduleResult = bulkScheduleMatches(matchesToSchedule, allAvailability)
+
+  // Apply confirmed matches
+  for (const { matchId, slot } of scheduleResult.confirmed) {
+    const m = t.matches.find(x => x.id === matchId)
+    if (m) {
+      m.schedule = {
+        status: 'confirmed',
+        proposals: [{
+          id: generateId(),
+          proposedBy: 'system',
+          day: slot.day as DayOfWeek,
+          startHour: slot.startHour,
+          endHour: slot.endHour,
+          status: 'accepted',
+        }],
+        confirmedSlot: { day: slot.day as DayOfWeek, startHour: slot.startHour, endHour: slot.endHour },
+        createdAt: new Date().toISOString(),
+        escalationDay: 0,
+        lastEscalation: new Date().toISOString(),
+        participationScores: {},
+        schedulingTier: 'auto',
+      }
+    }
+  }
+
+  // Apply needs-accept matches (suggest best slot)
+  for (const { matchId, slot } of scheduleResult.needsAccept) {
+    const m = t.matches.find(x => x.id === matchId)
+    if (m) {
+      m.schedule = {
+        status: 'proposed',
+        proposals: [{
+          id: generateId(),
+          proposedBy: 'system',
+          day: slot.day as DayOfWeek,
+          startHour: slot.startHour,
+          endHour: slot.endHour,
+          status: 'pending',
+        }],
+        confirmedSlot: null,
+        createdAt: new Date().toISOString(),
+        escalationDay: 0,
+        lastEscalation: new Date().toISOString(),
+        participationScores: {},
+        schedulingTier: 'needs-accept',
+      }
+    }
+  }
+
+  // Apply needs-negotiation matches (fall back to per-match scheduling)
+  for (const { matchId } of scheduleResult.needsNegotiation) {
+    const m = t.matches.find(x => x.id === matchId)
+    if (m && m.player1Id && m.player2Id) {
       m.schedule = generateMatchSchedule(m.player1Id, m.player2Id)
+      if (m.schedule) {
+        m.schedule.schedulingTier = 'needs-negotiation'
+      }
     }
   }
 

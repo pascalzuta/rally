@@ -429,6 +429,58 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
+      {/* Scheduling dashboard — shows auto-scheduling summary */}
+      {tournament.status === 'in-progress' && isParticipant && (() => {
+        const myMatches = tournament.matches.filter(
+          m => (m.player1Id === currentPlayerId || m.player2Id === currentPlayerId) && !m.completed
+        )
+        const scheduled = myMatches.filter(m => m.schedule?.status === 'confirmed').length
+        const needsInput = myMatches.filter(m => m.schedule?.status === 'proposed' || m.schedule?.status === 'unscheduled' || m.schedule?.status === 'escalated').length
+        const total = myMatches.length
+        if (total === 0) return null
+        return (
+          <div className="scheduling-dashboard">
+            <div className="scheduling-dashboard-title">Your Match Schedule</div>
+            <div className="scheduling-dashboard-stats">
+              <div className="scheduling-stat scheduling-stat-confirmed">
+                <span className="scheduling-stat-num">{scheduled}</span>
+                <span className="scheduling-stat-label">scheduled</span>
+              </div>
+              {needsInput > 0 && (
+                <div className="scheduling-stat scheduling-stat-action">
+                  <span className="scheduling-stat-num">{needsInput}</span>
+                  <span className="scheduling-stat-label">need your input</span>
+                </div>
+              )}
+              {needsInput === 0 && scheduled === total && (
+                <div className="scheduling-stat scheduling-stat-done">
+                  <span className="scheduling-stat-label">All matches scheduled</span>
+                </div>
+              )}
+            </div>
+            {scheduled > 0 && (
+              <div className="scheduling-dashboard-next">
+                {myMatches
+                  .filter(m => m.schedule?.status === 'confirmed' && m.schedule?.confirmedSlot)
+                  .slice(0, 3)
+                  .map(m => {
+                    const opponentId = m.player1Id === currentPlayerId ? m.player2Id : m.player1Id
+                    const opponentName = getPlayerName(tournament, opponentId)
+                    const slot = m.schedule!.confirmedSlot!
+                    const { day, time } = formatStartTime(slot)
+                    return (
+                      <div key={m.id} className="scheduling-next-match">
+                        <span className="scheduling-next-time">{day} {time}</span>
+                        <span className="scheduling-next-vs">vs {opponentName}</span>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {winner && (
         <div className="winner-banner">
           <div className="winner-trophy">🏆</div>

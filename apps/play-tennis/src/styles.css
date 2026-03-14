@@ -2160,6 +2160,21 @@ select:focus {
   margin-bottom: var(--space-lg);
 }
 
+.formation-availability-prompt {
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 4px solid var(--color-accent-primary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-body-sm);
+  line-height: 1.5;
+}
+.formation-availability-prompt p { margin: 0; }
+.formation-availability-hint {
+  color: var(--color-text-muted);
+  margin-top: 4px !important;
+}
+
 .formation-actions {
   display: flex;
   flex-direction: column;
@@ -4912,6 +4927,89 @@ select:focus {
 @keyframes advancementSlide {
   from { transform: translateY(-10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* ================================================
+   Scheduling Dashboard (Bulk Auto-Scheduler)
+   ================================================ */
+
+.scheduling-dashboard {
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-left: 4px solid var(--color-positive-primary);
+  border-radius: var(--radius-card);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.scheduling-dashboard-title {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.scheduling-dashboard-stats {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+
+.scheduling-stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.scheduling-stat-num {
+  font-size: var(--font-heading-lg, 24px);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.scheduling-stat-confirmed .scheduling-stat-num {
+  color: var(--color-positive-primary);
+}
+
+.scheduling-stat-action .scheduling-stat-num {
+  color: var(--color-accent-primary);
+}
+
+.scheduling-stat-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
+.scheduling-stat-done .scheduling-stat-label {
+  color: var(--color-positive-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.scheduling-dashboard-next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border-secondary);
+}
+
+.scheduling-next-match {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-body-sm);
+}
+
+.scheduling-next-time {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  min-width: 70px;
+}
+
+.scheduling-next-vs {
+  color: var(--color-text-secondary);
 }
 
 /* ================================================

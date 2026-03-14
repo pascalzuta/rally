@@ -46,6 +46,8 @@ export interface MatchProposal {
   status: 'pending' | 'accepted' | 'rejected'
 }
 
+export type SchedulingTier = 'auto' | 'needs-accept' | 'needs-negotiation'
+
 export interface MatchSchedule {
   status: SchedulingStatus
   proposals: MatchProposal[]
@@ -55,6 +57,7 @@ export interface MatchSchedule {
   lastEscalation: string     // ISO date of last escalation check
   participationScores?: Record<string, number>  // playerId -> score
   resolution?: MatchResolution
+  schedulingTier?: SchedulingTier  // how the match was scheduled
 }
 
 export type ResolutionType = 'walkover' | 'forced-match' | 'double-loss'

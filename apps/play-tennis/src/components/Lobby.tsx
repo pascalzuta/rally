@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired } from '../store'
+import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getAvailability, MIN_AVAILABILITY_SLOTS } from '../store'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
 interface Props {
@@ -31,6 +31,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   const [countdown, setCountdown] = useState<string | null>(null)
   const [showShareSheet, setShowShareSheet] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [needsAvailability, setNeedsAvailability] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoJoinedRef = useRef(false)
 
@@ -91,9 +92,17 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   }
 
   async function handleJoin() {
+    // Check availability before attempting join
+    const slots = getAvailability(profile.id)
+    if (slots.length < MIN_AVAILABILITY_SLOTS) {
+      setNeedsAvailability(true)
+      return
+    }
+
     const updated = await joinLobby(profile)
     setEntries(updated)
     setJoined(true)
+    setNeedsAvailability(false)
 
     if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
       const tournament = await startTournamentFromLobby(profile.county)
@@ -220,6 +229,12 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
               <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
             </div>
             <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Tournament starts when it ends or {maxPlayers} join.</p>
+            {needsAvailability && (
+              <div className="formation-availability-prompt">
+                <p>Add your available times so we can schedule your matches automatically.</p>
+                <p className="formation-availability-hint">Go to Profile to set when you can play.</p>
+              </div>
+            )}
             <div className="formation-actions">
               {!isUserInvolved ? (
                 <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>Join Tournament</button>

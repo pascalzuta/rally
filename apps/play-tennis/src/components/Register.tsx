@@ -474,7 +474,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       <div className="signup-content">
         <div className="signup-header">
           <h1 className="signup-title">When can you play?</h1>
-          <p className="signup-desc">Helps us schedule matches automatically</p>
+          <p className="signup-desc">Tell us when you're free and we'll handle the rest</p>
         </div>
 
         <div className="availability-picker">
@@ -545,12 +545,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             disabled={detailedMode ? detailedSlots.length === 0 : selectedQuick.size === 0}
           >
             Start Competing
-          </button>
-          <button
-            className="btn btn-large"
-            onClick={() => handleFinish(true)}
-          >
-            Skip for now
           </button>
         </div>
       </div>
