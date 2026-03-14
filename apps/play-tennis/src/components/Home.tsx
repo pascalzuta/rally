@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, saveMatchScore, getSeeds, winProbability } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, saveMatchScore, getSeeds, winProbability, hasUnreadFrom, getConversationList } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
+import MessagePanel from './MessagePanel'
 
 interface Props {
   profile: PlayerProfile
@@ -62,12 +63,13 @@ function handleInvite(county: string) {
   }
 }
 
-type ActionType = 'score' | 'respond' | 'schedule' | 'escalated'
+type ActionType = 'score' | 'respond' | 'schedule' | 'escalated' | 'message'
 
 interface ActionCard {
   type: ActionType
   label: string
   detail: string
+  opponentId: string
   opponentName: string
   tournamentId: string
   matchId: string
@@ -116,6 +118,7 @@ function buildActionCards(
           type: 'escalated',
           label: 'Urgent',
           detail: `Escalation day ${schedule.escalationDay} — respond now`,
+          opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
           matchId: match.id,
@@ -130,6 +133,7 @@ function buildActionCards(
           type: 'score',
           label: 'Score Match',
           detail: 'Match confirmed — enter result',
+          opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
           matchId: match.id,
@@ -154,6 +158,7 @@ function buildActionCards(
             type: 'respond',
             label: 'Respond',
             detail: `${respondableCount} time slot${respondableCount === 1 ? '' : 's'} proposed`,
+            opponentId: opponentId!,
             opponentName,
             tournamentId: tournament.id,
             matchId: match.id,
@@ -174,6 +179,7 @@ function buildActionCards(
           type: 'schedule',
           label: 'Schedule',
           detail: 'Find a time to play',
+          opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
           matchId: match.id,
@@ -182,6 +188,30 @@ function buildActionCards(
         continue
       }
     }
+  }
+
+  // Add unread message action cards
+  const conversations = getConversationList(playerId)
+  const existingOpponentIds = new Set(cards.map(c => c.opponentId))
+  for (const conv of conversations) {
+    if (conv.unreadCount === 0) continue
+    // Only show if this opponent is in an active tournament
+    const inActiveTournament = tournaments.some(t =>
+      t.status === 'in-progress' && t.players.some(p => p.id === conv.otherPlayerId)
+    )
+    if (!inActiveTournament) continue
+    // Don't duplicate if already has a match action card for this opponent
+    if (existingOpponentIds.has(conv.otherPlayerId)) continue
+    cards.push({
+      type: 'message',
+      label: 'Message',
+      detail: `${conv.unreadCount} unread message${conv.unreadCount !== 1 ? 's' : ''}`,
+      opponentId: conv.otherPlayerId,
+      opponentName: conv.otherPlayerName,
+      tournamentId: '',
+      matchId: '',
+      priority: 2.5,
+    })
   }
 
   cards.sort((a, b) => a.priority - b.priority)
@@ -428,6 +458,7 @@ export default function Home({
   onDataChanged,
 }: Props) {
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
+  const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
 
   const activeTournaments = useMemo(
     () => tournaments.filter(
@@ -654,22 +685,60 @@ export default function Home({
             const cardTournament = activeTournaments.find(t => t.id === card.tournamentId)
             const cardMatch = cardTournament?.matches.find(m => m.id === card.matchId)
 
+            const isMessaging = messagingCardKey === cardKey
+            const hasUnread = card.opponentId ? hasUnreadFrom(profile.id, card.opponentId) : false
+
             return (
               <div
                 key={cardKey}
                 className={`action-card action-${card.type}`}
-                onClick={() => setExpandedCardKey(isExpanded ? null : cardKey)}
+                onClick={() => card.type === 'message'
+                  ? setMessagingCardKey(isMessaging ? null : cardKey)
+                  : setExpandedCardKey(isExpanded ? null : cardKey)
+                }
               >
                 <div className="action-card-type">{card.label}</div>
-                <div className="action-card-opponent">vs {card.opponentName}</div>
+                <div className="action-card-opponent">{card.type === 'message' ? 'from' : 'vs'} {card.opponentName}</div>
                 <div className="action-card-detail">{card.detail}</div>
-                {!isExpanded && (
-                  <button className="action-card-btn" onClick={e => {
-                    e.stopPropagation()
-                    setExpandedCardKey(cardKey)
-                  }}>
-                    {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
-                  </button>
+                <div className="action-card-buttons">
+                  {card.type === 'message' ? (
+                    <button className="action-card-btn" onClick={e => {
+                      e.stopPropagation()
+                      setMessagingCardKey(isMessaging ? null : cardKey)
+                    }}>
+                      Reply
+                    </button>
+                  ) : !isExpanded ? (
+                    <button className="action-card-btn" onClick={e => {
+                      e.stopPropagation()
+                      setExpandedCardKey(cardKey)
+                    }}>
+                      {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
+                    </button>
+                  ) : null}
+                  {card.type !== 'message' && (
+                    <button
+                      className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
+                      onClick={e => { e.stopPropagation(); setMessagingCardKey(isMessaging ? null : cardKey) }}
+                      aria-label="Message opponent"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                      </svg>
+                      {hasUnread && <span className="msg-unread-dot" />}
+                    </button>
+                  )}
+                </div>
+                {isMessaging && card.opponentId && (
+                  <div onClick={e => e.stopPropagation()}>
+                    <MessagePanel
+                      currentPlayerId={profile.id}
+                      currentPlayerName={profile.name}
+                      otherPlayerId={card.opponentId}
+                      otherPlayerName={card.opponentName.replace(/\s*\(\d+\)$/, '')}
+                      onClose={() => setMessagingCardKey(null)}
+                    />
+                  </div>
                 )}
                 {isExpanded && cardTournament && cardMatch && (
                   <div onClick={e => e.stopPropagation()}>

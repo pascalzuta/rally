@@ -160,10 +160,16 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 
 ### Direct Messaging
 - **1:1 messages** between players — simple text, no group chat
-- **Access points**: Message icon on match cards (Bracket tab) and opponent rows (Play Now tab)
-- **Inline panel**: Expands below match card/opponent row, no separate screen or tab
+- **Access points**: Message icon on match cards (Bracket tab, Home tab) and opponent rows (Play Now tab)
+- **Inline panel**: Expands below match card/opponent row — consistent behavior across all tabs
 - **UI**: Chat bubble layout (own messages right-aligned blue, theirs left-aligned gray), auto-scroll, Enter to send
-- **Unread count**: Included in notification bell badge alongside match actions and offers
+- **Inbox**: Envelope icon in top nav (left of notification bell) opens full message inbox
+  - **Unread dot**: Red dot on envelope icon when any unread messages exist
+  - **Tournament tabs**: "Current Tournament" / "Past Tournaments" navigation (same style as Bracket tab's matches/standings tabs)
+  - **Conversation cards**: Sorted by most recent, showing avatar, name, preview text, timestamp, unread badge
+  - Click conversation → opens full chat view with back navigation
+- **Unread indicators**: Red dot on speech bubble icon per match/opponent card when unread messages exist from that player
+- **Home action items**: Unread messages from tournament opponents appear as "Message" action cards on Home tab (priority between respond and schedule)
 - **Data model**: `DirectMessage` with sender/recipient IDs, text, timestamp, read status
 - **Storage**: `rally-direct-messages` localStorage key
 - **Limits**: 500 character max per message
@@ -254,7 +260,8 @@ Four-tab layout designed around the player's tournament journey:
 - **Standings.tsx** — Round-robin standings table (used by BracketTab)
 - **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
 - **Profile.tsx** — Player identity, rating hero, performance stats, rating chart, availability, rating explainer
-- **MessagePanel.tsx** — Inline 1:1 chat panel (used by BracketTab and PlayNowTab)
+- **MessagePanel.tsx** — Inline 1:1 chat panel (used by BracketTab, Home, PlayNowTab, and Inbox)
+- **Inbox.tsx** — Full message inbox overlay with tournament tab navigation and conversation list
 - **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight, defending champion marker, recent activity feed
 - **VictoryAnimation.tsx** — Full-screen trophy celebration overlay with confetti and tier-appropriate styling
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)

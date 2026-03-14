@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount } from './store'
+import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
@@ -37,6 +38,7 @@ export default function App() {
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showInbox, setShowInbox] = useState(false)
 
   // Count pending actions for notification badge
   const matchActionCount = tournaments.reduce((count, t) => {
@@ -61,7 +63,7 @@ export default function App() {
   const incomingOfferCount = profile ? getIncomingOffers(profile.id).length : 0
   const unreadNotifCount = profile ? getUnreadNotificationCount(profile.id) : 0
   const unreadMsgCount = profile ? getUnreadMessageCount(profile.id) : 0
-  const pendingActionCount = matchActionCount + incomingOfferCount + unreadNotifCount + unreadMsgCount
+  const pendingActionCount = matchActionCount + incomingOfferCount + unreadNotifCount
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -187,8 +189,15 @@ export default function App() {
               </svg>
             </div>
           <div className="top-nav-actions">
+            <button className="top-nav-icon inbox-icon-btn" aria-label="Messages" onClick={() => { setShowInbox(!showInbox); setShowNotifications(false) }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M22 7l-10 7L2 7" />
+              </svg>
+              {unreadMsgCount > 0 && <span className="inbox-unread-dot" />}
+            </button>
             <div className="notif-wrapper">
-              <button className="top-nav-icon" aria-label="Notifications" onClick={() => setShowNotifications(!showNotifications)}>
+              <button className="top-nav-icon" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false) }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -277,9 +286,17 @@ export default function App() {
                 )
               })()}
             </div>
-            <button className="top-nav-icon" onClick={() => setActiveTab('profile')}>
+            <button className="top-nav-icon" onClick={() => { setActiveTab('profile'); setShowInbox(false); setShowNotifications(false) }}>
               <div className="nav-avatar">{profile.name[0].toUpperCase()}</div>
             </button>
+            {showInbox && (
+              <Inbox
+                currentPlayerId={profile.id}
+                currentPlayerName={profile.name}
+                tournaments={tournaments}
+                onClose={() => setShowInbox(false)}
+              />
+            )}
           </div>
         </nav>
 

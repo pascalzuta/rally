@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers } from '../store'
+import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom } from '../store'
 import { Tournament, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
 
@@ -489,6 +489,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                             <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
                           </svg>
+                          {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
                         </button>
                         <button
                           className="btn btn-primary btn-small pn-ask-btn"

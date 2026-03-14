@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
@@ -359,17 +359,22 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             {/* Action row: action button + message button */}
             <div className="match-card-actions-row">
               {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
-              {isMyMatch && match.player1Id && match.player2Id && !match.completed && (
-                <button
-                  className={`match-card-msg-btn ${messagingMatchId === match.id ? 'active' : ''}`}
-                  onClick={e => { e.stopPropagation(); setMessagingMatchId(messagingMatchId === match.id ? null : match.id) }}
-                  aria-label="Message opponent"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              )}
+              {isMyMatch && match.player1Id && match.player2Id && !match.completed && (() => {
+                const msgOpponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
+                const msgUnread = hasUnreadFrom(currentPlayerId, msgOpponentId!)
+                return (
+                  <button
+                    className={`match-card-msg-btn ${messagingMatchId === match.id ? 'active' : ''}`}
+                    onClick={e => { e.stopPropagation(); setMessagingMatchId(messagingMatchId === match.id ? null : match.id) }}
+                    aria-label="Message opponent"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    </svg>
+                    {msgUnread && <span className="msg-unread-dot" />}
+                  </button>
+                )
+              })()}
             </div>
 
             {/* Message panel */}

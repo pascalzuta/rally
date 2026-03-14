@@ -5328,3 +5328,277 @@ select:focus {
 .pn-message-panel-wrapper {
   padding: 0 16px 16px;
 }
+
+/* --- Envelope icon + Inbox --- */
+
+.inbox-icon-btn {
+  position: relative;
+}
+
+.inbox-unread-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-negative-primary, #ef4444);
+  border: 2px solid var(--color-surface);
+}
+
+.inbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  padding-top: 56px;
+}
+
+.inbox-panel {
+  background: var(--color-surface);
+  width: 100%;
+  max-width: 420px;
+  max-height: calc(100vh - 112px);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.inbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.inbox-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.inbox-back-btn,
+.inbox-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 4px;
+  line-height: 0;
+}
+
+.inbox-back-btn {
+  margin-right: 8px;
+}
+
+.inbox-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-divider);
+  padding: 0 16px;
+}
+
+.inbox-tab {
+  flex: 1;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.inbox-tab.active {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-text-primary);
+}
+
+.inbox-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.inbox-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  padding: 32px 16px;
+}
+
+.inbox-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-divider);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s ease;
+}
+
+.inbox-card:hover {
+  background: var(--color-neutral-bg);
+}
+
+.inbox-card-unread {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.inbox-card-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.inbox-card-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-negative-primary, #ef4444);
+  border: 2px solid var(--color-surface);
+}
+
+.inbox-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.inbox-card-name {
+  font-weight: 600;
+  font-size: var(--font-body-md);
+  color: var(--color-text-primary);
+}
+
+.inbox-card-unread .inbox-card-name {
+  font-weight: 700;
+}
+
+.inbox-card-time {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.inbox-card-preview {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.inbox-card-unread .inbox-card-preview {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.inbox-card-badge {
+  background: var(--color-accent-blue, #2563eb);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.inbox-conversation-view {
+  flex: 1;
+  overflow: hidden;
+}
+
+.inbox-conversation-view .message-panel {
+  border: none;
+  border-radius: 0;
+  margin-top: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.inbox-conversation-view .message-panel-header {
+  display: none;
+}
+
+.inbox-conversation-view .message-panel-body {
+  flex: 1;
+  max-height: none;
+}
+
+/* Message unread dot on speech bubble icon */
+
+.match-card-msg-btn {
+  position: relative;
+}
+
+.msg-unread-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-negative-primary, #ef4444);
+  border: 2px solid var(--color-surface);
+}
+
+/* Action card buttons row */
+
+.action-card-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.action-card-buttons .action-card-btn {
+  margin-top: 0;
+}
+
+/* Message action card accent */
+
+.action-card.action-message {
+  border-left-color: var(--color-accent-blue, #2563eb);
+}

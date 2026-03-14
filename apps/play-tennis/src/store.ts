@@ -2966,3 +2966,7 @@ export function markConversationRead(playerId: string, otherPlayerId: string): v
   }
   if (changed) saveMessages(msgs)
 }
+
+export function hasUnreadFrom(playerId: string, otherPlayerId: string): boolean {
+  return loadMessages().some(m => m.recipientId === playerId && m.senderId === otherPlayerId && !m.read)
+}
