@@ -67,6 +67,14 @@
   --radius-button: 10px;
   --radius-chip: 999px;
 
+  /* Border Radius (extended) */
+  --radius-sm: 8px;
+
+  /* Headings */
+  --font-heading-sm: 18px;
+  --font-heading-md: 22px;
+  --font-heading-lg: 28px;
+
   /* Shadow */
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
 }
@@ -5209,12 +5217,14 @@ select:focus {
 .score-fullscreen {
   position: fixed;
   inset: 0;
-  background: var(--color-bg-base);
-  z-index: 300;
+  background: var(--color-bg-primary);
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   animation: scoreFsIn 0.2s ease;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @keyframes scoreFsIn {
@@ -5226,8 +5236,9 @@ select:focus {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 2px solid var(--color-divider);
+  background: var(--color-bg-surface);
 }
 
 .score-fs-close {
@@ -5249,14 +5260,14 @@ select:focus {
 /* Score grid */
 .score-fs-grid {
   display: grid;
-  grid-template-columns: 1fr repeat(2, 56px);
-  gap: var(--space-xs);
-  padding: var(--space-lg);
+  grid-template-columns: 1fr repeat(2, 64px);
+  gap: var(--space-sm);
+  padding: var(--space-xl);
   align-items: center;
 }
 
 .score-fs-grid:has(.score-fs-cell:nth-child(7)) {
-  grid-template-columns: 1fr repeat(3, 56px);
+  grid-template-columns: 1fr repeat(3, 64px);
 }
 
 .score-fs-grid-header {
@@ -5275,17 +5286,18 @@ select:focus {
 }
 
 .score-fs-cell {
-  height: 48px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--color-divider);
   border-radius: var(--radius-sm);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
   user-select: none;
+  background: var(--color-bg-surface);
 }
 
 .score-cell-active {
@@ -5301,41 +5313,40 @@ select:focus {
 .score-numpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  max-width: 320px;
-  margin: auto;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl);
   margin-top: auto;
 }
 
 .score-numpad-btn {
-  height: 52px;
-  min-width: 52px;
+  height: 56px;
+  min-width: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-surface);
-  font-size: 1.25rem;
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--color-neutral-bg);
+  font-size: 1.5rem;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-  transition: background 0.1s;
+  transition: background 0.1s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .score-numpad-btn:active {
-  background: var(--color-neutral-bg);
+  background: var(--color-divider);
+  transform: scale(0.96);
 }
 
 .score-numpad-clear {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 
 .score-fs-confirm-btn {
-  margin: var(--space-md) var(--space-lg);
-  width: calc(100% - 2 * var(--space-lg));
+  margin: var(--space-lg) var(--space-xl);
+  width: calc(100% - 2 * var(--space-xl));
 }
 
 /* Confirmation step */
@@ -5345,13 +5356,14 @@ select:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-xl);
+  padding: var(--space-xxl) var(--space-xl);
   text-align: center;
-  gap: var(--space-md);
+  gap: var(--space-lg);
 }
 
 .score-confirm-icon {
-  font-size: 3rem;
+  font-size: 4rem;
+  margin-bottom: var(--space-sm);
 }
 
 .score-confirm-title {
@@ -5376,77 +5388,86 @@ select:focus {
 .score-confirm-actions {
   display: flex;
   gap: var(--space-md);
-  margin-top: var(--space-lg);
+  margin-top: var(--space-xl);
+  width: 100%;
+  max-width: 300px;
 }
 
 .score-confirm-actions .btn {
-  min-width: 120px;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Registration details fields ── */
 .details-field-group {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 
 .details-field-group .field-label {
   display: block;
-  font-size: var(--font-body-sm);
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-text-secondary);
-  margin-bottom: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-md);
 }
 
 .experience-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 
 .experience-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: var(--space-md);
+  padding: var(--space-lg);
   border: 2px solid var(--color-divider);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-card);
   background: var(--color-bg-surface);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   text-align: left;
 }
 
 .experience-card.selected {
   border-color: var(--color-accent-primary);
   background: var(--color-accent-bg);
+  box-shadow: 0 0 0 1px var(--color-accent-primary);
 }
 
 .experience-card-label {
-  font-size: var(--font-body-md);
+  font-size: var(--font-body-lg);
   font-weight: 600;
 }
 
 .experience-card-desc {
   font-size: var(--font-body-sm);
   color: var(--color-text-muted);
-  margin-top: 2px;
+  margin-top: var(--space-xs);
 }
 
 .chip-select {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
 }
 
 .chip-btn {
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
   border: 1.5px solid var(--color-divider);
-  border-radius: 20px;
+  border-radius: var(--radius-chip);
   background: var(--color-bg-surface);
-  font-size: var(--font-body-sm);
+  font-size: var(--font-body-md);
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
   white-space: nowrap;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
 }
 
 .chip-btn.selected {
