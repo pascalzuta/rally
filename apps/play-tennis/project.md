@@ -40,6 +40,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 ### Match Offer Types
 - **MatchOffer**: offerId, senderId, senderName, recipientId, recipientName, tournamentId, proposedDate, proposedTime, createdAt, expiresAt, status (proposed | accepted | declined | expired), matchId
 - **RallyNotification**: id, type (match_offer | offer_accepted | offer_declined | offer_expired | match_reminder), recipientId, message, detail, relatedOfferId, createdAt, read
+- **DirectMessage**: id, senderId, senderName, recipientId, recipientName, text, createdAt, read
 
 ## Features
 
@@ -157,6 +158,22 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **Backend transition**: System structured to map to future API → Match Offer Service → Notification Service (push, SMS, email)
 - **UI principles**: Cards emphasize Time > Opponent > Expiration > Actions. No chat bubbles, no sports icons. Minimal and structured.
 
+### Direct Messaging
+- **1:1 messages** between players — simple text, no group chat
+- **Access points**: Message icon on match cards (Bracket tab) and opponent rows (Play Now tab)
+- **Inline panel**: Expands below match card/opponent row, no separate screen or tab
+- **UI**: Chat bubble layout (own messages right-aligned blue, theirs left-aligned gray), auto-scroll, Enter to send
+- **Unread count**: Included in notification bell badge alongside match actions and offers
+- **Data model**: `DirectMessage` with sender/recipient IDs, text, timestamp, read status
+- **Storage**: `rally-direct-messages` localStorage key
+- **Limits**: 500 character max per message
+
+### Match Scheduling — 2-Hour Windows
+- Availability slots remain broad (e.g., "Saturday 9 AM – 3 PM") to maximize overlap matching
+- When proposing match times, overlaps are split into **2-hour windows** (e.g., "9 AM", "11 AM", "1 PM")
+- Minimum overlap required: 2 hours (one match length)
+- Players choose a concrete 2-hour window, not a vague range
+
 ## Storage Keys
 - `play-tennis-data` — Tournament data
 - `play-tennis-ratings` — Global Elo ratings
@@ -169,6 +186,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `play-tennis-badges` — Player achievement badges
 - `rally-match-offers` — Match offers (proposed/accepted/declined/expired)
 - `rally-notifications` — In-app notification entries
+- `rally-direct-messages` — Player-to-player direct messages
 
 ## Navigation Structure
 Four-tab layout designed around the player's tournament journey:
@@ -189,6 +207,7 @@ Four-tab layout designed around the player's tournament journey:
   - "Up Next" card for confirmed upcoming matches with day/time
   - Tournament progress indicator
   - "You're all caught up" state when nothing needs attention
+  - **Incoming offers summary** — count badge linking to Find Match tab (full offer UI lives on PlayNow, not duplicated here)
 - **Inline actions**: Schedule and score matches directly from the Home tab without navigating to the tournament tab
   - Schedule/respond/escalated cards expand inline `MatchSchedulePanel` within the card
   - Score cards and up-next cards open `MatchScoreModal` as overlay
@@ -197,7 +216,9 @@ Four-tab layout designed around the player's tournament journey:
 
 ### Bracket Tab
 - Full bracket (elimination) or standings table (round-robin) for the active tournament
-- Match cards with inline scheduling and scoring (tap to expand/score)
+- Match cards with inline scheduling, scoring, and messaging (tap to expand/score/message)
+- Match sort priority: Escalated > Confirmed/Score > Proposed/Respond > Unscheduled > Others > Completed
+- **Inline messaging**: Message icon on match cards opens conversation with opponent
 - "Leave this tournament" link at bottom (replaces header button)
 
 ### Play Now Tab
@@ -205,6 +226,11 @@ Four-tab layout designed around the player's tournament journey:
 - Active broadcast management
 - Availability timeline always visible (not behind a toggle)
 - Active broadcasts from opponents with "Claim Match" flow
+- **Inline messaging**: Message icon on opponent cards opens conversation
+
+### Leaderboard
+- Full county rankings with W-L records
+- **Recent Activity feed** — last 5 county matches (moved from Home for better context alongside rankings)
 
 ### Profile Tab
 - **Player identity card**: Name, county, matches played count
@@ -218,8 +244,8 @@ Four-tab layout designed around the player's tournament journey:
 ## Components
 - **App.tsx** — Root with 4-tab navigation (Home, Bracket, Play Now, Profile), derives active tournament
 - **Home.tsx** — Dashboard with action cards (inline scheduling & scoring), lobby fallback, tournament progress
-- **BracketTab.tsx** — Dedicated bracket/standings view with inline scheduling and scoring
-- **PlayNowTab.tsx** — Elevated broadcast/availability as first-class tab
+- **BracketTab.tsx** — Dedicated bracket/standings view with inline scheduling, scoring, and messaging
+- **PlayNowTab.tsx** — Elevated broadcast/availability as first-class tab with inline messaging
 - **Register.tsx** — Three-screen onboarding + signup with county autocomplete + availability picker
 - **Lobby.tsx** — County lobby with countdown (used by Home tab)
 - **TournamentView.tsx** — Legacy bracket/match display (retained for reference)
@@ -228,7 +254,8 @@ Four-tab layout designed around the player's tournament journey:
 - **Standings.tsx** — Round-robin standings table (used by BracketTab)
 - **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
 - **Profile.tsx** — Player identity, rating hero, performance stats, rating chart, availability, rating explainer
-- **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight, defending champion marker
+- **MessagePanel.tsx** — Inline 1:1 chat panel (used by BracketTab and PlayNowTab)
+- **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight, defending champion marker, recent activity feed
 - **VictoryAnimation.tsx** — Full-screen trophy celebration overlay with confetti and tier-appropriate styling
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
 

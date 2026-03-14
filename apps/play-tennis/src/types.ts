@@ -179,6 +179,19 @@ export interface MatchOffer {
   matchId?: string         // linked match ID once accepted
 }
 
+// --- Direct Messages ---
+
+export interface DirectMessage {
+  id: string
+  senderId: string
+  senderName: string
+  recipientId: string
+  recipientName: string
+  text: string
+  createdAt: string
+  read: boolean
+}
+
 // --- Notifications ---
 
 export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder'

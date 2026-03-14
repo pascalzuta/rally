@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers } from '../store'
 import { Tournament, MatchBroadcast, MatchOffer } from '../types'
+import MessagePanel from './MessagePanel'
 
 interface Props {
   tournament: Tournament | null
@@ -180,6 +181,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const [message, setMessage] = useState('')
   const [feedback, setFeedback] = useState('')
   const [askingRow, setAskingRow] = useState<OpponentRow | null>(null)
+  const [messagingPlayerId, setMessagingPlayerId] = useState<string | null>(null)
   const [, setTick] = useState(0)
 
   // Auto-refresh expiration timers
@@ -458,32 +460,55 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
               <div className="pn-date-header">{group.dateLabel}</div>
               <div className="pn-opponent-list">
                 {group.entries.map((row, i) => (
-                  <div
-                    key={`${row.playerId}-${row.date}-${i}`}
-                    className="pn-opponent-row pn-opponent-actionable"
-                    onClick={() => setAskingRow(row)}
-                  >
-                    <div className="pn-opponent-avatar">
-                      {row.playerName[0]?.toUpperCase() ?? '?'}
-                    </div>
-                    <div className="pn-opponent-info">
-                      <div className="pn-opponent-name">
-                        {row.playerName}
-                        <span className="seed-label">{playerSeedLabel(row.playerId)}</span>
-                      </div>
-                      <div className="pn-opponent-meta">
-                        {row.isNow && <span className="pn-available-now">Available now</span>}
-                        <span>{row.dateLabel} · {row.timeLabel}</span>
-                        {row.location && <span> · {row.location}</span>}
-                      </div>
-                      {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
-                    </div>
-                    <button
-                      className="btn btn-primary btn-small pn-ask-btn"
-                      onClick={e => { e.stopPropagation(); setAskingRow(row) }}
+                  <div key={`${row.playerId}-${row.date}-${i}`}>
+                    <div
+                      className="pn-opponent-row pn-opponent-actionable"
+                      onClick={() => setAskingRow(row)}
                     >
-                      Ask to Play
-                    </button>
+                      <div className="pn-opponent-avatar">
+                        {row.playerName[0]?.toUpperCase() ?? '?'}
+                      </div>
+                      <div className="pn-opponent-info">
+                        <div className="pn-opponent-name">
+                          {row.playerName}
+                          <span className="seed-label">{playerSeedLabel(row.playerId)}</span>
+                        </div>
+                        <div className="pn-opponent-meta">
+                          {row.isNow && <span className="pn-available-now">Available now</span>}
+                          <span>{row.dateLabel} · {row.timeLabel}</span>
+                          {row.location && <span> · {row.location}</span>}
+                        </div>
+                        {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
+                      </div>
+                      <div className="pn-opponent-actions">
+                        <button
+                          className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`}
+                          onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }}
+                          aria-label="Message player"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        <button
+                          className="btn btn-primary btn-small pn-ask-btn"
+                          onClick={e => { e.stopPropagation(); setAskingRow(row) }}
+                        >
+                          Ask to Play
+                        </button>
+                      </div>
+                    </div>
+                    {messagingPlayerId === row.playerId && (
+                      <div className="pn-message-panel-wrapper" onClick={e => e.stopPropagation()}>
+                        <MessagePanel
+                          currentPlayerId={currentPlayerId}
+                          currentPlayerName={currentPlayerName}
+                          otherPlayerId={row.playerId}
+                          otherPlayerName={row.playerName}
+                          onClose={() => setMessagingPlayerId(null)}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

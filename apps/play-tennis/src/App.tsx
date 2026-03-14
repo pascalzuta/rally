@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
@@ -60,7 +60,8 @@ export default function App() {
   // Include incoming match offers and unread notifications in badge
   const incomingOfferCount = profile ? getIncomingOffers(profile.id).length : 0
   const unreadNotifCount = profile ? getUnreadNotificationCount(profile.id) : 0
-  const pendingActionCount = matchActionCount + incomingOfferCount + unreadNotifCount
+  const unreadMsgCount = profile ? getUnreadMessageCount(profile.id) : 0
+  const pendingActionCount = matchActionCount + incomingOfferCount + unreadNotifCount + unreadMsgCount
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -308,6 +309,7 @@ export default function App() {
             <BracketTab
               tournament={activeTournament}
               currentPlayerId={profile.id}
+              currentPlayerName={profile.name}
               onTournamentUpdated={() => setRefreshKey(r => r + 1)}
               focusMatchId={focusMatchId}
               onFocusConsumed={() => setFocusMatchId(null)}
@@ -326,6 +328,7 @@ export default function App() {
           {activeTab === 'leaderboard' && (
             <Leaderboard
               county={profile.county}
+              currentPlayerId={profile.id}
               currentPlayerName={profile.name}
               onBack={() => setActiveTab('home')}
             />

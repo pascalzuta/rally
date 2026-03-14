@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getOutgoingOffers, saveMatchScore, getSeeds, winProbability, getRecentResults } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, saveMatchScore, getSeeds, winProbability } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -474,8 +474,6 @@ export default function Home({
   )
   const myRating = getPlayerRating(profile.id, profile.name)
 
-  const recentResults = useMemo(() => getRecentResults(profile.county, 5), [profile.county, tournaments])
-
   // No active or setup tournament: show lobby + status + leaderboard
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
@@ -532,24 +530,6 @@ export default function Home({
           </div>
         )}
 
-        {/* Recent Activity Feed */}
-        {recentResults.length > 0 && (
-          <div className="card recent-activity">
-            <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Recent Matches</div>
-            <div className="recent-results-list">
-              {recentResults.map(result => (
-                <div key={result.matchId} className="recent-result-item" onClick={() => onViewTournament(result.tournamentId)}>
-                  <div className="recent-result-players">
-                    <span className={`recent-result-name ${result.winnerId === profile.id ? 'is-me' : ''}`}>{result.winnerName}</span>
-                    <span className="recent-result-def">def.</span>
-                    <span className={`recent-result-name ${result.loserId === profile.id ? 'is-me' : ''}`}>{result.loserName}</span>
-                  </div>
-                  <div className="recent-result-score">{result.score}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -652,36 +632,15 @@ export default function Home({
         )
       })}
 
-      {/* Match Offers (incoming + outgoing) */}
+      {/* Match Offers summary — details on Find Match tab */}
       {(() => {
         const incoming = getIncomingOffers(profile.id)
-        const outgoing = getOutgoingOffers(profile.id)
-        if (incoming.length === 0 && outgoing.length === 0) return null
+        if (incoming.length === 0) return null
         return (
-          <div className="action-cards">
-            {incoming.map(offer => (
-              <div
-                key={offer.offerId}
-                className="action-card action-respond"
-                onClick={onViewOffers}
-              >
-                <div className="action-card-type">Respond</div>
-                <div className="action-card-opponent">{offer.senderName}</div>
-                <div className="action-card-detail">{offer.proposedTime} · {offer.proposedDate}</div>
-                <button className="action-card-btn" onClick={e => { e.stopPropagation(); onViewOffers?.() }}>View Offer</button>
-              </div>
-            ))}
-            {outgoing.map(offer => (
-              <div
-                key={offer.offerId}
-                className="action-card action-schedule"
-                onClick={onViewOffers}
-              >
-                <div className="action-card-type">Pending</div>
-                <div className="action-card-opponent">to {offer.recipientName}</div>
-                <div className="action-card-detail">{offer.proposedTime} · Waiting for response</div>
-              </div>
-            ))}
+          <div className="card offer-summary-card" onClick={onViewOffers} style={{ cursor: 'pointer' }}>
+            <div className="card-eyebrow" style={{ color: 'var(--color-accent-blue, #2563eb)' }}>Match Offers</div>
+            <div className="card-title">{incoming.length} offer{incoming.length !== 1 ? 's' : ''} waiting</div>
+            <button className="btn-link">View on Find Match</button>
           </div>
         )
       })()}

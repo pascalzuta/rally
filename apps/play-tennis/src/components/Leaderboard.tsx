@@ -1,14 +1,16 @@
-import { getCountyLeaderboard, isDefendingChampion } from '../store'
+import { getCountyLeaderboard, isDefendingChampion, getRecentResults } from '../store'
 import type { LeaderboardEntry } from '../store'
 
 interface Props {
   county: string
+  currentPlayerId: string
   currentPlayerName: string
   onBack: () => void
 }
 
-export default function Leaderboard({ county, currentPlayerName, onBack }: Props) {
+export default function Leaderboard({ county, currentPlayerId, currentPlayerName, onBack }: Props) {
   const leaderboard = getCountyLeaderboard(county)
+  const recentResults = getRecentResults(county, 5)
 
   // Find current player's position
   const myIndex = leaderboard.findIndex(e => e.name.toLowerCase() === currentPlayerName.toLowerCase())
@@ -83,6 +85,24 @@ export default function Leaderboard({ county, currentPlayerName, onBack }: Props
           : `${leaderboard.length} players ranked`
         }
       </div>
+
+      {recentResults.length > 0 && (
+        <div className="card recent-activity" style={{ marginTop: '16px' }}>
+          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Recent Matches</div>
+          <div className="recent-results-list">
+            {recentResults.map(result => (
+              <div key={result.matchId} className="recent-result-item">
+                <div className="recent-result-players">
+                  <span className={`recent-result-name ${result.winnerId === currentPlayerId ? 'is-me' : ''}`}>{result.winnerName}</span>
+                  <span className="recent-result-def">def.</span>
+                  <span className={`recent-result-name ${result.loserId === currentPlayerId ? 'is-me' : ''}`}>{result.loserName}</span>
+                </div>
+                <div className="recent-result-score">{result.score}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

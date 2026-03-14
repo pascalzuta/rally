@@ -3,11 +3,13 @@ import { Tournament, Match } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
+import MessagePanel from './MessagePanel'
 import Standings from './Standings'
 
 interface Props {
   tournament: Tournament | null
   currentPlayerId: string
+  currentPlayerName: string
   onTournamentUpdated: () => void
   focusMatchId?: string | null
   onFocusConsumed?: () => void
@@ -22,15 +24,15 @@ function formatStartTime(slot: { day: string; startHour: number }): { day: strin
 
 function matchSortPriority(match: Match, currentPlayerId: string): number {
   const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-  if (match.completed) return 5
-  if (!match.player1Id || !match.player2Id) return 4
+  if (match.completed) return 6
+  if (!match.player1Id || !match.player2Id) return 5
   const s = match.schedule
-  if (isMyMatch && s?.status === 'confirmed') return 0 // score required
-  if (isMyMatch && s?.status === 'escalated') return 0.5
-  if (isMyMatch && s?.status === 'proposed') return 1 // respond
-  if (isMyMatch && (!s || s.status === 'unscheduled')) return 1.5
-  if (s?.status === 'confirmed') return 2 // confirmed upcoming
-  return 3 // pending
+  if (isMyMatch && s?.status === 'escalated') return 0   // urgent — respond now
+  if (isMyMatch && s?.status === 'confirmed') return 1    // ready to score
+  if (isMyMatch && s?.status === 'proposed') return 2     // respond to proposal
+  if (isMyMatch && (!s || s.status === 'unscheduled')) return 2.5 // needs scheduling
+  if (s?.status === 'confirmed') return 3 // others' confirmed
+  return 4 // others' pending
 }
 
 function scheduleStatusClass(match: Match): string {
@@ -51,9 +53,10 @@ function scheduleStatusClass(match: Match): string {
   }
 }
 
-export default function BracketTab({ tournament, currentPlayerId, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
+export default function BracketTab({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
+  const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [showOverflow, setShowOverflow] = useState(false)
@@ -353,8 +356,38 @@ export default function BracketTab({ tournament, currentPlayerId, onTournamentUp
               </div>
             )}
 
-            {/* Action button */}
-            {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
+            {/* Action row: action button + message button */}
+            <div className="match-card-actions-row">
+              {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
+              {isMyMatch && match.player1Id && match.player2Id && !match.completed && (
+                <button
+                  className={`match-card-msg-btn ${messagingMatchId === match.id ? 'active' : ''}`}
+                  onClick={e => { e.stopPropagation(); setMessagingMatchId(messagingMatchId === match.id ? null : match.id) }}
+                  aria-label="Message opponent"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Message panel */}
+            {messagingMatchId === match.id && isMyMatch && match.player1Id && match.player2Id && (() => {
+              const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
+              const opponentName = getPlayerName(tournament!, opponentId)
+              return (
+                <div onClick={e => e.stopPropagation()}>
+                  <MessagePanel
+                    currentPlayerId={currentPlayerId}
+                    currentPlayerName={currentPlayerName}
+                    otherPlayerId={opponentId}
+                    otherPlayerName={opponentName}
+                    onClose={() => setMessagingMatchId(null)}
+                  />
+                </div>
+              )
+            })()}
 
             {/* Expanded scheduling panel */}
             {isExpanded && !match.completed && match.schedule && (

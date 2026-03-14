@@ -5159,3 +5159,172 @@ select:focus {
 .bracket-overflow-danger {
   color: var(--color-negative-primary);
 }
+
+/* --- Message Panel --- */
+
+.message-panel {
+  border: 1px solid var(--color-divider);
+  border-radius: 12px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.message-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-neutral-bg);
+}
+
+.message-panel-name {
+  font-size: var(--font-body-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.message-panel-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  line-height: 0;
+}
+
+.message-panel-body {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message-panel-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  padding: 16px 0;
+  margin: 0;
+}
+
+.message-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: var(--font-body-sm);
+}
+
+.message-mine {
+  align-self: flex-end;
+  background: var(--color-accent-blue, #2563eb);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message-theirs {
+  align-self: flex-start;
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: 4px;
+}
+
+.message-text {
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+
+.message-time {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.message-mine .message-time {
+  text-align: right;
+}
+
+.message-panel-input {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--color-divider);
+  background: var(--color-neutral-bg);
+}
+
+.message-panel-input input {
+  flex: 1;
+  border: 1px solid var(--color-divider);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: var(--font-body-sm);
+  font-family: inherit;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.message-panel-input input:focus {
+  border-color: var(--color-accent-blue, #2563eb);
+}
+
+.message-send-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-accent-blue, #2563eb);
+  padding: 4px;
+  line-height: 0;
+}
+
+.message-send-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Match card message button */
+
+.match-card-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.match-card-actions-row .match-card-action-btn {
+  margin-top: 0;
+}
+
+.match-card-msg-btn {
+  background: none;
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  line-height: 0;
+  transition: all 0.15s ease;
+}
+
+.match-card-msg-btn:hover,
+.match-card-msg-btn.active {
+  color: var(--color-accent-blue, #2563eb);
+  border-color: var(--color-accent-blue, #2563eb);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+/* PlayNow opponent actions */
+
+.pn-opponent-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pn-message-panel-wrapper {
+  padding: 0 16px 16px;
+}

@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -22,6 +22,7 @@ const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
 const OFFERS_KEY = 'rally-match-offers'
 const NOTIFICATIONS_KEY = 'rally-notifications'
 const MATCH_NOTES_KEY = 'rally-match-notes'
+const MESSAGES_KEY = 'rally-direct-messages'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -2891,4 +2892,77 @@ export function addMatchNote(tournamentId: string, matchId: string, playerId: st
   notes.push(note)
   saveMatchNotes(notes)
   return note
+}
+
+// --- Direct Messages ---
+
+function loadMessages(): DirectMessage[] {
+  try {
+    return JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]')
+  } catch { return [] }
+}
+
+function saveMessages(msgs: DirectMessage[]): void {
+  localStorage.setItem(MESSAGES_KEY, JSON.stringify(msgs))
+}
+
+export function sendMessage(senderId: string, senderName: string, recipientId: string, recipientName: string, text: string): DirectMessage {
+  const msgs = loadMessages()
+  const msg: DirectMessage = {
+    id: generateId(),
+    senderId,
+    senderName,
+    recipientId,
+    recipientName,
+    text: text.trim(),
+    createdAt: new Date().toISOString(),
+    read: false,
+  }
+  msgs.push(msg)
+  saveMessages(msgs)
+  return msg
+}
+
+export function getConversation(playerId: string, otherPlayerId: string): DirectMessage[] {
+  return loadMessages().filter(m =>
+    (m.senderId === playerId && m.recipientId === otherPlayerId) ||
+    (m.senderId === otherPlayerId && m.recipientId === playerId)
+  ).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+}
+
+export function getConversationList(playerId: string): { otherPlayerId: string; otherPlayerName: string; lastMessage: DirectMessage; unreadCount: number }[] {
+  const msgs = loadMessages().filter(m => m.senderId === playerId || m.recipientId === playerId)
+  const byPeer: Record<string, DirectMessage[]> = {}
+  for (const m of msgs) {
+    const peerId = m.senderId === playerId ? m.recipientId : m.senderId
+    if (!byPeer[peerId]) byPeer[peerId] = []
+    byPeer[peerId].push(m)
+  }
+  return Object.entries(byPeer).map(([peerId, peerMsgs]) => {
+    peerMsgs.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const last = peerMsgs[peerMsgs.length - 1]
+    const unread = peerMsgs.filter(m => m.recipientId === playerId && !m.read).length
+    return {
+      otherPlayerId: peerId,
+      otherPlayerName: last.senderId === peerId ? last.senderName : last.recipientName,
+      lastMessage: last,
+      unreadCount: unread,
+    }
+  }).sort((a, b) => b.lastMessage.createdAt.localeCompare(a.lastMessage.createdAt))
+}
+
+export function getUnreadMessageCount(playerId: string): number {
+  return loadMessages().filter(m => m.recipientId === playerId && !m.read).length
+}
+
+export function markConversationRead(playerId: string, otherPlayerId: string): void {
+  const msgs = loadMessages()
+  let changed = false
+  for (const m of msgs) {
+    if (m.recipientId === playerId && m.senderId === otherPlayerId && !m.read) {
+      m.read = true
+      changed = true
+    }
+  }
+  if (changed) saveMessages(msgs)
 }
