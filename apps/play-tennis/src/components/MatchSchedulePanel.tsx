@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { acceptProposal, proposeNewSlots, getMatchNotes, addMatchNote, getPlayerName } from '../store'
-import type { MatchNote } from '../store'
+import { acceptProposal, proposeNewSlots } from '../store'
 import { Match, Tournament, DayOfWeek, MatchProposal } from '../types'
 
 interface Props {
@@ -32,75 +31,6 @@ function dayLabel(day: DayOfWeek): string {
 
 function proposalLabel(p: MatchProposal): string {
   return `${dayLabel(p.day)} ${formatHour(p.startHour)}–${formatHour(p.endHour)}`
-}
-
-function MatchNotesSection({ tournament, match, currentPlayerId }: { tournament: Tournament; match: Match; currentPlayerId: string }) {
-  const [notes, setNotes] = useState<MatchNote[]>(() => getMatchNotes(tournament.id, match.id))
-  const [newNote, setNewNote] = useState('')
-  const [showNotes, setShowNotes] = useState(false)
-
-  const currentPlayerName = getPlayerName(tournament, currentPlayerId)
-
-  function handleSend() {
-    if (!newNote.trim()) return
-    addMatchNote(tournament.id, match.id, currentPlayerId, currentPlayerName, newNote)
-    setNotes(getMatchNotes(tournament.id, match.id))
-    setNewNote('')
-  }
-
-  return (
-    <div className="match-notes-section">
-      <button
-        className="btn-link match-notes-toggle"
-        onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes) }}
-      >
-        {showNotes ? 'Hide notes' : `Notes${notes.length > 0 ? ` (${notes.length})` : ''}`}
-      </button>
-      {showNotes && (
-        <div className="match-notes-body" onClick={e => e.stopPropagation()}>
-          {notes.length > 0 && (
-            <div className="match-notes-list">
-              {notes.map(note => (
-                <div key={note.id} className={`match-note ${note.playerId === currentPlayerId ? 'mine' : 'theirs'}`}>
-                  <div className="match-note-header">
-                    <span className="match-note-author">{note.playerId === currentPlayerId ? 'You' : note.playerName}</span>
-                    <span className="match-note-time">{formatNoteTime(note.createdAt)}</span>
-                  </div>
-                  <div className="match-note-text">{note.text}</div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="match-notes-input-row">
-            <input
-              type="text"
-              className="match-notes-input"
-              placeholder="Add a note..."
-              value={newNote}
-              onChange={e => setNewNote(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
-              maxLength={200}
-            />
-            <button className="btn btn-primary btn-small" onClick={handleSend} disabled={!newNote.trim()}>
-              Send
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function formatNoteTime(isoStr: string): string {
-  const d = new Date(isoStr)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  if (diffMins < 1) return 'now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated }: Props) {
@@ -141,7 +71,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <span className="confirmed-day">{dayLabel(s.day)}</span>
           <span className="confirmed-time">{formatHour(s.startHour)}–{formatHour(s.endHour)}</span>
         </div>
-        <MatchNotesSection tournament={tournament} match={match} currentPlayerId={currentPlayerId} />
+
       </div>
     )
   }
@@ -350,7 +280,6 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         </div>
       )}
 
-      <MatchNotesSection tournament={tournament} match={match} currentPlayerId={currentPlayerId} />
     </div>
   )
 }
