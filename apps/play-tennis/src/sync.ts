@@ -219,9 +219,14 @@ async function refreshLobbyFromRemote(countyKey: string): Promise<void> {
     county: row.county,
     joinedAt: row.joined_at,
   }))
+  // Merge: keep local-only entries (e.g. dev-seeded players) alongside remote data
   const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
   const otherCounties = localLobby.filter(e => e.county.toLowerCase() !== countyKey)
-  localStorage.setItem(LOBBY_KEY, JSON.stringify([...otherCounties, ...remoteEntries]))
+  const remoteIds = new Set(remoteEntries.map(e => e.playerId))
+  const localOnlyCounty = localLobby.filter(
+    e => e.county.toLowerCase() === countyKey && !remoteIds.has(e.playerId)
+  )
+  localStorage.setItem(LOBBY_KEY, JSON.stringify([...otherCounties, ...remoteEntries, ...localOnlyCounty]))
   dispatchSync()
 }
 
