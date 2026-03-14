@@ -434,7 +434,7 @@ function computeOverlap(slotsA: AvailabilitySlot[], slotsB: AvailabilitySlot[]):
       if (a.day !== b.day) continue
       const start = Math.max(a.startHour, b.startHour)
       const end = Math.min(a.endHour, b.endHour)
-      if (end - start >= 1) { // at least 1 hour overlap
+      if (end - start >= 2) { // at least 2 hours (one match length) overlap
         overlaps.push({ day: a.day, startHour: start, endHour: end })
       }
     }
@@ -444,18 +444,25 @@ function computeOverlap(slotsA: AvailabilitySlot[], slotsB: AvailabilitySlot[]):
 
 const DAY_ORDER: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
+/** Split overlaps into 2-hour match windows */
+function splitIntoMatchWindows(slots: AvailabilitySlot[]): AvailabilitySlot[] {
+  const windows: AvailabilitySlot[] = []
+  for (const slot of slots) {
+    for (let h = slot.startHour; h + 2 <= slot.endHour; h += 2) {
+      windows.push({ day: slot.day, startHour: h, endHour: h + 2 })
+    }
+  }
+  return windows
+}
+
 function rankSlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
   return [...slots].sort((a, b) => {
-    // Prefer longer slots
-    const durA = a.endHour - a.startHour
-    const durB = b.endHour - b.startHour
-    if (durB !== durA) return durB - durA
-    // Then prefer weekends
+    // Prefer weekends
     const weekendA = (a.day === 'saturday' || a.day === 'sunday') ? 0 : 1
     const weekendB = (b.day === 'saturday' || b.day === 'sunday') ? 0 : 1
     if (weekendA !== weekendB) return weekendA - weekendB
     // Then by day order
-    return DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
+    return DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) || a.startHour - b.startHour
   })
 }
 
@@ -467,9 +474,10 @@ export function generateMatchSchedule(
   const slots2 = getAvailability(player2Id)
 
   const overlaps = computeOverlap(slots1, slots2)
-  const ranked = rankSlots(overlaps)
+  const windows = splitIntoMatchWindows(overlaps)
+  const ranked = rankSlots(windows)
 
-  // Generate up to 3 system proposals from overlaps
+  // Generate up to 3 system proposals from 2-hour match windows
   const proposals: MatchProposal[] = ranked.slice(0, 3).map(slot => ({
     id: generateId(),
     proposedBy: 'system',
@@ -481,7 +489,7 @@ export function generateMatchSchedule(
 
   // If no overlap, use one player's slots as suggestions
   if (proposals.length === 0) {
-    const fallback = rankSlots([...slots1, ...slots2])
+    const fallback = rankSlots(splitIntoMatchWindows([...slots1, ...slots2]))
     for (const slot of fallback.slice(0, 3)) {
       proposals.push({
         id: generateId(),
