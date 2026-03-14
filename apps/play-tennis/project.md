@@ -164,6 +164,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **Inline panel**: Expands below match card/opponent row — consistent behavior across all tabs
 - **UI**: Chat bubble layout (own messages right-aligned blue, theirs left-aligned gray), auto-scroll, Enter to send
 - **Inbox**: Envelope icon in top nav (left of notification bell) opens full message inbox
+  - **Rendered at root level** (outside nav) with `z-index: 1000` for proper full-screen overlay
   - **Unread dot**: Red dot on envelope icon when any unread messages exist
   - **Tournament tabs**: "Current Tournament" / "Past Tournaments" navigation (same style as Bracket tab's matches/standings tabs)
   - **Conversation cards**: Sorted by most recent, showing avatar, name, preview text, timestamp, unread badge
@@ -173,6 +174,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **Data model**: `DirectMessage` with sender/recipient IDs, text, timestamp, read status
 - **Storage**: `rally-direct-messages` localStorage key
 - **Limits**: 500 character max per message
+- **No match notes**: Notes feature on match schedule cards was removed to reduce clutter
 
 ### Match Scheduling — 2-Hour Windows
 - Availability slots remain broad (e.g., "Saturday 9 AM – 3 PM") to maximize overlap matching
@@ -195,7 +197,9 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `rally-direct-messages` — Player-to-player direct messages
 
 ## Navigation Structure
-Four-tab layout designed around the player's tournament journey:
+Four-tab layout designed around the player's tournament journey.
+
+**Browser history integration**: Tab state synced to URL hash (`#home`, `#bracket`, `#playnow`, `#profile`). Tab switches push history entries so the browser back/forward buttons navigate between tabs instead of leaving the app. Deep-linking supported (e.g. `play-rally.com/#bracket`).
 
 | Tab | Icon | Purpose |
 |-----|------|---------|
