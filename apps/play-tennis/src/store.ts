@@ -215,9 +215,9 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
           p_county: entry.county,
           p_joined_at: entry.joinedAt,
         })
-        if (!error && data) {
-          // Update local lobby from RPC response
-          const entries: LobbyEntry[] = (data.entries ?? []).map((e: any) => ({
+        if (!error && data && Array.isArray(data.entries)) {
+          // Update local lobby from RPC response (only if RPC returned valid entries)
+          const entries: LobbyEntry[] = data.entries.map((e: any) => ({
             playerId: e.playerId,
             playerName: e.playerName,
             county: e.county,
