@@ -164,13 +164,14 @@ export default function App() {
     setTournaments(sorted)
   }
 
-  function handleRegistered(p: PlayerProfile) {
+  async function handleRegistered(p: PlayerProfile) {
     if (inviteCounty) {
       // After registering via invite, auto-join the invite county's lobby
-      joinLobby({ ...p, county: inviteCounty })
+      await joinLobby({ ...p, county: inviteCounty })
       clearInviteParam()
     }
     setProfile(p)
+    setActiveTab('home')
   }
 
   if (!profile) {

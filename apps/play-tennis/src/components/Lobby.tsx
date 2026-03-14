@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired } from '../store'
+import { SYNC_EVENT } from '../sync'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
 interface Props {
@@ -36,10 +37,23 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
 
   const isInSetupTournament = setupTournament?.players.some(p => p.id === profile.id) ?? false
 
-  useEffect(() => {
+  function refreshState() {
     setEntries(getLobbyByCounty(profile.county))
     setJoined(isInLobby(profile.id))
     checkForSetupTournament()
+  }
+
+  useEffect(() => {
+    refreshState()
+  }, [profile])
+
+  // Listen for Supabase realtime sync updates
+  useEffect(() => {
+    function handleSync() {
+      refreshState()
+    }
+    window.addEventListener(SYNC_EVENT, handleSync)
+    return () => window.removeEventListener(SYNC_EVENT, handleSync)
   }, [profile])
 
   // Auto-join when coming from "Start Tournament"
@@ -91,21 +105,26 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   }
 
   async function handleJoin() {
-    const updated = await joinLobby(profile)
-    setEntries(updated)
-    setJoined(true)
+    try {
+      const updated = await joinLobby(profile)
+      setEntries(updated)
+      setJoined(true)
 
-    if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
-      const tournament = await startTournamentFromLobby(profile.county)
-      if (tournament) {
-        if (tournament.status === 'in-progress') {
-          onTournamentCreated(tournament.id)
+      if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
+        const tournament = await startTournamentFromLobby(profile.county)
+        if (tournament) {
+          if (tournament.status === 'in-progress') {
+            onTournamentCreated(tournament.id)
+            return
+          }
+          setSetupTournament(tournament)
+          setEntries(getLobbyByCounty(profile.county))
           return
         }
-        setSetupTournament(tournament)
-        setEntries(getLobbyByCounty(profile.county))
-        return
       }
+    } catch {
+      // On error, re-read state from storage to stay in sync
+      refreshState()
     }
   }
 
