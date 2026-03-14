@@ -17,12 +17,12 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
   const county = profile?.county ?? ''
   const testProfiles = county ? getTestProfiles(county) : []
 
-  function handleSeed(count: number) {
+  async function handleSeed(count: number) {
     if (!county) {
       setMessage('Register first to seed your county')
       return
     }
-    const entries = seedLobby(county, count)
+    const entries = await seedLobby(county, count)
     setMessage(`Lobby now has ${entries.length} players in ${county}`)
     setTimeout(() => setMessage(''), 2000)
   }
