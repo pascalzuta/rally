@@ -35,7 +35,9 @@
     "dev:grp": "npx serve apps/grp -l 3500 --no-clipboard",
     "prepare": "husky || true",
     "dev:cms": "npm run dev -w @grp/cms",
-    "build:cms": "npm run build -w @grp/cms"
+    "build:cms": "npm run build -w @grp/cms",
+    "dev:play-tennis": "npm run dev -w @play-tennis/web",
+    "build:play-tennis": "npm run build -w @play-tennis/web"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
