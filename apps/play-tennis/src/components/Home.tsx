@@ -16,6 +16,7 @@ interface Props {
   onViewLeaderboard?: () => void
   onViewOffers?: () => void
   onDataChanged?: () => void
+  onViewHelp?: () => void
 }
 
 // --- Onboarding ---
@@ -456,9 +457,11 @@ export default function Home({
   onViewLeaderboard,
   onViewOffers,
   onDataChanged,
+  onViewHelp,
 }: Props) {
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
+  const [hiwDismissed, setHiwDismissed] = useState(() => localStorage.getItem('rally_hiw_dismissed') === '1')
 
   const activeTournaments = useMemo(
     () => tournaments.filter(
@@ -510,6 +513,43 @@ export default function Home({
     return (
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
+
+        {/* How Rally Works card */}
+        {!hiwDismissed && (
+          <div className="how-rally-works">
+            <div className="how-rally-works-header">
+              <h3>How Rally Works</h3>
+              <button className="how-rally-works-dismiss" onClick={() => { setHiwDismissed(true); localStorage.setItem('rally_hiw_dismissed', '1') }} aria-label="Dismiss">&#10005;</button>
+            </div>
+            <div className="how-rally-steps">
+              <div className="how-rally-step">
+                <div className="how-rally-step-icon how-rally-step-icon--join">1</div>
+                <div className="how-rally-step-text">
+                  <strong>Join</strong>
+                  <span>Sign up for a tournament in your area</span>
+                </div>
+              </div>
+              <div className="how-rally-step">
+                <div className="how-rally-step-icon how-rally-step-icon--play">2</div>
+                <div className="how-rally-step-text">
+                  <strong>Play</strong>
+                  <span>Matches auto-scheduled from your availability</span>
+                </div>
+              </div>
+              <div className="how-rally-step">
+                <div className="how-rally-step-icon how-rally-step-icon--compete">3</div>
+                <div className="how-rally-step-text">
+                  <strong>Compete</strong>
+                  <span>Top 4 advance to finals for the championship</span>
+                </div>
+              </div>
+            </div>
+            <div className="how-rally-footer">
+              ~30 days per season
+              {onViewHelp && <button className="how-rally-learn-more" onClick={onViewHelp}>Learn more</button>}
+            </div>
+          </div>
+        )}
 
         {/* User Status Block */}
         <div className="card user-status-card">

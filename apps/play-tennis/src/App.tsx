@@ -12,12 +12,13 @@ import PlayNowTab from './components/PlayNowTab'
 import Profile from './components/Profile'
 import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
+import Help from './components/Help'
 import DevTools from './components/DevTools'
 import './styles.css'
 
-type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard'
+type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
 
-const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard']
+const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard', 'help']
 
 function getTabFromHash(): Tab {
   const hash = window.location.hash.replace('#', '')
@@ -340,6 +341,7 @@ export default function App() {
               onViewLeaderboard={() => setActiveTab('leaderboard')}
               onViewOffers={() => setActiveTab('playnow')}
               onDataChanged={() => setRefreshKey(r => r + 1)}
+              onViewHelp={() => setActiveTab('help')}
             />
           )}
 
@@ -381,7 +383,12 @@ export default function App() {
                 setActiveTab(tab)
               }}
               onViewLeaderboard={() => setActiveTab('leaderboard')}
+              onViewHelp={() => setActiveTab('help')}
             />
+          )}
+
+          {activeTab === 'help' && (
+            <Help onBack={() => setActiveTab('profile')} />
           )}
         </main>
 

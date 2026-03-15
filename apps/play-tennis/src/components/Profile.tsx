@@ -8,6 +8,7 @@ interface Props {
   onLogout: () => void
   onNavigate: (tab: 'home' | 'bracket' | 'playnow') => void
   onViewLeaderboard?: () => void
+  onViewHelp?: () => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -206,7 +207,7 @@ function BadgeIcon({ type }: { type: Badge['type'] }) {
 
 // --- Main Profile ---
 
-export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard }: Props) {
+export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard, onViewHelp }: Props) {
   const rating = getPlayerRating(profile.id, profile.name)
   const label = getRatingLabel(rating.rating)
   const tournaments = getPlayerTournaments(profile.id)
@@ -638,6 +639,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
         )}
       </div>
+
+      {/* Help & How Rally Works */}
+      {onViewHelp && (
+        <button className="btn btn-large help-link-btn" onClick={onViewHelp}>How Rally Works</button>
+      )}
 
       {/* Sign Out */}
       <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
