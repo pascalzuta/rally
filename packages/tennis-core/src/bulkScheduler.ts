@@ -184,9 +184,12 @@ export function bulkScheduleMatches(
   const constraints = { ...DEFAULT_CONSTRAINTS, ...constraintsInput }
   const weeks = Math.max(3, Math.ceil(matches.length / (constraints.weeklyCapPerPlayer * 2)))
 
+  // Filter out bye matches (missing player IDs)
+  const validMatches = matches.filter(m => m.player1Id && m.player2Id)
+
   // Step 1: Compute candidate slots for each match
   const matchCandidates = new Map<string, { match: MatchToSchedule; candidates: CandidateSlot[] }>()
-  for (const match of matches) {
+  for (const match of validMatches) {
     const slots1 = availability[match.player1Id] ?? []
     const slots2 = availability[match.player2Id] ?? []
     const candidates = computeOverlapWindows(slots1, slots2, constraints.matchDurationHours, weeks)

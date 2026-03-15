@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { createProfile, saveAvailability } from '../store'
+import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
 
@@ -109,6 +109,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [addingDay, setAddingDay] = useState<DayOfWeek | ''>('')
   const [addingStart, setAddingStart] = useState(18)
   const [addingEnd, setAddingEnd] = useState(21)
+  const [weeklyCap, setWeeklyCap] = useState<1 | 2 | 3>(2)
+  const [matchableCount, setMatchableCount] = useState(0)
 
   function detectLocation() {
     if (detectingLocation || suggestedCounty) return
@@ -190,6 +192,32 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     setDetailedSlots(prev => prev.filter((_, i) => i !== idx))
   }
 
+  // Compute matchable players count based on current availability selection
+  useEffect(() => {
+    if (!county) { setMatchableCount(0); return }
+    const currentSlots: AvailabilitySlot[] = detailedMode
+      ? detailedSlots
+      : Array.from(selectedQuick).flatMap(idx => QUICK_SLOTS[idx].slots)
+
+    if (currentSlots.length === 0) { setMatchableCount(0); return }
+
+    const lobby = getLobbyByCounty(county)
+    let count = 0
+    for (const entry of lobby) {
+      const playerSlots = getAvailability(entry.playerId)
+      if (playerSlots.length === 0) continue
+      // Check if any slot overlaps (same day, >= 2 hour overlap)
+      const hasOverlap = currentSlots.some(cs =>
+        playerSlots.some(ps =>
+          cs.day === ps.day &&
+          Math.min(cs.endHour, ps.endHour) - Math.max(cs.startHour, ps.startHour) >= 2
+        )
+      )
+      if (hasOverlap) count++
+    }
+    setMatchableCount(count)
+  }, [county, selectedQuick, detailedSlots, detailedMode])
+
   const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
 
   function handleFinish(skip: boolean) {
@@ -197,6 +225,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       skillLevel: skillLevel || undefined,
       gender: gender || undefined,
     })
+    // Save weekly cap to profile
+    p.weeklyCap = weeklyCap
+    localStorage.setItem('play-tennis-profile', JSON.stringify(p))
+
     if (!skip) {
       let slots: AvailabilitySlot[] = []
       if (detailedMode) {
@@ -207,7 +239,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         }
       }
       if (slots.length > 0) {
-        saveAvailability(p.id, slots)
+        saveAvailability(p.id, slots, county, weeklyCap)
       }
     }
     setCreatedProfile(p)
@@ -540,12 +572,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   }
 
   // --- Step: Availability ---
+  const hasSlots = detailedMode ? detailedSlots.length > 0 : selectedQuick.size > 0
+  const capDurationLabels: Record<number, string> = { 1: 'Tournament takes ~5 weeks', 2: 'Tournament takes ~3 weeks', 3: 'Tournament takes ~2 weeks' }
+
   return (
     <div className="onboard-screen">
       <div className="signup-content">
         <div className="signup-header">
           <h1 className="signup-title">When can you play?</h1>
-          <p className="signup-desc">Tell us when you're free and we'll handle the rest</p>
+          <p className="signup-desc">Add your times. We'll schedule your matches automatically.</p>
         </div>
 
         <div className="availability-picker">
@@ -609,11 +644,51 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           )}
         </div>
 
+        {/* Matchable players preview */}
+        <div className={`availability-preview ${hasSlots ? 'visible' : ''}`}>
+          {matchableCount > 0 && (
+            <>
+              <span className="availability-preview-count">{matchableCount}</span>
+              <span className="availability-preview-label">players you can match with</span>
+            </>
+          )}
+          {matchableCount >= 5 && (
+            <div className="availability-preview-hint availability-preview-hint--positive">
+              Nice — that's enough for a full tournament group
+            </div>
+          )}
+          {hasSlots && matchableCount <= 2 && matchableCount > 0 && (
+            <div className="availability-preview-hint availability-preview-hint--warning">
+              Tip: adding a weekend morning matches you with more players
+            </div>
+          )}
+        </div>
+
+        {/* Weekly cap selector */}
+        <div className="weekly-cap-picker">
+          <div className="weekly-cap-header">
+            <span className="weekly-cap-title">Matches per week</span>
+            <span className="weekly-cap-hint">We'll spread your matches out</span>
+          </div>
+          <div className="weekly-cap-options">
+            {([1, 2, 3] as const).map(cap => (
+              <button
+                key={cap}
+                className={`weekly-cap-option ${weeklyCap === cap ? 'selected' : ''}`}
+                onClick={() => setWeeklyCap(cap)}
+              >
+                {cap}
+              </button>
+            ))}
+          </div>
+          <div className="weekly-cap-duration">{capDurationLabels[weeklyCap]}</div>
+        </div>
+
         <div className="availability-actions">
           <button
             className="btn btn-primary btn-large"
             onClick={() => handleFinish(false)}
-            disabled={detailedMode ? detailedSlots.length === 0 : selectedQuick.size === 0}
+            disabled={!hasSlots}
           >
             Start Competing
           </button>

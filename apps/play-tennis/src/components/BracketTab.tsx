@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal } from '../store'
 import MatchScoreModal from './MatchScoreModal'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
+import ScheduleSummary from './ScheduleSummary'
+import MatchCalendar from './MatchCalendar'
 
 interface Props {
   tournament: Tournament | null
@@ -61,6 +63,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [showOverflow, setShowOverflow] = useState(false)
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
+  const [showScheduleSummary, setShowScheduleSummary] = useState(true) // show aha moment first
+  const [viewMode, setViewMode] = useState<'calendar' | 'bracket'>('calendar') // default calendar for round-robin
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const pendingScrollId = useRef<string | null>(null)
 
@@ -107,12 +111,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     )
   }
 
-  if (tournament.status === 'setup') {
+  if (tournament.status === 'setup' || tournament.status === 'scheduling') {
     return (
       <div className="bracket-tab">
         <div className="bracket-tab-header">
           <h2>{tournament.name}</h2>
-          <div className="bracket-tab-meta">Setting up · {tournament.players.length} players</div>
+          <div className="bracket-tab-meta">
+            {tournament.status === 'scheduling' ? 'Generating your schedule...' : `Setting up · ${tournament.players.length} players`}
+          </div>
         </div>
         <div className="card">
           <div className="setup-roster-title">Players</div>
@@ -290,8 +296,18 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
       >
         <>
-          {/* Eyebrow label */}
-          {eyebrow && <div className="match-card-eyebrow">{eyebrow.label}</div>}
+          {/* Eyebrow label with scheduling tier badge */}
+          <div className="match-card-eyebrow-row">
+            {eyebrow && <div className="match-card-eyebrow">{eyebrow.label}</div>}
+            {!match.completed && match.schedule?.schedulingTier && (
+              <span className={`scheduling-badge scheduling-badge--${match.schedule.schedulingTier === 'auto' ? 'auto' : match.schedule.schedulingTier === 'needs-accept' ? 'accept' : 'negotiate'}`}>
+                <span className="scheduling-badge-icon">
+                  {match.schedule.schedulingTier === 'auto' ? '✓' : match.schedule.schedulingTier === 'needs-accept' ? '●' : '○'}
+                </span>
+                {match.schedule.schedulingTier === 'auto' ? 'Confirmed' : match.schedule.schedulingTier === 'needs-accept' ? 'Pending' : 'Unscheduled'}
+              </span>
+            )}
+          </div>
 
           <div className="match-players-row">
             <div className="match-players-names">
@@ -429,57 +445,61 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* Scheduling dashboard — shows auto-scheduling summary */}
-      {tournament.status === 'in-progress' && isParticipant && (() => {
-        const myMatches = tournament.matches.filter(
-          m => (m.player1Id === currentPlayerId || m.player2Id === currentPlayerId) && !m.completed
-        )
-        const scheduled = myMatches.filter(m => m.schedule?.status === 'confirmed').length
-        const needsInput = myMatches.filter(m => m.schedule?.status === 'proposed' || m.schedule?.status === 'unscheduled' || m.schedule?.status === 'escalated').length
-        const total = myMatches.length
-        if (total === 0) return null
-        return (
-          <div className="scheduling-dashboard">
-            <div className="scheduling-dashboard-title">Your Match Schedule</div>
-            <div className="scheduling-dashboard-stats">
-              <div className="scheduling-stat scheduling-stat-confirmed">
-                <span className="scheduling-stat-num">{scheduled}</span>
-                <span className="scheduling-stat-label">scheduled</span>
-              </div>
-              {needsInput > 0 && (
-                <div className="scheduling-stat scheduling-stat-action">
-                  <span className="scheduling-stat-num">{needsInput}</span>
-                  <span className="scheduling-stat-label">need your input</span>
-                </div>
-              )}
-              {needsInput === 0 && scheduled === total && (
-                <div className="scheduling-stat scheduling-stat-done">
-                  <span className="scheduling-stat-label">All matches scheduled</span>
-                </div>
-              )}
-            </div>
-            {scheduled > 0 && (
-              <div className="scheduling-dashboard-next">
-                {myMatches
-                  .filter(m => m.schedule?.status === 'confirmed' && m.schedule?.confirmedSlot)
-                  .slice(0, 3)
-                  .map(m => {
-                    const opponentId = m.player1Id === currentPlayerId ? m.player2Id : m.player1Id
-                    const opponentName = getPlayerName(tournament, opponentId)
-                    const slot = m.schedule!.confirmedSlot!
-                    const { day, time } = formatStartTime(slot)
-                    return (
-                      <div key={m.id} className="scheduling-next-match">
-                        <span className="scheduling-next-time">{day} {time}</span>
-                        <span className="scheduling-next-vs">vs {opponentName}</span>
-                      </div>
-                    )
-                  })}
-              </div>
-            )}
+      {/* Schedule Summary — "Aha Moment" (first view for round-robin) */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && showScheduleSummary && isParticipant && (
+        <ScheduleSummary
+          tournament={tournament}
+          currentPlayerId={currentPlayerId}
+          onViewBracket={() => setShowScheduleSummary(false)}
+          onConfirmMatch={async (matchId) => {
+            const match = tournament.matches.find(m => m.id === matchId)
+            if (!match?.schedule?.proposals?.length) return
+            const pending = match.schedule.proposals.find(p => p.status === 'pending')
+            if (pending) {
+              await acceptProposal(tournament.id, matchId, pending.id, currentPlayerId)
+              refresh()
+            }
+          }}
+          onScheduleMatch={(matchId) => {
+            setShowScheduleSummary(false)
+            setExpandedMatchId(matchId)
+          }}
+        />
+      )}
+
+      {/* Calendar/Bracket toggle for round-robin */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0 var(--space-md) 0' }}>
+          <div className="bracket-view-toggle">
+            <button
+              className={`bracket-view-toggle-btn ${viewMode === 'calendar' ? 'selected' : ''}`}
+              onClick={() => setViewMode('calendar')}
+            >Calendar</button>
+            <button
+              className={`bracket-view-toggle-btn ${viewMode === 'bracket' ? 'selected' : ''}`}
+              onClick={() => setViewMode('bracket')}
+            >Bracket</button>
           </div>
-        )
-      })()}
+          {tournament.schedulingSummary && (
+            <button className="btn-link" onClick={() => setShowScheduleSummary(true)} style={{ fontSize: 'var(--font-body-sm, 13px)' }}>
+              View summary
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Calendar view for round-robin */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && viewMode === 'calendar' && (
+        <MatchCalendar
+          tournament={tournament}
+          currentPlayerId={currentPlayerId}
+          onTournamentUpdated={refresh}
+          onExpandMatch={(matchId) => {
+            setViewMode('bracket')
+            setExpandedMatchId(matchId)
+          }}
+        />
+      )}
 
       {winner && (
         <div className="winner-banner">

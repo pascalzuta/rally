@@ -18,10 +18,18 @@ export interface ClusterGroup {
   players: Array<{ playerId: string; playerName: string }>
 }
 
+export type ClusterQuality = 'good' | 'degraded' | 'fallback'
+
 export interface ClusterResult {
   groups: ClusterGroup[]
   /** Players who couldn't be placed in any compatible group */
   waitlisted: Array<{ playerId: string; playerName: string }>
+  /** Quality metric for the clustering */
+  quality: ClusterQuality
+  /** Minimum pairwise overlap score across all groups */
+  minOverlap: number
+  /** Average pairwise overlap score across all groups */
+  avgOverlap: number
 }
 
 const MIN_GROUP_SIZE = 4
@@ -131,13 +139,34 @@ export function clusterPlayersByAvailability(
   const minSize = options?.minGroupSize ?? MIN_GROUP_SIZE
   const maxSize = options?.maxGroupSize ?? MAX_GROUP_SIZE
 
+  // Check if any players have availability data
+  const playersWithAvailability = players.filter(p => p.slots.length > 0)
+
   if (players.length <= maxSize) {
-    // Small enough for a single group — no clustering needed
+    // Small enough for a single group — compute quality metrics
+    const graph = buildOverlapGraph(players)
+    let minOv = Infinity, sumOv = 0, pairs = 0
+    for (let i = 0; i < players.length; i++) {
+      for (let j = i + 1; j < players.length; j++) {
+        const score = graph.get(players[i]!.playerId)?.get(players[j]!.playerId) ?? 0
+        minOv = Math.min(minOv, score)
+        sumOv += score
+        pairs++
+      }
+    }
+    const avgOv = pairs > 0 ? sumOv / pairs : 0
+    if (minOv === Infinity) minOv = 0
+    const quality: ClusterQuality = playersWithAvailability.length < 2 ? 'fallback'
+      : minOv >= threshold ? 'good' : 'degraded'
+
     return {
       groups: [{
         players: players.map(p => ({ playerId: p.playerId, playerName: p.playerName })),
       }],
       waitlisted: [],
+      quality,
+      minOverlap: minOv,
+      avgOverlap: avgOv,
     }
   }
 
@@ -233,5 +262,25 @@ export function clusterPlayersByAvailability(
     }
   }
 
-  return { groups: validGroups, waitlisted }
+  // Compute quality metrics across all valid groups
+  let globalMinOverlap = Infinity
+  let globalSumOverlap = 0
+  let globalPairs = 0
+  for (const group of validGroups) {
+    for (let i = 0; i < group.players.length; i++) {
+      for (let j = i + 1; j < group.players.length; j++) {
+        const score = graph.get(group.players[i]!.playerId)?.get(group.players[j]!.playerId) ?? 0
+        globalMinOverlap = Math.min(globalMinOverlap, score)
+        globalSumOverlap += score
+        globalPairs++
+      }
+    }
+  }
+  if (globalMinOverlap === Infinity) globalMinOverlap = 0
+  const globalAvgOverlap = globalPairs > 0 ? globalSumOverlap / globalPairs : 0
+
+  const quality: ClusterQuality = playersWithAvailability.length < 2 ? 'fallback'
+    : globalMinOverlap >= threshold ? 'good' : 'degraded'
+
+  return { groups: validGroups, waitlisted, quality, minOverlap: globalMinOverlap, avgOverlap: globalAvgOverlap }
 }

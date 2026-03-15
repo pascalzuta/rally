@@ -1,11 +1,11 @@
 import { getClient } from './supabase'
-import { Tournament, LobbyEntry, PlayerRating } from './types'
+import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot } from './types'
 
 const QUEUE_KEY = 'rally-offline-queue'
 
 export interface QueuedWrite {
   id: string
-  type: 'tournament' | 'lobby_add' | 'lobby_remove' | 'rating'
+  type: 'tournament' | 'lobby_add' | 'lobby_remove' | 'rating' | 'availability' | 'match_schedule'
   payload: unknown
   createdAt: string
 }
@@ -79,6 +79,30 @@ export async function flushQueue(): Promise<void> {
             player_id: playerId,
             data: rating,
           }, { onConflict: 'player_id' })
+          if (error) remaining.push(item)
+          break
+        }
+        case 'availability': {
+          const { playerId, county, slots, weeklyCap } = item.payload as {
+            playerId: string; county: string; slots: AvailabilitySlot[]; weeklyCap: number
+          }
+          const { error } = await client.from('availability').upsert({
+            player_id: playerId,
+            county: county.toLowerCase(),
+            slots,
+            weekly_cap: weeklyCap,
+          }, { onConflict: 'player_id' })
+          if (error) remaining.push(item)
+          break
+        }
+        case 'match_schedule': {
+          // Match schedule updates are embedded in tournament data
+          const t = item.payload as Tournament
+          const { error } = await client.from('tournaments').upsert({
+            id: t.id,
+            county: t.county.toLowerCase(),
+            data: t,
+          }, { onConflict: 'id' })
           if (error) remaining.push(item)
           break
         }

@@ -181,8 +181,71 @@ export function syncRatings(ratings: Record<string, PlayerRating>): void {
   }
 }
 
-export function syncAvailability(playerId: string, slots: AvailabilitySlot[]): void {
-  // Availability stays local-only
+export async function syncAvailabilityToRemote(
+  playerId: string,
+  county: string,
+  slots: AvailabilitySlot[],
+  weeklyCap: number = 2,
+): Promise<SyncResult> {
+  const client = getClient()
+  if (!client) return { success: true } // offline: will be queued
+
+  const { error } = await client.from('availability').upsert({
+    player_id: playerId,
+    county: county.toLowerCase(),
+    slots,
+    weekly_cap: weeklyCap,
+  }, { onConflict: 'player_id' })
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+/** @deprecated Use syncAvailabilityToRemote instead */
+export function syncAvailability(playerId: string, _slots: AvailabilitySlot[]): void {
+  // Legacy no-op kept for backward compatibility
+}
+
+// --- Availability remote fetch ---
+
+const AVAILABILITY_KEY = 'play-tennis-availability'
+
+export async function refreshAvailabilityFromRemote(countyKey: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client.from('availability').select('*').eq('county', countyKey)
+  if (!data) return
+
+  // Merge remote availability into localStorage
+  const localRaw = localStorage.getItem(AVAILABILITY_KEY)
+  const local: Record<string, AvailabilitySlot[]> = localRaw ? JSON.parse(localRaw) : {}
+
+  for (const row of data) {
+    local[row.player_id] = row.slots as AvailabilitySlot[]
+  }
+
+  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(local))
+  dispatchSync()
+}
+
+export async function fetchAvailabilityForPlayers(
+  playerIds: string[]
+): Promise<Record<string, AvailabilitySlot[]>> {
+  const client = getClient()
+  if (!client) return {}
+
+  const { data } = await client
+    .from('availability')
+    .select('player_id, slots')
+    .in('player_id', playerIds)
+
+  if (!data) return {}
+
+  const result: Record<string, AvailabilitySlot[]> = {}
+  for (const row of data) {
+    result[row.player_id] = row.slots as AvailabilitySlot[]
+  }
+  return result
 }
 
 // --- Supabase Realtime subscriptions ---
@@ -201,6 +264,9 @@ function subscribeToCounty(county: string): void {
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `county=eq.${countyKey}` }, () => {
       refreshTournamentsFromRemote(countyKey)
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'availability', filter: `county=eq.${countyKey}` }, () => {
+      refreshAvailabilityFromRemote(countyKey)
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {
       refreshRatingsFromRemote()
@@ -340,6 +406,7 @@ export async function initSync(county: string): Promise<void> {
   await refreshLobbyFromRemote(countyKey)
   await refreshTournamentsFromRemote(countyKey)
   await refreshRatingsFromRemote()
+  await refreshAvailabilityFromRemote(countyKey)
 
   // Link existing localStorage profile to auth session (Phase 3 migration)
   await linkProfileToAuth(client, county)

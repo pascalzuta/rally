@@ -12,6 +12,7 @@ export interface PlayerProfile {
   county: string
   skillLevel?: SkillLevel
   gender?: Gender
+  weeklyCap?: 1 | 2 | 3  // max matches per week, default 2
   createdAt: string
 }
 
@@ -92,6 +93,13 @@ export interface Match {
   phase?: MatchPhase
 }
 
+export interface SchedulingSummary {
+  confirmed: number
+  needsAccept: number
+  needsNegotiation: number
+  scheduledAt: string
+}
+
 export interface Tournament {
   id: string
   name: string
@@ -100,10 +108,13 @@ export interface Tournament {
   format: 'single-elimination' | 'round-robin' | 'group-knockout'
   players: Player[]
   matches: Match[]
-  status: 'setup' | 'in-progress' | 'completed'
+  status: 'setup' | 'scheduling' | 'in-progress' | 'completed'
   createdAt: string
   countdownStartedAt?: string  // ISO timestamp when 6-player countdown began
   groupPhaseComplete?: boolean  // for group-knockout: true once all group matches done
+  clusterRunId?: string  // links to cluster_runs for traceability
+  schedulingSummary?: SchedulingSummary  // set after bulk scheduling
+  waitlistedPlayerIds?: string[]  // player IDs that couldn't be placed in any group
 }
 
 // --- Match Broadcast ---

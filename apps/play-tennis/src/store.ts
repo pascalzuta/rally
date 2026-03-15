@@ -1,8 +1,9 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
   syncTournaments, syncLobbyForCounty, syncRatings, syncAvailability,
+  syncAvailabilityToRemote, fetchAvailabilityForPlayers,
   getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
   SyncResult,
 } from './sync'
@@ -249,6 +250,16 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
   const takenIds = new Set<string>()
   const newlyCreated: Tournament[] = []
 
+  // Fetch fresh availability from Supabase before clustering
+  if (getClient()) {
+    const remoteAvail = await fetchAvailabilityForPlayers(allCounty.map(e => e.playerId))
+    for (const [pid, slots] of Object.entries(remoteAvail)) {
+      const avail = loadAllAvailability()
+      avail[pid] = slots
+      saveAllAvailability(avail)
+    }
+  }
+
   const playerAvailabilities: PlayerAvailability[] = allCounty.map(e => ({
     playerId: e.playerId,
     playerName: e.playerName,
@@ -270,11 +281,8 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
     if (!firstTournament) firstTournament = tournament
   }
 
-  // Sync each new tournament to Supabase
-  for (const t of newlyCreated) {
-    await saveAndSync(all, t)
-  }
-  save(all)
+  // Batch sync all new tournaments to Supabase (single HTTP request)
+  await saveAndSyncBatch(all, newlyCreated)
 
   // Remove players who entered tournaments from lobby
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
@@ -331,11 +339,19 @@ function saveAllAvailability(avail: Record<string, AvailabilitySlot[]>): void {
   localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(avail))
 }
 
-export function saveAvailability(playerId: string, slots: AvailabilitySlot[]): void {
+export async function saveAvailability(playerId: string, slots: AvailabilitySlot[], county?: string, weeklyCap?: number): Promise<void> {
   const all = loadAllAvailability()
   all[playerId] = slots
+  // Write to localStorage FIRST (local-first pattern)
   saveAllAvailability(all)
-  syncAvailability(playerId, slots)
+
+  // Sync to Supabase
+  if (SUPABASE_PRIMARY && county) {
+    const result = await syncAvailabilityToRemote(playerId, county, slots, weeklyCap ?? 2)
+    if (!result.success) {
+      enqueue('availability', { playerId, county, slots, weeklyCap: weeklyCap ?? 2 })
+    }
+  }
 }
 
 export function getAvailability(playerId: string): AvailabilitySlot[] {
@@ -772,6 +788,28 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
   return { success: true }
 }
 
+/** Batch sync: upserts multiple tournaments in a single request */
+async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): Promise<void> {
+  if (SUPABASE_PRIMARY && tournaments.length > 0) {
+    const client = getClient()
+    if (client) {
+      const rows = tournaments.map(t => ({
+        id: t.id,
+        county: t.county.toLowerCase(),
+        data: t,
+      }))
+      const { error } = await client.from('tournaments').upsert(rows, { onConflict: 'id' })
+      if (error) {
+        // Fall back to queuing individual tournaments
+        for (const t of tournaments) {
+          enqueue('tournament', t)
+        }
+      }
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+}
+
 export function getTournaments(): Tournament[] {
   return load()
 }
@@ -1067,9 +1105,74 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
     }
   }
 
+  // Set scheduling summary
+  t.schedulingSummary = {
+    confirmed: scheduleResult.confirmed.length,
+    needsAccept: scheduleResult.needsAccept.length,
+    needsNegotiation: scheduleResult.needsNegotiation.length,
+    scheduledAt: new Date().toISOString(),
+  }
+
   t.status = 'in-progress'
   await saveAndSync(all, t)
   return t
+}
+
+/** Get scheduling summary for a tournament */
+export function getSchedulingSummary(tournament: Tournament): SchedulingSummary | null {
+  if (tournament.schedulingSummary) return tournament.schedulingSummary
+  // Compute from match data if not cached
+  if (tournament.status === 'setup' || tournament.status === 'scheduling') return null
+  let confirmed = 0, needsAccept = 0, needsNegotiation = 0
+  for (const m of tournament.matches) {
+    if (!m.schedule) continue
+    switch (m.schedule.schedulingTier) {
+      case 'auto': confirmed++; break
+      case 'needs-accept': needsAccept++; break
+      case 'needs-negotiation': needsNegotiation++; break
+    }
+  }
+  return { confirmed, needsAccept, needsNegotiation, scheduledAt: tournament.createdAt }
+}
+
+/** Compute scheduling confidence for a set of players in a county lobby */
+export function getSchedulingConfidence(county: string): { score: number; label: 'high' | 'medium' | 'low'; playersWithAvailability: number } {
+  const lobby = getLobbyByCounty(county)
+  const allAvail = loadAllAvailability()
+
+  let withAvailability = 0
+  const playerSlots: Array<{ playerId: string; slots: AvailabilitySlot[] }> = []
+
+  for (const entry of lobby) {
+    const slots = allAvail[entry.playerId] ?? []
+    if (slots.length > 0) {
+      withAvailability++
+      playerSlots.push({ playerId: entry.playerId, slots })
+    }
+  }
+
+  if (playerSlots.length < 2) {
+    return { score: 0, label: 'low', playersWithAvailability: withAvailability }
+  }
+
+  // Compute average pairwise overlap
+  let totalOverlap = 0
+  let pairs = 0
+  for (let i = 0; i < playerSlots.length; i++) {
+    for (let j = i + 1; j < playerSlots.length; j++) {
+      const overlap = computeOverlap(playerSlots[i].slots, playerSlots[j].slots)
+      const windows = splitIntoMatchWindows(overlap)
+      totalOverlap += windows.length
+      pairs++
+    }
+  }
+
+  const avgOverlap = pairs > 0 ? totalOverlap / pairs : 0
+  // Map to 0-100 score: 3+ windows = high (70+), 1-3 = medium, 0 = low
+  const score = Math.min(100, Math.round((avgOverlap / 5) * 100))
+  const label = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low'
+
+  return { score, label, playersWithAvailability: withAvailability }
 }
 
 // Compute group standings for group-knockout format

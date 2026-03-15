@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired } from '../store'
+import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getSchedulingConfidence } from '../store'
 import { SYNC_EVENT } from '../sync'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
@@ -261,6 +261,38 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
           </>
         )}
       </div>
+
+      {/* Scheduling confidence preview */}
+      {isUserInvolved && totalJoined >= 4 && (() => {
+        const confidence = getSchedulingConfidence(profile.county)
+        if (confidence.playersWithAvailability < 2) return null
+        return (
+          <div className="scheduling-confidence">
+            <div className="confidence-header">Scheduling confidence</div>
+            <div className="confidence-bar">
+              <div
+                className={`confidence-fill confidence-fill--${confidence.label}`}
+                style={{ width: `${confidence.score}%` }}
+              />
+            </div>
+            <div className="confidence-value" style={{
+              color: confidence.label === 'high' ? 'var(--color-positive-primary)' :
+                     confidence.label === 'medium' ? 'var(--color-accent-primary, #2563EB)' :
+                     'var(--color-warning-primary, #F59E0B)'
+            }}>
+              {confidence.score}%
+            </div>
+            <div className="confidence-label">
+              {confidence.label === 'high' ? 'High — most matches can be auto-scheduled' :
+               confidence.label === 'medium' ? 'Medium — some matches may need manual scheduling' :
+               'Low — many matches will need manual scheduling'}
+            </div>
+            <div className="confidence-footnote">
+              Based on {confidence.playersWithAvailability} players' availability
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Leave option for joined users */}
       {isUserInvolved && !isInSetupTournament && (
