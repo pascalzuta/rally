@@ -2,7 +2,7 @@ import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, Lob
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
-  syncTournaments, syncLobbyForCounty, syncRatings, syncAvailability,
+  syncTournaments, syncLobbyForCounty, syncRatings,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
   getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
   SyncResult,
@@ -288,9 +288,11 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
   saveLobby(remainingLobby)
   if (SUPABASE_PRIMARY) {
-    for (const id of takenIds) {
-      syncRemoveLobbyEntry(id).catch(() => enqueue('lobby_remove', { playerId: id }))
-    }
+    await Promise.all(
+      [...takenIds].map(id =>
+        syncRemoveLobbyEntry(id).catch(() => enqueue('lobby_remove', { playerId: id }))
+      )
+    )
   }
 
   // Start any tournaments that are already at max capacity
@@ -778,8 +780,17 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
     const result = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
     if (!result.success) {
       if (result.conflict) {
-        // Refresh from remote — caller should re-read
-        await refreshTournamentById(changedTournament.id)
+        // Conflict: refresh from remote and retry once with fresh timestamp
+        const fresh = await refreshTournamentById(changedTournament.id)
+        if (fresh) {
+          // Re-apply our changes on top of the fresh remote state
+          const mergedAll = all.map(t => t.id === changedTournament.id ? changedTournament : t)
+          const retry = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
+          if (retry.success) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedAll))
+            return { success: true }
+          }
+        }
         return result
       }
       // Network error: save locally + queue
@@ -1584,7 +1595,7 @@ export async function updateRatings(
             rating: data.playerB.rating,
             matchesPlayed: data.playerB.matchesPlayed,
           }
-          saveRatings(ratings)
+          await saveRatingsAndSync(ratings, playerA.id, playerB.id)
           recordRatingSnapshot(playerA.id, data.playerA.rating)
           recordRatingSnapshot(playerB.id, data.playerB.rating)
           return
@@ -2288,7 +2299,7 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
     const rating: PlayerRating = { name, rating: TEST_RATINGS[normalizedName] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
     if (!ratings[id]) {
       ratings[id] = rating
-      saveRatings(ratings)
+      await saveRatingsAndSync(ratings, id)
     }
 
     // Set up their availability

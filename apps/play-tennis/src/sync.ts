@@ -201,11 +201,6 @@ export async function syncAvailabilityToRemote(
   return { success: true }
 }
 
-/** @deprecated Use syncAvailabilityToRemote instead */
-export function syncAvailability(playerId: string, _slots: AvailabilitySlot[]): void {
-  // Legacy no-op kept for backward compatibility
-}
-
 // --- Availability remote fetch ---
 
 const AVAILABILITY_KEY = 'play-tennis-availability'
@@ -216,15 +211,24 @@ export async function refreshAvailabilityFromRemote(countyKey: string): Promise<
   const { data } = await client.from('availability').select('*').eq('county', countyKey)
   if (!data) return
 
-  // Merge remote availability into localStorage
+  // Merge remote availability into localStorage (preserve local-only entries)
   const localRaw = localStorage.getItem(AVAILABILITY_KEY)
   const local: Record<string, AvailabilitySlot[]> = localRaw ? JSON.parse(localRaw) : {}
+  const remoteIds = new Set(data.map(row => row.player_id))
 
+  // Start with remote data (authoritative for known players)
+  const merged: Record<string, AvailabilitySlot[]> = {}
   for (const row of data) {
-    local[row.player_id] = row.slots as AvailabilitySlot[]
+    merged[row.player_id] = row.slots as AvailabilitySlot[]
+  }
+  // Preserve local-only entries (not yet synced to Supabase)
+  for (const [id, slots] of Object.entries(local)) {
+    if (!remoteIds.has(id)) {
+      merged[id] = slots
+    }
   }
 
-  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(local))
+  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(merged))
   dispatchSync()
 }
 
@@ -351,7 +355,9 @@ async function refreshRatingsFromRemote(): Promise<void> {
   const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
   const remoteRatings: Record<string, PlayerRating> = {}
   for (const row of data) remoteRatings[row.player_id] = row.data as PlayerRating
-  localStorage.setItem(RATINGS_KEY, JSON.stringify({ ...localRatings, ...remoteRatings }))
+  // Remote wins for known players; local-only entries preserved
+  const merged = { ...localRatings, ...remoteRatings }
+  localStorage.setItem(RATINGS_KEY, JSON.stringify(merged))
   dispatchSync()
 }
 
