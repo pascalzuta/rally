@@ -16,48 +16,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ github.token }}
 
-      - name: Create and merge PR
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Merge to main
         run: |
           BRANCH="${GITHUB_REF_NAME}"
-          echo "Creating PR from $BRANCH to main..."
+          echo "Merging $BRANCH into main..."
 
-          # Try to create PR
-          PR_URL=$(gh pr create \
-            --title "Auto-merge: ${BRANCH}" \
-            --body "Automated merge from Claude Code session." \
-            --base main \
-            --head "$BRANCH" 2>&1) || true
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          echo "Create result: $PR_URL"
-
-          # If PR already exists, find it
-          if echo "$PR_URL" | grep -q "already exists"; then
-            PR_URL=$(gh pr list --head "$BRANCH" --json url --jq '.[0].url')
-          fi
-
-          echo "PR: $PR_URL"
-
-          # Get PR number
-          PR_NUM=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')
-          echo "PR Number: $PR_NUM"
-
-          if [ -z "$PR_NUM" ]; then
-            echo "ERROR: Could not find PR number"
-            exit 1
-          fi
-
-          # Try multiple merge strategies
-          echo "Attempting merge..."
-          gh pr merge "$PR_NUM" --merge --admin 2>&1 || \
-          gh pr merge "$PR_NUM" --merge 2>&1 || \
-          gh pr merge "$PR_NUM" --squash --admin 2>&1 || \
-          gh pr merge "$PR_NUM" --squash 2>&1 || \
-          (echo "gh merge failed, trying API directly..." && \
-           curl -X PUT \
-             -H "Authorization: token ${GH_TOKEN}" \
-             -H "Accept: application/vnd.github+json" \
-             "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUM}/merge" \
-             -d '{"merge_method":"merge"}')
+          git checkout main
+          git merge "origin/$BRANCH" --no-edit -m "Auto-merge: ${BRANCH}"
+          git push origin main
