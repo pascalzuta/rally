@@ -14,10 +14,22 @@ import { findNearMisses, findOverlaps, formatProposalLabel } from "./scheduler.j
 export async function autoScheduleTournament(
   matches: Match[],
   playerAvailability: Map<string, AvailabilitySlot[]>,
-  fromDate: Date
+  fromDate: Date,
+  existingScheduledMatches?: Match[]
 ): Promise<{ result: SchedulingResult; updatedMatches: Match[] }> {
   // Track booked dates per player — at most 1 match per day
+  // Pre-seed with existing scheduled matches (from other tournaments / casual)
   const bookedDates = new Map<string, Set<string>>();
+  if (existingScheduledMatches) {
+    for (const m of existingScheduledMatches) {
+      if (m.status !== "scheduled" || !m.scheduledAt) continue;
+      const dateStr = new Date(m.scheduledAt).toISOString().slice(0, 10);
+      for (const pid of [m.challengerId, m.opponentId]) {
+        if (!bookedDates.has(pid)) bookedDates.set(pid, new Set());
+        bookedDates.get(pid)!.add(dateStr);
+      }
+    }
+  }
 
   const failedMatchIds: string[] = [];
   let scheduledCount = 0;

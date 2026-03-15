@@ -44,6 +44,26 @@ interface RouteDeps {
   engine: TournamentEngine;
 }
 
+/**
+ * Check if a player already has a scheduled match on the given date.
+ * Returns the conflicting match if found, null otherwise.
+ */
+async function hasMatchOnDate(
+  matchRepo: MatchRepo,
+  playerId: string,
+  datetime: string,
+  excludeMatchId?: string
+): Promise<Match | null> {
+  const targetDate = new Date(datetime).toISOString().slice(0, 10);
+  const playerMatches = await matchRepo.findByPlayer(playerId);
+  return playerMatches.find((m) => {
+    if (m.id === excludeMatchId) return false;
+    if (m.status !== "scheduled") return false;
+    if (!m.scheduledAt) return false;
+    return new Date(m.scheduledAt).toISOString().slice(0, 10) === targetDate;
+  }) ?? null;
+}
+
 export function createRoutes(deps: RouteDeps): Router {
   const router = Router();
   const { config } = deps;
@@ -260,6 +280,7 @@ export function createRoutes(deps: RouteDeps): Router {
       // proposal the user has accepted, so step 3 (accept-proposals) can finish them.
       // Other matches are created directly as "scheduled".
       const userPid = playerId ? String(playerId) : null;
+      let userMatchIndex = 0; // Track user matches for date spreading
       const updatedRounds = [];
       for (const round of rounds) {
         const updatedPairings = [];
@@ -270,6 +291,13 @@ export function createRoutes(deps: RouteDeps): Router {
           const oId = playerIds[pairing.awayIndex]!;
           const involvesUser = userPid && (cId === userPid || oId === userPid);
 
+          // Spread user matches across different days (1 match per day)
+          const daysOffset = involvesUser ? 3 + userMatchIndex * 7 : 3;
+          const proposalDate = new Date(now.getTime() + daysOffset * 86400000);
+          proposalDate.setHours(10, 0, 0, 0);
+          const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][proposalDate.getDay()] ?? "Sat";
+          if (involvesUser) userMatchIndex++;
+
           const m: Match = {
             id: matchId,
             challengerId: cId,
@@ -279,8 +307,8 @@ export function createRoutes(deps: RouteDeps): Router {
             proposals: involvesUser
               ? [{
                   id: randomUUID(),
-                  datetime: new Date(now.getTime() + 3 * 86400000).toISOString(),
-                  label: "Sat - 10:00am",
+                  datetime: proposalDate.toISOString(),
+                  label: `${dayName} - 10:00am`,
                   acceptedBy: [userPid],
                 }]
               : [],
@@ -346,6 +374,12 @@ export function createRoutes(deps: RouteDeps): Router {
           (p) => p.acceptedBy.includes(playerId) && !p.acceptedBy.includes(opponentId),
         );
         if (!proposal) continue;
+        // Check same-day conflict before scheduling
+        if (proposal.datetime) {
+          const conflict1 = await hasMatchOnDate(deps.matches, playerId, proposal.datetime, match.id);
+          const conflict2 = await hasMatchOnDate(deps.matches, opponentId, proposal.datetime, match.id);
+          if (conflict1 || conflict2) continue; // Skip — would create same-day conflict
+        }
         proposal.acceptedBy.push(opponentId);
         match.status = "scheduled";
         match.scheduledAt = proposal.datetime;
@@ -820,6 +854,16 @@ export function createRoutes(deps: RouteDeps): Router {
       updatedProposal?.acceptedBy.includes(match.challengerId) &&
       updatedProposal?.acceptedBy.includes(match.opponentId);
 
+    // Check for same-day conflicts before scheduling
+    if (bothAccepted && updatedProposal?.datetime) {
+      const challengerConflict = await hasMatchOnDate(deps.matches, match.challengerId, updatedProposal.datetime, match.id);
+      const opponentConflict = await hasMatchOnDate(deps.matches, match.opponentId, updatedProposal.datetime, match.id);
+      if (challengerConflict || opponentConflict) {
+        res.status(409).json({ error: "same_day_conflict", message: "A player already has a match scheduled on this day. Max 1 match per day." });
+        return;
+      }
+    }
+
     const updated: Match = {
       ...match,
       proposals: updatedProposals,
@@ -886,6 +930,14 @@ export function createRoutes(deps: RouteDeps): Router {
     const { datetime, label } = req.body as { datetime?: string; label?: string };
     if (!datetime || !label) {
       res.status(400).json({ error: "datetime_and_label_required" });
+      return;
+    }
+
+    // Check for same-day conflicts
+    const challengerConflict = await hasMatchOnDate(deps.matches, match.challengerId, datetime, match.id);
+    const opponentConflict = await hasMatchOnDate(deps.matches, match.opponentId, datetime, match.id);
+    if (challengerConflict || opponentConflict) {
+      res.status(409).json({ error: "same_day_conflict", message: "A player already has a match scheduled on this day. Max 1 match per day." });
       return;
     }
 
@@ -964,6 +1016,14 @@ export function createRoutes(deps: RouteDeps): Router {
     const { datetime, label } = req.body as { datetime?: string; label?: string };
     if (!datetime || !label) {
       res.status(400).json({ error: "datetime_and_label_required" }); return;
+    }
+
+    // Check for same-day conflicts
+    const challengerConflict = await hasMatchOnDate(deps.matches, match.challengerId, datetime, match.id);
+    const opponentConflict = await hasMatchOnDate(deps.matches, match.opponentId, datetime, match.id);
+    if (challengerConflict || opponentConflict) {
+      res.status(409).json({ error: "same_day_conflict", message: "A player already has a match scheduled on this day. Max 1 match per day." });
+      return;
     }
 
     const proposal: import("@rally/core").TimeProposal = {

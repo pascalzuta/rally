@@ -725,15 +725,24 @@ export class TournamentEngine {
 
     // Auto-schedule matches based on player availability
     const playerAvailability = new Map<string, import("@rally/core").AvailabilitySlot[]>();
+    // Collect existing scheduled matches for all players to prevent same-day conflicts
+    const existingScheduledMatches: import("@rally/core").Match[] = [];
     for (const pid of t.playerIds) {
       const slots = await this.deps.availability.getByPlayer(pid);
       playerAvailability.set(pid, slots);
+      const playerMatches = await this.deps.matches.findByPlayer(pid);
+      for (const m of playerMatches) {
+        if (m.tournamentId !== t.id && m.status === "scheduled" && m.scheduledAt) {
+          existingScheduledMatches.push(m);
+        }
+      }
     }
 
     const { result: schedulingResult, updatedMatches } = await autoScheduleTournament(
       tournamentMatches,
       playerAvailability,
-      now
+      now,
+      existingScheduledMatches
     );
 
     // Save updated matches — set deadlineStartedAt on unscheduled (Tier 2/3)
