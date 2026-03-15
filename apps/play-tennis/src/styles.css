@@ -1925,13 +1925,15 @@ select:focus {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: var(--space-sm) var(--space-md);
-  border: 2px solid var(--color-border-secondary);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-primary);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: all 0.15s;
   text-align: left;
+  font-family: inherit;
+  color: var(--color-text-primary);
 }
 
 .skill-option:hover {
@@ -1940,7 +1942,7 @@ select:focus {
 
 .skill-option.selected {
   border-color: var(--color-accent-primary);
-  background: rgba(59, 130, 246, 0.06);
+  background: var(--color-accent-bg);
 }
 
 .skill-option-label {
@@ -1960,14 +1962,16 @@ select:focus {
 
 .gender-option {
   flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border: 2px solid var(--color-border-secondary);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-primary);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
   cursor: pointer;
   font-size: var(--font-body-md);
   font-weight: var(--weight-medium);
-  transition: border-color 0.15s, background 0.15s;
+  transition: all 0.15s;
+  font-family: inherit;
+  color: var(--color-text-primary);
 }
 
 .gender-option:hover {
@@ -1976,7 +1980,7 @@ select:focus {
 
 .gender-option.selected {
   border-color: var(--color-accent-primary);
-  background: rgba(59, 130, 246, 0.06);
+  background: var(--color-accent-bg);
 }
 
 /* Availability Picker */
