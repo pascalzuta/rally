@@ -521,6 +521,7 @@ export async function acceptProposal(
   }
 
   match.schedule.status = 'confirmed'
+  match.schedule.schedulingTier = 'auto'
   match.schedule.confirmedSlot = {
     day: proposal.day,
     startHour: proposal.startHour,
@@ -530,6 +531,9 @@ export async function acceptProposal(
   // Track participation: +4 for accepting
   if (!match.schedule.participationScores) match.schedule.participationScores = {}
   match.schedule.participationScores[acceptedBy] = (match.schedule.participationScores[acceptedBy] ?? 0) + 4
+
+  // Invalidate cached summary so it recomputes from match data
+  delete t.schedulingSummary
 
   await saveAndSync(all, t)
   return t
@@ -938,6 +942,16 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t || t.players.length < 2) return undefined
+
+  // Fetch remote availability so we have all players' slots (not just local user's)
+  if (getClient()) {
+    const remoteAvail = await fetchAvailabilityForPlayers(t.players.map(p => p.id))
+    for (const [pid, slots] of Object.entries(remoteAvail)) {
+      const avail = loadAllAvailability()
+      avail[pid] = slots
+      saveAllAvailability(avail)
+    }
+  }
 
   if (t.format === 'single-elimination') {
     const seeded = [...t.players].sort((a, b) => {
