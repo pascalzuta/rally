@@ -9,16 +9,30 @@ interface Props {
 }
 
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
-  friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
 }
 
-function formatSlotTime(slot: { day: string; startHour: number; endHour: number }): string {
-  const day = DAY_LABELS[slot.day] ?? slot.day
+function resolveDate(weekStart: Date, dayOfWeek: string): Date {
+  const target = DAY_INDEX[dayOfWeek] ?? 1
+  const start = weekStart.getDay()
+  const diff = (target - start + 7) % 7
+  const result = new Date(weekStart)
+  result.setDate(result.getDate() + diff)
+  return result
+}
+
+function formatSlotTime(slot: { day: string; startHour: number; endHour: number }, weekStart?: Date): string {
   const period = slot.startHour >= 12 ? 'PM' : 'AM'
   const hour = slot.startHour % 12 || 12
-  return `${day}, ${hour}:00 ${period}`
+  if (weekStart) {
+    const date = resolveDate(weekStart, slot.day)
+    const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    return `${dayLabel}, ${hour}:00 ${period}`
+  }
+  const dayLabel = (slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3))
+  return `${dayLabel}, ${hour}:00 ${period}`
 }
 
 function formatScoreDisplay(match: Match): string {
@@ -53,19 +67,24 @@ function sortMatchesForCalendar(matches: Match[], currentPlayerId: string): Matc
   })
 }
 
-function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolean; matches: Match[] }> {
+function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolean; matches: Match[]; weekStart: Date }> {
   // Simple week grouping: distribute matches into weeks of ~3 each
-  const weeks: Array<{ label: string; isCurrent: boolean; matches: Match[] }> = []
+  const weeks: Array<{ label: string; isCurrent: boolean; matches: Match[]; weekStart: Date }> = []
   const today = new Date()
+  // Align to Monday of current week
+  const mondayOffset = (today.getDay() + 6) % 7 // days since Monday
+  const thisMonday = new Date(today)
+  thisMonday.setDate(today.getDate() - mondayOffset)
+  thisMonday.setHours(0, 0, 0, 0)
   const perWeek = 3
   let weekIdx = 0
 
   for (let i = 0; i < matches.length; i += perWeek) {
     const batch = matches.slice(i, i + perWeek)
-    const weekStart = new Date(today)
-    weekStart.setDate(weekStart.getDate() + weekIdx * 7)
+    const weekStart = new Date(thisMonday)
+    weekStart.setDate(thisMonday.getDate() + weekIdx * 7)
     const label = weekIdx === 0 ? 'This Week' : `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-    weeks.push({ label, isCurrent: weekIdx === 0, matches: batch })
+    weeks.push({ label, isCurrent: weekIdx === 0, matches: batch, weekStart })
     weekIdx++
   }
 
@@ -156,7 +175,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, onTournamen
                 <div className="calendar-match-body">
                   <div className="calendar-match-opponent">vs {getPlayerName(tournament, opponentId)}</div>
                   {slot && !isCompleted ? (
-                    <div className="calendar-match-time">{formatSlotTime(slot)}</div>
+                    <div className="calendar-match-time">{formatSlotTime(slot, week.weekStart)}</div>
                   ) : isCompleted && score ? (
                     <div className="calendar-match-score">{score}</div>
                   ) : (

@@ -10,14 +10,33 @@ interface Props {
   onScheduleMatch?: (matchId: string) => void
 }
 
-function formatMatchDate(slot: { day: string; startHour: number }): string {
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+}
+
+function resolveDate(weekStart: Date, dayOfWeek: string): Date {
+  const target = DAY_INDEX[dayOfWeek] ?? 1
+  const start = weekStart.getDay()
+  const diff = (target - start + 7) % 7
+  const result = new Date(weekStart)
+  result.setDate(result.getDate() + diff)
+  return result
+}
+
+function formatMatchDate(slot: { day: string; startHour: number }, weekStart?: Date): string {
+  const period = slot.startHour >= 12 ? 'PM' : 'AM'
+  const hour = slot.startHour % 12 || 12
+  if (weekStart) {
+    const date = resolveDate(weekStart, slot.day)
+    const dayLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+    return `${dayLabel}, ${hour}:00 ${period}`
+  }
   const dayNames: Record<string, string> = {
     monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
     thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
   }
   const day = dayNames[slot.day] ?? slot.day
-  const period = slot.startHour >= 12 ? 'PM' : 'AM'
-  const hour = slot.startHour % 12 || 12
   return `${day}, ${hour}:00 ${period}`
 }
 
@@ -27,8 +46,8 @@ function getWeekNumber(match: Match): number {
   return Math.ceil((match.position + 1) / 3)
 }
 
-function groupMatchesByWeek(matches: Match[]): Map<number, Match[]> {
-  const weeks = new Map<number, Match[]>()
+function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; weekStart: Date }> {
+  const weeks = new Map<number, { matches: Match[]; weekStart: Date }>()
 
   // Assign weeks based on scheduling tier order
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -46,13 +65,23 @@ function groupMatchesByWeek(matches: Match[]): Map<number, Match[]> {
   let weekMatchCount = 0
   const maxPerWeek = 3
 
+  const today = new Date()
+  const mondayOffset = (today.getDay() + 6) % 7
+  const thisMonday = new Date(today)
+  thisMonday.setDate(today.getDate() - mondayOffset)
+  thisMonday.setHours(0, 0, 0, 0)
+
   for (const match of scheduled) {
     if (weekMatchCount >= maxPerWeek) {
       currentWeek++
       weekMatchCount = 0
     }
-    if (!weeks.has(currentWeek)) weeks.set(currentWeek, [])
-    weeks.get(currentWeek)!.push(match)
+    if (!weeks.has(currentWeek)) {
+      const weekStart = new Date(thisMonday)
+      weekStart.setDate(thisMonday.getDate() + (currentWeek - 1) * 7)
+      weeks.set(currentWeek, { matches: [], weekStart })
+    }
+    weeks.get(currentWeek)!.matches.push(match)
     weekMatchCount++
   }
 
@@ -104,10 +133,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
 
   // Group my matches by week for the agenda
   const weekGroups = groupMatchesByWeek(myMatches)
-  const today = new Date()
-  const getWeekLabel = (week: number) => {
-    const weekStart = new Date(today)
-    weekStart.setDate(weekStart.getDate() + (week - 1) * 7)
+  const getWeekLabel = (week: number, weekStart: Date) => {
     return week === 1 ? 'This Week' : `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
   }
 
@@ -156,7 +182,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
             </span>
             {nextMatch.schedule?.confirmedSlot && (
               <span className="schedule-next-time">
-                {formatMatchDate(nextMatch.schedule.confirmedSlot)}
+                {formatMatchDate(nextMatch.schedule.confirmedSlot, weekGroups.get(1)?.weekStart)}
               </span>
             )}
           </div>
@@ -172,11 +198,11 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
       {weekGroups.size > 0 && (
         <div className="schedule-agenda">
           <div className="schedule-agenda-title">Your Schedule</div>
-          {[...weekGroups.entries()].map(([week, matches]) => (
+          {[...weekGroups.entries()].map(([week, { matches, weekStart }]) => (
             <div key={week} className="schedule-week">
               <div className="schedule-week-header">
                 <span className={`calendar-week-dot ${week === 1 ? 'calendar-week-dot--current' : 'calendar-week-dot--future'}`} />
-                {getWeekLabel(week)}
+                {getWeekLabel(week, weekStart)}
               </div>
               {matches.map((match, i) => {
                 const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
@@ -189,7 +215,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     {slot && (
-                      <div className="calendar-match-time">{formatMatchDate(slot)}</div>
+                      <div className="calendar-match-time">{formatMatchDate(slot, weekStart)}</div>
                     )}
                     <div className="calendar-match-opponent">vs {getPlayerName(tournament, opponentId)}</div>
                     <div className={`calendar-match-status ${tier === 'auto' ? 'calendar-match-status--auto' : tier === 'needs-accept' ? 'calendar-match-status--accept' : 'calendar-match-status--negotiate'}`}>

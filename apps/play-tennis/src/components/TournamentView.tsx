@@ -12,8 +12,24 @@ interface Props {
   onBack: () => void
 }
 
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+}
+
+function resolveNextDate(dayOfWeek: string): Date {
+  const today = new Date()
+  const target = DAY_INDEX[dayOfWeek] ?? 1
+  const current = today.getDay()
+  const diff = (target - current + 7) % 7
+  const result = new Date(today)
+  result.setDate(today.getDate() + diff)
+  return result
+}
+
 function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
-  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
+  const date = resolveNextDate(slot.day)
+  const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   const period = slot.startHour >= 12 ? 'pm' : 'am'
   const hour = slot.startHour % 12 || 12
   return { day, time: `${hour}${period}` }
