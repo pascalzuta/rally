@@ -310,8 +310,12 @@ async function refreshTournamentsFromRemote(countyKey: string): Promise<void> {
   })
   const remoteIds = new Set(remoteTournaments.map(t => t.id))
   const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
-  const others = localTournaments.filter(t => !remoteIds.has(t.id) && t.county.toLowerCase() !== countyKey)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...remoteTournaments, ...others]))
+  // Keep local-only tournaments for this county (not yet synced) + tournaments from other counties
+  const localOnlyForCounty = localTournaments.filter(
+    t => t.county.toLowerCase() === countyKey && !remoteIds.has(t.id)
+  )
+  const otherCounties = localTournaments.filter(t => t.county.toLowerCase() !== countyKey)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...remoteTournaments, ...localOnlyForCounty, ...otherCounties]))
   dispatchSync()
 }
 
