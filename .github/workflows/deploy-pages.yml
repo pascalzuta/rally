@@ -3,9 +3,6 @@ name: Deploy Play Tennis to GitHub Pages
 on:
   push:
     branches:
-      - claude/tennis-tournament-app-wqHUw
-      - claude/rally-tennis-app-uuWbC
-      - claude/rally-tennis-app-597Of
       - main
   workflow_dispatch:
 
