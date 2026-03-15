@@ -5,6 +5,7 @@ on:
     branches:
       - claude/tennis-tournament-app-wqHUw
       - claude/rally-tennis-app-uuWbC
+      - claude/rally-tennis-app-597Of
       - main
 
 permissions:
