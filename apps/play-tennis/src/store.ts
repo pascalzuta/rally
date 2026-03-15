@@ -100,84 +100,36 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
-    county: profile.county,
+    county: profile.county.toLowerCase(),
     joinedAt: new Date().toISOString(),
   }
   lobby.push(entry)
 
-  if (SUPABASE_PRIMARY) {
-    // Try RPC first for atomic operation
-    const client = getClient()
-    if (client) {
-      try {
-        const { data, error } = await client.rpc('rpc_join_lobby', {
-          p_player_id: entry.playerId,
-          p_player_name: entry.playerName,
-          p_county: entry.county,
-          p_joined_at: entry.joinedAt,
-        })
-        if (!error && data) {
-          // Merge RPC response with local lobby (preserves local-only entries like dev seeds)
-          const remoteEntries: LobbyEntry[] = (data.entries ?? []).map((e: any) => ({
-            playerId: e.playerId,
-            playerName: e.playerName,
-            county: e.county,
-            joinedAt: e.joinedAt,
-          }))
-          const currentLobby = loadLobby()
-          const remoteIds = new Set(remoteEntries.map(e => e.playerId))
-          const localOnlyCounty = currentLobby.filter(
-            e => e.county.toLowerCase() === profile.county.toLowerCase() && !remoteIds.has(e.playerId)
-          )
-          const otherCounties = currentLobby.filter(e => e.county.toLowerCase() !== profile.county.toLowerCase())
-          saveLobby([...otherCounties, ...remoteEntries, ...localOnlyCounty])
-          return getLobbyByCounty(profile.county)
-        }
-      } catch {
-        // RPC failed, fall through to Phase 1 pattern
-      }
-    }
+  // Save to localStorage FIRST so UI updates immediately and realtime refresh
+  // cannot overwrite before we persist (fixes race condition)
+  saveLobby(lobby)
 
-    // Phase 1 fallback: direct sync
+  if (SUPABASE_PRIMARY) {
     const result = await syncLobbyEntry(entry)
     if (!result.success) {
-      // Network error: save locally + queue
-      localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
       enqueue('lobby_add', entry)
-      return getLobbyByCounty(profile.county)
     }
   }
-  saveLobby(lobby)
   return getLobbyByCounty(profile.county)
 }
 
 export async function leaveLobby(playerId: string): Promise<void> {
   const lobby = loadLobby().filter(e => e.playerId !== playerId)
 
-  if (SUPABASE_PRIMARY) {
-    // Try RPC first
-    const client = getClient()
-    if (client) {
-      try {
-        const { error } = await client.rpc('rpc_leave_lobby', { p_player_id: playerId })
-        if (!error) {
-          saveLobby(lobby)
-          return
-        }
-      } catch {
-        // RPC failed, fall through
-      }
-    }
+  // Save to localStorage FIRST for immediate UI update
+  saveLobby(lobby)
 
-    // Phase 1 fallback
+  if (SUPABASE_PRIMARY) {
     const result = await syncRemoveLobbyEntry(playerId)
     if (!result.success) {
-      localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
       enqueue('lobby_remove', { playerId })
-      return
     }
   }
-  saveLobby(lobby)
 }
 
 const COUNTDOWN_MS = 48 * 60 * 60 * 1000 // 48 hours
@@ -2199,8 +2151,9 @@ const TEST_AVAILABILITY: AvailabilitySlot[][] = [
 ]
 
 export async function seedLobby(county: string, count: number = 3): Promise<LobbyEntry[]> {
+  const normalizedCounty = county.toLowerCase()
   const lobby = loadLobby()
-  const existing = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
+  const existing = lobby.filter(e => e.county.toLowerCase() === normalizedCounty)
   const existingNames = new Set(existing.map(e => e.playerName.toLowerCase()))
 
   const available = TEST_PLAYERS.filter(n => !existingNames.has(n.toLowerCase()))
@@ -2209,7 +2162,7 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
   for (const name of toAdd) {
     const id = generateId()
     const playerIdx = TEST_PLAYERS.indexOf(name)
-    const entry: LobbyEntry = { playerId: id, playerName: name, county, joinedAt: new Date().toISOString() }
+    const entry: LobbyEntry = { playerId: id, playerName: name, county: normalizedCounty, joinedAt: new Date().toISOString() }
     lobby.push(entry)
 
     // Set up their rating (keyed by player ID)
@@ -2226,13 +2179,19 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
       saveAvailability(id, TEST_AVAILABILITY[playerIdx])
     }
 
-    // Sync to Supabase
-    await syncLobbyEntry(entry)
-    await syncRatingsForPlayer(id, rating)
+    // Sync to Supabase (check results, queue on failure)
+    const lobbyResult = await syncLobbyEntry(entry)
+    if (!lobbyResult.success) {
+      enqueue('lobby_add', entry)
+    }
+    const ratingResult = await syncRatingsForPlayer(id, rating)
+    if (!ratingResult.success) {
+      enqueue('rating', { playerId: id, rating })
+    }
   }
 
   saveLobby(lobby)
-  return getLobbyByCounty(county)
+  return getLobbyByCounty(normalizedCounty)
 }
 
 export function getTestProfiles(county: string): PlayerProfile[] {

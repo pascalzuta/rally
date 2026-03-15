@@ -34,6 +34,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   const [copied, setCopied] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoJoinedRef = useRef(false)
+  const joiningRef = useRef(false)
 
   const isInSetupTournament = setupTournament?.players.some(p => p.id === profile.id) ?? false
 
@@ -50,6 +51,9 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   // Listen for Supabase realtime sync updates
   useEffect(() => {
     function handleSync() {
+      // Skip refresh while a join is in progress to prevent realtime from
+      // overwriting the optimistic state set by handleJoin
+      if (joiningRef.current) return
       refreshState()
     }
     window.addEventListener(SYNC_EVENT, handleSync)
@@ -105,6 +109,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   }
 
   async function handleJoin() {
+    joiningRef.current = true
     try {
       const updated = await joinLobby(profile)
       setEntries(updated)
@@ -124,6 +129,10 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       }
     } catch {
       // On error, re-read state from storage to stay in sync
+      refreshState()
+    } finally {
+      joiningRef.current = false
+      // Do one final refresh to pick up any remote changes that arrived during join
       refreshState()
     }
   }
