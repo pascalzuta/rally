@@ -19,6 +19,21 @@ const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
   { key: 'sunday', label: 'Sunday', short: 'Sun' },
 ]
 
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+}
+
+function resolveNextDate(dayOfWeek: string): Date {
+  const today = new Date()
+  const target = DAY_INDEX[dayOfWeek] ?? 1
+  const current = today.getDay()
+  const diff = (target - current + 7) % 7
+  const result = new Date(today)
+  result.setDate(today.getDate() + diff)
+  return result
+}
+
 function formatHour(h: number): string {
   if (h === 0 || h === 24) return '12am'
   if (h === 12) return '12pm'
@@ -26,11 +41,17 @@ function formatHour(h: number): string {
 }
 
 function dayLabel(day: DayOfWeek): string {
-  return DAYS.find(d => d.key === day)?.label ?? day
+  const date = resolveNextDate(day)
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+}
+
+function dayLabelShort(day: DayOfWeek): string {
+  const date = resolveNextDate(day)
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 function proposalLabel(p: MatchProposal): string {
-  return `${dayLabel(p.day)} ${formatHour(p.startHour)}–${formatHour(p.endHour)}`
+  return `${dayLabelShort(p.day)} ${formatHour(p.startHour)}–${formatHour(p.endHour)}`
 }
 
 export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated }: Props) {
@@ -153,7 +174,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             <div className="propose-row">
               <select value={propDay} onChange={e => setPropDay(e.target.value as DayOfWeek | '')}>
                 <option value="">Day...</option>
-                {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
+                {DAYS.map(d => <option key={d.key} value={d.key}>{dayLabelShort(d.key)}</option>)}
               </select>
               <select value={propStart} onChange={e => setPropStart(Number(e.target.value))}>
                 {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
@@ -251,7 +272,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <div className="propose-row">
             <select value={propDay} onChange={e => setPropDay(e.target.value as DayOfWeek | '')}>
               <option value="">Day...</option>
-              {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
+              {DAYS.map(d => <option key={d.key} value={d.key}>{dayLabelShort(d.key)}</option>)}
             </select>
             <select value={propStart} onChange={e => setPropStart(Number(e.target.value))}>
               {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
