@@ -13,6 +13,7 @@ import {
   apiSubmitScores,
   apiConfirmScores,
   apiAdvanceToFinals,
+  apiGetTournaments,
 } from "./api";
 import BottomNav from "./components/BottomNav";
 import BottomSheet from "./components/BottomSheet";
@@ -157,7 +158,12 @@ export default function App() {
     if (!token || !player) return;
     await loadTournaments(token);
     await loadSlots(token);
-  }, [token, player?.id, loadTournaments, loadSlots]);
+    // Force re-fetch matches for all tournaments (covers activation creating new matches)
+    const fresh = await apiGetTournaments(token);
+    if (fresh.tournaments.length > 0) {
+      await loadMatchesForTournaments(token, fresh.tournaments, player.id);
+    }
+  }, [token, player?.id, loadTournaments, loadSlots, loadMatchesForTournaments]);
 
   const handleAction = useCallback(
     async (action: ActionItem) => {
@@ -376,8 +382,14 @@ export default function App() {
       try {
         const result = await joinTournament(token, id);
         sheet.close();
+        // Always reload to pick up updated tournament state, matches, and player names
+        await reloadAll();
         if (result.activated) {
-          await reloadAll();
+          // Fetch full detail (player names/ratings) for the newly activated tournament
+          fetchedDetailIds.current.delete(id);
+          await getTournamentDetail(token, id);
+          setSelectedTournamentId(id);
+          setActiveTab("tourney");
         }
       } catch (e) {
         alert(e instanceof Error ? e.message : "Failed to join");
@@ -385,7 +397,7 @@ export default function App() {
         setActionInProgress(false);
       }
     },
-    [token, joinTournament, reloadAll, availSlots, actionInProgress, sheet],
+    [token, joinTournament, reloadAll, getTournamentDetail, availSlots, actionInProgress, sheet],
   );
 
   const handleViewTournament = useCallback((id: string) => {
