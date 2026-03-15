@@ -1,4 +1,4 @@
-import type { Player, SetScore, TournamentMatch } from "./types";
+import type { Player, SetScore, Tournament, TournamentMatch } from "./types";
 
 /**
  * Get a display-friendly name for a player.
@@ -131,6 +131,74 @@ export function shortTournamentName(name: string): string {
   const parts = name.split(/\s*[–—-]\s*/);
   if (parts.length >= 3) return parts[1]?.trim() ?? name;
   return name;
+}
+
+/**
+ * Format a date as "Mon 15 Mar" (short, no time).
+ */
+export function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+/**
+ * Format a date as "Mar 15" (compact).
+ */
+export function formatCompactDate(iso: string): string {
+  const d = new Date(iso);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+/**
+ * Compute tournament phase dates from a tournament object or an activation date.
+ * If the tournament has real dates, use those. Otherwise compute estimates.
+ */
+export function getTournamentDates(tournament: Tournament): {
+  registrationStart: string;
+  activationDate: string | null;
+  roundRobinEnd: string | null;
+  finalsEnd: string | null;
+  hardDeadline: string | null;
+  isEstimated: boolean;
+} {
+  const registrationStart = tournament.registrationOpenedAt || tournament.createdAt;
+
+  if (tournament.activatedAt) {
+    const activated = new Date(tournament.activatedAt);
+    const rrEnd = tournament.roundRobinDeadline
+      || new Date(activated.getTime() + 18 * 86400000).toISOString();
+    const finalsEnd = new Date(new Date(rrEnd).getTime() + 5 * 86400000).toISOString();
+    const hardDl = tournament.hardDeadline
+      || new Date(activated.getTime() + 32 * 86400000).toISOString();
+
+    return {
+      registrationStart,
+      activationDate: tournament.activatedAt,
+      roundRobinEnd: rrEnd,
+      finalsEnd,
+      hardDeadline: hardDl,
+      isEstimated: false,
+    };
+  }
+
+  // Estimate: assume activation 7 days from registration
+  const regDate = new Date(registrationStart);
+  const estActivation = new Date(regDate.getTime() + 7 * 86400000);
+  const estRREnd = new Date(estActivation.getTime() + 18 * 86400000);
+  const estFinalsEnd = new Date(estRREnd.getTime() + 5 * 86400000);
+  const estHardDeadline = new Date(estActivation.getTime() + 32 * 86400000);
+
+  return {
+    registrationStart,
+    activationDate: estActivation.toISOString(),
+    roundRobinEnd: estRREnd.toISOString(),
+    finalsEnd: estFinalsEnd.toISOString(),
+    hardDeadline: estHardDeadline.toISOString(),
+    isEstimated: true,
+  };
 }
 
 /**

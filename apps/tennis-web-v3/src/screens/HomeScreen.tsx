@@ -13,6 +13,7 @@ import {
   formatDate,
 } from "../helpers";
 import ActionCard from "../components/ActionCard";
+import HowItWorksCard from "../components/HowItWorksCard";
 
 interface Props {
   player: Player;
@@ -20,10 +21,13 @@ interface Props {
   tournaments: Tournament[];
   allMatches: Map<string, TournamentMatch[]>;
   playerNames: Record<string, string>;
+  showHowItWorks: boolean;
   onAction: (action: ActionItem) => void;
   onJoinTournament: (id: string) => void;
   onViewTournament: (id: string) => void;
   onTabChange: (tab: Tab) => void;
+  onDismissHowItWorks: () => void;
+  onShowRules: () => void;
 }
 
 function HomeScreen({
@@ -32,9 +36,12 @@ function HomeScreen({
   tournaments,
   allMatches,
   playerNames,
+  showHowItWorks,
   onAction,
   onJoinTournament,
   onViewTournament,
+  onDismissHowItWorks,
+  onShowRules,
 }: Props) {
   const firstName = (player.name || player.email.split("@")[0] || "Player").split(" ")[0];
 
@@ -100,6 +107,11 @@ function HomeScreen({
         </div>
         <p className="home-greeting">Hi, {firstName}</p>
       </div>
+
+      {/* How It Works — shown to new players */}
+      {showHowItWorks && (
+        <HowItWorksCard onDismiss={onDismissHowItWorks} />
+      )}
 
       {/* Action Cards */}
       {actionItems.length > 0 ? (

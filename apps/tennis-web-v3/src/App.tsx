@@ -21,6 +21,8 @@ import ConfirmScoreSheet from "./components/ConfirmScoreSheet";
 import SchedulingSheet from "./components/SchedulingSheet";
 import FlexSheet from "./components/FlexSheet";
 import ProposeSheet from "./components/ProposeSheet";
+import JoinTournamentSheet from "./components/JoinTournamentSheet";
+import TournamentRulesSheet from "./components/TournamentRulesSheet";
 import TestBar from "./components/TestBar";
 import GateScreen, { isGateUnlocked } from "./screens/GateScreen";
 import LoginScreen from "./screens/LoginScreen";
@@ -30,9 +32,14 @@ import TourneyScreen from "./screens/TourneyScreen";
 import ActivityScreen from "./screens/ActivityScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 
+const HIW_DISMISSED_KEY = "rally_hiw_dismissed";
+
 export default function App() {
   const [gateUnlocked, setGateUnlocked] = useState(isGateUnlocked);
   const [actionInProgress, setActionInProgress] = useState(false);
+  const [hiwDismissed, setHiwDismissed] = useState(() =>
+    localStorage.getItem(HIW_DISMISSED_KEY) === "1"
+  );
 
   const {
     token,
@@ -338,6 +345,19 @@ export default function App() {
   );
 
   const handleJoinTournament = useCallback(
+    (id: string) => {
+      if (!token || actionInProgress) return;
+
+      const tournament = tournaments.find((t) => t.id === id);
+      if (!tournament) return;
+
+      // Open the join sheet with tournament info
+      sheet.open({ type: "join-tournament", tournament });
+    },
+    [token, tournaments, actionInProgress, sheet],
+  );
+
+  const handleConfirmJoin = useCallback(
     async (id: string) => {
       if (!token || actionInProgress) return;
 
@@ -346,6 +366,7 @@ export default function App() {
           "You haven't set any availability yet. Without availability, your matches can't be auto-scheduled and you'll need to coordinate times manually.\n\nSet availability in your Profile first?",
         );
         if (goToProfile) {
+          sheet.close();
           setActiveTab("profile");
           return;
         }
@@ -354,6 +375,7 @@ export default function App() {
       setActionInProgress(true);
       try {
         const result = await joinTournament(token, id);
+        sheet.close();
         if (result.activated) {
           await reloadAll();
         }
@@ -363,12 +385,24 @@ export default function App() {
         setActionInProgress(false);
       }
     },
-    [token, joinTournament, reloadAll, availSlots, actionInProgress],
+    [token, joinTournament, reloadAll, availSlots, actionInProgress, sheet],
   );
 
   const handleViewTournament = useCallback((id: string) => {
     setSelectedTournamentId(id);
     setActiveTab("tourney");
+  }, []);
+
+  const handleShowRules = useCallback(() => {
+    const tournament = selectedTournamentId
+      ? tournaments.find((t) => t.id === selectedTournamentId) ?? null
+      : null;
+    sheet.open({ type: "rules", tournament });
+  }, [selectedTournamentId, tournaments, sheet]);
+
+  const handleDismissHowItWorks = useCallback(() => {
+    setHiwDismissed(true);
+    localStorage.setItem(HIW_DISMISSED_KEY, "1");
   }, []);
 
   const handleSaveAvailability = useCallback(
@@ -450,10 +484,13 @@ export default function App() {
             tournaments={tournaments}
             allMatches={allMatches}
             playerNames={playerNames}
+            showHowItWorks={!hiwDismissed}
             onAction={handleAction}
             onJoinTournament={handleJoinTournament}
             onViewTournament={handleViewTournament}
             onTabChange={setActiveTab}
+            onDismissHowItWorks={handleDismissHowItWorks}
+            onShowRules={handleShowRules}
           />
         )}
         {activeTab === "tourney" && (
@@ -467,6 +504,7 @@ export default function App() {
             onSelectTournament={setSelectedTournamentId}
             onMatchAction={handleMatchAction}
             onJoinTournament={handleJoinTournament}
+            onShowRules={handleShowRules}
           />
         )}
         {activeTab === "activity" && (
@@ -485,6 +523,7 @@ export default function App() {
             impactSuggestions={impactSuggestions}
             onSaveAvailability={handleSaveAvailability}
             onSignOut={logout}
+            onShowRules={handleShowRules}
           />
         )}
       </div>
@@ -523,10 +562,10 @@ export default function App() {
             options={sheet.content.schedulingInfo.overlaps}
             proposals={sheet.content.match.proposals}
             onSelectOption={(dt, label) =>
-              handleSchedule(dt, label, sheet.content!.match.id)
+              handleSchedule(dt, label, (sheet.content as { match: TournamentMatch }).match.id)
             }
             onAcceptProposal={(pid) =>
-              handleAcceptProposal(pid, sheet.content!.match.id)
+              handleAcceptProposal(pid, (sheet.content as { match: TournamentMatch }).match.id)
             }
             onClose={sheet.close}
           />
@@ -538,7 +577,7 @@ export default function App() {
             playerNames={playerNames}
             playerId={player.id}
             onAccept={(dt, label) =>
-              handleFlexAccept(dt, label, sheet.content!.match.id)
+              handleFlexAccept(dt, label, (sheet.content as { match: TournamentMatch }).match.id)
             }
             onClose={sheet.close}
           />
@@ -549,7 +588,20 @@ export default function App() {
             mySlots={sheet.content.mySlots}
             playerNames={playerNames}
             playerId={player.id}
-            onPropose={(times) => handlePropose(times, sheet.content!.match.id)}
+            onPropose={(times) => handlePropose(times, (sheet.content as { match: TournamentMatch }).match.id)}
+            onClose={sheet.close}
+          />
+        )}
+        {sheet.content?.type === "join-tournament" && (
+          <JoinTournamentSheet
+            tournament={sheet.content.tournament}
+            onConfirmJoin={() => handleConfirmJoin((sheet.content as { tournament: { id: string } }).tournament.id)}
+            onClose={sheet.close}
+          />
+        )}
+        {sheet.content?.type === "rules" && (
+          <TournamentRulesSheet
+            tournament={sheet.content.tournament}
             onClose={sheet.close}
           />
         )}

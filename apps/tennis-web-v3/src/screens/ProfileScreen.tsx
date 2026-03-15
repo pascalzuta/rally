@@ -9,6 +9,7 @@ interface Props {
   impactSuggestions: AvailabilityImpactSuggestion[];
   onSaveAvailability: (slots: Array<{ dayOfWeek: number; startTime: string; endTime: string }>) => void | Promise<void>;
   onSignOut: () => void;
+  onShowRules: () => void;
 }
 
 export default function ProfileScreen({
@@ -17,6 +18,7 @@ export default function ProfileScreen({
   impactSuggestions,
   onSaveAvailability,
   onSignOut,
+  onShowRules,
 }: Props) {
   const [slots, setSlots] = useState<Array<{ dayOfWeek: number; startTime: string; endTime: string }>>(
     availability.map((s) => ({ dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime }))
@@ -174,6 +176,11 @@ export default function ProfileScreen({
           <p>No suggestions available right now.</p>
         )}
       </div>
+
+      {/* How Rally Works */}
+      <button className="profile-rules-link" onClick={onShowRules}>
+        How Rally Works
+      </button>
 
       {/* Sign Out */}
       <button className="signout-btn" onClick={onSignOut}>

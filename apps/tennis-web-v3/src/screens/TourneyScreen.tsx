@@ -9,6 +9,8 @@ import {
   tierColor,
   ordinal,
   displayName,
+  formatCompactDate,
+  getTournamentDates,
 } from "../helpers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -25,6 +27,7 @@ interface Props {
   onSelectTournament: (id: string) => void;
   onMatchAction: (match: TournamentMatch) => void;
   onJoinTournament: (id: string) => void;
+  onShowRules: () => void;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -364,12 +367,17 @@ function StandingsTab({
 function InfoTab({
   tournament,
   names,
+  onShowRules,
 }: {
   tournament: Tournament;
   names: Record<string, string>;
+  onShowRules: () => void;
 }) {
+  const dates = getTournamentDates(tournament);
+
   return (
     <div className="info-section">
+      {/* Tournament Details */}
       <div className="info-card">
         <h3>{tournament.name}</h3>
         <dl>
@@ -378,9 +386,6 @@ function InfoTab({
 
           <dt>Band</dt>
           <dd>{tournament.band}</dd>
-
-          <dt>Month</dt>
-          <dd>{tournament.month}</dd>
 
           <dt>Players</dt>
           <dd>
@@ -392,6 +397,49 @@ function InfoTab({
         </dl>
       </div>
 
+      {/* Timeline with concrete dates */}
+      <div className="info-card">
+        <h4>Tournament Timeline</h4>
+        <div className="info-timeline">
+          <TimelineRow
+            label="Registration"
+            date={formatCompactDate(dates.registrationStart)}
+            status={tournament.status === "registration" ? "current" : "done"}
+          />
+          <TimelineRow
+            label="Round-Robin"
+            date={
+              dates.activationDate && dates.roundRobinEnd
+                ? `${formatCompactDate(dates.activationDate)} – ${formatCompactDate(dates.roundRobinEnd)}${dates.isEstimated ? " (est.)" : ""}`
+                : "TBD"
+            }
+            detail="18 days · everyone plays everyone"
+            status={tournament.status === "active" ? "current" : tournament.status === "registration" ? "upcoming" : "done"}
+          />
+          <TimelineRow
+            label="Finals"
+            date={
+              dates.roundRobinEnd && dates.finalsEnd
+                ? `${formatCompactDate(dates.roundRobinEnd)} – ${formatCompactDate(dates.finalsEnd)}${dates.isEstimated ? " (est.)" : ""}`
+                : "TBD"
+            }
+            detail="Top 4 compete"
+            status={tournament.status === "finals" ? "current" : (tournament.status === "completed" ? "done" : "upcoming")}
+          />
+          <TimelineRow
+            label="Ends"
+            date={
+              dates.hardDeadline
+                ? `by ${formatCompactDate(dates.hardDeadline)}${dates.isEstimated ? " (est.)" : ""}`
+                : "TBD"
+            }
+            status={tournament.status === "completed" ? "done" : "upcoming"}
+            isLast
+          />
+        </div>
+      </div>
+
+      {/* Players */}
       <div className="info-card">
         <h4>Players</h4>
         <div className="player-pills">
@@ -401,6 +449,39 @@ function InfoTab({
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Full rules link */}
+      <button className="info-rules-link" onClick={onShowRules}>
+        View full rules &amp; how Rally works
+      </button>
+    </div>
+  );
+}
+
+function TimelineRow({
+  label,
+  date,
+  detail,
+  status,
+  isLast,
+}: {
+  label: string;
+  date: string;
+  detail?: string;
+  status: "done" | "current" | "upcoming";
+  isLast?: boolean;
+}) {
+  return (
+    <div className={`info-timeline-row info-timeline-row--${status}`}>
+      <div className="info-timeline-left">
+        <div className={`info-timeline-dot info-timeline-dot--${status}`} />
+        {!isLast && <div className="info-timeline-line" />}
+      </div>
+      <div className="info-timeline-right">
+        <strong>{label}</strong>
+        <span className="info-timeline-date">{date}</span>
+        {detail && <span className="info-timeline-detail">{detail}</span>}
       </div>
     </div>
   );
@@ -418,6 +499,7 @@ export default function TourneyScreen({
   onSelectTournament,
   onMatchAction,
   onJoinTournament,
+  onShowRules,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("matches");
 
@@ -526,7 +608,7 @@ export default function TourneyScreen({
           )}
 
           {activeTab === "info" && (
-            <InfoTab tournament={selectedTournament} names={playerNames} />
+            <InfoTab tournament={selectedTournament} names={playerNames} onShowRules={onShowRules} />
           )}
         </>
       )}

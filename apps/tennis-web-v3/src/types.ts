@@ -121,4 +121,6 @@ export type SheetContent =
   | { type: "confirm-score"; match: TournamentMatch; tournament: Tournament }
   | { type: "scheduling"; match: TournamentMatch; schedulingInfo: SchedulingInfo }
   | { type: "flex"; match: TournamentMatch; nearMiss: NearMiss }
-  | { type: "propose"; match: TournamentMatch; mySlots: AvailabilitySlot[] };
+  | { type: "propose"; match: TournamentMatch; mySlots: AvailabilitySlot[] }
+  | { type: "join-tournament"; tournament: Tournament }
+  | { type: "rules"; tournament: Tournament | null };

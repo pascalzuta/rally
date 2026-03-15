@@ -2629,3 +2629,854 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+/* ============================================================
+   22. HOW IT WORKS CARD (HomeScreen)
+   ============================================================ */
+
+.how-it-works-card {
+  margin: 0 var(--space-lg) var(--space-lg);
+  background: linear-gradient(135deg, var(--card) 0%, #1a3058 100%);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: var(--space-md) var(--space-lg);
+}
+
+.hiw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.hiw-header .section-title {
+  margin: 0;
+}
+
+.hiw-dismiss {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-dim);
+  border-radius: 50%;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.hiw-dismiss:hover {
+  color: var(--text);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hiw-timeline-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hiw-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.hiw-step-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.hiw-step-icon--join {
+  background: linear-gradient(135deg, var(--blue-secondary), #2a6fd4);
+}
+
+.hiw-step-icon--play {
+  background: linear-gradient(135deg, var(--green), #16a34a);
+}
+
+.hiw-step-icon--compete {
+  background: linear-gradient(135deg, var(--red-primary), #b80909);
+}
+
+.hiw-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+}
+
+.hiw-step-text strong {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.hiw-step-text span {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.hiw-step-connector {
+  width: 2px;
+  height: 12px;
+  background-color: var(--card-border);
+  margin-left: 15px;
+}
+
+.hiw-footer {
+  margin-top: var(--space-md);
+  text-align: center;
+}
+
+.hiw-duration {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+
+/* ============================================================
+   23. JOIN TOURNAMENT SHEET
+   ============================================================ */
+
+.join-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.join-sheet-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: calc(-1 * var(--space-sm));
+}
+
+/* Timeline */
+.join-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-sm) 0;
+}
+
+.join-timeline-track {
+  position: absolute;
+  left: 9px;
+  top: var(--space-md);
+  bottom: var(--space-md);
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    var(--green) 0%,
+    var(--blue-secondary) 40%,
+    var(--amber) 70%,
+    var(--text-dim) 100%
+  );
+}
+
+.join-timeline-phase {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  position: relative;
+}
+
+.join-timeline-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--card);
+  border: 2px solid var(--card-border);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.join-timeline-dot--active {
+  border-color: var(--green);
+  background-color: var(--green);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.join-timeline-dot--end {
+  border-color: var(--text-dim);
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+}
+
+.join-timeline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.join-timeline-label {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.join-timeline-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.join-timeline-detail {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.join-timeline-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  font-style: italic;
+}
+
+/* Commitment */
+.join-commitment {
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: var(--space-md);
+}
+
+.join-commitment h3 {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.join-commitment ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.join-commitment li {
+  font-size: 12px;
+  color: var(--text);
+  padding-left: var(--space-md);
+  position: relative;
+  line-height: 1.5;
+}
+
+.join-commitment li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--blue-secondary);
+}
+
+/* Actions */
+.join-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.join-sheet-confirm {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, var(--green) 0%, #16a34a 100%);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.join-sheet-confirm:hover {
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+}
+
+.join-sheet-confirm:active {
+  transform: scale(0.98);
+}
+
+.join-sheet-cancel {
+  width: 100%;
+  height: 40px;
+  background-color: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.join-sheet-cancel:hover {
+  color: var(--text-muted);
+}
+
+
+/* ============================================================
+   24. TOURNAMENT RULES SHEET
+   ============================================================ */
+
+.rules-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rules-header .sheet-title {
+  padding: 0;
+}
+
+.rules-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--text-dim);
+  border-radius: 50%;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.rules-close:hover {
+  color: var(--text);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Section tabs */
+.rules-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.rules-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.rules-tab {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.rules-tab:hover {
+  color: var(--text-muted);
+  border-color: var(--text-dim);
+}
+
+.rules-tab--active {
+  color: var(--text);
+  background-color: rgba(213, 10, 10, 0.08);
+  border-color: var(--red-primary);
+}
+
+/* Rules body */
+.rules-body {
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.rules-body::-webkit-scrollbar {
+  display: none;
+}
+
+.rules-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.rules-intro {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.rules-subheading {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-top: var(--space-sm);
+}
+
+/* Phase diagram (Overview) */
+.rules-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rules-phase {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+
+.rules-phase-bar {
+  width: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  min-height: 60px;
+}
+
+.rules-phase--reg .rules-phase-bar {
+  background: linear-gradient(180deg, var(--blue-secondary), #2a6fd4);
+}
+
+.rules-phase--rr .rules-phase-bar {
+  background: linear-gradient(180deg, var(--green), #16a34a);
+}
+
+.rules-phase--finals .rules-phase-bar {
+  background: linear-gradient(180deg, var(--amber), #d97706);
+}
+
+.rules-phase--end .rules-phase-bar {
+  background: linear-gradient(180deg, var(--text-dim), var(--text-dim));
+}
+
+.rules-phase-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rules-phase-content strong {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.rules-phase-duration {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rules-phase-dates {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+.rules-phase-content p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* Scheduling tiers */
+.rules-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rules-tier {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+}
+
+.rules-tier-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.rules-tier-badge--auto {
+  background: linear-gradient(135deg, var(--green), #16a34a);
+}
+
+.rules-tier-badge--flex {
+  background: linear-gradient(135deg, var(--amber), #d97706);
+}
+
+.rules-tier-badge--propose {
+  background: linear-gradient(135deg, var(--red-primary), #b80909);
+}
+
+.rules-tier-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rules-tier-content strong {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+
+.rules-tier-content p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.rules-tip {
+  font-size: 12px;
+  color: var(--green);
+  background-color: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  padding: var(--space-sm) var(--space-md);
+  font-weight: 500;
+}
+
+/* Scoring steps */
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rules-list-item {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.rules-list-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red-primary), #b80909);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.rules-list-item strong {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+
+.rules-list-item p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.rules-tiebreak-list {
+  list-style: decimal;
+  padding-left: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rules-tiebreak-list strong {
+  color: var(--text);
+}
+
+/* Deadlines */
+.rules-deadlines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rules-deadline-item {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  align-items: flex-start;
+}
+
+.rules-deadline-days {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+  white-space: nowrap;
+  min-width: 52px;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.rules-deadline-item strong {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+
+.rules-deadline-item p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Forfeits */
+.rules-forfeit-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rules-forfeit-type {
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+}
+
+.rules-forfeit-type strong {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+
+.rules-forfeit-type p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+
+/* ============================================================
+   25. INFO TAB TIMELINE (TourneyScreen)
+   ============================================================ */
+
+.info-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-sm) 0;
+}
+
+.info-timeline-row {
+  display: flex;
+  gap: var(--space-md);
+  min-height: 48px;
+}
+
+.info-timeline-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.info-timeline-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--card-border);
+  background-color: var(--card);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.info-timeline-dot--done {
+  border-color: var(--green);
+  background-color: var(--green);
+}
+
+.info-timeline-dot--current {
+  border-color: var(--amber);
+  background-color: var(--amber);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+.info-timeline-dot--upcoming {
+  border-color: var(--text-dim);
+}
+
+.info-timeline-line {
+  width: 2px;
+  flex: 1;
+  background-color: var(--card-border);
+  min-height: 16px;
+}
+
+.info-timeline-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: var(--space-sm);
+}
+
+.info-timeline-right strong {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+
+.info-timeline-row--done .info-timeline-right strong {
+  color: var(--green);
+}
+
+.info-timeline-row--current .info-timeline-right strong {
+  color: var(--amber);
+}
+
+.info-timeline-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.info-timeline-detail {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.info-rules-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--space-md);
+  background-color: transparent;
+  border: 1px dashed var(--card-border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.info-rules-link:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+
+/* ============================================================
+   26. PROFILE RULES LINK
+   ============================================================ */
+
+.profile-rules-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - var(--space-lg) * 2);
+  margin: var(--space-sm) auto 0;
+  height: 40px;
+  background-color: transparent;
+  border: 1px dashed var(--card-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.profile-rules-link:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
