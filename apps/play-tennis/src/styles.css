@@ -1985,25 +1985,77 @@ select:focus {
 
 /* Availability Picker */
 .availability-picker {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-sm);
 }
 
-.quick-slots {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+/* --- Availability screen (v2 redesign) --- */
+
+.avail-screen .signup-content {
+  gap: 0;
+}
+
+.avail-header {
+  text-align: center;
   margin-bottom: var(--space-md);
 }
 
-.quick-slot-btn {
+.avail-value-prop {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+  line-height: 1.4;
+}
+
+.avail-value-highlight {
+  color: var(--color-accent-primary);
+  font-weight: var(--weight-semibold);
+}
+
+/* Mode toggle — segmented control */
+.avail-mode-toggle {
+  display: flex;
+  background: var(--color-bg-secondary, #F3F4F6);
+  border-radius: var(--radius-button);
+  padding: 3px;
+  margin-bottom: var(--space-md);
+}
+
+.avail-mode-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: calc(var(--radius-button) - 2px);
+  background: transparent;
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+  font-family: inherit;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.avail-mode-btn.active {
+  background: var(--color-surface, #fff);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Quick slots v2 — compact layout */
+.quick-slots-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.quick-slot-v2 {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-card);
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-button);
   border: 1px solid var(--color-divider);
   background: var(--color-bg-surface);
-  font-size: var(--font-body-md);
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.15s;
   text-align: left;
@@ -2011,20 +2063,133 @@ select:focus {
   color: var(--color-text-primary);
 }
 
-.quick-slot-btn.selected {
+.quick-slot-v2.selected {
   border-color: var(--color-accent-primary);
-  background: var(--color-accent-bg);
+  background: rgba(37, 99, 235, 0.05);
 }
 
-.quick-slot-check {
-  width: 20px;
-  height: 20px;
+.quick-slot-v2-check {
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-body-md);
+  font-size: 13px;
   color: var(--color-accent-primary);
   font-weight: var(--weight-bold);
+  flex-shrink: 0;
+}
+
+.quick-slot-v2-label {
+  flex: 1;
+  font-weight: var(--weight-medium);
+}
+
+.quick-slot-v2-time {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.quick-slots-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+/* Feedback area */
+.avail-feedback {
+  min-height: 44px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: var(--space-sm) 0;
+}
+
+.avail-feedback.visible {
+  opacity: 1;
+}
+
+.avail-feedback-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.avail-feedback-count {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-title-sm, 20px);
+  font-weight: 700;
+  color: var(--color-positive-primary);
+}
+
+.avail-feedback-label {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+}
+
+.avail-nudge {
+  font-size: var(--font-body-sm, 13px);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.avail-nudge--positive {
+  color: var(--color-positive-primary);
+}
+
+/* Compact weekly cap — inline row */
+.avail-cap-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--color-divider, #E5E7EB);
+  margin-bottom: var(--space-md);
+}
+
+.avail-cap-label {
+  font-size: var(--font-body-sm, 13px);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.avail-cap-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.avail-cap-pill {
+  width: 36px;
+  height: 32px;
+  border-radius: var(--radius-button, 10px);
+  border: 1px solid var(--color-divider, #E5E7EB);
+  background: var(--color-surface, #fff);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  font-family: inherit;
+}
+
+.avail-cap-pill.selected {
+  border-color: var(--color-accent-primary, #2563EB);
+  background: rgba(37, 99, 235, 0.05);
+  color: var(--color-accent-primary, #2563EB);
+}
+
+.avail-cap-pill:active {
+  transform: scale(0.95);
+}
+
+.avail-cap-duration {
+  font-size: var(--font-body-sm, 13px);
+  color: var(--color-text-muted);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
 }
 
 .detailed-slot-list {
@@ -4893,20 +5058,7 @@ select:focus {
   cursor: not-allowed;
 }
 
-/* ================================================
-   Availability Hint
-   ================================================ */
-.availability-hint {
-  font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
-  margin-bottom: var(--space-sm);
-}
-
-.quick-slot-btn.recommended {
-  border-color: var(--color-accent-primary);
-  background: rgba(42, 91, 215, 0.04);
-}
+/* Old availability-hint and quick-slot-btn.recommended removed — replaced by avail-* classes */
 
 /* ================================================
    Confirmed Screen (Micro Reward)
@@ -6287,112 +6439,7 @@ select:focus {
   margin-top: var(--space-sm);
 }
 
-/* --- Weekly cap selector --- */
-
-.weekly-cap-picker {
-  margin-top: var(--space-lg);
-  padding-top: var(--space-lg);
-  border-top: 1px solid var(--color-divider, #E5E7EB);
-}
-
-.weekly-cap-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-md);
-}
-
-.weekly-cap-title {
-  font-size: var(--font-body-md, 16px);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.weekly-cap-hint {
-  font-size: var(--font-body-sm, 13px);
-  color: var(--color-text-muted);
-}
-
-.weekly-cap-options {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.weekly-cap-option {
-  flex: 1;
-  height: 48px;
-  border-radius: var(--radius-button, 10px);
-  border: 1px solid var(--color-divider, #E5E7EB);
-  background: var(--color-surface, #fff);
-  font-size: var(--font-title-sm, 20px);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.weekly-cap-option.selected {
-  border-color: var(--color-accent-primary, #2563EB);
-  background: rgba(37, 99, 235, 0.05);
-  color: var(--color-accent-primary, #2563EB);
-}
-
-.weekly-cap-option:active {
-  transform: scale(0.97);
-}
-
-.weekly-cap-duration {
-  font-size: var(--font-body-sm, 13px);
-  color: var(--color-text-muted);
-  margin-top: var(--space-sm);
-  text-align: center;
-}
-
-/* --- Availability preview (Registration) --- */
-
-.availability-preview {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-  padding: var(--space-md) 0;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.availability-preview.visible {
-  opacity: 1;
-}
-
-.availability-preview-count {
-  font-variant-numeric: tabular-nums;
-  font-size: var(--font-title-sm, 20px);
-  font-weight: 700;
-  color: var(--color-positive-primary);
-  transition: transform 0.2s ease;
-}
-
-.availability-preview-count.bounce {
-  transform: scale(1.2);
-}
-
-.availability-preview-label {
-  font-size: var(--font-body-md, 16px);
-  color: var(--color-text-secondary);
-}
-
-.availability-preview-hint {
-  font-size: var(--font-body-sm, 13px);
-  margin-top: var(--space-xs);
-}
-
-.availability-preview-hint--positive {
-  color: var(--color-positive-primary);
-}
-
-.availability-preview-hint--warning {
-  color: var(--color-warning-primary, #F59E0B);
-}
+/* Old weekly-cap and availability-preview classes removed — replaced by avail-cap-* and avail-feedback-* */
 
 /* --- Waitlist experience --- */
 

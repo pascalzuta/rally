@@ -573,36 +573,64 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
   // --- Step: Availability ---
   const hasSlots = detailedMode ? detailedSlots.length > 0 : selectedQuick.size > 0
-  const capDurationLabels: Record<number, string> = { 1: 'Tournament takes ~5 weeks', 2: 'Tournament takes ~3 weeks', 3: 'Tournament takes ~2 weeks' }
+  const capDurationLabels: Record<number, string> = { 1: '~5 weeks', 2: '~3 weeks', 3: '~2 weeks' }
+  const slotCount = detailedMode ? detailedSlots.length : selectedQuick.size
 
   return (
-    <div className="onboard-screen">
+    <div className="onboard-screen avail-screen">
       <div className="signup-content">
-        <div className="signup-header">
+        {/* Motivational header */}
+        <div className="avail-header">
           <h1 className="signup-title">When can you play?</h1>
-          <p className="signup-desc">Add your times. We'll schedule your matches automatically.</p>
+          <p className="avail-value-prop">
+            More times = more opponents matched.
+            <br />
+            <span className="avail-value-highlight">We handle all the scheduling.</span>
+          </p>
+        </div>
+
+        {/* Mode toggle — prominent segmented control */}
+        <div className="avail-mode-toggle">
+          <button
+            className={`avail-mode-btn ${!detailedMode ? 'active' : ''}`}
+            onClick={() => setDetailedMode(false)}
+          >
+            Quick picks
+          </button>
+          <button
+            className={`avail-mode-btn ${detailedMode ? 'active' : ''}`}
+            onClick={() => setDetailedMode(true)}
+          >
+            Custom times
+          </button>
         </div>
 
         <div className="availability-picker">
           {!detailedMode ? (
-            <>
-              <p className="availability-hint">Most players choose:</p>
-              <div className="quick-slots">
-                {QUICK_SLOTS.map((slot, idx) => (
+            <div className="quick-slots-v2">
+              {/* Full-width weekday option */}
+              <button
+                className={`quick-slot-v2 quick-slot-v2--wide ${selectedQuick.has(0) ? 'selected' : ''}`}
+                onClick={() => toggleQuickSlot(0)}
+              >
+                <span className="quick-slot-v2-check">{selectedQuick.has(0) ? '✓' : ''}</span>
+                <span className="quick-slot-v2-label">{QUICK_SLOTS[0].label}</span>
+                <span className="quick-slot-v2-time">Mon–Fri 6–9pm</span>
+              </button>
+              {/* 2×2 grid for weekend slots */}
+              <div className="quick-slots-grid">
+                {QUICK_SLOTS.slice(1).map((slot, idx) => (
                   <button
-                    key={idx}
-                    className={`quick-slot-btn ${selectedQuick.has(idx) ? 'selected' : ''} ${idx <= 1 ? 'recommended' : ''}`}
-                    onClick={() => toggleQuickSlot(idx)}
+                    key={idx + 1}
+                    className={`quick-slot-v2 ${selectedQuick.has(idx + 1) ? 'selected' : ''}`}
+                    onClick={() => toggleQuickSlot(idx + 1)}
                   >
-                    <span className="quick-slot-check">{selectedQuick.has(idx) ? '✓' : ''}</span>
-                    {slot.label}
+                    <span className="quick-slot-v2-check">{selectedQuick.has(idx + 1) ? '✓' : ''}</span>
+                    <span className="quick-slot-v2-label">{slot.label.replace('Saturday ', 'Sat ').replace('Sunday ', 'Sun ')}</span>
                   </button>
                 ))}
               </div>
-              <button className="btn-link" onClick={() => setDetailedMode(true)}>
-                Set specific times instead
-              </button>
-            </>
+            </div>
           ) : (
             <>
               {detailedSlots.length > 0 && (
@@ -636,52 +664,41 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   Add
                 </button>
               </div>
-
-              <button className="btn-link" onClick={() => setDetailedMode(false)}>
-                Use quick picks instead
-              </button>
             </>
           )}
         </div>
 
-        {/* Matchable players preview */}
-        <div className={`availability-preview ${hasSlots ? 'visible' : ''}`}>
+        {/* Live feedback — matchable count + social proof nudge */}
+        <div className={`avail-feedback ${hasSlots ? 'visible' : ''}`}>
           {matchableCount > 0 && (
-            <>
-              <span className="availability-preview-count">{matchableCount}</span>
-              <span className="availability-preview-label">players you can match with</span>
-            </>
+            <div className="avail-feedback-row">
+              <span className="avail-feedback-count">{matchableCount}</span>
+              <span className="avail-feedback-label">players match your times</span>
+            </div>
+          )}
+          {hasSlots && slotCount < 3 && (
+            <p className="avail-nudge">Players who pick 3+ slots get matched 2× faster</p>
           )}
           {matchableCount >= 5 && (
-            <div className="availability-preview-hint availability-preview-hint--positive">
-              Nice — that's enough for a full tournament group
-            </div>
-          )}
-          {hasSlots && matchableCount <= 2 && matchableCount > 0 && (
-            <div className="availability-preview-hint availability-preview-hint--warning">
-              Tip: adding a weekend morning matches you with more players
-            </div>
+            <p className="avail-nudge avail-nudge--positive">Enough for a full tournament group!</p>
           )}
         </div>
 
-        {/* Weekly cap selector */}
-        <div className="weekly-cap-picker">
-          <div className="weekly-cap-header">
-            <span className="weekly-cap-title">Matches per week</span>
-            <span className="weekly-cap-hint">We'll spread your matches out</span>
-          </div>
-          <div className="weekly-cap-options">
+        {/* Compact weekly cap — inline row */}
+        <div className="avail-cap-row">
+          <span className="avail-cap-label">Matches / week</span>
+          <div className="avail-cap-pills">
             {([1, 2, 3] as const).map(cap => (
               <button
                 key={cap}
-                className={`weekly-cap-option ${weeklyCap === cap ? 'selected' : ''}`}
+                className={`avail-cap-pill ${weeklyCap === cap ? 'selected' : ''}`}
                 onClick={() => setWeeklyCap(cap)}
               >
                 {cap}
               </button>
             ))}
           </div>
-          <div className="weekly-cap-duration">{capDurationLabels[weeklyCap]}</div>
+          <span className="avail-cap-duration">{capDurationLabels[weeklyCap]}</span>
         </div>
 
         <div className="availability-actions">
