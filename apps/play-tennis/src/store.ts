@@ -731,7 +731,7 @@ function advanceWinner(tournament: Tournament, match: Match, winnerId: string): 
         nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
       }
     }
-  } else if (tournament.format === 'group-knockout') {
+  } else if (tournament.format === 'group-knockout' || tournament.format === 'round-robin') {
     if (match.phase === 'group') {
       // Check if all group matches are done → generate knockout
       const groupMatches = tournament.matches.filter(m => m.phase === 'group')
@@ -1040,6 +1040,7 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
     t.groupPhaseComplete = false
     t.matches = matches
   } else {
+    // Round-robin: all players play each other (group phase), then top 4 play semifinals + final
     const matches: Match[] = []
     for (let i = 0; i < t.players.length; i++) {
       for (let j = i + 1; j < t.players.length; j++) {
@@ -1053,9 +1054,11 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
           score2: [],
           winnerId: null,
           completed: false,
+          phase: 'group',
         })
       }
     }
+    t.groupPhaseComplete = false
     t.matches = matches
   }
 
@@ -1213,6 +1216,7 @@ export function getGroupStandings(tournament: Tournament): { id: string; name: s
     gamesLost: 0,
   }))
 
+  // For both group-knockout and round-robin, count only group phase matches
   const groupMatches = tournament.matches.filter(m => m.phase === 'group')
   for (const match of groupMatches) {
     if (!match.completed) continue
@@ -1373,8 +1377,8 @@ export async function saveMatchScore(
             setTournamentTimestamp(tournamentId, data.updated_at)
           }
 
-          // Handle group-knockout phase transition (complex client logic)
-          if (serverTournament.format === 'group-knockout') {
+          // Handle phase transition: group → knockout (for group-knockout and round-robin)
+          if (serverTournament.format === 'group-knockout' || serverTournament.format === 'round-robin') {
             const serverMatch = serverTournament.matches.find((m: Match) => m.id === matchId)
             if (serverMatch?.phase === 'group') {
               const groupMatches = serverTournament.matches.filter((m: Match) => m.phase === 'group')
@@ -1432,8 +1436,8 @@ export async function saveMatchScore(
     }
   }
 
-  // Group-knockout: check if group phase is done, generate knockout
-  if (t.format === 'group-knockout') {
+  // Group-knockout and round-robin: check if group phase is done, generate knockout
+  if (t.format === 'group-knockout' || t.format === 'round-robin') {
     if (match.phase === 'group') {
       const groupMatches = t.matches.filter(m => m.phase === 'group')
       const allGroupDone = groupMatches.every(m => m.completed)
@@ -2025,34 +2029,49 @@ export function awardTournamentTrophies(tournamentId: string, tournamentObj?: To
       }
     }
   } else if (t.format === 'round-robin') {
-    // Round-robin: winner is #1 in standings (most wins)
-    // getGroupStandings filters by phase==='group', but round-robin matches have no phase
-    // So compute standings directly
-    const stats = t.players.map(p => ({ id: p.id, name: p.name, wins: 0 }))
-    for (const m of t.matches) {
-      if (!m.completed || !m.winnerId) continue
-      const s = stats.find(s => s.id === m.winnerId)
-      if (s) s.wins++
-    }
-    stats.sort((a, b) => b.wins - a.wins)
-    const standings = stats
-    if (standings.length > 0) {
-      const winner = t.players.find(p => p.name === standings[0].name)
-      if (winner) {
-        newTrophies.push({
-          id: generateId(), playerId: winner.id, playerName: winner.name,
-          tournamentId: t.id, tournamentName: t.name, county: t.county,
-          tier: 'champion', date: t.date, awardedAt: now,
-        })
-      }
-      if (standings.length > 1) {
-        const second = t.players.find(p => p.name === standings[1].name)
-        if (second) {
+    // Round-robin with playoff phase: semis + final determine trophies
+    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+    if (knockoutMatches.length > 0) {
+      const maxRound = Math.max(...knockoutMatches.map(m => m.round))
+      const finalMatch = knockoutMatches.find(m => m.round === maxRound && m.completed)
+      if (finalMatch && finalMatch.winnerId) {
+        const champion = t.players.find(p => p.id === finalMatch.winnerId)
+        const finalist = t.players.find(p => p.id === (finalMatch.player1Id === finalMatch.winnerId ? finalMatch.player2Id : finalMatch.player1Id))
+        const scoreStr = formatMatchScore(
+          finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score1 : finalMatch.score2,
+          finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score2 : finalMatch.score1
+        )
+        if (champion) {
           newTrophies.push({
-            id: generateId(), playerId: second.id, playerName: second.name,
+            id: generateId(), playerId: champion.id, playerName: champion.name,
+            tournamentId: t.id, tournamentName: t.name, county: t.county,
+            tier: 'champion', date: t.date, awardedAt: now,
+            finalMatch: { opponentName: finalist?.name ?? 'Unknown', score: scoreStr, won: true }
+          })
+        }
+        if (finalist) {
+          newTrophies.push({
+            id: generateId(), playerId: finalist.id, playerName: finalist.name,
             tournamentId: t.id, tournamentName: t.name, county: t.county,
             tier: 'finalist', date: t.date, awardedAt: now,
+            finalMatch: { opponentName: champion?.name ?? 'Unknown', score: scoreStr, won: false }
           })
+        }
+        // Semifinalists
+        const semiRound = maxRound - 1
+        const semiMatches = knockoutMatches.filter(m => m.round === semiRound && m.completed)
+        for (const sm of semiMatches) {
+          if (!sm.winnerId) continue
+          const loserId = sm.player1Id === sm.winnerId ? sm.player2Id : sm.player1Id
+          if (!loserId) continue
+          const loser = t.players.find(p => p.id === loserId)
+          if (loser) {
+            newTrophies.push({
+              id: generateId(), playerId: loser.id, playerName: loser.name,
+              tournamentId: t.id, tournamentName: t.name, county: t.county,
+              tier: 'semifinalist', date: t.date, awardedAt: now,
+            })
+          }
         }
       }
     }
@@ -2531,22 +2550,48 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
     return { tournamentId }
   }
 
-  // Round-robin: score all except last match involving player
-  const myMatches = t.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId)
-  const otherMatches = t.matches.filter(m => m.player1Id !== playerId && m.player2Id !== playerId)
-  // Score all other matches
-  for (const match of otherMatches) {
+  // Round-robin with playoffs: score all group matches, then semis, leave final
+  const groupMatches = t.matches.filter(m => m.phase === 'group')
+  for (const match of groupMatches) {
     if (match.completed || !match.player1Id || !match.player2Id) continue
-    await saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], match.player1Id!)
-  }
-  // Score all my matches except the last
-  for (let i = 0; i < myMatches.length - 1; i++) {
-    const match = myMatches[i]
-    if (match.completed || !match.player1Id || !match.player2Id) continue
-    if (match.player1Id === playerId) {
-      await saveMatchScore(tournamentId, match.id, [6, 6], [3, 4], playerId)
+    const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+    const s1 = [6, 6]
+    const s2 = [3, 4]
+    let winnerId: string
+    if (isMyMatch) {
+      winnerId = playerId
     } else {
-      await saveMatchScore(tournamentId, match.id, [3, 4], [6, 6], playerId)
+      winnerId = match.player1Id!
+    }
+    if (winnerId === match.player1Id) {
+      await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+    } else {
+      await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+    }
+  }
+
+  // Reload tournament (knockout phase should now exist)
+  t = getTournament(tournamentId)
+  if (!t) return null
+
+  // Score semifinals, ensuring our player wins
+  const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+  const semis = knockoutMatches.filter(m => m.round === 2)
+  for (const semi of semis) {
+    if (semi.completed || !semi.player1Id || !semi.player2Id) continue
+    const isMyMatch = semi.player1Id === playerId || semi.player2Id === playerId
+    const s1 = [6, 6]
+    const s2 = [3, 4]
+    let winnerId: string
+    if (isMyMatch) {
+      winnerId = playerId
+    } else {
+      winnerId = semi.player1Id!
+    }
+    if (winnerId === semi.player1Id) {
+      await saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
+    } else {
+      await saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
     }
   }
 

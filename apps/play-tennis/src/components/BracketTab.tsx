@@ -181,15 +181,16 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     return `Round ${round}`
   }
 
-  // Group-knockout specific
-  const groupMatches = tournament.format === 'group-knockout'
+  // Group + knockout phase data (applies to group-knockout AND round-robin)
+  const hasGroupPhase = tournament.format === 'group-knockout' || tournament.format === 'round-robin'
+  const groupMatches = hasGroupPhase
     ? tournament.matches.filter(m => m.phase === 'group').sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId))
     : []
-  const knockoutMatches = tournament.format === 'group-knockout'
+  const knockoutMatches = hasGroupPhase
     ? tournament.matches.filter(m => m.phase === 'knockout')
     : []
-  const groupComplete = tournament.format === 'group-knockout' && tournament.groupPhaseComplete
-  const groupStandings = tournament.format === 'group-knockout' ? getGroupStandings(tournament) : []
+  const groupComplete = hasGroupPhase && !!tournament.groupPhaseComplete
+  const groupStandings = hasGroupPhase ? getGroupStandings(tournament) : []
   const groupMatchesCompleted = groupMatches.filter(m => m.completed).length
   const groupMatchesTotal = groupMatches.length
 
@@ -596,25 +597,25 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             </div>
           )}
 
-          {/* Group-knockout progress stepper */}
-          {tournament.format === 'group-knockout' && (
+          {/* Group-phase progress stepper (round-robin and group-knockout) */}
+          {hasGroupPhase && (
             <div className="round-progress">
               <div className="round-progress-item">
                 <div className={`round-progress-dot ${groupComplete ? 'completed' : 'active'}`} />
                 <span className={`round-progress-label ${groupComplete ? 'completed' : 'active'}`}>
-                  Group ({groupMatchesCompleted}/{groupMatchesTotal})
+                  Round Robin ({groupMatchesCompleted}/{groupMatchesTotal})
                 </span>
                 <div className={`round-progress-line ${groupComplete ? 'completed' : ''}`} />
               </div>
               <div className="round-progress-item">
-                <div className={`round-progress-dot ${groupComplete ? (knockoutMatches.every(m => m.completed || !m.player1Id) ? 'completed' : 'active') : 'upcoming'}`} />
+                <div className={`round-progress-dot ${groupComplete ? (knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
                 <span className={`round-progress-label ${groupComplete ? 'active' : 'upcoming'}`}>
                   Semifinals
                 </span>
                 <div className={`round-progress-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
               </div>
               <div className="round-progress-item">
-                <div className={`round-progress-dot ${tournament.matches.every(m => m.completed || (!m.player1Id && !m.player2Id)) ? 'completed' : 'upcoming'}`} />
+                <div className={`round-progress-dot ${knockoutMatches.some(m => m.round === 3 && m.completed) ? 'completed' : knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`} />
                 <span className={`round-progress-label ${knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`}>
                   Final
                 </span>
@@ -701,10 +702,61 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 )}
               </>
             ) : (
-              <div className="round">
-                <h3 className="round-label">All Matches</h3>
-                {[...tournament.matches].sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
-              </div>
+              <>
+                <div className="round">
+                  <h3 className="round-label">Round Robin</h3>
+                  {groupMatches.map(m => renderMatchCard(m))}
+                </div>
+
+                {groupMatches.some(m => m.completed) && (
+                  <div className="group-standings-inline">
+                    <h3 className="round-label">Standings</h3>
+                    <table className="group-standings-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Player</th>
+                          <th>W</th>
+                          <th>L</th>
+                          <th>Sets</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupStandings.map((s, i) => {
+                          const seed = seeds.get(s.id)
+                          const qualifies = i < 4
+                          return (
+                            <tr key={s.id} className={qualifies ? 'qualifies' : ''}>
+                              <td className="rank">{i + 1}</td>
+                              <td className="player-cell">{s.name}{seed != null && <span className="seed-label"> ({seed})</span>}</td>
+                              <td className="stat-cell">{s.wins}</td>
+                              <td className="stat-cell">{s.losses}</td>
+                              <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                    {!groupComplete && <div className="qualification-hint">Top 4 advance to semifinals</div>}
+                  </div>
+                )}
+
+                {groupComplete && knockoutMatches.length > 0 && (
+                  <>
+                    <div className="round">
+                      <h3 className="round-label">Semifinals</h3>
+                      {knockoutMatches.filter(m => m.round === 2).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
+                    </div>
+                    <div className="bracket-connector">
+                      <div className="bracket-connector-line" />
+                    </div>
+                    <div className="round round-final">
+                      <h3 className="round-label">Final</h3>
+                      {knockoutMatches.filter(m => m.round === 3).map(m => renderMatchCard(m, true))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </div>
         </>
