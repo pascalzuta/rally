@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
 import { Tournament, Match } from '../types'
-import MatchScoreModal from './MatchScoreModal'
+import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
 import BroadcastPanel from './BroadcastPanel'
@@ -95,7 +95,6 @@ function scheduleStatusClass(match: Match): string {
 
 export default function TournamentView({ tournamentId, currentPlayerId, onBack }: Props) {
   const [tournament, setTournament] = useState<Tournament | undefined>()
-  const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
@@ -111,11 +110,6 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     setTournament(getTournament(tournamentId))
   }
 
-  function handleScoreSaved() {
-    setScoringMatchId(null)
-    refresh()
-  }
-
   async function handleLeave() {
     await leaveTournament(tournamentId, currentPlayerId)
     setShowLeaveConfirm(false)
@@ -123,12 +117,8 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
   }
 
   function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
-    if (canScore && match.schedule?.status === 'confirmed') {
-      setScoringMatchId(match.id)
-    } else if (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id) {
+    if (canScore || (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id)) {
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
-    } else if (canScore) {
-      setScoringMatchId(match.id)
     }
   }
 
@@ -287,14 +277,27 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
             {/* Action button */}
             {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
 
-            {/* Expanded scheduling panel */}
-            {isExpanded && !match.completed && match.schedule && (
-              <MatchSchedulePanel
-                tournament={tournament!}
-                match={match}
-                currentPlayerId={currentPlayerId}
-                onUpdated={refresh}
-              />
+            {/* Expanded inline scoring or scheduling panel */}
+            {isExpanded && !match.completed && (
+              <div onClick={e => e.stopPropagation()}>
+                {canScore ? (
+                  <InlineScoreEntry
+                    tournament={tournament!}
+                    matchId={match.id}
+                    onSaved={() => {
+                      setExpandedMatchId(null)
+                      refresh()
+                    }}
+                  />
+                ) : match.schedule ? (
+                  <MatchSchedulePanel
+                    tournament={tournament!}
+                    match={match}
+                    currentPlayerId={currentPlayerId}
+                    onUpdated={refresh}
+                  />
+                ) : null}
+              </div>
             )}
           </>
         )}
@@ -446,15 +449,6 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           <Standings tournament={tournament} />
         )}
       </main>
-
-      {scoringMatchId && (
-        <MatchScoreModal
-          tournament={tournament}
-          matchId={scoringMatchId}
-          onClose={() => setScoringMatchId(null)}
-          onSaved={handleScoreSaved}
-        />
-      )}
 
       {/* Leave tournament confirmation */}
       {showLeaveConfirm && (

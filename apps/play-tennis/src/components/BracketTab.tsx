@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal } from '../store'
-import MatchScoreModal from './MatchScoreModal'
+import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
@@ -56,7 +56,6 @@ function scheduleStatusClass(match: Match): string {
 }
 
 export default function BracketTab({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
-  const [scoringMatchId, setScoringMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
@@ -73,10 +72,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const match = tournament.matches.find(m => m.id === focusMatchId)
     if (match) {
       const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-      const canScore = isMyMatch && !match.completed && match.player1Id && match.player2Id
-      if (canScore && match.schedule?.status === 'confirmed') {
-        if (scoringMatchId !== focusMatchId) setScoringMatchId(focusMatchId)
-      } else if (expandedMatchId !== focusMatchId) {
+      if (expandedMatchId !== focusMatchId) {
         setExpandedMatchId(focusMatchId)
       }
       pendingScrollId.current = focusMatchId
@@ -137,7 +133,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleScoreSaved() {
-    setScoringMatchId(null)
+    setExpandedMatchId(null)
     refresh()
     // Check if player advanced to a new round
     const updated = getTournament(tournament!.id)
@@ -163,12 +159,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
-    if (canScore && match.schedule?.status === 'confirmed') {
-      setScoringMatchId(match.id)
-    } else if (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id) {
+    if (canScore || (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id)) {
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
-    } else if (canScore) {
-      setScoringMatchId(match.id)
     }
   }
 
@@ -410,14 +402,24 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               )
             })()}
 
-            {/* Expanded scheduling panel */}
-            {isExpanded && !match.completed && match.schedule && (
-              <MatchSchedulePanel
-                tournament={tournament!}
-                match={match}
-                currentPlayerId={currentPlayerId}
-                onUpdated={refresh}
-              />
+            {/* Expanded inline scoring or scheduling panel */}
+            {isExpanded && !match.completed && (
+              <div onClick={e => e.stopPropagation()}>
+                {canScore ? (
+                  <InlineScoreEntry
+                    tournament={tournament!}
+                    matchId={match.id}
+                    onSaved={handleScoreSaved}
+                  />
+                ) : match.schedule ? (
+                  <MatchSchedulePanel
+                    tournament={tournament!}
+                    match={match}
+                    currentPlayerId={currentPlayerId}
+                    onUpdated={refresh}
+                  />
+                ) : null}
+              </div>
             )}
         </>
       </div>
@@ -725,15 +727,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             </div>
           )}
         </div>
-      )}
-
-      {scoringMatchId && (
-        <MatchScoreModal
-          tournament={tournament}
-          matchId={scoringMatchId}
-          onClose={() => setScoringMatchId(null)}
-          onSaved={handleScoreSaved}
-        />
       )}
 
       {/* Leave tournament confirmation */}
