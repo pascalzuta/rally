@@ -1,5 +1,17 @@
-import { useState } from 'react'
-import { seedLobby, getProfile, getTestProfiles, switchProfile, simulateRoundScores, autoConfirmAllSchedules, forceStartTournament, getSetupTournamentForCounty, escalateMatch, getTournament, simulateToFinal } from '../store'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import {
+  seedLobby,
+  getProfile,
+  getTestProfiles,
+  switchProfile,
+  simulateRoundScores,
+  autoConfirmAllSchedules,
+  forceStartTournament,
+  getSetupTournamentForCounty,
+  escalateMatch,
+  getTournament,
+  simulateToFinal,
+} from '../store'
 import { PlayerProfile } from '../types'
 
 interface Props {
@@ -9,199 +21,236 @@ interface Props {
   onTournamentCreated?: (id: string) => void
 }
 
+type Status = { text: string; type: 'info' | 'success' | 'error' } | null
+
 export default function DevTools({ onProfileSwitch, activeTournamentId, onTournamentUpdated, onTournamentCreated }: Props) {
-  const [open, setOpen] = useState(false)
-  const [message, setMessage] = useState('')
+  const [expanded, setExpanded] = useState(false)
+  const [status, setStatus] = useState<Status>(null)
+  const [busy, setBusy] = useState(false)
+  const statusTimer = useRef<ReturnType<typeof setTimeout>>()
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const profile = getProfile()
   const county = profile?.county ?? ''
   const testProfiles = county ? getTestProfiles(county) : []
+  const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
 
-  async function handleSeed(count: number) {
-    if (!county) {
-      setMessage('Register first to seed your county')
-      return
-    }
-    setMessage('Seeding...')
-    const entries = await seedLobby(county, count)
-    setMessage(`Lobby now has ${entries.length} players in ${county}`)
-    setTimeout(() => setMessage(''), 2000)
+  function flash(text: string, type: 'info' | 'success' | 'error' = 'success') {
+    clearTimeout(statusTimer.current)
+    setStatus({ text, type })
+    statusTimer.current = setTimeout(() => setStatus(null), 2500)
   }
 
-  function handleSwitch(tp: PlayerProfile) {
-    switchProfile(tp)
-    onProfileSwitch(tp)
-    setMessage(`Switched to ${tp.name}`)
-    setTimeout(() => setMessage(''), 2000)
-  }
-
-  async function handleAutoConfirm() {
-    if (!activeTournamentId) return
-    const result = await autoConfirmAllSchedules(activeTournamentId)
-    if (result) {
-      const confirmed = result.matches.filter(m => m.schedule?.status === 'confirmed').length
-      setMessage(`${confirmed} matches confirmed`)
-    } else {
-      setMessage('No matches to confirm')
-    }
-    onTournamentUpdated?.()
-    setTimeout(() => setMessage(''), 2000)
-  }
-
-  async function handleSimulate() {
-    if (!activeTournamentId) {
-      setMessage('No active tournament')
-      return
-    }
-    const result = await simulateRoundScores(activeTournamentId)
-    if (!result) {
-      setMessage('Could not simulate scores')
-    } else if (result.status === 'completed') {
-      setMessage('Tournament complete!')
-    } else {
-      const incomplete = result.matches.filter(m => !m.completed && m.player1Id && m.player2Id)
-      setMessage(incomplete.length > 0 ? `Round scored! ${incomplete.length} matches remaining` : 'All matches scored!')
-    }
-    onTournamentUpdated?.()
-    setTimeout(() => setMessage(''), 2000)
-  }
-
-  async function handleEscalateAll() {
-    if (!activeTournamentId) return
-    const t = getTournament(activeTournamentId)
-    if (!t) { setMessage('No tournament found'); return }
-
-    const unconfirmed = t.matches.filter(
-      m => m.schedule && m.schedule.status !== 'confirmed' && m.schedule.status !== 'resolved' && !m.completed
-    )
-    if (unconfirmed.length === 0) {
-      setMessage('No matches to escalate')
-      setTimeout(() => setMessage(''), 2000)
-      return
-    }
-
-    let escalated = 0
-    let confirmed = 0
-    let resolved = 0
-    for (const match of unconfirmed) {
-      const result = await escalateMatch(activeTournamentId, match.id)
-      if (result) {
-        const updated = result.matches.find(m => m.id === match.id)
-        if (updated?.schedule?.status === 'confirmed') confirmed++
-        else if (updated?.schedule?.status === 'resolved') resolved++
-        else if (updated?.schedule?.status === 'escalated') escalated++
-        else escalated++
+  // Close panel on outside click
+  useEffect(() => {
+    if (!expanded) return
+    function onClickOutside(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setExpanded(false)
       }
     }
-    const parts = []
-    if (confirmed) parts.push(`${confirmed} confirmed`)
-    if (escalated) parts.push(`${escalated} escalated`)
-    if (resolved) parts.push(`${resolved} resolved`)
-    setMessage(parts.join(', ') || 'Escalation processed')
-    onTournamentUpdated?.()
-    setTimeout(() => setMessage(''), 2000)
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [expanded])
+
+  const run = useCallback(async (fn: () => Promise<void>) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      await fn()
+    } catch {
+      flash('Something went wrong', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }, [busy])
+
+  async function seed(count: number) {
+    if (!county) { flash('Register first', 'error'); return }
+    flash('Seeding...', 'info')
+    const entries = await seedLobby(county, count)
+    flash(`${entries.length} players in lobby`)
   }
 
-  async function handleSimulateToFinal() {
-    if (!profile) {
-      setMessage('Register first')
-      return
+  async function doForceStart() {
+    if (!setupTournament) return
+    const result = await forceStartTournament(setupTournament.id)
+    if (result && result.status === 'in-progress') {
+      flash(`Started with ${result.players.length} players`)
+      onTournamentCreated?.(result.id)
+    } else {
+      flash('Could not start', 'error')
     }
+  }
+
+  async function doSimToFinal() {
+    if (!profile) { flash('Register first', 'error'); return }
     const result = await simulateToFinal(profile.id, county)
     if (result) {
-      setMessage('Tournament ready — score the final!')
+      flash('Ready — score the final!')
       onTournamentCreated?.(result.tournamentId)
       onTournamentUpdated?.()
     } else {
-      setMessage('Could not simulate to final')
+      flash('Could not simulate', 'error')
     }
-    setTimeout(() => setMessage(''), 3000)
   }
 
-  const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
-
-  async function handleForceStart() {
-    const t = setupTournament
-    if (!t) return
-    const result = await forceStartTournament(t.id)
-    if (result && result.status === 'in-progress') {
-      setMessage(`Tournament started with ${result.players.length} players!`)
-      onTournamentCreated?.(result.id)
+  async function doScoreRound() {
+    if (!activeTournamentId) { flash('No tournament', 'error'); return }
+    const result = await simulateRoundScores(activeTournamentId)
+    if (!result) {
+      flash('Could not simulate', 'error')
+    } else if (result.status === 'completed') {
+      flash('Tournament complete!')
     } else {
-      setMessage('Could not start tournament')
+      const remaining = result.matches.filter(m => !m.completed && m.player1Id && m.player2Id).length
+      flash(remaining > 0 ? `Scored! ${remaining} left` : 'All scored!')
     }
-    setTimeout(() => setMessage(''), 2000)
+    onTournamentUpdated?.()
   }
 
-  if (!open) {
+  async function doConfirmAll() {
+    if (!activeTournamentId) return
+    const result = await autoConfirmAllSchedules(activeTournamentId)
+    if (result) {
+      const n = result.matches.filter(m => m.schedule?.status === 'confirmed').length
+      flash(`${n} confirmed`)
+    } else {
+      flash('Nothing to confirm', 'info')
+    }
+    onTournamentUpdated?.()
+  }
+
+  async function doEscalateAll() {
+    if (!activeTournamentId) return
+    const t = getTournament(activeTournamentId)
+    if (!t) { flash('No tournament', 'error'); return }
+    const pending = t.matches.filter(
+      m => m.schedule && m.schedule.status !== 'confirmed' && m.schedule.status !== 'resolved' && !m.completed
+    )
+    if (pending.length === 0) { flash('Nothing to escalate', 'info'); return }
+
+    const counts = { escalated: 0, confirmed: 0, resolved: 0 }
+    for (const match of pending) {
+      const result = await escalateMatch(activeTournamentId, match.id)
+      if (result) {
+        const s = result.matches.find(m => m.id === match.id)?.schedule?.status
+        if (s === 'confirmed') counts.confirmed++
+        else if (s === 'resolved') counts.resolved++
+        else counts.escalated++
+      }
+    }
+    const parts: string[] = []
+    if (counts.confirmed) parts.push(`${counts.confirmed} confirmed`)
+    if (counts.escalated) parts.push(`${counts.escalated} escalated`)
+    if (counts.resolved) parts.push(`${counts.resolved} resolved`)
+    flash(parts.join(', ') || 'Done')
+    onTournamentUpdated?.()
+  }
+
+  function doSwitch(tp: PlayerProfile) {
+    switchProfile(tp)
+    onProfileSwitch(tp)
+    flash(`Now: ${tp.name}`)
+  }
+
+  // Collapsed: small floating pill
+  if (!expanded) {
     return (
-      <button className="dev-toggle" onClick={() => setOpen(true)}>
-        DEV
+      <button
+        className="devbar-pill"
+        onClick={() => setExpanded(true)}
+        aria-label="Open dev tools"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M5.5 3L2 8l3.5 5M10.5 3L14 8l-3.5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </button>
     )
   }
 
   return (
-    <div className="dev-panel">
-      <div className="dev-header">
-        <strong>Dev Tools</strong>
-        <button className="btn-icon" onClick={() => setOpen(false)}>✕</button>
+    <div className="devbar" ref={panelRef}>
+      {/* Header */}
+      <div className="devbar-head">
+        <span className="devbar-title">Dev</span>
+        {profile && <span className="devbar-user">{profile.name.split(' ')[0]}</span>}
+        <button className="devbar-close" onClick={() => setExpanded(false)} aria-label="Close">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
       </div>
 
-      {message && <div className="dev-message">{message}</div>}
-
-      <div className="dev-section">
-        <div className="dev-label">Seed Lobby ({county || 'no county'})</div>
-        <div className="dev-buttons">
-          <button className="btn dev-btn" onClick={() => handleSeed(1)}>+1</button>
-          <button className="btn dev-btn" onClick={() => handleSeed(3)}>+3</button>
-          <button className="btn dev-btn" onClick={() => handleSeed(5)}>+5</button>
-        </div>
-      </div>
-
-      {setupTournament && (
-        <div className="dev-section">
-          <div className="dev-label">Tournament ({setupTournament.players.length} players waiting)</div>
-          <div className="dev-buttons">
-            <button className="btn dev-btn" onClick={handleForceStart}>Start Now</button>
-          </div>
-        </div>
+      {/* Status toast */}
+      {status && (
+        <div className={`devbar-toast devbar-toast--${status.type}`}>{status.text}</div>
       )}
 
-      <div className="dev-section">
-        <div className="dev-label">Quick Setup</div>
-        <div className="dev-buttons">
-          <button className="btn dev-btn" onClick={handleSimulateToFinal}>Sim → Final</button>
-        </div>
-      </div>
-
-      {activeTournamentId && (
-        <div className="dev-section">
-          <div className="dev-label">Simulate</div>
-          <div className="dev-buttons">
-            <button className="btn dev-btn" onClick={handleSimulate}>Score Round</button>
-            <button className="btn dev-btn" onClick={handleAutoConfirm}>Confirm All</button>
-            <button className="btn dev-btn" onClick={handleEscalateAll}>Escalate All</button>
+      {/* Actions grid */}
+      <div className="devbar-grid">
+        {/* Seed lobby */}
+        <div className="devbar-group">
+          <span className="devbar-group-label">Lobby {county && `· ${county}`}</span>
+          <div className="devbar-row">
+            <button className="devbar-btn" onClick={() => run(() => seed(1))} disabled={busy}>+1</button>
+            <button className="devbar-btn" onClick={() => run(() => seed(3))} disabled={busy}>+3</button>
+            <button className="devbar-btn" onClick={() => run(() => seed(5))} disabled={busy}>+5</button>
           </div>
         </div>
-      )}
 
-      {profile && (
-        <div className="dev-section">
-          <div className="dev-label">Switch Profile</div>
-          <div className="dev-profiles">
-            {testProfiles.map(tp => (
-              <button
-                key={tp.id}
-                className={`btn dev-btn ${tp.name === profile.name ? 'active' : ''}`}
-                onClick={() => handleSwitch(tp)}
-              >
-                {tp.name.split(' ')[0]}
+        {/* Tournament setup */}
+        {setupTournament && (
+          <div className="devbar-group">
+            <span className="devbar-group-label">Setup · {setupTournament.players.length}p</span>
+            <div className="devbar-row">
+              <button className="devbar-btn devbar-btn--accent" onClick={() => run(doForceStart)} disabled={busy}>
+                Start Now
               </button>
-            ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quick sim */}
+        <div className="devbar-group">
+          <span className="devbar-group-label">Quick</span>
+          <div className="devbar-row">
+            <button className="devbar-btn devbar-btn--accent" onClick={() => run(doSimToFinal)} disabled={busy}>
+              Sim to Final
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Active tournament actions */}
+        {activeTournamentId && (
+          <div className="devbar-group">
+            <span className="devbar-group-label">Tournament</span>
+            <div className="devbar-row">
+              <button className="devbar-btn" onClick={() => run(doScoreRound)} disabled={busy}>Score</button>
+              <button className="devbar-btn" onClick={() => run(doConfirmAll)} disabled={busy}>Confirm</button>
+              <button className="devbar-btn" onClick={() => run(doEscalateAll)} disabled={busy}>Escalate</button>
+            </div>
+          </div>
+        )}
+
+        {/* Profile switcher */}
+        {profile && testProfiles.length > 0 && (
+          <div className="devbar-group">
+            <span className="devbar-group-label">Profile</span>
+            <div className="devbar-row devbar-row--wrap">
+              {testProfiles.map(tp => (
+                <button
+                  key={tp.id}
+                  className={`devbar-btn ${tp.id === profile.id ? 'devbar-btn--active' : ''}`}
+                  onClick={() => doSwitch(tp)}
+                >
+                  {tp.name.split(' ')[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -632,7 +632,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                     <option key={h} value={h}>{formatHour(h)}</option>
                   ))}
                 </select>
-                <button className="btn dev-btn" onClick={addDetailedSlot} disabled={!addingDay || addingStart >= addingEnd}>
+                <button className="btn" onClick={addDetailedSlot} disabled={!addingDay || addingStart >= addingEnd}>
                   Add
                 </button>
               </div>

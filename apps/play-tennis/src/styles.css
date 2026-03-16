@@ -3848,102 +3848,187 @@ select:focus {
 /* ================================================
    Dev Tools
    ================================================ */
-.dev-toggle {
+.devbar-pill {
   position: fixed;
-  top: var(--space-sm);
-  right: var(--space-sm);
+  top: 10px;
+  right: 10px;
   z-index: 200;
-  background: var(--color-text-primary);
-  color: white;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  color: rgba(255, 255, 255, 0.7);
   border: none;
-  border-radius: 6px;
-  padding: var(--space-xs) var(--space-sm);
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  letter-spacing: 1px;
+  border-radius: 50%;
   cursor: pointer;
-  opacity: 0.6;
-  font-family: inherit;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.15s;
+  opacity: 0.4;
 }
 
-.dev-toggle:hover {
+.devbar-pill:hover {
   opacity: 1;
+  color: white;
 }
 
-.dev-panel {
+.devbar {
   position: fixed;
-  top: 0;
-  right: 0;
+  top: 8px;
+  right: 8px;
   z-index: 200;
-  background: var(--color-text-primary);
-  color: white;
-  border-radius: 0 0 0 var(--radius-card);
-  padding: var(--space-md) var(--space-lg);
-  width: 260px;
+  width: 240px;
+  background: rgba(18, 18, 22, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #e0e0e4;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: -2px 2px 12px rgba(0,0,0,0.3);
+  font-size: 12px;
 }
 
-.dev-header {
+.devbar-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-md);
-  font-size: 13px;
-}
-
-.dev-header .btn-icon {
-  color: var(--color-text-muted);
-}
-
-.dev-message {
-  background: var(--color-positive-primary);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: var(--font-body-sm);
+  gap: 6px;
   margin-bottom: 10px;
-  text-align: center;
 }
 
-.dev-section {
-  margin-bottom: var(--space-md);
-}
-
-.dev-label {
+.devbar-title {
+  font-weight: 700;
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
-  margin-bottom: 6px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.dev-buttons {
-  display: flex;
-  gap: 6px;
+.devbar-user {
+  flex: 1;
+  text-align: right;
+  font-size: 11px;
+  color: var(--color-accent-primary);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dev-btn {
-  padding: 6px var(--space-md);
-  font-size: var(--font-body-sm);
-  border: 1px solid #555;
-  color: white;
-  background: #333;
-  border-radius: 6px;
+.devbar-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  font-family: inherit;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  transition: color 0.1s;
 }
 
-.dev-btn.active {
+.devbar-close:hover {
+  color: white;
+}
+
+.devbar-toast {
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.devbar-toast--success {
+  background: rgba(52, 199, 89, 0.2);
+  color: #34c759;
+}
+
+.devbar-toast--info {
+  background: rgba(90, 130, 255, 0.15);
+  color: #8ab4f8;
+}
+
+.devbar-toast--error {
+  background: rgba(255, 69, 58, 0.2);
+  color: #ff6961;
+}
+
+.devbar-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.devbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.devbar-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+.devbar-row {
+  display: flex;
+  gap: 4px;
+}
+
+.devbar-row--wrap {
+  flex-wrap: wrap;
+}
+
+.devbar-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+
+.devbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.devbar-btn:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.devbar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.devbar-btn--accent {
+  background: rgba(90, 130, 255, 0.15);
+  border-color: rgba(90, 130, 255, 0.3);
+  color: #8ab4f8;
+}
+
+.devbar-btn--accent:hover:not(:disabled) {
+  background: rgba(90, 130, 255, 0.25);
+}
+
+.devbar-btn--active {
   background: var(--color-accent-primary);
   border-color: var(--color-accent-primary);
-}
-
-.dev-profiles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  color: white;
 }
 
 /* --- Activation Progress --- */
