@@ -20,6 +20,7 @@ coverage/
 
 # Claude
 .claude/
+claude/
 
 # Database files
 *.db
