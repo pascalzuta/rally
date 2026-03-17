@@ -155,6 +155,10 @@ body {
   padding-bottom: 80px;
 }
 
+.tab-loading {
+  min-height: 200px;
+}
+
 /* ================================================
    Top Navigation (Polymarket style)
    ================================================ */

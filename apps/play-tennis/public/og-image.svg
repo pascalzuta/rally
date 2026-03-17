@@ -1,0 +1,10 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#16a34a"/>
+  <text x="100" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="700" fill="#111827">Rally</text>
+  <text x="100" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="#6b7280">Local Tennis Tournaments</text>
+  <text x="100" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#9ca3af">Auto-scheduled around your calendar</text>
+  <circle cx="1000" cy="315" r="120" fill="none" stroke="#16a34a" stroke-width="6"/>
+  <line x1="940" y1="315" x2="1060" y2="315" stroke="#16a34a" stroke-width="2"/>
+  <text x="100" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#16a34a">play-rally.com</text>
+</svg>

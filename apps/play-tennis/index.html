@@ -4,16 +4,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#16a34a" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <title>Rally</title>
+    <meta name="description" content="Rally runs local tennis tournaments and auto-schedules every match around your calendar. Join your county, play everyone, climb the rankings." />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Rally — Local Tennis Tournaments" />
+    <meta property="og:description" content="Join your county's tournament. Rally auto-schedules matches around your calendar so you just show up and play." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://play-rally.com" />
+    <meta property="og:image" content="https://play-rally.com/og-image.png" />
+    <meta property="og:site_name" content="Rally" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Rally — Local Tennis Tournaments" />
+    <meta name="twitter:description" content="Join your county's tournament. Rally auto-schedules matches around your calendar." />
+    <meta name="twitter:image" content="https://play-rally.com/og-image.png" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rally" />
+
+    <title>Rally — Local Tennis Tournaments</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {})
+        })
+      }
+    </script>
   </body>
 </html>

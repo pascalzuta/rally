@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
@@ -7,15 +7,17 @@ import { flushQueue } from './offline-queue'
 import { ensureAuth } from './supabase'
 import Register from './components/Register'
 import Home from './components/Home'
-import BracketTab from './components/BracketTab'
-import PlayNowTab from './components/PlayNowTab'
-import Profile from './components/Profile'
-import Leaderboard from './components/Leaderboard'
-import VictoryAnimation from './components/VictoryAnimation'
-import Help from './components/Help'
-import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import './styles.css'
+
+// Lazy-load heavier route components for smaller initial bundle
+const BracketTab = lazy(() => import('./components/BracketTab'))
+const PlayNowTab = lazy(() => import('./components/PlayNowTab'))
+const Profile = lazy(() => import('./components/Profile'))
+const Leaderboard = lazy(() => import('./components/Leaderboard'))
+const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
+const Help = lazy(() => import('./components/Help'))
+const DevTools = lazy(() => import('./components/DevTools'))
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
 
@@ -226,6 +228,7 @@ export default function App() {
             </div>
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
+        <Suspense fallback={null}>
         <DevTools
           onProfileSwitch={p => setProfile(p)}
           activeTournamentId={null}
@@ -235,6 +238,7 @@ export default function App() {
             setActiveTab('home')
           }}
         />
+        </Suspense>
       </div>
     )
   }
@@ -365,6 +369,7 @@ export default function App() {
         </nav>
 
         <main className="content tab-content">
+          <Suspense fallback={<div className="tab-loading" />}>
           {activeTab === 'home' && (
             <Home
               profile={profile}
@@ -432,6 +437,7 @@ export default function App() {
           {activeTab === 'help' && (
             <Help onBack={() => setActiveTab('profile')} />
           )}
+          </Suspense>
         </main>
 
         <nav className="bottom-tabs">
@@ -474,6 +480,7 @@ export default function App() {
         />
         </div>
       )}
+      <Suspense fallback={null}>
       <DevTools
         onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}
         activeTournamentId={activeTournament?.id ?? null}
@@ -490,6 +497,7 @@ export default function App() {
           onDismiss={() => setVictoryAnim(null)}
         />
       )}
+      </Suspense>
     </div>
     </ToastProvider>
   )
