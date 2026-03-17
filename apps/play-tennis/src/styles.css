@@ -322,7 +322,7 @@ body {
 }
 
 .btn-primary:active {
-  background: #d0f0db;
+  background: var(--color-positive-bg);
 }
 
 .btn-primary:disabled {
@@ -385,7 +385,7 @@ body {
 }
 
 .btn-danger:active {
-  background: #fad8d8;
+  background: var(--color-negative-bg);
 }
 
 .btn-row {
@@ -587,7 +587,7 @@ body {
 }
 
 .card-action-btn:active {
-  background: #d0f0db;
+  background: var(--color-positive-bg);
 }
 
 .card-top {
@@ -1765,14 +1765,14 @@ select:focus {
 }
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(2) {
   transform: rotate(2deg);
-  background: #E8E9EB;
+  background: var(--color-divider);
 }
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(3) {
   transform: rotate(-2.5deg);
 }
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(4) {
   transform: rotate(1.5deg);
-  background: #DFE0E3;
+  background: var(--color-neutral-bg);
 }
 
 /* Match scheduling visual */
@@ -3630,7 +3630,7 @@ select:focus {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-card);
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -3698,14 +3698,14 @@ select:focus {
 }
 
 .availability-slot-time {
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: var(--weight-semibold);
   color: var(--color-accent-primary);
   min-width: 120px;
 }
 
 .availability-slot-name {
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }
@@ -3762,7 +3762,7 @@ select:focus {
   color: white;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-button);
-  font-size: 13px;
+  font-size: var(--font-caption);
   text-align: center;
   margin-bottom: var(--space-md);
   animation: toast-slide-in 0.3s ease-out;
@@ -4197,7 +4197,7 @@ select:focus {
   background: none;
   border: none;
   color: var(--color-negative-primary);
-  font-size: 13px;
+  font-size: var(--font-caption);
   cursor: pointer;
   opacity: 0.7;
   font-family: inherit;
@@ -4226,7 +4226,7 @@ select:focus {
 
 .leave-link {
   color: var(--color-negative-primary);
-  font-size: 13px;
+  font-size: var(--font-caption);
   cursor: pointer;
   background: none;
   border: none;
