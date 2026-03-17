@@ -40,16 +40,9 @@ function formatMatchDate(slot: { day: string; startHour: number }, weekStart?: D
   return `${day}, ${hour}:00 ${period}`
 }
 
-function getWeekNumber(match: Match): number {
-  // Use the scheduled slot's week if available, otherwise estimate from position
-  if (match.schedule?.confirmedSlot) return 1
-  return Math.ceil((match.position + 1) / 3)
-}
-
 function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; weekStart: Date }> {
   const weeks = new Map<number, { matches: Match[]; weekStart: Date }>()
 
-  // Assign weeks based on scheduling tier order
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
   const scheduled = matches
     .filter(m => m.schedule && !m.completed)
@@ -60,7 +53,6 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
       return dayOrder.indexOf(slotA.day) - dayOrder.indexOf(slotB.day) || slotA.startHour - slotB.startHour
     })
 
-  // Distribute into weeks (up to weeklyCap matches per player per week)
   let currentWeek = 1
   let weekMatchCount = 0
   const maxPerWeek = 3
@@ -89,34 +81,33 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
 }
 
 export default function ScheduleSummary({ tournament, currentPlayerId, onViewBracket, onConfirmMatch, onScheduleMatch }: Props) {
-  const [animatedCount, setAnimatedCount] = useState(0)
   const [visible, setVisible] = useState(false)
-  const animatedRef = useRef(false)
 
   const summary = getSchedulingSummary(tournament)
   const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
+  const completedMatchCount = tournament.matches.filter(m => m.completed).length
+  const playedPct = totalMatches > 0 ? Math.round((completedMatchCount / totalMatches) * 100) : 0
 
-  // Count up animation
+  // Phase data
+  const hasGroupPhase = tournament.format === 'group-knockout' || tournament.format === 'round-robin'
+  const groupMatches = hasGroupPhase ? tournament.matches.filter(m => m.phase === 'group') : []
+  const knockoutMatches = hasGroupPhase ? tournament.matches.filter(m => m.phase === 'knockout') : []
+  const groupComplete = hasGroupPhase && !!tournament.groupPhaseComplete
+  const groupMatchesCompleted = groupMatches.filter(m => m.completed).length
+  const groupMatchesTotal = groupMatches.length
+
+  // Estimated end date
+  const estimatedWeeksRemaining = totalMatches > 0 ? Math.max(1, Math.ceil((totalMatches - completedMatchCount) / 2)) : 0
+  const estimatedEndDate = (() => {
+    if (completedMatchCount >= totalMatches) return null
+    const d = new Date()
+    d.setDate(d.getDate() + estimatedWeeksRemaining * 7)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  })()
+
   useEffect(() => {
-    if (!summary || animatedRef.current) return
-    animatedRef.current = true
     setVisible(true)
-
-    const target = summary.confirmed
-    const duration = 600
-    const startTime = performance.now()
-
-    function animate(now: number) {
-      const elapsed = now - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      // Ease out quad
-      const eased = 1 - (1 - progress) * (1 - progress)
-      setAnimatedCount(Math.round(eased * target))
-      if (progress < 1) requestAnimationFrame(animate)
-    }
-
-    requestAnimationFrame(animate)
-  }, [summary])
+  }, [])
 
   if (!summary) return null
 
@@ -127,10 +118,6 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
   const nextConfirmed = myMatches.find(m => m.schedule?.schedulingTier === 'auto' && m.schedule?.confirmedSlot)
   const nextMatch = nextConfirmed ?? myMatches[0]
 
-  const confirmedPct = totalMatches > 0 ? (summary.confirmed / totalMatches) * 100 : 0
-  const acceptPct = totalMatches > 0 ? (summary.needsAccept / totalMatches) * 100 : 0
-  const negotiatePct = totalMatches > 0 ? (summary.needsNegotiation / totalMatches) * 100 : 0
-
   // Group my matches by week for the agenda
   const weekGroups = groupMatchesByWeek(myMatches)
   const getWeekLabel = (week: number, weekStart: Date) => {
@@ -139,37 +126,70 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
 
   return (
     <div className={`schedule-summary-screen ${visible ? 'visible' : ''}`}>
-      {/* Hero stat */}
-      <div className="schedule-hero">
-        <div className="schedule-hero-number">{animatedCount}</div>
-        <div className="schedule-hero-qualifier">of {totalMatches} matches confirmed</div>
-        <div className="schedule-hero-subtitle">Confirm your match times to get playing!</div>
-      </div>
-
-      {/* Three-tier summary bar */}
-      <div className="schedule-tier-bar">
-        {confirmedPct > 0 && <div className="schedule-tier-segment tier-confirmed" style={{ width: `${confirmedPct}%` }} />}
-        {acceptPct > 0 && <div className="schedule-tier-segment tier-proposed" style={{ width: `${acceptPct}%` }} />}
-        {negotiatePct > 0 && <div className="schedule-tier-segment tier-negotiation" style={{ width: `${negotiatePct}%` }} />}
-      </div>
-
-      <div className="schedule-tier-labels">
-        <span className="schedule-tier-label">
-          <span className="schedule-tier-dot" style={{ background: 'var(--color-positive-primary)' }} />
-          {summary.confirmed} Confirmed
-        </span>
-        {summary.needsAccept > 0 && (
-          <span className="schedule-tier-label">
-            <span className="schedule-tier-dot" style={{ background: 'var(--color-accent-primary)' }} />
-            {summary.needsAccept} Awaiting your response
-          </span>
+      {/* === Unified Tournament Header Card === */}
+      <div className="schedule-header-card">
+        {/* Phase stepper */}
+        {hasGroupPhase && (
+          <div className="schedule-phase-stepper">
+            <div className="schedule-phase-step">
+              <div className={`schedule-phase-dot ${groupComplete ? 'completed' : 'active'}`} />
+              <span className={`schedule-phase-label ${groupComplete ? 'completed' : 'active'}`}>
+                Round Robin
+              </span>
+            </div>
+            <div className={`schedule-phase-line ${groupComplete ? 'completed' : ''}`} />
+            <div className="schedule-phase-step">
+              <div className={`schedule-phase-dot ${groupComplete ? (knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
+              <span className={`schedule-phase-label ${groupComplete ? 'active' : 'upcoming'}`}>
+                Semi
+              </span>
+            </div>
+            <div className={`schedule-phase-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
+            <div className="schedule-phase-step">
+              <div className={`schedule-phase-dot ${knockoutMatches.some(m => m.round === 3 && m.completed) ? 'completed' : knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`} />
+              <span className={`schedule-phase-label ${knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`}>
+                Final
+              </span>
+            </div>
+          </div>
         )}
-        {summary.needsNegotiation > 0 && (
-          <span className="schedule-tier-label">
-            <span className="schedule-tier-dot" style={{ background: 'var(--color-warning-primary, #F59E0B)' }} />
-            {summary.needsNegotiation} Pick a time
-          </span>
-        )}
+
+        {/* Progress bar */}
+        <div className="schedule-progress-section">
+          <div className="schedule-progress-bar-track">
+            <div className="schedule-progress-bar-fill" style={{ width: `${Math.max(playedPct, 2)}%` }} />
+          </div>
+          <div className="schedule-progress-meta">
+            <span className="schedule-progress-count">{completedMatchCount} of {totalMatches} played</span>
+            {estimatedEndDate && <span className="schedule-progress-est">Est. finish {estimatedEndDate}</span>}
+          </div>
+        </div>
+
+        {/* Your To-Do */}
+        <div className="schedule-todo-section">
+          <div className="schedule-todo-title">Your To-Do</div>
+          <div className="schedule-todo-rows">
+            <div className="schedule-todo-row">
+              <span className="schedule-todo-dot" style={{ background: 'var(--color-positive-primary)' }} />
+              <span className="schedule-todo-count">{summary.confirmed}</span>
+              <span className="schedule-todo-label">Confirmed</span>
+            </div>
+            {summary.needsAccept > 0 && (
+              <div className="schedule-todo-row">
+                <span className="schedule-todo-dot" style={{ background: 'var(--color-accent-primary)' }} />
+                <span className="schedule-todo-count">{summary.needsAccept}</span>
+                <span className="schedule-todo-label">Confirm your time</span>
+              </div>
+            )}
+            {summary.needsNegotiation > 0 && (
+              <div className="schedule-todo-row">
+                <span className="schedule-todo-dot" style={{ background: 'var(--color-warning-primary, #F59E0B)' }} />
+                <span className="schedule-todo-count">{summary.needsNegotiation}</span>
+                <span className="schedule-todo-label">Need scheduling</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Next match card */}

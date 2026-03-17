@@ -564,28 +564,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       </div>
 
-      {/* R-18: Tournament progress banner */}
-      {tournament.status === 'in-progress' && totalMatches > 0 && (
-        <div className="tournament-progress-banner">
-          <div className="tournament-progress-header">
-            <span className="tournament-progress-title">
-              Round robin &mdash; {completedMatchCount} of {totalMatches} matches complete
-            </span>
-            {tournamentStartDate && (
-              <span className="tournament-progress-date">Started {tournamentStartDate}</span>
-            )}
-          </div>
-          <div className="tournament-progress-bar-container">
-            <div className="tournament-progress-bar" style={{ width: `${completionPct}%` }} />
-          </div>
-          <div className="tournament-progress-footer">
-            <span className="tournament-progress-pct">{completionPct}%</span>
-            {estimatedEndDate && (
-              <span className="tournament-progress-est">Est. finish: {estimatedEndDate}</span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Tournament progress banner removed — now part of ScheduleSummary */}
 
       {/* Advancement prompt after scoring a win */}
       {advancementPrompt && (
