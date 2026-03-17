@@ -310,6 +310,10 @@ body {
   font-family: inherit;
 }
 
+.btn:hover {
+  background: #F3F4F6;
+}
+
 .btn:active {
   transform: scale(0.97);
 }
@@ -319,6 +323,10 @@ body {
   color: var(--color-positive-primary);
   border-color: transparent;
   font-weight: var(--weight-semibold);
+}
+
+.btn-primary:hover {
+  background: #d0f0db;
 }
 
 .btn-primary:active {
@@ -384,8 +392,39 @@ body {
   font-weight: var(--weight-semibold);
 }
 
+.btn-danger:hover {
+  background: #f5d5d5;
+}
+
 .btn-danger:active {
   background: var(--color-negative-bg);
+}
+
+.btn-destructive {
+  background: var(--color-negative-bg);
+  color: var(--color-negative-primary);
+  border-color: transparent;
+  font-weight: var(--weight-semibold);
+}
+
+.btn-destructive:hover {
+  background: #f5d5d5;
+}
+
+.btn-ghost {
+  background: none;
+  border: none;
+  color: var(--color-accent-primary);
+  padding: 0 var(--space-sm);
+}
+
+.btn-ghost:hover {
+  background: var(--color-accent-bg);
+}
+
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 .btn-row {
@@ -627,13 +666,13 @@ body {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-xl);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-xs);
   border: none;
 }
 
@@ -908,7 +947,7 @@ select:focus {
 .bracket {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-xl);
 }
 
 .round {
@@ -1444,12 +1483,12 @@ select:focus {
 .modal h2 {
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
-  margin-bottom: 20px;
+  margin-bottom: var(--space-xl);
 }
 
 .modal-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-md);
 }
 
 .modal-actions .btn {
@@ -1670,7 +1709,7 @@ select:focus {
    ================================================ */
 .register-hero {
   text-align: center;
-  padding: 40px 20px 20px;
+  padding: var(--space-3xl) 20px var(--space-xl);
 }
 
 .register-hero p {
@@ -2667,7 +2706,7 @@ select:focus {
 .profile-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-xl);
 }
 
 .profile-card {
@@ -3153,7 +3192,7 @@ select:focus {
    Broadcast / Play Now
    ================================================ */
 .broadcast-section {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-xl);
 }
 
 .broadcast-feedback {
@@ -3168,7 +3207,7 @@ select:focus {
 
 .broadcast-empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--space-3xl) 20px;
   color: var(--color-text-secondary);
   font-size: var(--font-body-md);
 }
@@ -3356,7 +3395,7 @@ select:focus {
 
 .broadcast-form-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-md);
 }
 
 .broadcast-form-actions .btn {
@@ -3365,7 +3404,7 @@ select:focus {
 
 /* Timeline view */
 .broadcast-timeline {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-xl);
 }
 
 .broadcast-timeline-title {
@@ -3479,7 +3518,7 @@ select:focus {
 
 .broadcast-claim-info {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-xl);
 }
 
 .broadcast-claim-player {
@@ -3503,7 +3542,7 @@ select:focus {
 
 .broadcast-claim-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-md);
 }
 
 .broadcast-claim-actions .btn {
@@ -3965,12 +4004,12 @@ select:focus {
   font-size: var(--font-body-md);
   color: var(--color-text-secondary);
   line-height: 1.5;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-xl);
 }
 
 .leave-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-md);
 }
 
 .leave-actions .btn {
@@ -4136,7 +4175,7 @@ select:focus {
 /* Caught up */
 .caught-up {
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--space-3xl) 20px;
   color: var(--color-text-secondary);
 }
 
