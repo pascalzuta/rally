@@ -362,9 +362,6 @@ export default function App() {
                 )
               })()}
             </div>
-            <button className="top-nav-icon" onClick={() => { setActiveTab('profile'); setShowInbox(false); setShowNotifications(false) }}>
-              <div className="nav-avatar">{profile.name[0].toUpperCase()}</div>
-            </button>
           </div>
         </nav>
 
