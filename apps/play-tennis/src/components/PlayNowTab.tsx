@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom } from '../store'
-import { Tournament, MatchBroadcast, MatchOffer } from '../types'
+import { Tournament, Match, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
 
 interface Props {
@@ -27,10 +27,8 @@ function formatDate(dateStr: string): string {
   today.setHours(0, 0, 0, 0)
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
-
   if (date.getTime() === today.getTime()) return 'Today'
   if (date.getTime() === tomorrow.getTime()) return 'Tomorrow'
-
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
 }
 
@@ -93,16 +91,12 @@ interface OpponentRow {
   sortKey: string
   startHour: number
   endHour: number
-  day: string // day name lowercase
+  day: string
 }
 
-function buildOpponentRows(
-  slots: UpcomingSlot[],
-  broadcasts: MatchBroadcast[],
-): OpponentRow[] {
+function buildOpponentRows(slots: UpcomingSlot[], broadcasts: MatchBroadcast[]): OpponentRow[] {
   const rows: OpponentRow[] = []
   const broadcastPlayerDates = new Set<string>()
-
   for (const b of broadcasts) {
     const dateLabel = formatDate(b.date)
     const timeLabel = formatTimeRange(b.startTime, b.endTime || defaultEndTime(b.startTime))
@@ -112,48 +106,15 @@ function buildOpponentRows(
     const [endH] = endTime.split(':').map(Number)
     const dateObj = new Date(b.date + 'T00:00:00')
     const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-    rows.push({
-      type: 'broadcast',
-      playerId: b.playerId,
-      playerName: b.playerName,
-      date: b.date,
-      dateLabel,
-      timeLabel,
-      location: b.location,
-      message: b.message,
-      broadcastId: b.id,
-      isNow: isAvailableNowBroadcast(b),
-      sortKey: `${b.date}-${b.startTime}`,
-      startHour: startH,
-      endHour: endH,
-      day: dayName,
-    })
+    rows.push({ type: 'broadcast', playerId: b.playerId, playerName: b.playerName, date: b.date, dateLabel, timeLabel, location: b.location, message: b.message, broadcastId: b.id, isNow: isAvailableNowBroadcast(b), sortKey: `${b.date}-${b.startTime}`, startHour: startH, endHour: endH, day: dayName })
   }
-
   for (const s of slots) {
     if (broadcastPlayerDates.has(`${s.playerId}-${s.date}`)) continue
     const dateObj = new Date(s.date + 'T00:00:00')
     const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-    rows.push({
-      type: 'availability',
-      playerId: s.playerId,
-      playerName: s.playerName,
-      date: s.date,
-      dateLabel: s.dayLabel,
-      timeLabel: formatHourRange(s.startHour, s.endHour),
-      isNow: isAvailableNow(s.date, s.startHour, s.endHour),
-      sortKey: `${s.date}-${s.startHour.toString().padStart(2, '0')}`,
-      startHour: s.startHour,
-      endHour: s.endHour,
-      day: dayName,
-    })
+    rows.push({ type: 'availability', playerId: s.playerId, playerName: s.playerName, date: s.date, dateLabel: s.dayLabel, timeLabel: formatHourRange(s.startHour, s.endHour), isNow: isAvailableNow(s.date, s.startHour, s.endHour), sortKey: `${s.date}-${s.startHour.toString().padStart(2, '0')}`, startHour: s.startHour, endHour: s.endHour, day: dayName })
   }
-
-  rows.sort((a, b) => {
-    if (a.isNow !== b.isNow) return a.isNow ? -1 : 1
-    return a.sortKey.localeCompare(b.sortKey)
-  })
-
+  rows.sort((a, b) => { if (a.isNow !== b.isNow) return a.isNow ? -1 : 1; return a.sortKey.localeCompare(b.sortKey) })
   return rows
 }
 
@@ -161,15 +122,40 @@ function groupRowsByDate(rows: OpponentRow[]): { date: string; dateLabel: string
   const map = new Map<string, { dateLabel: string; entries: OpponentRow[] }>()
   for (const r of rows) {
     const existing = map.get(r.date)
-    if (existing) {
-      existing.entries.push(r)
-    } else {
-      map.set(r.date, { dateLabel: r.dateLabel, entries: [r] })
-    }
+    if (existing) { existing.entries.push(r) } else { map.set(r.date, { dateLabel: r.dateLabel, entries: [r] }) }
   }
-  return [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, { dateLabel, entries }]) => ({ date, dateLabel, entries }))
+  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, { dateLabel, entries }]) => ({ date, dateLabel, entries }))
+}
+
+function getPlayerTournamentMatches(t: Tournament, playerId: string): (Match & { opponentName: string })[] {
+  const playerMap = new Map(t.players.map(p => [p.id, p.name]))
+  return t.matches
+    .filter(m => !m.completed && (m.player1Id === playerId || m.player2Id === playerId) && m.player1Id != null && m.player2Id != null)
+    .map(m => {
+      const opponentId = m.player1Id === playerId ? m.player2Id! : m.player1Id!
+      return { ...m, opponentName: playerMap.get(opponentId) || 'TBD' }
+    })
+    .sort((a, b) => {
+      const tierOrder: Record<string, number> = { auto: 0, 'needs-accept': 1, 'needs-negotiation': 2 }
+      const aTier = a.schedule?.schedulingTier ? tierOrder[a.schedule.schedulingTier] ?? 3 : 3
+      const bTier = b.schedule?.schedulingTier ? tierOrder[b.schedule.schedulingTier] ?? 3 : 3
+      if (aTier !== bTier) return aTier - bTier
+      return a.round - b.round
+    })
+}
+
+function schedulingTierLabel(match: Match): { label: string; className: string } {
+  const tier = match.schedule?.schedulingTier
+  if (tier === 'auto') return { label: 'Confirmed', className: 'pn-tier-confirmed' }
+  if (tier === 'needs-accept') return { label: 'Proposed', className: 'pn-tier-proposed' }
+  if (tier === 'needs-negotiation') return { label: 'Needs Scheduling', className: 'pn-tier-unscheduled' }
+  return { label: 'Unscheduled', className: 'pn-tier-unscheduled' }
+}
+
+function formatSlotTime(match: Match): string {
+  const slot = match.schedule?.confirmedSlot
+  if (!slot) return 'Time TBD'
+  return `${formatHour(slot.startHour)} – ${formatHour(slot.endHour)}`
 }
 
 export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerName, onMatchConfirmed }: Props) {
@@ -182,36 +168,32 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const [feedback, setFeedback] = useState('')
   const [askingRow, setAskingRow] = useState<OpponentRow | null>(null)
   const [messagingPlayerId, setMessagingPlayerId] = useState<string | null>(null)
+  const [showInfoTooltip, setShowInfoTooltip] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
   const [, setTick] = useState(0)
 
-  // Auto-refresh expiration timers
+  // Auto-dismiss toast after 3 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      cleanExpiredOffers()
-      setTick(t => t + 1)
-    }, 30000) // every 30s
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 3000)
+    return () => clearTimeout(timer)
+  }, [toast])
+
+  useEffect(() => {
+    const interval = setInterval(() => { cleanExpiredOffers(); setTick(t => t + 1) }, 30000)
     return () => clearInterval(interval)
   }, [])
 
   if (!tournament || tournament.status !== 'in-progress') {
-    return (
-      <div className="playnow-tab">
-        <div className="card">
-          <p className="subtle">Join an active tournament to use Find Match</p>
-        </div>
-      </div>
-    )
+    return (<div className="playnow-tab"><div className="card"><p className="subtle">Join an active tournament to use Find Match</p></div></div>)
   }
 
   const myBroadcast = getPlayerActiveBroadcast(currentPlayerId)
   const availableBroadcasts = getActiveBroadcasts(tournament.id, currentPlayerId)
   const upcomingSlots = getUpcomingAvailability(tournament, currentPlayerId)
   const seeds = getSeeds(tournament)
-
-  // Match offers
   const incomingOffers = getIncomingOffers(currentPlayerId)
   const outgoingOffers = getOutgoingOffers(currentPlayerId)
-
   const opponentRows = buildOpponentRows(upcomingSlots, availableBroadcasts)
   const dateGroups = groupRowsByDate(opponentRows)
 
@@ -221,114 +203,107 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleCreate() {
-    if (!location.trim()) {
-      setFeedback('Please enter a location')
-      setTimeout(() => setFeedback(''), 2000)
-      return
-    }
-    const result = createBroadcast(
-      currentPlayerId,
-      currentPlayerName,
-      tournament!.id,
-      date,
-      startTime,
-      endTime,
-      location.trim(),
-      message.trim() || undefined
-    )
+    if (!location.trim()) { setFeedback('Please enter a location'); setTimeout(() => setFeedback(''), 2000); return }
+    const result = createBroadcast(currentPlayerId, currentPlayerName, tournament!.id, date, startTime, endTime, location.trim(), message.trim() || undefined)
     if (result) {
-      setShowForm(false)
-      setLocation('')
-      setMessage('')
-      setFeedback('Broadcast sent!')
+      setShowForm(false); setLocation(''); setMessage('')
+      setToast("You're now visible to other players!")
     } else {
-      setFeedback('You already have an active broadcast')
+      setFeedback('You already have an active broadcast'); setTimeout(() => setFeedback(''), 2000)
     }
-    setTimeout(() => setFeedback(''), 2000)
     setTick(t => t + 1)
   }
 
   function handleAskToPlay(row: OpponentRow) {
-    const result = createMatchOffer(
-      { id: currentPlayerId, name: currentPlayerName },
-      { id: row.playerId, name: row.playerName },
-      tournament!.id,
-      row.date,
-      `${formatHour(row.startHour)}`,
-      row.day,
-      row.startHour,
-      row.endHour,
-    )
-
-    if ('error' in result) {
-      setFeedback(result.error)
-    } else {
-      setFeedback('Match offer sent')
-    }
-    setAskingRow(null)
-    setTimeout(() => setFeedback(''), 2500)
-    setTick(t => t + 1)
+    const result = createMatchOffer({ id: currentPlayerId, name: currentPlayerName }, { id: row.playerId, name: row.playerName }, tournament!.id, row.date, `${formatHour(row.startHour)}`, row.day, row.startHour, row.endHour)
+    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Match offer sent') }
+    setAskingRow(null); setTimeout(() => setFeedback(''), 2500); setTick(t => t + 1)
   }
 
   async function handleAcceptOffer(offer: MatchOffer) {
     const result = await acceptMatchOffer(offer.offerId, currentPlayerId)
-    if ('error' in result) {
-      setFeedback(result.error)
-    } else {
-      setFeedback('Match scheduled')
-      if (result.matchConfirmed) onMatchConfirmed()
-    }
-    setTimeout(() => setFeedback(''), 2500)
-    setTick(t => t + 1)
+    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Match scheduled'); if (result.matchConfirmed) onMatchConfirmed() }
+    setTimeout(() => setFeedback(''), 2500); setTick(t => t + 1)
   }
 
   function handleDeclineOffer(offer: MatchOffer) {
     const result = declineMatchOffer(offer.offerId, currentPlayerId)
-    if ('error' in result) {
-      setFeedback(result.error)
-    } else {
-      setFeedback('Offer declined')
-    }
-    setTimeout(() => setFeedback(''), 2000)
-    setTick(t => t + 1)
+    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Offer declined') }
+    setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1)
   }
 
   function handleCancelOffer(offer: MatchOffer) {
     cancelMatchOffer(offer.offerId, currentPlayerId)
-    setFeedback('Offer cancelled')
-    setTimeout(() => setFeedback(''), 2000)
-    setTick(t => t + 1)
+    setFeedback('Offer cancelled'); setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1)
   }
 
   function handleCancel() {
-    if (myBroadcast) {
-      cancelBroadcast(myBroadcast.id, currentPlayerId)
-      setFeedback('Broadcast cancelled')
-      setTimeout(() => setFeedback(''), 2000)
-      setTick(t => t + 1)
-    }
+    if (myBroadcast) { cancelBroadcast(myBroadcast.id, currentPlayerId); setFeedback('Broadcast cancelled'); setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1) }
   }
 
-  function handleStartTimeChange(val: string) {
-    setStartTime(val)
-    setEndTime(defaultEndTime(val))
-  }
+  function handleStartTimeChange(val: string) { setStartTime(val); setEndTime(defaultEndTime(val)) }
+
+  const tournamentMatches = getPlayerTournamentMatches(tournament, currentPlayerId)
 
   return (
     <div className="playnow-tab">
       {feedback && <div className="broadcast-feedback">{feedback}</div>}
 
-      {/* === INCOMING OFFERS === */}
+      {/* === TOAST === */}
+      {toast && (
+        <div className="pn-toast">
+          <span className="pn-toast-icon">&#10003;</span> {toast}
+        </div>
+      )}
+
+      {/* === INFO BANNER: Clarify Tournament vs Casual === */}
+      <div className="pn-info-banner">
+        <div className="pn-info-banner-content">
+          <span className="pn-info-banner-icon" onClick={() => setShowInfoTooltip(!showInfoTooltip)} role="button" tabIndex={0} aria-label="More info">&#9432;</span>
+          <span className="pn-info-banner-text">Find opponents and schedule games</span>
+        </div>
+        {showInfoTooltip && (
+          <div className="pn-info-tooltip">
+            <strong>Tournament Matches</strong> are part of your tournament bracket and count toward standings.
+            <br /><strong>Casual Play</strong> lets you find pickup games with other players in your tournament.
+            <br />Use &quot;Send Match Request&quot; below to propose a casual game.
+          </div>
+        )}
+      </div>
+
+      {/* === TOURNAMENT MATCHES SECTION === */}
+      {tournamentMatches.length > 0 && (
+        <div className="pn-section">
+          <h3 className="pn-section-title pn-section-title-tournament">Tournament Matches</h3>
+          <p className="pn-section-desc">Bracket matches that count toward your tournament standings.</p>
+          <div className="pn-tournament-match-list">
+            {tournamentMatches.map(m => {
+              const tier = schedulingTierLabel(m)
+              return (
+                <div key={m.id} className={`card pn-tournament-match-card ${tier.className}`}>
+                  <div className="pn-tournament-match-header">
+                    <span className="pn-tournament-match-opponent">vs {m.opponentName}</span>
+                    <span className={`pn-tier-badge ${tier.className}`}>{tier.label}</span>
+                  </div>
+                  <div className="pn-tournament-match-details">
+                    <span>Round {m.round}</span>
+                    {m.schedule?.confirmedSlot && <span> · {formatSlotTime(m)}</span>}
+                    {m.schedule?.confirmedSlot && <span> · {m.schedule.confirmedSlot.day}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {incomingOffers.length > 0 && (
         <div className="pn-section">
-          <h3 className="pn-section-title">Match Offers</h3>
+          <h3 className="pn-section-title">Incoming Match Requests</h3>
           <div className="offer-list">
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
-                <div className="offer-card-header">
-                  <span className="offer-card-label">Respond</span>
-                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
-                </div>
+                <div className="offer-card-header"><span className="offer-card-label">Respond</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
                 <div className="card-title">{offer.senderName}</div>
                 <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
                 <div className="offer-card-actions">
@@ -341,17 +316,13 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* === OUTGOING OFFERS === */}
       {outgoingOffers.length > 0 && (
         <div className="pn-section">
-          <h3 className="pn-section-title">Your Pending Offers</h3>
+          <h3 className="pn-section-title">Your Pending Requests</h3>
           <div className="offer-list">
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
-                <div className="offer-card-header">
-                  <span className="offer-card-label">Pending</span>
-                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
-                </div>
+                <div className="offer-card-header"><span className="offer-card-label">Pending</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
                 <div className="card-title">to {offer.recipientName}</div>
                 <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
                 <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
@@ -361,11 +332,13 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* === BROADCAST HERO === */}
       {myBroadcast ? (
-        <div className="card pn-my-broadcast">
+        <div className="card pn-my-broadcast pn-my-broadcast-active">
           <div className="broadcast-card-header">
-            <span className="broadcast-player-name">Your Broadcast</span>
+            <span className="broadcast-player-name">
+              <span className="pn-active-indicator" />
+              You're Available
+            </span>
             <span className="badge badge-live">Active</span>
           </div>
           <div className="broadcast-card-details">
@@ -373,6 +346,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <span className="broadcast-detail">{formatTimeRange(myBroadcast.startTime, myBroadcast.endTime || defaultEndTime(myBroadcast.startTime))}</span>
             <span className="broadcast-detail">{myBroadcast.location}</span>
           </div>
+          <div className="pn-broadcast-expiry">Available for the next {timeRemaining(myBroadcast.expiresAt)}</div>
           <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Cancel Broadcast</button>
         </div>
       ) : !showForm ? (
@@ -383,142 +357,64 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       ) : (
         <div className="card broadcast-form">
           <h3 className="broadcast-form-title">I Want To Play</h3>
-
-          <div className="field">
-            <label className="field-label">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
-            />
-          </div>
-
+          <div className="field"><label className="field-label">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} /></div>
           <div className="broadcast-time-row">
-            <div className="field field-half">
-              <label className="field-label">From</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={e => handleStartTimeChange(e.target.value)}
-                className="select-input"
-              />
-            </div>
-            <div className="field field-half">
-              <label className="field-label">To</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={e => setEndTime(e.target.value)}
-                className="select-input"
-              />
-            </div>
+            <div className="field field-half"><label className="field-label">From</label><input type="time" value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="select-input" /></div>
+            <div className="field field-half"><label className="field-label">To</label><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="select-input" /></div>
           </div>
-
-          <div className="field">
-            <label className="field-label">Location</label>
-            <input
-              type="text"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              placeholder="e.g. Marin Tennis Club"
-            />
-          </div>
-
-          <div className="field">
-            <label className="field-label">Message (optional)</label>
-            <input
-              type="text"
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="Anyone free?"
-            />
-          </div>
-
-          <div className="broadcast-form-actions">
-            <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleCreate}>Broadcast</button>
-          </div>
+          <div className="field"><label className="field-label">Location</label><input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Marin Tennis Club" /></div>
+          <div className="field"><label className="field-label">Message (optional)</label><input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Anyone free?" /></div>
+          <div className="broadcast-form-actions"><button className="btn" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-primary" onClick={handleCreate}>Broadcast</button></div>
         </div>
       )}
 
-      {/* === AVAILABLE OPPONENTS === */}
+      {/* === CASUAL PLAY SECTION === */}
       <div className="pn-section">
-        <h3 className="pn-section-title">Available Opponents</h3>
-
+        <h3 className="pn-section-title pn-section-title-casual">Casual Play</h3>
+        <p className="pn-section-desc">Find pickup games with other tournament players. These don't affect standings.</p>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
             <div className="pn-empty-title">No players available right now</div>
             <div className="pn-empty-desc">Post your availability and we'll notify tournament players</div>
-            {!myBroadcast && !showForm && (
-              <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>Play Now</button>
-            )}
+            {!myBroadcast && !showForm && <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>Play Now</button>}
           </div>
-        ) : (
-          dateGroups.map(group => (
-            <div key={group.date} className="pn-date-group">
-              <div className="pn-date-header">{group.dateLabel}</div>
-              <div className="pn-opponent-list">
-                {group.entries.map((row, i) => (
-                  <div key={`${row.playerId}-${row.date}-${i}`}>
-                    <div
-                      className="pn-opponent-row pn-opponent-actionable"
-                      onClick={() => setAskingRow(row)}
-                    >
-                      <div className="pn-opponent-avatar">
-                        {row.playerName[0]?.toUpperCase() ?? '?'}
+        ) : dateGroups.map(group => (
+          <div key={group.date} className="pn-date-group">
+            <div className="pn-date-header">{group.dateLabel}</div>
+            <div className="pn-opponent-list">
+              {group.entries.map((row, i) => (
+                <div key={`${row.playerId}-${row.date}-${i}`}>
+                  <div className="pn-opponent-row pn-opponent-actionable" onClick={() => setAskingRow(row)}>
+                    <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
+                    <div className="pn-opponent-info">
+                      <div className="pn-opponent-name">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
+                      <div className="pn-opponent-meta">
+                        {row.isNow && <span className="pn-available-now">Available now</span>}
+                        <span>{row.dateLabel} · {row.timeLabel}</span>
+                        {row.location && <span> · {row.location}</span>}
                       </div>
-                      <div className="pn-opponent-info">
-                        <div className="pn-opponent-name">
-                          {row.playerName}
-                          <span className="seed-label">{playerSeedLabel(row.playerId)}</span>
-                        </div>
-                        <div className="pn-opponent-meta">
-                          {row.isNow && <span className="pn-available-now">Available now</span>}
-                          <span>{row.dateLabel} · {row.timeLabel}</span>
-                          {row.location && <span> · {row.location}</span>}
-                        </div>
-                        {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
-                      </div>
-                      <div className="pn-opponent-actions">
-                        <button
-                          className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`}
-                          onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }}
-                          aria-label="Message player"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                          </svg>
-                          {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
-                        </button>
-                        <button
-                          className="btn btn-primary btn-small pn-ask-btn"
-                          onClick={e => { e.stopPropagation(); setAskingRow(row) }}
-                        >
-                          Ask to Play
-                        </button>
-                      </div>
+                      {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
                     </div>
-                    {messagingPlayerId === row.playerId && (
-                      <div className="pn-message-panel-wrapper" onClick={e => e.stopPropagation()}>
-                        <MessagePanel
-                          currentPlayerId={currentPlayerId}
-                          currentPlayerName={currentPlayerName}
-                          otherPlayerId={row.playerId}
-                          otherPlayerName={row.playerName}
-                          onClose={() => setMessagingPlayerId(null)}
-                        />
-                      </div>
-                    )}
+                    <div className="pn-opponent-actions">
+                      <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
+                        {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
+                      </button>
+                      <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setAskingRow(row) }}>Send Match Request</button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  {messagingPlayerId === row.playerId && (
+                    <div className="pn-message-panel-wrapper" onClick={e => e.stopPropagation()}>
+                      <MessagePanel currentPlayerId={currentPlayerId} currentPlayerName={currentPlayerName} otherPlayerId={row.playerId} otherPlayerName={row.playerName} onClose={() => setMessagingPlayerId(null)} />
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
 
-      {/* === ASK TO PLAY CONFIRMATION MODAL === */}
       {askingRow && (
         <div className="broadcast-claim-overlay" onClick={() => setAskingRow(null)}>
           <div className="broadcast-claim-modal" onClick={e => e.stopPropagation()}>
@@ -528,12 +424,10 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
               <div className="offer-confirm-date">{askingRow.dateLabel}</div>
               {askingRow.location && <div className="broadcast-claim-detail">{askingRow.location}</div>}
             </div>
-            <p className="offer-confirm-note">
-              {askingRow.playerName} will have 2 hours to accept or decline.
-            </p>
+            <p className="offer-confirm-note">{askingRow.playerName} will have 2 hours to accept or decline.</p>
             <div className="broadcast-claim-actions">
               <button className="btn" onClick={() => setAskingRow(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={() => handleAskToPlay(askingRow)}>Ask to Play</button>
+              <button className="btn btn-primary" onClick={() => handleAskToPlay(askingRow)}>Send Match Request</button>
             </div>
           </div>
         </div>

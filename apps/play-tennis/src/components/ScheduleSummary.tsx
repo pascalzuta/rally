@@ -219,7 +219,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
                     )}
                     <div className="calendar-match-opponent">vs {getPlayerName(tournament, opponentId)}</div>
                     <div className={`calendar-match-status ${tier === 'auto' ? 'calendar-match-status--auto' : tier === 'needs-accept' ? 'calendar-match-status--accept' : 'calendar-match-status--negotiate'}`}>
-                      {tier === 'auto' ? 'Scheduled' : tier === 'needs-accept' ? 'Tap to confirm' : 'Needs scheduling'}
+                      {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Awaiting confirmation' : 'Pick a time'}
                     </div>
                     {tier === 'needs-accept' && onConfirmMatch && (
                       <button className="match-card-action-btn match-card-action-btn--accept" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>

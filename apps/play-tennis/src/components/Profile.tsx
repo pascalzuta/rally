@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability } from '../store'
+import { useState, useRef } from 'react'
+import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability, switchProfile } from '../store'
 import type { RatingSnapshot, MatchHistoryEntry } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, Trophy, TrophyTier, Badge } from '../types'
 
@@ -220,6 +220,14 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   const [selectedTrophy, setSelectedTrophy] = useState<Trophy | null>(null)
   const [showRatingInfo, setShowRatingInfo] = useState(false)
   const [editing, setEditing] = useState(false)
+
+  // R-20: Profile photo, bio, playing style, preferred courts
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [photoUrl, setPhotoUrl] = useState<string>(profile.photoUrl ?? '')
+  const [bio, setBio] = useState<string>(profile.bio ?? '')
+  const [playingStyle, setPlayingStyle] = useState<string[]>(profile.playingStyle ?? [])
+  const [preferredCourts, setPreferredCourts] = useState<string[]>(profile.preferredCourts ?? [])
+  const [newCourt, setNewCourt] = useState('')
   const [slots, setSlots] = useState<AvailabilitySlot[]>(() => getAvailability(profile.id))
   const [detailedMode, setDetailedMode] = useState(false)
   const [detailDay, setDetailDay] = useState<DayOfWeek>('monday')
@@ -260,6 +268,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
     if (confirm('Sign out? You can sign back in with the same name.')) {
       logout()
       onLogout()
+      window.location.hash = '#home'
     }
   }
 
@@ -307,6 +316,56 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
     setDetailedMode(false)
   }
 
+  // R-20: Profile management helpers
+  const STYLE_OPTIONS = ['Singles', 'Doubles', 'Competitive', 'Casual'] as const
+
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setPhotoUrl(dataUrl)
+      const updated = { ...profile, photoUrl: dataUrl }
+      switchProfile(updated)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleBioChange(value: string) {
+    if (value.length <= 150) {
+      setBio(value)
+      const updated = { ...profile, bio: value }
+      switchProfile(updated)
+    }
+  }
+
+  function togglePlayingStyle(style: string) {
+    const next = playingStyle.includes(style)
+      ? playingStyle.filter(s => s !== style)
+      : [...playingStyle, style]
+    setPlayingStyle(next)
+    const updated = { ...profile, playingStyle: next }
+    switchProfile(updated)
+  }
+
+  function addCourt() {
+    const name = newCourt.trim()
+    if (!name || preferredCourts.length >= 3 || preferredCourts.includes(name)) return
+    const next = [...preferredCourts, name]
+    setPreferredCourts(next)
+    setNewCourt('')
+    const updated = { ...profile, preferredCourts: next }
+    switchProfile(updated)
+  }
+
+  function removeCourt(court: string) {
+    const next = preferredCourts.filter(c => c !== court)
+    setPreferredCourts(next)
+    const updated = { ...profile, preferredCourts: next }
+    switchProfile(updated)
+  }
+
   function getTournamentResult(tournament: typeof tournaments[0]): string {
     const playerMatches = tournament.matches.filter(m =>
       m.completed && m.winnerId &&
@@ -334,17 +393,115 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
       {/* Player Identity */}
       <div className="card">
         <div className="profile-card">
-          <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
+          {/* Profile Photo */}
+          <div className="profile-photo-section" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+            {photoUrl ? (
+              <img src={photoUrl} alt={profile.name} className="profile-avatar-img" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handlePhotoUpload}
+            />
+            <div className="profile-photo-hint" style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: 4 }}>Tap to change photo</div>
+          </div>
           <h2 className="profile-name">{profile.name}</h2>
           <p className="profile-county">{profile.county}</p>
           {(profile.skillLevel || profile.gender) && (
             <p className="profile-details">
-              {profile.skillLevel && <span className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}</span>}
-              {profile.skillLevel && profile.gender && <span className="profile-detail-sep"> · </span>}
+              {profile.skillLevel && <span className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}{profile.skillLevel === 'beginner' ? ' (NTRP 2.0-2.5)' : profile.skillLevel === 'intermediate' ? ' (NTRP 3.0-3.5)' : profile.skillLevel === 'advanced' ? ' (NTRP 4.0+)' : ''}</span>}
+              {profile.skillLevel && profile.gender && <span className="profile-detail-sep"> &middot; </span>}
               {profile.gender && <span className="profile-gender">{profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}</span>}
             </p>
           )}
+          {bio && <p className="profile-bio-display" style={{ marginTop: 6, fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{bio}</p>}
+          {playingStyle.length > 0 && (
+            <div className="profile-style-tags-display" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, justifyContent: 'center' }}>
+              {playingStyle.map(s => (
+                <span key={s} className="profile-style-tag" style={{ padding: '2px 10px', borderRadius: 12, background: 'var(--color-surface-alt, #f0f0f0)', fontSize: '0.8rem' }}>{s}</span>
+              ))}
+            </div>
+          )}
           {totalMatches > 0 && <p className="profile-matches-played">{totalMatches} matches played</p>}
+        </div>
+      </div>
+
+      {/* Bio & Playing Style */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title"><span>About You</span></h3>
+
+        {/* Bio */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4, color: 'var(--color-text-secondary)' }}>Bio</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Tell others about yourself..."
+            value={bio}
+            maxLength={150}
+            onChange={e => handleBioChange(e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textAlign: 'right', marginTop: 2 }}>{150 - bio.length} characters remaining</div>
+        </div>
+
+        {/* Playing Style Tags */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Playing Style</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {STYLE_OPTIONS.map(style => (
+              <button
+                key={style}
+                className={`btn btn-small ${playingStyle.includes(style) ? 'btn-primary' : ''}`}
+                onClick={() => togglePlayingStyle(style)}
+                style={{ borderRadius: 20 }}
+              >
+                {style}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Preferred Courts */}
+        <div>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Preferred Courts (max 3)</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: preferredCourts.length > 0 ? 8 : 0 }}>
+            {preferredCourts.map(court => (
+              <span key={court} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 10px', borderRadius: 16,
+                background: 'var(--color-surface-alt, #f0f0f0)',
+                fontSize: '0.85rem',
+              }}>
+                {court}
+                <button
+                  className="btn-icon"
+                  onClick={() => removeCourt(court)}
+                  style={{ fontSize: '0.75rem', padding: 0, lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+          {preferredCourts.length < 3 && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Add a court name"
+                value={newCourt}
+                onChange={e => setNewCourt(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') addCourt() }}
+                style={{ flex: 1 }}
+              />
+              <button className="btn btn-small" onClick={addCourt}>Add</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -521,7 +678,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
                 <div key={t.id} className="history-card">
                   <div className="history-card-info">
                     <div className="history-card-name">{t.name}</div>
-                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Knockout' : t.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'}</div>
+                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Elimination' : t.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Everyone plays everyone'}</div>
                   </div>
                   <span className={`history-card-result ${result === 'Won' ? 'won' : result === 'Lost' ? 'lost' : ''}`}>{result}</span>
                 </div>
@@ -540,7 +697,10 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
         {!editing ? (
           <div className="availability-current">
             {slots.length === 0 ? (
-              <p className="subtle">No availability set</p>
+              <div>
+                <p className="subtle">No availability set</p>
+                <p style={{ color: 'var(--color-warning, #e6a200)', fontSize: '0.85rem', marginTop: 8 }}>Set your availability to get better match times</p>
+              </div>
             ) : (
               slots.map((slot, i) => {
                 const dayInfo = DAYS.find(d => d.key === slot.day)

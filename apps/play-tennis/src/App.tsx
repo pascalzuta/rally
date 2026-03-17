@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount } from './store'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
@@ -47,6 +47,8 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showInbox, setShowInbox] = useState(false)
+  const notifWrapperRef = useRef<HTMLDivElement>(null)
+  const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
   // Navigate tabs via hash so browser back/forward buttons work
   const setActiveTab = useCallback((tab: Tab) => {
@@ -68,6 +70,38 @@ export default function App() {
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
+
+  // Dismiss notification panel / inbox on outside click or Escape key
+  useEffect(() => {
+    function handleMouseDown(e: MouseEvent) {
+      if (
+        showNotifications &&
+        notifWrapperRef.current &&
+        !notifWrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowNotifications(false)
+      }
+      if (
+        showInbox &&
+        inboxWrapperRef.current &&
+        !inboxWrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowInbox(false)
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setShowNotifications(false)
+        setShowInbox(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showNotifications, showInbox])
 
   // Count pending actions for notification badge
   const matchActionCount = tournaments.reduce((count, t) => {
@@ -224,9 +258,9 @@ export default function App() {
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M22 7l-10 7L2 7" />
               </svg>
-              {unreadMsgCount > 0 && <span className="inbox-unread-dot" />}
+              {unreadMsgCount > 0 && <span className="inbox-unread-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
-            <div className="notif-wrapper">
+            <div className="notif-wrapper" ref={notifWrapperRef}>
               <button className="top-nav-icon" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false) }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -261,6 +295,12 @@ export default function App() {
                                 if (n.type === 'match_offer') {
                                   setActiveTab('playnow')
                                 } else if (n.type === 'offer_accepted') {
+                                  if (n.relatedOfferId) {
+                                    const offer = getMatchOffer(n.relatedOfferId)
+                                    if (offer?.matchId) {
+                                      setFocusMatchId(offer.matchId)
+                                    }
+                                  }
                                   setActiveTab('bracket')
                                 }
                                 setShowNotifications(false)
@@ -423,12 +463,14 @@ export default function App() {
         </nav>
       </div>
       {showInbox && (
+        <div ref={inboxWrapperRef}>
         <Inbox
           currentPlayerId={profile.id}
           currentPlayerName={profile.name}
           tournaments={tournaments}
           onClose={() => setShowInbox(false)}
         />
+        </div>
       )}
       <DevTools
         onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}

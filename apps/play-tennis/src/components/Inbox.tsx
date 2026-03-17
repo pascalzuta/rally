@@ -1,13 +1,40 @@
 import { useState } from 'react'
-import { getConversationList, markConversationRead } from '../store'
+import { getConversationList, markConversationRead, sendMessage } from '../store'
 import { Tournament } from '../types'
 import MessagePanel from './MessagePanel'
+
+const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!']
 
 interface Props {
   currentPlayerId: string
   currentPlayerName: string
   tournaments: Tournament[]
   onClose: () => void
+}
+
+/** Find the next upcoming match between two players across tournaments */
+function findMatchContext(
+  tournaments: Tournament[],
+  playerId: string,
+  otherPlayerId: string
+): { tournamentName: string; matchDate: string | null } | null {
+  for (const t of tournaments) {
+    const isP1 = t.players.some(p => p.id === playerId)
+    const isP2 = t.players.some(p => p.id === otherPlayerId)
+    if (!isP1 || !isP2) continue
+    const match = t.matches.find(
+      m =>
+        (m.player1Id === playerId && m.player2Id === otherPlayerId) ||
+        (m.player1Id === otherPlayerId && m.player2Id === playerId)
+    )
+    if (!match) continue
+    const slot = match.schedule?.confirmedSlot
+    const dateStr = slot
+      ? `${slot.day.charAt(0).toUpperCase() + slot.day.slice(1)} ${slot.startHour % 12 || 12}${slot.startHour >= 12 ? 'pm' : 'am'}`
+      : null
+    return { tournamentName: t.name, matchDate: dateStr }
+  }
+  return null
 }
 
 export default function Inbox({ currentPlayerId, currentPlayerName, tournaments, onClose }: Props) {
@@ -66,6 +93,23 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
               </svg>
             </button>
           </div>
+          <div className="inbox-quick-messages">
+            {QUICK_MESSAGES.map(qm => (
+              <button
+                key={qm}
+                className="quick-msg-btn"
+                onClick={() => {
+                  sendMessage(currentPlayerId, currentPlayerName, openConversation.playerId, openConversation.playerName, qm)
+                  // Force re-render by toggling conversation
+                  const conv = openConversation
+                  setOpenConversation(null)
+                  setTimeout(() => setOpenConversation(conv), 0)
+                }}
+              >
+                {qm}
+              </button>
+            ))}
+          </div>
           <div className="inbox-conversation-view">
             <MessagePanel
               currentPlayerId={currentPlayerId}
@@ -84,7 +128,13 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
     <div className="inbox-overlay" onClick={onClose}>
       <div className="inbox-panel" onClick={e => e.stopPropagation()}>
         <div className="inbox-header">
-          <span className="inbox-title">Messages</span>
+          <span className="inbox-title">
+            Messages
+            {(() => {
+              const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
+              return totalUnread > 0 ? <span className="inbox-unread-badge">{totalUnread}</span> : null
+            })()}
+          </span>
           <button className="inbox-close-btn" onClick={onClose} aria-label="Close">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -115,36 +165,45 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
                 : 'No messages from past tournaments'}
             </div>
           ) : (
-            displayedConversations.map(conv => (
-              <button
-                key={conv.otherPlayerId}
-                className={`inbox-card ${conv.unreadCount > 0 ? 'inbox-card-unread' : ''}`}
-                onClick={() => {
-                  markConversationRead(currentPlayerId, conv.otherPlayerId)
-                  setOpenConversation({ playerId: conv.otherPlayerId, playerName: conv.otherPlayerName })
-                }}
-              >
-                <div className="inbox-card-avatar">
-                  {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
-                  {conv.unreadCount > 0 && <span className="inbox-card-dot" />}
-                </div>
-                <div className="inbox-card-content">
-                  <div className="inbox-card-top">
-                    <span className="inbox-card-name">{conv.otherPlayerName}</span>
-                    <span className="inbox-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
+            displayedConversations.map(conv => {
+              const matchCtx = findMatchContext(tournaments, currentPlayerId, conv.otherPlayerId)
+              return (
+                <button
+                  key={conv.otherPlayerId}
+                  className={`inbox-card ${conv.unreadCount > 0 ? 'inbox-card-unread' : ''}`}
+                  onClick={() => {
+                    markConversationRead(currentPlayerId, conv.otherPlayerId)
+                    setOpenConversation({ playerId: conv.otherPlayerId, playerName: conv.otherPlayerName })
+                  }}
+                >
+                  <div className="inbox-card-avatar">
+                    {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
+                    {conv.unreadCount > 0 && <span className="inbox-card-dot" />}
                   </div>
-                  <div className="inbox-card-preview">
-                    {conv.lastMessage.senderId === currentPlayerId ? 'You: ' : ''}
-                    {conv.lastMessage.text.length > 60
-                      ? conv.lastMessage.text.slice(0, 60) + '...'
-                      : conv.lastMessage.text}
+                  <div className="inbox-card-content">
+                    <div className="inbox-card-top">
+                      <span className="inbox-card-name">{conv.otherPlayerName}</span>
+                      <span className="inbox-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
+                    </div>
+                    {matchCtx && (
+                      <div className="inbox-card-match-tag">
+                        {matchCtx.tournamentName}
+                        {matchCtx.matchDate && <span> &middot; {matchCtx.matchDate}</span>}
+                      </div>
+                    )}
+                    <div className="inbox-card-preview">
+                      {conv.lastMessage.senderId === currentPlayerId ? 'You: ' : ''}
+                      {conv.lastMessage.text.length > 60
+                        ? conv.lastMessage.text.slice(0, 60) + '...'
+                        : conv.lastMessage.text}
+                    </div>
                   </div>
-                </div>
-                {conv.unreadCount > 0 && (
-                  <span className="inbox-card-badge">{conv.unreadCount}</span>
-                )}
-              </button>
-            ))
+                  {conv.unreadCount > 0 && (
+                    <span className="inbox-card-badge">{conv.unreadCount}</span>
+                  )}
+                </button>
+              )
+            })
           )}
         </div>
       </div>

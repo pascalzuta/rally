@@ -95,7 +95,7 @@ function getOpponentId(match: Match, playerId: string): string | null {
 function playerNameWithSeed(tournament: Tournament, playerId: string | null): string {
   const name = getPlayerName(tournament, playerId)
   const seed = getPlayerSeed(tournament, playerId)
-  return seed != null ? `${name} (${seed})` : name
+  return seed != null ? `${name} [#${seed}]` : name
 }
 
 function buildActionCards(
@@ -158,7 +158,7 @@ function buildActionCards(
         if (respondableCount > 0) {
           cards.push({
             type: 'respond',
-            label: 'Respond',
+            label: 'Action needed',
             detail: `${respondableCount} time slot${respondableCount === 1 ? '' : 's'} proposed`,
             opponentId: opponentId!,
             opponentName,
@@ -341,6 +341,14 @@ export default function Home({
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
+        {!hasAvailability && (
+          <div className="card" style={{ borderLeft: '3px solid var(--color-warning, #f59e0b)', background: 'var(--color-surface)' }}>
+            <div style={{ padding: '2px 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <strong>Add your availability</strong> so matches can be scheduled around your calendar. Go to Profile to set your times.
+            </div>
+          </div>
+        )}
+
         {/* How Rally Works card */}
         {!hiwDismissed && (
           <div className="how-rally-works">
@@ -438,6 +446,14 @@ export default function Home({
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
+        {!hasAvailability && (
+          <div className="card" style={{ borderLeft: '3px solid var(--color-warning, #f59e0b)', background: 'var(--color-surface)' }}>
+            <div style={{ padding: '2px 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <strong>Add your availability</strong> so matches can be scheduled around your calendar. Go to Profile to set your times.
+            </div>
+          </div>
+        )}
+
         {/* User Status Block */}
         <div className="card user-status-card">
           <div className="user-status-row">
@@ -521,7 +537,7 @@ export default function Home({
             <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Tournament</div>
             <div className="card-title">{tournament.name}</div>
             <div className="card-secondary">
-              {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'} · {tournament.players.length} players · {getProgressText(tournament)}
+              {tournament.format === 'single-elimination' ? 'Playoffs' : tournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Everyone Plays Everyone'} · {tournament.players.length} players · {getProgressText(tournament)}
             </div>
             <div className="tournament-progress-bar">
               <div className="tournament-progress-fill" style={{ width: `${progressPct}%` }} />

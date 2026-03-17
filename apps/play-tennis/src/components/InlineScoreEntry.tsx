@@ -103,10 +103,65 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
 
   const visibleSets = showThirdSet ? 3 : 2
 
-  async function handleSave() {
+  // R-07: Confirmation + R-16: Success feedback state machine
+  const [saveState, setSaveState] = useState<'idle' | 'confirming' | 'saving' | 'success' | 'error'>('idle')
+
+  function handleSaveClick() {
     if (!scores || !winnerId) return
-    await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
-    onSaved()
+    setSaveState('confirming')
+  }
+
+  async function handleConfirm() {
+    if (!scores || !winnerId) return
+    setSaveState('saving')
+    try {
+      await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
+      setSaveState('success')
+      setTimeout(() => onSaved(), 2000)
+    } catch {
+      setSaveState('error')
+    }
+  }
+
+  // R-16: Success toast
+  if (saveState === 'success') {
+    return (
+      <div className="score-toast score-toast--success">
+        <span className="score-toast-check">✓</span>
+        <strong>Score saved!</strong>
+        <div style={{ fontSize: '13px', marginTop: '4px', opacity: 0.8 }}>
+          Your opponent has 48 hours to confirm.
+        </div>
+      </div>
+    )
+  }
+
+  if (saveState === 'error') {
+    return (
+      <div className="score-toast score-toast--error">
+        <strong>Failed to save score</strong>
+        <div style={{ marginTop: '8px' }}>
+          <button className="btn" onClick={() => setSaveState('idle')}>Try Again</button>
+        </div>
+      </div>
+    )
+  }
+
+  // R-07: Confirmation step
+  if (saveState === 'confirming' && scores && winnerId) {
+    const scoreSummary = scores.score1.map((s, i) => `${s}-${scores.score2[i]}`).join(', ')
+    return (
+      <div className="score-confirm-overlay">
+        <div className="score-confirm-summary">You entered: {scoreSummary}</div>
+        <div className="score-confirm-winner">Winner: {getPlayerName(tournament, winnerId)}</div>
+        <div className="score-confirm-actions">
+          <button className="btn" onClick={() => setSaveState('idle')}>Edit</button>
+          <button className="btn btn-primary" onClick={handleConfirm}>
+            Confirm
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -120,13 +175,14 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
         <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
       </div>
 
+      {/* R-26: Player labels with You/Opponent distinction */}
       <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>
         <div className="score-header"></div>
         {sets.slice(0, visibleSets).map((_, i) => (
           <div key={i} className="score-header">Set {i + 1}</div>
         ))}
 
-        <div className="score-player-name">{p1Name}{seed1 != null && <span className="seed-label"> ({seed1})</span>}</div>
+        <div className="score-player-name score-row-label score-row-label--you">You ({p1Name})</div>
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
             key={`p1-${i}`}
@@ -141,7 +197,7 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
           />
         ))}
 
-        <div className="score-player-name">{p2Name}{seed2 != null && <span className="seed-label"> ({seed2})</span>}</div>
+        <div className="score-player-name score-row-label score-row-label--opponent">{p2Name}</div>
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
             key={`p2-${i}`}
@@ -164,11 +220,11 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
 
       {winnerId && (
         <div className="winner-preview">
-          Winner: <strong>{getPlayerName(tournament, winnerId)}{winnerId && seeds.get(winnerId) != null && <span className="seed-label"> ({seeds.get(winnerId)})</span>}</strong>
+          Winner: <strong>{getPlayerName(tournament, winnerId)}</strong>
         </div>
       )}
 
-      <button className="btn btn-primary" onClick={handleSave} disabled={!canSave} style={{ width: '100%', marginTop: '0.5rem' }}>
+      <button className="btn btn-primary" onClick={handleSaveClick} disabled={!canSave} style={{ width: '100%', marginTop: '0.5rem' }}>
         Save Score
       </button>
     </div>

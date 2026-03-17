@@ -24,8 +24,8 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 ## Data Model
 
 ### Core Types
-- **PlayerProfile**: id, name, county, createdAt
-- **Tournament**: id, name, date, county, format (single-elimination | round-robin | group-knockout), players, matches, status (setup | in-progress | completed), groupPhaseComplete
+- **PlayerProfile**: id, name, county, skillLevel, gender, weeklyCap, bio, playingStyle, photoUrl, preferredCourts, createdAt
+- **Tournament**: id, name, date, county, format (single-elimination | round-robin | group-knockout), players, matches, status (setup | scheduling | in-progress | completed), groupPhaseComplete, mode (singles | doubles), teams (DoublesTeam[])
 - **Match**: id, round, position, player1Id, player2Id, scores, winnerId, completed, schedule, resolution, phase (group | knockout)
 - **MatchSchedule**: status (unscheduled | proposed | confirmed | escalated | resolved), proposals, confirmedSlot, escalationDay, participationScores, resolution
 - **MatchResolution**: type (walkover | forced-match | double-loss), winnerId, reason, resolvedAt, forcedSlot
@@ -44,6 +44,8 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **MatchOffer**: offerId, senderId, senderName, recipientId, recipientName, tournamentId, proposedDate, proposedTime, createdAt, expiresAt, status (proposed | accepted | declined | expired), matchId
 - **RallyNotification**: id, type (match_offer | offer_accepted | offer_declined | offer_expired | match_reminder), recipientId, message, detail, relatedOfferId, createdAt, read
 - **DirectMessage**: id, senderId, senderName, recipientId, recipientName, text, createdAt, read
+- **MatchReaction**: matchId, playerId, fun (1-5), fair (1-5), playAgain (boolean), createdAt
+- **DoublesTeam**: id, player1Id, player2Id, teamName
 - **RatingSnapshot**: rating, timestamp (used for rating history chart)
 - **MatchHistoryEntry**: matchId, tournamentId, tournamentName, opponentId, opponentName, score, won, date, round, format, phase
 - **RecentResult**: matchId, tournamentId, tournamentName, winnerId, winnerName, loserId, loserName, score, round, date (used for leaderboard recent activity)
@@ -204,6 +206,7 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - `rally-match-offers` — Match offers (proposed/accepted/declined/expired)
 - `rally-notifications` — In-app notification entries
 - `rally-direct-messages` — Player-to-player direct messages
+- `rally-match-reactions` — Post-match fun/fair/playAgain ratings
 
 ## Navigation Structure
 Four-tab layout designed around the player's tournament journey.
@@ -278,6 +281,50 @@ Four-tab layout designed around the player's tournament journey.
 - **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight, defending champion marker, recent activity feed
 - **VictoryAnimation.tsx** — Full-screen trophy celebration overlay with confetti and tier-appropriate styling
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
+
+## Implemented Roadmap (R-01 to R-28)
+
+All 28 items from the Rally Product Roadmap have been implemented. Based on UX Research Report findings from two independent evaluations.
+
+### Theme 1: Core Interaction Polish
+- **R-01** Unified confirm button — Single "Confirm" action on match cards and schedule summary (ScheduleSummary.tsx)
+- **R-02** HTTPS enforcement — CNAME configured for play-rally.com; requires "Enforce HTTPS" in GitHub Pages repo settings
+- **R-03** Logout redirect — Clears all play-tennis-* localStorage keys and redirects to #home (store.ts, Profile.tsx)
+- **R-04** Notification dismiss — Click-outside and Escape key close notification panel and inbox (App.tsx)
+- **R-05** Bracket deduplication — renderedMatchIds ref prevents duplicate match card rendering (BracketTab.tsx)
+
+### Theme 2: Scheduling & Score Entry
+- **R-06** Early score entry — canScore no longer requires confirmed schedule (BracketTab.tsx, TournamentView.tsx)
+- **R-07** Score edit/undo — editMatchScore() with 48-hour edit window; confirmation dialog before save (store.ts, InlineScoreEntry.tsx)
+- **R-08** Rescheduling — rescheduleMatch() with max 2 limit + cancelMatch() with reason/walkover (store.ts, MatchSchedulePanel.tsx)
+- **R-09** Granular availability — 30-minute time slot picker (6:00, 6:30, 7:00...) in registration (Register.tsx)
+- **R-10** Find Match clarity — Section labels distinguishing "Tournament Matches" from "Casual Play" (PlayNowTab.tsx)
+
+### Theme 3: Onboarding & Calibration
+- **R-11** Enforce availability — Warning card shown on Home and Profile when availability is not set (Home.tsx, Profile.tsx)
+- **R-12** Skip returning users — "Skip intro" button + auto-skip onboarding for returning users (Register.tsx)
+- **R-13** Skill calibration — Behavioral anchors with NTRP equivalents + "rating adjusts automatically" reassurance (Register.tsx)
+- **R-14** Plain language — Replaced jargon: "Confirmed", "Awaiting confirmation", "Pick a time" across all views
+
+### Theme 4: Information Architecture
+- **R-15** Deep-link notifications — highlightedMatchId with 3-second pulse animation, auto-scroll (BracketTab.tsx)
+- **R-16** Score save feedback — Success toast ("Score saved! Your opponent has 48 hours to confirm.") + error toast (InlineScoreEntry.tsx)
+- **R-17** Completed matches — Filter bar with Upcoming/Completed/All toggle (BracketTab.tsx)
+- **R-18** Tournament progress — Progress banner with bar, completion %, and dates (BracketTab.tsx, TournamentView.tsx)
+- **R-19** PLAY NOW feedback — Toast after broadcast creation ("You're now visible to other players!") (PlayNowTab.tsx)
+
+### Theme 5: Social & Community
+- **R-20** Player profiles — Photo upload, bio (150 char), playing style tags (Profile.tsx)
+- **R-21** Court venues — Preferred courts (max 3) in profile + venue suggestion in scheduling (Profile.tsx, MatchSchedulePanel.tsx)
+- **R-22** Unified messaging — Quick message buttons ("Running late", "What court?", "Looking forward to it!") (Inbox.tsx)
+- **R-23** Post-match reactions — Fun/Fair star ratings + "Play again?" toggle on completed matches (BracketTab.tsx, store.ts)
+- **R-24** Doubles support — DoublesTeam type, tournament mode (singles/doubles), team creation in lobby, team names in bracket (types.ts, Lobby.tsx, BracketTab.tsx)
+
+### Theme 6: Accessibility & Progressive Disclosure
+- **R-25** Touch targets — 44px minimum on all interactive elements (styles.css)
+- **R-26** Score form labels — "You (name)" vs opponent name with distinct styling (InlineScoreEntry.tsx)
+- **R-27** Progressive disclosure — Show/hide details toggle for seeds, probabilities, and advanced stats (BracketTab.tsx)
+- **R-28** Schedule disclosure — Next match hero card + collapsible "Upcoming matches (N more)" expander (BracketTab.tsx)
 
 ## Dev Tools
 - Seed lobby with test players (+1, +3, +5)

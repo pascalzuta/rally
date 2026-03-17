@@ -117,7 +117,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, onTournamen
         <div className="schedule-summary-stats">
           <span className="schedule-stat schedule-stat--confirmed">{confirmed} <span className="schedule-stat-label">Scheduled</span></span>
           <span className="schedule-stat-sep">&middot;</span>
-          <span className="schedule-stat schedule-stat--pending">{pending} <span className="schedule-stat-label">Pending</span></span>
+          <span className="schedule-stat schedule-stat--pending">{pending} <span className="schedule-stat-label">In progress</span></span>
           <span className="schedule-stat-sep">&middot;</span>
           <span className="schedule-stat schedule-stat--unscheduled">{unscheduled} <span className="schedule-stat-label">Unscheduled</span></span>
           {completed > 0 && (

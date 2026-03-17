@@ -47,7 +47,7 @@ function OverviewSection() {
   return (
     <div className="help-section">
       <p className="help-intro">
-        Rally runs monthly round-robin tennis tournaments in your county.
+        Rally runs monthly tennis tournaments in your county.
         Everyone plays everyone, then the top players compete in finals.
       </p>
 
@@ -70,7 +70,7 @@ function OverviewSection() {
             <div>
               <strong>Tournament Forms</strong>
               <span className="help-phase-detail">When 6+ players join</span>
-              <p>A tournament is automatically created with round-robin matches for all players.</p>
+              <p>A tournament is automatically created where everyone plays everyone.</p>
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ function OverviewSection() {
             <div>
               <strong>Finals</strong>
               <span className="help-phase-detail">Top 4 compete</span>
-              <p>Top 4 advance to knockout semifinals and final. Win the championship trophy.</p>
+              <p>Top 4 advance to playoff semifinals and final. Win the championship trophy.</p>
             </div>
           </div>
         </div>
@@ -261,7 +261,7 @@ function FAQSection() {
 
   const items = [
     { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the waiting pool. Once enough players join (minimum 4), a tournament is automatically created.' },
-    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Single Elimination (knockout), and Group + Knockout (group stage then semifinals/final). The format is chosen based on player count.' },
+    { q: 'What tournament formats are available?', a: 'Rally supports Everyone Plays Everyone (round robin), Elimination (single elimination), and Group Stage + Playoffs. The format is chosen based on player count.' },
     { q: 'How are matches scheduled?', a: 'Rally uses your availability preferences to find overlapping times. The system proposes slots automatically. You can also use "Play Now" to broadcast availability for an immediate match.' },
     { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
     { q: 'How do I change my availability?', a: 'Go to the Profile tab, find the availability section, and tap "Edit". You can choose quick presets or set specific time slots.' },

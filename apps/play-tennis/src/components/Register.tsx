@@ -41,10 +41,25 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
 ]
 
 function formatHour(h: number): string {
-  if (h === 0 || h === 24) return '12am'
-  if (h === 12) return '12pm'
-  return h < 12 ? `${h}am` : `${h - 12}pm`
+  const whole = Math.floor(h)
+  const half = h % 1 >= 0.5
+  const suffix = half ? ':30' : ''
+  if (whole === 0 || whole === 24) return `12${suffix}am`
+  if (whole === 12) return `12${suffix}pm`
+  return whole < 12 ? `${whole}${suffix}am` : `${whole - 12}${suffix}pm`
 }
+
+/** Generate time options in 30-min increments */
+function timeOptions(startVal: number, endVal: number): { value: number; label: string }[] {
+  const opts: { value: number; label: string }[] = []
+  for (let h = startVal; h <= endVal; h += 0.5) {
+    opts.push({ value: h, label: formatHour(h) })
+  }
+  return opts
+}
+
+const START_OPTIONS = timeOptions(6, 21.5)
+const END_OPTIONS = timeOptions(6.5, 22)
 
 // Reverse geocode coordinates to county using free Nominatim API
 async function reverseGeocodeCounty(lat: number, lon: number): Promise<string | null> {
@@ -89,7 +104,18 @@ const STATE_ABBREVS: Record<string, string> = {
 type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
-  const [step, setStep] = useState<Step>(inviteCounty ? 'signup' : 'onboard-1')
+  // R-12: Auto-skip onboarding for returning users who have a previous profile
+  const [step, setStep] = useState<Step>(() => {
+    if (inviteCounty) return 'signup'
+    try {
+      const saved = localStorage.getItem('play-tennis-profile')
+      if (saved) {
+        const prev = JSON.parse(saved)
+        if (prev.name && prev.county) return 'signup'
+      }
+    } catch { /* ignore */ }
+    return 'onboard-1'
+  })
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [county, setCounty] = useState(inviteCounty ?? '')
@@ -104,7 +130,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [gender, setGender] = useState<Gender | ''>('')
 
   const [selectedQuick, setSelectedQuick] = useState<Set<number>>(new Set())
-  const [detailedMode, setDetailedMode] = useState(false)
+  const [detailedMode, setDetailedMode] = useState(true)  // Custom times is now the default/primary
   const [detailedSlots, setDetailedSlots] = useState<AvailabilitySlot[]>([])
   const [addingDay, setAddingDay] = useState<DayOfWeek | ''>('')
   const [addingStart, setAddingStart] = useState(18)
@@ -175,10 +201,28 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     setStep('skill-gender')
   }
 
+  // Presets now pre-fill the detailed slots list (shortcuts, not a separate mode)
   function toggleQuickSlot(idx: number) {
     const next = new Set(selectedQuick)
-    if (next.has(idx)) next.delete(idx)
-    else next.add(idx)
+    if (next.has(idx)) {
+      next.delete(idx)
+      const slotsToRemove = QUICK_SLOTS[idx].slots
+      setDetailedSlots(prev => prev.filter(existing =>
+        !slotsToRemove.some(r => r.day === existing.day && r.startHour === existing.startHour && r.endHour === existing.endHour)
+      ))
+    } else {
+      next.add(idx)
+      const newSlots = QUICK_SLOTS[idx].slots
+      setDetailedSlots(prev => {
+        const combined = [...prev]
+        for (const s of newSlots) {
+          const exists = combined.some(e => e.day === s.day && e.startHour === s.startHour && e.endHour === s.endHour)
+          if (!exists) combined.push(s)
+        }
+        return combined
+      })
+      setDetailedMode(true)
+    }
     setSelectedQuick(next)
   }
 
@@ -192,12 +236,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     setDetailedSlots(prev => prev.filter((_, i) => i !== idx))
   }
 
-  // Compute matchable players count based on current availability selection
+  // Compute matchable players count -- detailedSlots is always the combined source
   useEffect(() => {
     if (!county) { setMatchableCount(0); return }
-    const currentSlots: AvailabilitySlot[] = detailedMode
-      ? detailedSlots
-      : Array.from(selectedQuick).flatMap(idx => QUICK_SLOTS[idx].slots)
+    const currentSlots: AvailabilitySlot[] = detailedSlots
 
     if (currentSlots.length === 0) { setMatchableCount(0); return }
 
@@ -216,7 +258,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       if (hasOverlap) count++
     }
     setMatchableCount(count)
-  }, [county, selectedQuick, detailedSlots, detailedMode])
+  }, [county, detailedSlots])
 
   const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
 
@@ -230,14 +272,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     localStorage.setItem('play-tennis-profile', JSON.stringify(p))
 
     if (!skip) {
-      let slots: AvailabilitySlot[] = []
-      if (detailedMode) {
-        slots = detailedSlots
-      } else {
-        for (const idx of selectedQuick) {
-          slots.push(...QUICK_SLOTS[idx].slots)
-        }
-      }
+      // detailedSlots is the combined source (presets pre-fill into it)
+      const slots = detailedSlots
       if (slots.length > 0) {
         saveAvailability(p.id, slots, county, weeklyCap)
       }
@@ -278,6 +314,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
             Continue
           </button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('signup')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
@@ -323,6 +360,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
             Continue
           </button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('signup')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
@@ -365,6 +403,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('signup')}>
             Join Rally
           </button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('signup')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot" />
@@ -502,9 +541,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               <span className="field-label">Skill level</span>
               <div className="skill-options">
                 {([
-                  { value: 'beginner' as SkillLevel, label: 'Beginner', desc: 'Learning the basics' },
-                  { value: 'intermediate' as SkillLevel, label: 'Intermediate', desc: 'Consistent rallies' },
-                  { value: 'advanced' as SkillLevel, label: 'Advanced', desc: 'Tournament experience' },
+                  { value: 'beginner' as SkillLevel, label: 'Beginner', desc: 'Learning strokes, developing consistency' },
+                  { value: 'intermediate' as SkillLevel, label: 'Intermediate', desc: 'Consistent serve, comfortable rallying, plays regularly (NTRP 3.0\u20133.5)' },
+                  { value: 'advanced' as SkillLevel, label: 'Advanced', desc: 'Strong all-court game, plays competitively (NTRP 4.0+)' },
                 ] as const).map(opt => (
                   <button
                     key={opt.value}
@@ -516,6 +555,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   </button>
                 ))}
               </div>
+              <p className="skill-reassurance" style={{ fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)', marginTop: '8px' }}>
+                Your rating will adjust automatically after a few matches.
+              </p>
             </div>
 
             <div className="field">
@@ -572,9 +614,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   }
 
   // --- Step: Availability ---
-  const hasSlots = detailedMode ? detailedSlots.length > 0 : selectedQuick.size > 0
+  const hasSlots = detailedSlots.length > 0
   const capDurationLabels: Record<number, string> = { 1: '~5 weeks', 2: '~3 weeks', 3: '~2 weeks' }
-  const slotCount = detailedMode ? detailedSlots.length : selectedQuick.size
+  const slotCount = detailedSlots.length
 
   return (
     <div className="onboard-screen avail-screen">
@@ -589,48 +631,63 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           </p>
         </div>
 
-        {/* Mode toggle — prominent segmented control */}
+        {/* Mode toggle -- Custom times is primary/default */}
         <div className="avail-mode-toggle">
-          <button
-            className={`avail-mode-btn ${!detailedMode ? 'active' : ''}`}
-            onClick={() => setDetailedMode(false)}
-          >
-            Quick picks
-          </button>
           <button
             className={`avail-mode-btn ${detailedMode ? 'active' : ''}`}
             onClick={() => setDetailedMode(true)}
           >
             Custom times
           </button>
+          <button
+            className={`avail-mode-btn ${!detailedMode ? 'active' : ''}`}
+            onClick={() => setDetailedMode(false)}
+          >
+            Quick presets
+          </button>
         </div>
 
         <div className="availability-picker">
           {!detailedMode ? (
-            <div className="quick-slots-v2">
-              {/* Full-width weekday option */}
-              <button
-                className={`quick-slot-v2 quick-slot-v2--wide ${selectedQuick.has(0) ? 'selected' : ''}`}
-                onClick={() => toggleQuickSlot(0)}
-              >
-                <span className="quick-slot-v2-check">{selectedQuick.has(0) ? '✓' : ''}</span>
-                <span className="quick-slot-v2-label">{QUICK_SLOTS[0].label}</span>
-                <span className="quick-slot-v2-time">Mon–Fri 6–9pm</span>
-              </button>
-              {/* 2×2 grid for weekend slots */}
-              <div className="quick-slots-grid">
-                {QUICK_SLOTS.slice(1).map((slot, idx) => (
-                  <button
-                    key={idx + 1}
-                    className={`quick-slot-v2 ${selectedQuick.has(idx + 1) ? 'selected' : ''}`}
-                    onClick={() => toggleQuickSlot(idx + 1)}
-                  >
-                    <span className="quick-slot-v2-check">{selectedQuick.has(idx + 1) ? '✓' : ''}</span>
-                    <span className="quick-slot-v2-label">{slot.label.replace('Saturday ', 'Sat ').replace('Sunday ', 'Sun ')}</span>
-                  </button>
-                ))}
+            <>
+              <div className="quick-slots-v2">
+                <p className="quick-presets-hint">Tap to add common time blocks</p>
+                <button
+                  className={`quick-slot-v2 quick-slot-v2--wide ${selectedQuick.has(0) ? 'selected' : ''}`}
+                  onClick={() => toggleQuickSlot(0)}
+                >
+                  <span className="quick-slot-v2-check">{selectedQuick.has(0) ? '\u2713' : ''}</span>
+                  <span className="quick-slot-v2-label">{QUICK_SLOTS[0].label}</span>
+                  <span className="quick-slot-v2-time">Mon-Fri 6-9pm</span>
+                </button>
+                <div className="quick-slots-grid">
+                  {QUICK_SLOTS.slice(1).map((slot, idx) => (
+                    <button
+                      key={idx + 1}
+                      className={`quick-slot-v2 ${selectedQuick.has(idx + 1) ? 'selected' : ''}`}
+                      onClick={() => toggleQuickSlot(idx + 1)}
+                    >
+                      <span className="quick-slot-v2-check">{selectedQuick.has(idx + 1) ? '\u2713' : ''}</span>
+                      <span className="quick-slot-v2-label">{slot.label.replace('Saturday ', 'Sat ').replace('Sunday ', 'Sun ')}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              {detailedSlots.length > 0 && (
+                <div className="quick-presets-slots-preview">
+                  <div className="quick-presets-slots-label">{detailedSlots.length} time slot{detailedSlots.length !== 1 ? 's' : ''} added</div>
+                  <ul className="detailed-slot-list">
+                    {detailedSlots.map((s, i) => (
+                      <li key={i} className="detailed-slot-item">
+                        <span>{DAYS.find(d => d.key === s.day)?.label} {formatHour(s.startHour)}-{formatHour(s.endHour)}</span>
+                        <button className="btn-icon" onClick={() => removeDetailedSlot(i)}>{'\u2715'}</button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           ) : (
             <>
               {detailedSlots.length > 0 && (
@@ -650,14 +707,14 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
                 </select>
                 <select value={addingStart} onChange={e => setAddingStart(Number(e.target.value))}>
-                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-                    <option key={h} value={h}>{formatHour(h)}</option>
+                  {START_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
-                <span>–</span>
+                <span>-</span>
                 <select value={addingEnd} onChange={e => setAddingEnd(Number(e.target.value))}>
-                  {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-                    <option key={h} value={h}>{formatHour(h)}</option>
+                  {END_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
                 <button className="btn" onClick={addDetailedSlot} disabled={!addingDay || addingStart >= addingEnd}>

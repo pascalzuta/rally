@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void
 }
 
+const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!']
+
 export default function MessagePanel({ currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, onClose }: Props) {
   const [messages, setMessages] = useState<DirectMessage[]>([])
   const [text, setText] = useState('')
@@ -36,6 +38,11 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
     if (!trimmed) return
     sendMessage(currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, trimmed)
     setText('')
+    refresh()
+  }
+
+  function handleQuickMessage(msg: string) {
+    sendMessage(currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, msg)
     refresh()
   }
 
@@ -80,6 +87,17 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
           </div>
         ))}
         <div ref={bottomRef} />
+      </div>
+      <div className="quick-messages">
+        {QUICK_MESSAGES.map(qm => (
+          <button
+            key={qm}
+            className="quick-msg-btn"
+            onClick={() => handleQuickMessage(qm)}
+          >
+            {qm}
+          </button>
+        ))}
       </div>
       <div className="message-panel-input">
         <input

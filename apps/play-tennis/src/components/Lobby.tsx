@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getSchedulingConfidence } from '../store'
+import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getSchedulingConfidence, createDoublesTournament } from '../store'
 import { SYNC_EVENT } from '../sync'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 
@@ -32,6 +32,8 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   const [countdown, setCountdown] = useState<string | null>(null)
   const [showShareSheet, setShowShareSheet] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [lobbyMode, setLobbyMode] = useState<'singles' | 'doubles'>('singles')
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoJoinedRef = useRef(false)
   const joiningRef = useRef(false)
@@ -177,6 +179,22 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
     setShowShareSheet(false)
   }
 
+  // Doubles: available partners are other lobby entries (not self)
+  const availablePartners = entries.filter(e => e.playerId !== profile.id)
+
+  async function handleCreateDoubles() {
+    if (!selectedPartnerId) return
+    const partner = entries.find(e => e.playerId === selectedPartnerId)
+    if (!partner) return
+    const myEntry: LobbyEntry = { playerId: profile.id, playerName: profile.name, county: profile.county, joinedAt: new Date().toISOString() }
+    const tournament = await createDoublesTournament(profile.county, [
+      { player1: myEntry, player2: partner },
+    ])
+    if (tournament) {
+      onTournamentCreated(tournament.id)
+    }
+  }
+
   const setupPlayers = setupTournament?.players ?? []
   const totalJoined = setupPlayers.length + entries.length
   const targetPlayers = 6
@@ -199,71 +217,124 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
 
   return (
     <div className="lobby-section">
-      {/* Tournament Formation Card */}
-      <div className="card formation-hero">
-        {tournamentReady ? (
-          <>
-            <h2 className="formation-title">{profile.county} Tournament<br />Starting</h2>
-            <p className="formation-desc">Bracket is filling up. Tournament begins when the countdown ends.</p>
-            {countdown && (
-              <div className="formation-countdown">
-                <div className="formation-countdown-label">Starts in</div>
-                <div className="formation-countdown-timer">{countdown}</div>
+      {/* Singles / Doubles Toggle */}
+      <div className="lobby-mode-toggle">
+        <button
+          className={`lobby-mode-btn ${lobbyMode === 'singles' ? 'active' : ''}`}
+          onClick={() => setLobbyMode('singles')}
+        >
+          Singles
+        </button>
+        <button
+          className={`lobby-mode-btn ${lobbyMode === 'doubles' ? 'active' : ''}`}
+          onClick={() => setLobbyMode('doubles')}
+        >
+          Doubles
+        </button>
+      </div>
+
+      {/* Doubles Partner Selection */}
+      {lobbyMode === 'doubles' && (
+        <div className="card doubles-partner-card">
+          <h3 className="doubles-partner-title">Choose Your Partner</h3>
+          <p className="doubles-partner-desc">Select a player from the lobby to form a doubles team.</p>
+          {availablePartners.length === 0 ? (
+            <p className="doubles-partner-empty">No other players in lobby yet. Invite players to form a doubles team.</p>
+          ) : (
+            <div className="doubles-partner-list">
+              {availablePartners.map(p => (
+                <button
+                  key={p.playerId}
+                  className={`doubles-partner-item ${selectedPartnerId === p.playerId ? 'selected' : ''}`}
+                  onClick={() => setSelectedPartnerId(selectedPartnerId === p.playerId ? null : p.playerId)}
+                >
+                  <span className="doubles-partner-avatar">{p.playerName[0]?.toUpperCase()}</span>
+                  <span className="doubles-partner-name">{p.playerName}</span>
+                  {selectedPartnerId === p.playerId && (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {selectedPartnerId && (
+            <button className="btn btn-primary doubles-confirm-btn" onClick={handleCreateDoubles}>
+              Create Doubles Team
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Tournament Formation Card (Singles mode) */}
+      {lobbyMode === 'singles' && (
+        <div className="card formation-hero">
+          {tournamentReady ? (
+            <>
+              <h2 className="formation-title">{profile.county} Tournament<br />Starting</h2>
+              <p className="formation-desc">Bracket is filling up. Tournament begins when the countdown ends.</p>
+              {countdown && (
+                <div className="formation-countdown">
+                  <div className="formation-countdown-label">Starts in</div>
+                  <div className="formation-countdown-timer">{countdown}</div>
+                </div>
+              )}
+              <div className="formation-player-count">
+                <span className="formation-count-mono">{setupPlayers.length}</span>
+                <span className="formation-count-sep">/</span>
+                <span className="formation-count-mono">{maxPlayers}</span>
+                <span className="formation-count-label">players joined</span>
               </div>
-            )}
-            <div className="formation-player-count">
-              <span className="formation-count-mono">{setupPlayers.length}</span>
-              <span className="formation-count-sep">/</span>
-              <span className="formation-count-mono">{maxPlayers}</span>
-              <span className="formation-count-label">players joined</span>
-            </div>
-            <div className="formation-progress-bar formation-progress-animated">
-              <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
-            </div>
-            {spotsLeft > 0 && (
-              <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before bracket is full</p>
-            )}
-            <div className="formation-actions">
-              <button className="btn btn-primary btn-large formation-cta-primary" onClick={!isUserInvolved ? handleJoin : handleShareInvite}>
-                {!isUserInvolved ? 'Join Tournament' : 'Invite Players'}
-              </button>
-              {isUserInvolved && spotsLeft > 0 && (
+              <div className="formation-progress-bar formation-progress-animated">
+                <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
+              </div>
+              {spotsLeft > 0 && (
+                <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before bracket is full</p>
+              )}
+              <div className="formation-actions">
+                <button className="btn btn-primary btn-large formation-cta-primary" onClick={!isUserInvolved ? handleJoin : handleShareInvite}>
+                  {!isUserInvolved ? 'Join Tournament' : 'Invite Players'}
+                </button>
+                {isUserInvolved && spotsLeft > 0 && (
+                  <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
+                    {copied ? 'Copied!' : 'Copy Invite Link'}
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="formation-title">{profile.county} Tournament<br />Forming</h2>
+              <p className="formation-desc">6-8 players compete in a local elimination tournament</p>
+              <div className="formation-player-count">
+                <span className="formation-count-mono">{totalJoined}</span>
+                <span className="formation-count-sep">/</span>
+                <span className="formation-count-mono">{targetPlayers}</span>
+                <span className="formation-count-label">players joined</span>
+              </div>
+              <div className="formation-progress-bar formation-progress-animated">
+                <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
+              </div>
+              <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Tournament starts when it ends or {maxPlayers} join.</p>
+              <div className="formation-actions">
+                {!isUserInvolved ? (
+                  <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>Join Tournament</button>
+                ) : (
+                  <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>Invite Players</button>
+                )}
                 <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
                   {copied ? 'Copied!' : 'Copy Invite Link'}
                 </button>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="formation-title">{profile.county} Tournament<br />Forming</h2>
-            <p className="formation-desc">6–8 players compete in a local knockout tournament</p>
-            <div className="formation-player-count">
-              <span className="formation-count-mono">{totalJoined}</span>
-              <span className="formation-count-sep">/</span>
-              <span className="formation-count-mono">{targetPlayers}</span>
-              <span className="formation-count-label">players joined</span>
-            </div>
-            <div className="formation-progress-bar formation-progress-animated">
-              <div className="formation-progress-fill" style={{ width: `${progressPct}%`, background: progressColor }} />
-            </div>
-            <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Tournament starts when it ends or {maxPlayers} join.</p>
-            <div className="formation-actions">
-              {!isUserInvolved ? (
-                <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>Join Tournament</button>
-              ) : (
-                <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>Invite Players</button>
-              )}
-              <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
-                {copied ? 'Copied!' : 'Copy Invite Link'}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Scheduling confidence preview */}
-      {isUserInvolved && totalJoined >= 4 && (() => {
+      {lobbyMode === 'singles' && isUserInvolved && totalJoined >= 4 && (() => {
         const confidence = getSchedulingConfidence(profile.county)
         if (confidence.playersWithAvailability < 2) return null
         return (
@@ -283,9 +354,9 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
               {confidence.score}%
             </div>
             <div className="confidence-label">
-              {confidence.label === 'high' ? 'High — most matches can be auto-scheduled' :
-               confidence.label === 'medium' ? 'Medium — some matches may need manual scheduling' :
-               'Low — many matches will need manual scheduling'}
+              {confidence.label === 'high' ? 'High -- most matches can be auto-scheduled' :
+               confidence.label === 'medium' ? 'Medium -- some matches may need manual scheduling' :
+               'Low -- many matches will need manual scheduling'}
             </div>
             <div className="confidence-footnote">
               Based on {confidence.playersWithAvailability} players' availability
@@ -295,7 +366,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       })()}
 
       {/* Leave option for joined users */}
-      {isUserInvolved && !isInSetupTournament && (
+      {lobbyMode === 'singles' && isUserInvolved && !isInSetupTournament && (
         <div className="formation-leave">
           <button className="btn-link" onClick={handleLeave}>Leave tournament</button>
         </div>

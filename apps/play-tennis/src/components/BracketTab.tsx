@@ -1,12 +1,67 @@
 import { useState, useEffect, useRef } from 'react'
-import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal } from '../store'
+import { Tournament, Match, MatchReaction } from '../types'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions } from '../store'
 import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
 import ScheduleSummary from './ScheduleSummary'
 import MatchCalendar from './MatchCalendar'
+
+type MatchFilterMode = 'upcoming' | 'completed' | 'all'
+
+function PostMatchReactionInline({ matchId, playerId }: { matchId: string; playerId: string }) {
+  const existing = getMatchReactions(matchId).find(r => r.playerId === playerId)
+  const [fun, setFun] = useState(existing?.fun ?? 0)
+  const [fair, setFair] = useState(existing?.fair ?? 0)
+  const [playAgain, setPlayAgain] = useState(existing?.playAgain ?? false)
+  const [saved, setSaved] = useState(!!existing)
+
+  function handleSave() {
+    if (fun === 0 || fair === 0) return
+    saveMatchReaction({ matchId, playerId, fun, fair, playAgain, createdAt: new Date().toISOString() })
+    setSaved(true)
+  }
+
+  if (saved) {
+    return (
+      <div className="post-match-reaction" onClick={e => e.stopPropagation()}>
+        <div className="reaction-thankyou">Thanks for your feedback!</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="post-match-reaction" onClick={e => e.stopPropagation()}>
+      <div className="reaction-title">How was this match?</div>
+      <div className="reaction-row">
+        <span className="reaction-label">Fun</span>
+        <div className="reaction-stars">
+          {[1, 2, 3, 4, 5].map(n => (
+            <span key={n} className={`reaction-star ${n <= fun ? 'reaction-star--active' : ''}`} onClick={() => setFun(n)}>★</span>
+          ))}
+        </div>
+      </div>
+      <div className="reaction-row">
+        <span className="reaction-label">Fair</span>
+        <div className="reaction-stars">
+          {[1, 2, 3, 4, 5].map(n => (
+            <span key={n} className={`reaction-star ${n <= fair ? 'reaction-star--active' : ''}`} onClick={() => setFair(n)}>★</span>
+          ))}
+        </div>
+      </div>
+      <div className="reaction-row">
+        <label className="reaction-toggle">
+          <input type="checkbox" checked={playAgain} onChange={e => setPlayAgain(e.target.checked)} />
+          Play again?
+        </label>
+      </div>
+      <button className="btn btn-primary" onClick={handleSave} disabled={fun === 0 || fair === 0} style={{ width: '100%', marginTop: '8px' }}>
+        Submit
+      </button>
+    </div>
+  )
+}
 
 interface Props {
   tournament: Tournament | null
@@ -64,21 +119,39 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
   const [showScheduleSummary, setShowScheduleSummary] = useState(true) // show aha moment first
   const [viewMode, setViewMode] = useState<'calendar' | 'bracket'>('calendar') // default calendar for round-robin
+  const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
+  const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
+  const [showDetails, setShowDetails] = useState<boolean>(() => {
+    try { return localStorage.getItem('rally-show-details') === 'true' } catch { return false }
+  }) // R-27
+  const [showAllMatches, setShowAllMatches] = useState(false) // R-28
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const pendingScrollId = useRef<string | null>(null)
+  // R-05: Track rendered match IDs to prevent duplicates
+  const renderedMatchIds = useRef<Set<string>>(new Set())
 
-  // Auto-focus a match when navigated from Home action card
-  if (focusMatchId && tournament && tournament.status !== 'setup') {
+  // R-15: Deep-link focus — scroll to match and highlight with pulse effect
+  useEffect(() => {
+    if (!focusMatchId || !tournament || tournament.status === 'setup') return
     const match = tournament.matches.find(m => m.id === focusMatchId)
-    if (match) {
-      const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-      if (expandedMatchId !== focusMatchId) {
-        setExpandedMatchId(focusMatchId)
-      }
-      pendingScrollId.current = focusMatchId
+    if (!match) { onFocusConsumed?.(); return }
+
+    // Ensure the right filter is active for the target match
+    if (match.completed && matchFilter === 'upcoming') {
+      setMatchFilter('all')
     }
+
+    setExpandedMatchId(focusMatchId)
+    setShowScheduleSummary(false)
+    setViewMode('bracket')
+    pendingScrollId.current = focusMatchId
+    setHighlightedMatchId(focusMatchId)
     onFocusConsumed?.()
-  }
+
+    // Remove highlight after 3 seconds
+    const timer = setTimeout(() => setHighlightedMatchId(null), 3000)
+    return () => clearTimeout(timer)
+  }, [focusMatchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll focused match into view after render
   useEffect(() => {
@@ -230,8 +303,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
     if (match.schedule.status === 'confirmed') return { label: 'Confirmed', type: 'confirmed' }
     if (match.schedule.status === 'escalated') return { label: 'Escalated', type: 'escalated' }
-    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Respond', type: 'proposed' }
-    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Schedule', type: 'unscheduled' }
+    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Pick a time', type: 'proposed' }
+    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Find a time', type: 'unscheduled' }
     return { label: 'Pending', type: 'pending' }
   }
 
@@ -240,15 +313,31 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     if (canScore) return 'Enter Score'
     if (!isMyMatch) return null
     if (!match.schedule) return null
-    if (match.schedule.status === 'proposed') return 'Pick Time'
+    if (match.schedule.status === 'proposed') return 'Choose a time'
     if (match.schedule.status === 'escalated') return 'Respond Now'
-    if (match.schedule.status === 'unscheduled') return 'Schedule Match'
+    if (match.schedule.status === 'unscheduled') return 'Find a time'
     return null
   }
 
+  // R-17: Filter matches based on matchFilter mode
+  function filterMatch(m: Match): boolean {
+    if (matchFilter === 'upcoming') return !m.completed
+    if (matchFilter === 'completed') return m.completed
+    return true // 'all'
+  }
+
   function renderMatchCard(match: Match, isFinal = false) {
-    const p1 = getPlayerName(tournament!, match.player1Id)
-    const p2 = getPlayerName(tournament!, match.player2Id)
+    // R-05: Skip if this match was already rendered (prevents duplicates)
+    if (renderedMatchIds.current.has(match.id)) return null
+    renderedMatchIds.current.add(match.id)
+
+    const p1Raw = getPlayerName(tournament!, match.player1Id)
+    const p2Raw = getPlayerName(tournament!, match.player2Id)
+    // R-24: Show team names in doubles mode
+    const doublesTeam1 = tournament!.mode === 'doubles' && match.player1Id ? tournament!.teams?.find(t => t.player1Id === match.player1Id || t.player2Id === match.player1Id) : null
+    const doublesTeam2 = tournament!.mode === 'doubles' && match.player2Id ? tournament!.teams?.find(t => t.player1Id === match.player2Id || t.player2Id === match.player2Id) : null
+    const p1 = doublesTeam1?.teamName ?? p1Raw
+    const p2 = doublesTeam2?.teamName ?? p2Raw
     const r1 = match.player1Id ? getPlayerRating(match.player1Id, p1) : null
     const r2 = match.player2Id ? getPlayerRating(match.player2Id, p2) : null
     const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
@@ -256,7 +345,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
     const hasSchedule = match.schedule && match.player1Id && match.player2Id
     const isConfirmed = match.schedule?.status === 'confirmed'
-    const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch && (!hasSchedule || isConfirmed)
+    const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
@@ -285,7 +374,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       <div
         key={match.id}
         ref={el => { if (el) matchRefs.current.set(match.id, el); else matchRefs.current.delete(match.id) }}
-        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)}`}
+        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)} ${highlightedMatchId === match.id ? 'match-card-highlighted' : ''}`}
         onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
       >
         <>
@@ -297,7 +386,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 <span className="scheduling-badge-icon">
                   {match.schedule.schedulingTier === 'auto' ? '✓' : match.schedule.schedulingTier === 'needs-accept' ? '●' : '○'}
                 </span>
-                {match.schedule.schedulingTier === 'auto' ? 'Confirmed' : match.schedule.schedulingTier === 'needs-accept' ? 'Pending' : 'Unscheduled'}
+                {match.schedule.schedulingTier === 'auto' ? 'Confirmed' : match.schedule.schedulingTier === 'needs-accept' ? 'Awaiting confirmation' : 'Pick a time'}
               </span>
             )}
           </div>
@@ -305,9 +394,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           <div className="match-players-row">
             <div className="match-players-names">
               <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                {showWinProb && <div className="prob-indicator prob-indicator-p1" />}
+                {showDetails && showWinProb && <div className="prob-indicator prob-indicator-p1" />}
                 <span className="match-player-name">
-                  {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
+                  {p1}{showDetails && seed1 != null && <span className="seed-label"> ({seed1})</span>}
                 </span>
                 {scored && (
                   <span className="match-sets">
@@ -319,9 +408,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
               </div>
               <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                {showWinProb && <div className="prob-indicator prob-indicator-p2" />}
+                {showDetails && showWinProb && <div className="prob-indicator prob-indicator-p2" />}
                 <span className="match-player-name">
-                  {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
+                  {p2}{showDetails && seed2 != null && <span className="seed-label"> ({seed2})</span>}
                 </span>
                 {scored && (
                   <span className="match-sets">
@@ -345,7 +434,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           </div>
 
             {/* Win probability split bar */}
-            {showWinProb && (
+            {showDetails && showWinProb && (
               <div className="prob-split">
                 <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
                 <div className="prob-split-bar">
@@ -362,6 +451,20 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {match.resolution.type === 'walkover' ? 'Walkover' :
                  match.resolution.type === 'forced-match' ? 'Final Match Assigned' :
                  'Match Canceled'}
+              </div>
+            )}
+
+            {/* R-17: Completed match details — show date and winner for completed matches */}
+            {match.completed && isMyMatch && (
+              <div className="completed-match-detail">
+                <span className="completed-match-winner">
+                  {match.winnerId === currentPlayerId ? 'Won' : 'Lost'}
+                </span>
+                {match.resolution && (
+                  <span className="completed-match-resolution">
+                    {match.resolution.type === 'walkover' ? ' (Walkover)' : match.resolution.type === 'double-loss' ? ' (Canceled)' : ''}
+                  </span>
+                )}
               </div>
             )}
 
@@ -422,6 +525,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 ) : null}
               </div>
             )}
+
+            {/* R-23: Post-match reaction for completed matches */}
+            {match.completed && isMyMatch && (
+              <PostMatchReactionInline matchId={match.id} playerId={currentPlayerId} />
+            )}
         </>
       </div>
     )
@@ -429,14 +537,54 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   const isParticipant = tournament.players.some(p => p.id === currentPlayerId)
 
+  // R-05: Clear rendered IDs before each render pass to reset dedup tracking
+  renderedMatchIds.current.clear()
+
+  // R-18: Tournament progress calculations
+  const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
+  const completedMatchCount = tournament.matches.filter(m => m.completed).length
+  const completionPct = totalMatches > 0 ? Math.round((completedMatchCount / totalMatches) * 100) : 0
+  const tournamentStartDate = tournament.createdAt ? new Date(tournament.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null
+  // Estimate end date: assume ~2 matches/week pace
+  const estimatedWeeksRemaining = totalMatches > 0 ? Math.max(1, Math.ceil((totalMatches - completedMatchCount) / 2)) : 0
+  const estimatedEndDate = (() => {
+    if (completedMatchCount >= totalMatches) return null
+    const d = new Date()
+    d.setDate(d.getDate() + estimatedWeeksRemaining * 7)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  })()
+
   return (
     <div className="bracket-tab">
       <div className="bracket-tab-header">
         <h2>{tournament.name}</h2>
         <div className="bracket-tab-meta">
-          {tournament.format === 'single-elimination' ? 'Knockout' : tournament.format === 'group-knockout' ? 'Group + Knockout' : 'Round Robin'} · {tournament.players.length} players
+          {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Everyone plays everyone'} · {tournament.players.length} players
         </div>
       </div>
+
+      {/* R-18: Tournament progress banner */}
+      {tournament.status === 'in-progress' && totalMatches > 0 && (
+        <div className="tournament-progress-banner">
+          <div className="tournament-progress-header">
+            <span className="tournament-progress-title">
+              Everyone plays everyone &mdash; {completedMatchCount} of {totalMatches} matches complete
+            </span>
+            {tournamentStartDate && (
+              <span className="tournament-progress-date">Started {tournamentStartDate}</span>
+            )}
+          </div>
+          <div className="tournament-progress-bar-container">
+            <div className="tournament-progress-bar" style={{ width: `${completionPct}%` }} />
+          </div>
+          <div className="tournament-progress-footer">
+            <span className="tournament-progress-pct">{completionPct}%</span>
+            {estimatedEndDate && (
+              <span className="tournament-progress-est">Est. finish: {estimatedEndDate}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Advancement prompt after scoring a win */}
       {advancementPrompt && (
@@ -577,6 +725,35 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
+      {/* R-17: Match filter toggle — Upcoming | Completed | All */}
+      {tournament.status !== 'completed' && tab === 'matches' && (
+        <div className="match-filter-toggle">
+          {(['upcoming', 'completed', 'all'] as MatchFilterMode[]).map(mode => (
+            <button
+              key={mode}
+              className={`match-filter-btn ${matchFilter === mode ? 'selected' : ''}`}
+              onClick={() => setMatchFilter(mode)}
+            >
+              {mode === 'upcoming' ? 'Upcoming' : mode === 'completed' ? 'Completed' : 'All'}
+              {mode === 'completed' && completedMatchCount > 0 && (
+                <span className="match-filter-count">{completedMatchCount}</span>
+              )}
+            </button>
+          ))}
+          {/* R-27: Progressive disclosure toggle */}
+          <button
+            className="match-filter-btn details-toggle-btn"
+            onClick={() => {
+              const next = !showDetails
+              setShowDetails(next)
+              localStorage.setItem('rally-show-details', String(next))
+            }}
+          >
+            {showDetails ? 'Hide details' : 'Show details'}
+          </button>
+        </div>
+      )}
+
       {tournament.status !== 'completed' && tab === 'matches' && (
         <>
           {/* Round progress stepper for single-elimination */}
@@ -603,7 +780,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               <div className="round-progress-item">
                 <div className={`round-progress-dot ${groupComplete ? 'completed' : 'active'}`} />
                 <span className={`round-progress-label ${groupComplete ? 'completed' : 'active'}`}>
-                  Round Robin ({groupMatchesCompleted}/{groupMatchesTotal})
+                  All play all ({groupMatchesCompleted}/{groupMatchesTotal})
                 </span>
                 <div className={`round-progress-line ${groupComplete ? 'completed' : ''}`} />
               </div>
@@ -629,6 +806,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 const isFinalRound = round === rounds.length
                 const roundMatches = tournament.matches
                   .filter(m => m.round === round)
+                  .filter(filterMatch)
                   .sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId))
                 return (
                   <div key={round} className={`round ${isFinalRound ? 'round-final' : ''}`}>
@@ -647,7 +825,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {/* Group phase matches */}
                 <div className="round">
                   <h3 className="round-label">Group Stage</h3>
-                  {groupMatches.map(m => renderMatchCard(m))}
+                  {groupMatches.filter(filterMatch).map(m => renderMatchCard(m))}
                 </div>
 
                 {/* Group standings inline */}
@@ -689,14 +867,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   <>
                     <div className="round">
                       <h3 className="round-label">Semifinals</h3>
-                      {knockoutMatches.filter(m => m.round === 2).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
+                      {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
                     </div>
                     <div className="round round-final">
                       <h3 className="round-label">Final</h3>
-                      {knockoutMatches.filter(m => m.round === 3).map(m => renderMatchCard(m, true))}
+                      {knockoutMatches.filter(m => m.round === 3).filter(filterMatch).map(m => renderMatchCard(m, true))}
                     </div>
                   </>
                 )}
@@ -704,8 +882,50 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             ) : (
               <>
                 <div className="round">
-                  <h3 className="round-label">Round Robin</h3>
-                  {groupMatches.map(m => renderMatchCard(m))}
+                  <h3 className="round-label">All Matches <span style={{ fontSize: '0.75em', color: 'var(--color-text-secondary)' }}>(Round Robin)</span></h3>
+                  {(() => {
+                    const filtered = groupMatches.filter(filterMatch)
+                    const upcomingMatches = filtered.filter(m => !m.completed)
+                    const completedMatches = filtered.filter(m => m.completed)
+                    const nextMatch = upcomingMatches.find(m =>
+                      (m.player1Id === currentPlayerId || m.player2Id === currentPlayerId) &&
+                      m.player1Id && m.player2Id
+                    )
+                    const remainingUpcoming = nextMatch ? upcomingMatches.filter(m => m.id !== nextMatch.id) : upcomingMatches
+                    return (
+                      <>
+                        {nextMatch && (
+                          <div className="next-match-section">
+                            <div className="next-match-label">Next Match</div>
+                            {renderMatchCard(nextMatch)}
+                          </div>
+                        )}
+                        {remainingUpcoming.length > 0 && (
+                          showAllMatches || !nextMatch ? (
+                            <>
+                              {nextMatch && <div className="upcoming-matches-section"><div className="results-section-label">Upcoming matches ({remainingUpcoming.length})</div></div>}
+                              {remainingUpcoming.map(m => renderMatchCard(m))}
+                            </>
+                          ) : (
+                            <button className="show-more-matches-btn" onClick={() => setShowAllMatches(true)}>
+                              Upcoming matches ({remainingUpcoming.length} more)
+                            </button>
+                          )
+                        )}
+                        {completedMatches.length > 0 && (
+                          <div className="results-section">
+                            <div className="results-section-label">Results</div>
+                            {completedMatches.map(m => renderMatchCard(m))}
+                          </div>
+                        )}
+                        {showAllMatches && nextMatch && (
+                          <button className="show-more-matches-btn" onClick={() => setShowAllMatches(false)}>
+                            Show less
+                          </button>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
 
                 {groupMatches.some(m => m.completed) && (
@@ -745,14 +965,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   <>
                     <div className="round">
                       <h3 className="round-label">Semifinals</h3>
-                      {knockoutMatches.filter(m => m.round === 2).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
+                      {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
                     </div>
                     <div className="round round-final">
                       <h3 className="round-label">Final</h3>
-                      {knockoutMatches.filter(m => m.round === 3).map(m => renderMatchCard(m, true))}
+                      {knockoutMatches.filter(m => m.round === 3).filter(filterMatch).map(m => renderMatchCard(m, true))}
                     </div>
                   </>
                 )}

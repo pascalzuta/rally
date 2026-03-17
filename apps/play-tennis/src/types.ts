@@ -13,6 +13,10 @@ export interface PlayerProfile {
   skillLevel?: SkillLevel
   gender?: Gender
   weeklyCap?: 1 | 2 | 3  // max matches per week, default 2
+  bio?: string
+  playingStyle?: string[]
+  photoUrl?: string
+  preferredCourts?: string[]
   createdAt: string
 }
 
@@ -64,6 +68,7 @@ export interface MatchSchedule {
   participationScores?: Record<string, number>  // playerId -> score
   resolution?: MatchResolution
   schedulingTier?: SchedulingTier  // how the match was scheduled
+  rescheduleCount?: number
 }
 
 export type ResolutionType = 'walkover' | 'forced-match' | 'double-loss'
@@ -115,6 +120,8 @@ export interface Tournament {
   clusterRunId?: string  // links to cluster_runs for traceability
   schedulingSummary?: SchedulingSummary  // set after bulk scheduling
   waitlistedPlayerIds?: string[]  // player IDs that couldn't be placed in any group
+  mode?: 'singles' | 'doubles'
+  teams?: DoublesTeam[]
 }
 
 // --- Match Broadcast ---
@@ -226,4 +233,24 @@ export interface RallyNotification {
   relatedOfferId?: string
   createdAt: string
   read: boolean
+}
+
+// --- Match Reactions ---
+
+export interface MatchReaction {
+  matchId: string
+  playerId: string
+  fun: number  // 1-5
+  fair: number // 1-5
+  playAgain: boolean
+  createdAt: string
+}
+
+// --- Doubles ---
+
+export interface DoublesTeam {
+  id: string
+  player1Id: string
+  player2Id: string
+  teamName: string
 }

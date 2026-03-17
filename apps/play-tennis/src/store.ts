@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -59,6 +59,17 @@ export function createProfile(name: string, county: string, options?: { skillLev
 
 export function logout(): void {
   localStorage.removeItem(PROFILE_KEY)
+  // Remove all play-tennis-* keys from localStorage
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('play-tennis-')) {
+      keysToRemove.push(key)
+    }
+  }
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key)
+  }
 }
 
 // --- Lobby ---
@@ -179,6 +190,83 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
     createdAt: new Date().toISOString(),
     countdownStartedAt: new Date().toISOString(),
   }
+}
+
+// --- Doubles Tournament ---
+
+function generateDoublesRoundRobinMatches(teams: DoublesTeam[]): Match[] {
+  const n = teams.length
+  if (n < 2) return []
+  const matches: Match[] = []
+  let matchPos = 0
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      matches.push({
+        id: generateId(),
+        round: 1,
+        position: matchPos++,
+        player1Id: teams[i].id,
+        player2Id: teams[j].id,
+        score1: [],
+        score2: [],
+        winnerId: null,
+        completed: false,
+      })
+    }
+  }
+  return matches
+}
+
+export async function createDoublesTournament(
+  county: string,
+  teams: { player1: LobbyEntry; player2: LobbyEntry }[]
+): Promise<Tournament | null> {
+  if (teams.length < 3) return null
+
+  const num = getNextTournamentNumber(county)
+  const doublesTeams: DoublesTeam[] = teams.map(t => ({
+    id: generateId(),
+    player1Id: t.player1.playerId,
+    player2Id: t.player2.playerId,
+    teamName: `${t.player1.playerName.split(' ')[0]} & ${t.player2.playerName.split(' ')[0]}`,
+  }))
+
+  const allPlayers: Player[] = teams.flatMap(t => [
+    { id: t.player1.playerId, name: t.player1.playerName, partnerId: t.player2.playerId },
+    { id: t.player2.playerId, name: t.player2.playerName, partnerId: t.player1.playerId },
+  ])
+
+  const matches = generateDoublesRoundRobinMatches(doublesTeams)
+
+  const tournament: Tournament = {
+    id: generateId(),
+    name: `${county} Doubles #${num}`,
+    date: new Date().toISOString().split('T')[0],
+    county,
+    format: 'round-robin',
+    mode: 'doubles',
+    players: allPlayers,
+    teams: doublesTeams,
+    matches,
+    status: 'in-progress',
+    createdAt: new Date().toISOString(),
+  }
+
+  const all = load()
+  all.unshift(tournament)
+  save(all)
+
+  await syncTournament(tournament).catch(() => {
+    enqueue('tournament', tournament)
+  })
+
+  return tournament
+}
+
+export function getTeamName(tournament: Tournament, teamId: string | null): string {
+  if (!teamId || !tournament.teams) return 'TBD'
+  const team = tournament.teams.find(t => t.id === teamId)
+  return team?.teamName ?? 'TBD'
 }
 
 export async function startTournamentFromLobby(county: string): Promise<Tournament | null> {
@@ -1472,6 +1560,131 @@ export async function saveMatchScore(
 
   await saveAndSync(all, t)
   return t
+}
+
+export async function editMatchScore(
+  tournamentId: string,
+  matchId: string,
+  score1: number[],
+  score2: number[],
+  winnerId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.completed) return undefined
+
+  // Check if the match was completed less than 48 hours ago
+  // Use the schedule's resolution timestamp or fall back to allowing the edit
+  const now = Date.now()
+  const completedAt = match.schedule?.resolution?.resolvedAt
+    ? new Date(match.schedule.resolution.resolvedAt).getTime()
+    : match.schedule?.createdAt
+      ? new Date(match.schedule.createdAt).getTime()
+      : 0
+  if (completedAt > 0 && now - completedAt > 48 * 60 * 60 * 1000) {
+    return undefined // Cannot edit after 48 hours
+  }
+
+  // Update scores and recalculate winner
+  match.score1 = score1
+  match.score2 = score2
+  match.winnerId = winnerId
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function rescheduleMatch(
+  tournamentId: string,
+  matchId: string,
+  newDay: DayOfWeek,
+  newStartHour: number,
+  newEndHour: number
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.schedule) return undefined
+
+  const currentCount = match.schedule.rescheduleCount ?? 0
+  if (currentCount >= 2) return undefined // Max 2 reschedules
+
+  match.schedule.rescheduleCount = currentCount + 1
+  match.schedule.confirmedSlot = null
+  match.schedule.status = 'proposed'
+  match.schedule.proposals.push({
+    id: generateId(),
+    proposedBy: 'system',
+    day: newDay,
+    startHour: newStartHour,
+    endHour: newEndHour,
+    status: 'pending',
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function cancelMatch(
+  tournamentId: string,
+  matchId: string,
+  reason: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match) return undefined
+
+  match.resolution = {
+    type: 'walkover',
+    winnerId: null,
+    reason,
+    resolvedAt: new Date().toISOString(),
+  }
+  match.completed = true
+
+  await saveAndSync(all, t)
+  return t
+}
+
+// --- Match Reactions ---
+
+const REACTIONS_KEY = 'play-tennis-reactions'
+
+function loadReactions(): MatchReaction[] {
+  try {
+    const data = localStorage.getItem(REACTIONS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveReactionsToStorage(reactions: MatchReaction[]): void {
+  localStorage.setItem(REACTIONS_KEY, JSON.stringify(reactions))
+}
+
+export function saveMatchReaction(reaction: MatchReaction): void {
+  const reactions = loadReactions()
+  // Replace existing reaction from same player for same match
+  const idx = reactions.findIndex(r => r.matchId === reaction.matchId && r.playerId === reaction.playerId)
+  if (idx >= 0) {
+    reactions[idx] = reaction
+  } else {
+    reactions.push(reaction)
+  }
+  saveReactionsToStorage(reactions)
+}
+
+export function getMatchReactions(matchId: string): MatchReaction[] {
+  return loadReactions().filter(r => r.matchId === matchId)
 }
 
 export function getPlayerName(tournament: Tournament, playerId: string | null): string {
