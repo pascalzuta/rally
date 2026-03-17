@@ -564,38 +564,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       </div>
 
-      {/* Phase stepper with date info */}
-      {tournament.status === 'in-progress' && hasGroupPhase && (
-        <div className="tournament-phase-card">
-          <div className="schedule-phase-stepper">
-            <div className="schedule-phase-step">
-              <div className={`schedule-phase-dot ${groupComplete ? 'completed' : 'active'}`} />
-              <span className={`schedule-phase-label ${groupComplete ? 'completed' : 'active'}`}>
-                Round Robin ({groupMatchesCompleted}/{groupMatchesTotal})
-              </span>
-            </div>
-            <div className={`schedule-phase-line ${groupComplete ? 'completed' : ''}`} />
-            <div className="schedule-phase-step">
-              <div className={`schedule-phase-dot ${groupComplete ? (knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
-              <span className={`schedule-phase-label ${groupComplete ? 'active' : 'upcoming'}`}>
-                Semifinals
-              </span>
-            </div>
-            <div className={`schedule-phase-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
-            <div className="schedule-phase-step">
-              <div className={`schedule-phase-dot ${knockoutMatches.some(m => m.round === 3 && m.completed) ? 'completed' : knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`} />
-              <span className={`schedule-phase-label ${knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`}>
-                Final
-              </span>
-            </div>
-          </div>
-          <div className="tournament-phase-dates">
-            {tournamentStartDate && <span>Started {tournamentStartDate}</span>}
-            {estimatedEndDate && <span>Est. finish {estimatedEndDate}</span>}
-          </div>
-        </div>
-      )}
-
       {/* Advancement prompt after scoring a win */}
       {advancementPrompt && (
         <div className="advancement-prompt" onClick={() => setAdvancementPrompt(null)}>
