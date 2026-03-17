@@ -965,7 +965,7 @@ select:focus {
 .round {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-md, 12px);
   position: relative;
 }
 
@@ -3230,8 +3230,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-lg);
+  gap: 4px;
+  padding: var(--space-lg) var(--space-xl);
   margin-bottom: var(--space-lg);
   background: var(--color-accent-primary);
   color: white;
@@ -3251,15 +3251,15 @@ select:focus {
 }
 
 .play-now-text {
-  font-size: var(--font-body-lg);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: var(--weight-semibold, 600);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .play-now-sub {
-  font-size: var(--font-body-sm);
-  opacity: 0.85;
+  font-size: 13px;
+  opacity: 0.75;
   font-weight: var(--weight-regular);
 }
 
@@ -4224,7 +4224,7 @@ select:focus {
 .playnow-tab {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-md);
 }
 
 .playnow-section-title {
@@ -4234,6 +4234,45 @@ select:focus {
   color: var(--color-text-secondary);
   font-weight: var(--weight-semibold);
   margin-bottom: var(--space-sm);
+}
+
+/* Quick Play info banner */
+.pn-info-banner {
+  margin-bottom: var(--space-xs);
+}
+
+.pn-info-banner-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-md, 12px);
+  background: var(--color-neutral-bg, #f3f4f6);
+  border-radius: var(--radius-md, 8px);
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.4;
+}
+
+.pn-info-banner-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--color-accent-primary);
+}
+
+.pn-info-banner-text {
+  flex: 1;
+}
+
+.pn-info-tooltip {
+  margin-top: var(--space-sm, 8px);
+  padding: var(--space-md, 12px);
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* ================================================

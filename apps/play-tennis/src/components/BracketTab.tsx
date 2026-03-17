@@ -718,17 +718,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               )}
             </button>
           ))}
-          {/* R-27: Progressive disclosure toggle */}
-          <button
-            className="match-filter-btn details-toggle-btn"
-            onClick={() => {
-              const next = !showDetails
-              setShowDetails(next)
-              localStorage.setItem('rally-show-details', String(next))
-            }}
-          >
-            {showDetails ? 'Hide Advanced Stats' : 'Show Advanced Stats'}
-          </button>
         </div>
       )}
 
@@ -835,8 +824,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               </>
             ) : (
               <>
-                <div className="round">
-                  <h3 className="round-label">All Matches <span style={{ fontSize: '0.75em', color: 'var(--color-text-secondary)' }}>(Round Robin)</span></h3>
+                <div className="round round-rr">
                   {(() => {
                     const filtered = groupMatches.filter(filterMatch)
                     const upcomingMatches = filtered.filter(m => !m.completed)
@@ -848,16 +836,10 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                     const remainingUpcoming = nextMatch ? upcomingMatches.filter(m => m.id !== nextMatch.id) : upcomingMatches
                     return (
                       <>
-                        {nextMatch && (
-                          <div className="next-match-section">
-                            <div className="next-match-label">Next Match</div>
-                            {renderMatchCard(nextMatch)}
-                          </div>
-                        )}
+                        {nextMatch && renderMatchCard(nextMatch)}
                         {remainingUpcoming.length > 0 && (
                           showAllMatches || !nextMatch ? (
                             <>
-                              {nextMatch && <div className="upcoming-matches-section"><div className="results-section-label">{remainingUpcoming.length} more matches to play</div></div>}
                               {remainingUpcoming.map(m => renderMatchCard(m))}
                             </>
                           ) : (
@@ -866,12 +848,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                             </button>
                           )
                         )}
-                        {completedMatches.length > 0 && (
-                          <div className="results-section">
-                            <div className="results-section-label">Results</div>
-                            {completedMatches.map(m => renderMatchCard(m))}
-                          </div>
-                        )}
+                        {completedMatches.length > 0 && completedMatches.map(m => renderMatchCard(m))}
                         {showAllMatches && nextMatch && (
                           <button className="show-more-matches-btn" onClick={() => setShowAllMatches(false)}>
                             Show less

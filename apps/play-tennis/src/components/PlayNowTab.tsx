@@ -325,7 +325,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       ) : !showForm ? (
         <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
           <span className="play-now-text">I'm Free to Play</span>
-          <span className="play-now-sub">Broadcast your availability — get matched with someone nearby</span>
+          <span className="play-now-sub">Broadcast your availability — get matched nearby</span>
         </button>
       ) : (
         <div className="card broadcast-form">
