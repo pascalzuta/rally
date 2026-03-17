@@ -9,11 +9,24 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 - GitHub Pages (deploy via `.github/workflows/deploy-pages.yml`)
 - Custom domain: play-rally.com (CNAME configured)
 
+## Deployment
+- **One branch**: `main` — all work happens here
+- **Deploy process**: Push to `main` → GitHub Actions (`deploy-pages.yml`) builds `apps/play-tennis` → deployed to GitHub Pages at play-rally.com
+- **No Netlify** — play-rally.com is served by GitHub Pages (DNS: 185.199.x.x)
+- CDN cache can take a few minutes to update after deploy
+
 ## Key Architecture
+- `apps/play-tennis/` — The Rally Tennis web app (the only tennis frontend)
+- `apps/tennis-server/` — The Rally backend (Express, port 8788)
 - `apps/play-tennis/src/store.ts` — All game state (localStorage + Supabase sync)
 - `apps/play-tennis/src/sync.ts` — Bi-directional Supabase sync layer
 - `apps/play-tennis/src/supabase.ts` — Supabase client (hardcoded config, project ref: gxiflulfgqahlvdirecz)
 - Data flows: localStorage (fast local cache) ↔ Supabase (shared persistence)
+
+## Component Routing (important!)
+- `App.tsx` → `BracketTab` is the main tournament view (NOT `TournamentView.tsx`)
+- `BracketTab` renders `ScheduleSummary` as the default "aha moment" view for round-robin tournaments
+- `TournamentView.tsx` exists but is a secondary/legacy code path — changes there may not be visible on the live site
 
 ## Supabase Project
 - Name: rally-tennis
@@ -81,4 +94,4 @@ npm run build      # TypeScript check + Vite build
 ```
 
 ## Branch
-Active development on `claude/rally-tennis-app-uuWbC`
+Active development on `main` (single branch — no feature branches)
