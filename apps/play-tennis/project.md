@@ -12,14 +12,96 @@ A mobile-first web app for organizing local tennis tournaments within county-bas
 - **Styling**: Plain CSS with CSS variables
 
 ## Design System
-- **Polymarket-inspired**: Neutral surfaces, minimal color, color only for meaning, strong typography hierarchy
-- **Typography**: Inter font with `font-variant-numeric: tabular-nums` for consistent number rendering (no monospace overrides)
-- **Unified card anatomy**: Eyebrow label → Title → Secondary text → Content module → Action button
-- **Accent stripes**: 4px left border — blue (respond), orange (score), green (confirmed), gray (pending), red (escalated)
-- **Typography scale**: 12px uppercase semibold eyebrow (0.06em letter-spacing), 18px semibold title, 14px secondary
-- **Spacing**: 20px card padding, 16px border-radius, 16px card gap
+
+### Philosophy: Polymarket Indoor-Inspired
+Data-forward, neutral surfaces, color only for meaning. Every screen feels like a clean dashboard — numbers and status are the primary visual elements, not decoration.
+
+### Design Tokens
+
+#### Colors
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--color-bg-primary` | `#F6F7F9` | Page background |
+| `--color-bg-surface` | `#FFFFFF` | Card / surface background |
+| `--color-text-primary` | `#111111` | Headings, primary text |
+| `--color-text-secondary` | `#6B7280` | Supporting text, labels |
+| `--color-text-muted` | `#9CA3AF` | Timestamps, hints |
+| `--color-divider` | `#E5E7EB` | Borders, separators |
+| `--color-positive-primary` | `#1F9D55` | Confirmed, wins, success |
+| `--color-positive-bg` | `#E6F6EC` | Success background |
+| `--color-negative-primary` | `#D64545` | Losses, danger, errors |
+| `--color-negative-bg` | `#FDECEC` | Error background |
+| `--color-accent-primary` | `#2A5BD7` | Links, proposals, CTAs |
+| `--color-accent-bg` | `#DCE7FF` | Accent background |
+| `--color-warning-primary` | `#D97706` | Needs attention, scoring |
+| `--color-warning-bg` | `#FEF3C7` | Warning background |
+| `--color-neutral-primary` | `#374151` | Neutral states |
+| `--color-neutral-bg` | `#F1F3F5` | Neutral background |
+
+#### Typography
+- **Font**: Inter (system fallback: -apple-system, sans-serif)
+- **Numbers**: Always `font-variant-numeric: tabular-nums` for alignment
+- **Title LG**: 28px / bold — hero numbers, primary stats
+- **Title MD**: 22px / semibold — section headings
+- **Title SM**: 18px / semibold — card titles, match scores
+- **Body LG**: 16px / regular — primary body text
+- **Body MD**: 14px / regular — secondary text, descriptions
+- **Body SM**: 12px / medium — eyebrow labels, timestamps
+
+#### Spacing
+| Token | Value |
+|-------|-------|
+| `--space-xs` | 4px |
+| `--space-sm` | 8px |
+| `--space-md` | 12px |
+| `--space-lg` | 16px |
+| `--space-xl` | 24px |
+| `--space-xxl` | 32px |
+
+#### Radii & Shadows
+- **Cards**: `--radius-card: 16px`
+- **Buttons**: `--radius-button: 10px`
+- **Chips/Pills**: `--radius-chip: 999px`
+- **Shadow**: `0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)`
+
+### Accent Stripes (4px Left Border)
+Every card gets a 4px left border to communicate status at a glance:
+
+| Color | Value | Meaning |
+|-------|-------|---------|
+| Green | `#1F9D55` | Confirmed / auto-scheduled |
+| Blue | `#2A5BD7` | Proposal / action needed |
+| Orange | `#D97706` | Scoring / attention |
+| Gray | `#9CA3AF` | Pending / unscheduled |
+| Red | `#D64545` | Escalated / danger |
+
+### Unified Card Anatomy
+```
+┌─────────────────────────────────┐
+│ ▌ EYEBROW LABEL          12px  │  ← uppercase, semibold, 0.06em tracking
+│ ▌ Card Title              18px │  ← semibold
+│ ▌ Secondary text          14px │  ← text-secondary color
+│ ▌ [ Content Module ]           │  ← stats, schedule, avatar, etc.
+│ ▌ [ Action Button ]       44px │  ← full-width or inline
+└─────────────────────────────────┘
+   padding: 20px, radius: 16px
+```
+
+### Touch Targets
+All interactive elements minimum 44×44px (Apple HIG): buttons, tabs, nav icons, match card actions, link-style buttons.
+
+### Component Patterns
+- **Buttons**: 44px height, 10px radius, 16px font. Secondary buttons use 1px `--color-divider` border.
+- **Inputs**: 44px height, accent border on focus.
+- **Status Badges**: Pill-shaped (999px radius), 12px font, bg-colored by state (setup→neutral, live→warning, done→positive).
+- **Bottom Navigation**: 64px fixed, safe-area-inset padding for iOS notch.
+
+### Layout Principles
 - **Action-first sorting**: score > respond > schedule > confirmed > pending > completed
-- **Match time display**: Stacked day/hour layout in the score area of match cards for scheduled matches
+- **Progressive disclosure**: Default view shows opponent + status + next action only; seeds, probabilities behind toggle
+- **Schedule disclosure**: Next match hero card + collapsible "Upcoming (N more)" expander
+- **Match time display**: Stacked day/hour layout in score area of match cards
+- **Mobile-first**: max-width 480px centered, vanilla CSS with custom properties
 
 ## Data Model
 
@@ -272,13 +354,17 @@ Four-tab layout designed around the player's tournament journey.
 - **Lobby.tsx** — County lobby with countdown (used by Home tab)
 - **TournamentView.tsx** — Legacy bracket/match display (retained for reference)
 - **MatchSchedulePanel.tsx** — Time negotiation UI (used by Home and BracketTab)
-- **MatchScoreModal.tsx** — Score entry modal (used by Home and BracketTab)
 - **Standings.tsx** — Round-robin standings table (used by BracketTab)
 - **BroadcastPanel.tsx** — Legacy broadcast panel (retained for reference; PlayNowTab replaces it)
 - **Profile.tsx** — Player identity, rating hero, performance stats, rating chart, availability, rating explainer
 - **MessagePanel.tsx** — Inline 1:1 chat panel (used by BracketTab, Home, PlayNowTab, and Inbox)
 - **Inbox.tsx** — Full message inbox overlay with tournament tab navigation and conversation list
 - **Leaderboard.tsx** — Full county ranking screen with avatar initials, W-L records, soft highlight, defending champion marker, recent activity feed
+- **InlineScoreEntry.tsx** — Inline score entry within match cards (replaces modal), 3-set tennis scoring with edit/undo
+- **ScheduleSummary.tsx** — Schedule summary with unified confirm button and scheduling tier stats
+- **MatchCalendar.tsx** — Calendar/agenda view for scheduled matches
+- **Help.tsx** — Tournament rules panel ("How It Works") with format rules, scheduling timeline, scoring
+- **WaitlistCard.tsx** — Waitlist experience card for lobby overflow
 - **VictoryAnimation.tsx** — Full-screen trophy celebration overlay with confetti and tier-appropriate styling
 - **DevTools.tsx** — Dev utilities (seed, simulate, switch profile)
 
@@ -311,7 +397,7 @@ All 28 items from the Rally Product Roadmap have been implemented. Based on UX R
 - **R-16** Score save feedback — Success toast ("Score saved! Your opponent has 48 hours to confirm.") + error toast (InlineScoreEntry.tsx)
 - **R-17** Completed matches — Filter bar with Upcoming/Completed/All toggle (BracketTab.tsx)
 - **R-18** Tournament progress — Progress banner with bar, completion %, and dates (BracketTab.tsx, TournamentView.tsx)
-- **R-19** PLAY NOW feedback — Toast after broadcast creation ("You're now visible to other players!") (PlayNowTab.tsx)
+- **R-19** PLAY NOW feedback — Toast after broadcast creation ("You're now visible to other players!"), active broadcast indicator with green pulse and expiry timer ("Available for the next Xh Xm") (PlayNowTab.tsx)
 
 ### Theme 5: Social & Community
 - **R-20** Player profiles — Photo upload, bio (150 char), playing style tags (Profile.tsx)
