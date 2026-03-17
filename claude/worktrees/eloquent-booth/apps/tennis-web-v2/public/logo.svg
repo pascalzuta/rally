@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Background — navy radial, brighter top-left like in reference -->
+    <radialGradient id="bgGrad" cx="35%" cy="28%" r="80%">
+      <stop offset="0%"   stop-color="#1c3358"/>
+      <stop offset="55%"  stop-color="#0a1830"/>
+      <stop offset="100%" stop-color="#04090f"/>
+    </radialGradient>
+
+    <!-- Red R — bright orange-red top → deep red bottom-right -->
+    <linearGradient id="redGrad" x1="5%" y1="5%" x2="95%" y2="95%">
+      <stop offset="0%"   stop-color="#FF4242"/>
+      <stop offset="45%"  stop-color="#D50A0A"/>
+      <stop offset="100%" stop-color="#7A0000"/>
+    </linearGradient>
+
+    <!-- Green R — shadow layer -->
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#34B85A"/>
+      <stop offset="100%" stop-color="#0D5C22"/>
+    </linearGradient>
+
+    <!-- Gloss overlay — white fade on top-left quadrant -->
+    <linearGradient id="glossGrad" x1="0%" y1="0%" x2="30%" y2="55%">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.32)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+
+    <!-- Clip to rounded-square icon shape -->
+    <clipPath id="iconClip">
+      <rect width="512" height="512" rx="80" ry="80"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Background ──────────────────────────────────────────────────── -->
+  <rect width="512" height="512" rx="80" ry="80" fill="url(#bgGrad)"/>
+
+  <!-- ── Green R (shadow / depth layer, offset down-left) ──────────── -->
+  <!-- Shift: −14px X, +14px Y relative to red R; also shift whole R up −94px -->
+  <g transform="translate(-14 -80)" clip-path="url(#iconClip)">
+    <!-- Outer R body -->
+    <path d="M156 176C156 164.954 164.954 156 176 156H254
+             C306.81 156 348 197.19 348 250
+             C348 302.81 306.81 344 254 344H220V382
+             C220 393.046 211.046 402 200 402H176
+             C164.954 402 156 393.046 156 382V176Z"
+          fill="url(#greenGrad)"/>
+    <!-- Diagonal leg -->
+    <path d="M220 340L260 334L358 404
+             C363 418 352 428 338 428H312
+             C298 428 289 418 294 404L220 362Z"
+          fill="url(#greenGrad)"/>
+    <!-- Bowl counter cutout -->
+    <path d="M220 216H254
+             C271.673 216 286 230.327 286 248
+             C286 265.673 271.673 280 254 280H220V216Z"
+          fill="#04090f"/>
+  </g>
+
+  <!-- ── Red R (main layer, on top) ────────────────────────────────── -->
+  <!-- Shift whole R up −94px so it sits in upper portion with room for text -->
+  <g transform="translate(0 -94)" clip-path="url(#iconClip)">
+    <!-- Outer R body -->
+    <path id="redRBody"
+          d="M156 176C156 164.954 164.954 156 176 156H254
+             C306.81 156 348 197.19 348 250
+             C348 302.81 306.81 344 254 344H220V382
+             C220 393.046 211.046 402 200 402H176
+             C164.954 402 156 393.046 156 382V176Z"
+          fill="url(#redGrad)"/>
+    <!-- Diagonal leg -->
+    <path id="redRLeg"
+          d="M220 340L260 334L358 404
+             C363 418 352 428 338 428H312
+             C298 428 289 418 294 404L220 362Z"
+          fill="url(#redGrad)"/>
+    <!-- Bowl counter cutout -->
+    <path d="M220 216H254
+             C271.673 216 286 230.327 286 248
+             C286 265.673 271.673 280 254 280H220V216Z"
+          fill="#04090f"/>
+    <!-- Gloss — semi-transparent white on upper-left of R body -->
+    <path d="M156 176C156 164.954 164.954 156 176 156H254
+             C296 156 330 180 342 215
+             L295 215C283 196 269 188 254 188H210V280H220V216H254
+             C271.673 216 286 230.327 286 248V248
+             L220 248V176Z"
+          fill="url(#glossGrad)" opacity="0.85"/>
+  </g>
+
+  <!-- ── RALLY wordmark ─────────────────────────────────────────────── -->
+  <text x="256" y="462"
+        text-anchor="middle"
+        font-family="Impact, 'Arial Black', 'Helvetica Neue Condensed', sans-serif"
+        font-weight="900"
+        font-style="italic"
+        font-size="88"
+        fill="white"
+        letter-spacing="3">RALLY</text>
+</svg>

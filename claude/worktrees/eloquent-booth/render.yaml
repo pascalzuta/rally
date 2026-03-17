@@ -1,0 +1,23 @@
+# Render Blueprint — Rally API Server
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: rally-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build --workspace=apps/tennis-server
+    startCommand: node apps/tennis-server/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: AUTH_TOKEN_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false  # Set manually to your Netlify domain
+      - key: SUPABASE_URL
+        sync: false  # Set manually from Supabase dashboard
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false  # Set manually from Supabase dashboard

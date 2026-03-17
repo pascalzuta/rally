@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://images.pexels.com https://img1.wsimg.com data:; frame-src https://www.google.com; connect-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Green Room Partners | News</title>
+    <meta name="description" content="News and market commentary from Green Room Partners." />
+    <link rel="stylesheet" href="./styles.css?v=20260225m" />
+  </head>
+  <body>
+    <a class="skip-nav" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <div class="container header-shell">
+        <a class="wordmark" href="./index.html"><img class="wordmark-image" src="./assets/logo-wordmark-v5.svg" alt="Green Room Partners" /></a>
+        <button class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu"><span aria-hidden="true"></span></button>
+        <nav class="main-nav" id="site-nav" data-nav>
+          <a href="./index.html">Home</a>
+          <a href="./structure.html">Structure</a>
+          <a href="./investment-approach.html">Investment Approach</a>
+          <a href="./team.html">Team</a>
+          <a href="./news.html">News</a>
+          <a href="./contact.html">Contact</a>
+          <button class="login-nav-button" data-login-trigger type="button">Partner Login</button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero hero-compact hero-news">
+      <div class="container">
+        <p class="eyebrow">News</p>
+        <h1>Insights and monthly market perspective</h1>
+        <p>
+          Read Green Room Partners commentary and research notes. Recent posts cover key financial and economic themes from the past six months.
+        </p>
+      </div>
+    </section>
+
+    <main class="institutional-main" id="main-content">
+      <div class="container stack">
+        <section class="section-card">
+          <div class="page-intro">
+            <h2>Latest posts</h2>
+            <p>Six featured links are listed below, including the February 2026 performance update.</p>
+          </div>
+          <div class="news-grid" data-news-list></div>
+        </section>
+
+        <section class="section-card admin-panel" data-admin-panel hidden>
+          <div class="page-intro">
+            <h2>Partner blog module</h2>
+            <p>Create, edit, save drafts, publish, and delete posts. Custom posts are stored locally in this browser.</p>
+          </div>
+          <div class="admin-layout">
+            <form class="admin-form" data-post-form>
+              <input type="hidden" name="id" />
+              <label>
+                Title
+                <input name="title" type="text" required />
+              </label>
+              <label>
+                Author
+                <input name="author" type="text" required />
+              </label>
+              <label>
+                Publish date
+                <input name="publishedAt" type="date" required />
+              </label>
+              <label>
+                Month key (YYYY-MM)
+                <input name="monthKey" type="text" pattern="\\d{4}-\\d{2}" required />
+              </label>
+              <label>
+                Slug
+                <input name="slug" type="text" required />
+              </label>
+              <label>
+                Summary
+                <textarea name="summary" rows="3" required></textarea>
+              </label>
+              <label>
+                Tags (comma-separated)
+                <input name="tags" type="text" placeholder="Macro, Equities, Rates" />
+              </label>
+              <label>
+                Status
+                <select name="status">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </label>
+              <label>
+                Page 1 heading
+                <input name="page1Heading" type="text" required />
+              </label>
+              <label>
+                Page 1 body (paragraphs separated by blank lines)
+                <textarea name="page1Body" rows="8" required></textarea>
+              </label>
+              <label>
+                Page 2 heading
+                <input name="page2Heading" type="text" required />
+              </label>
+              <label>
+                Page 2 body (paragraphs separated by blank lines)
+                <textarea name="page2Body" rows="8" required></textarea>
+              </label>
+              <label>
+                Page 3 heading
+                <input name="page3Heading" type="text" required />
+              </label>
+              <label>
+                Page 3 body (paragraphs separated by blank lines)
+                <textarea name="page3Body" rows="8" required></textarea>
+              </label>
+              <div class="admin-actions">
+                <button type="submit" class="btn-primary">Save post</button>
+                <button type="button" class="btn-secondary" data-new-post>New post</button>
+              </div>
+            </form>
+
+            <div class="admin-posts">
+              <h3>Custom posts</h3>
+              <div data-custom-posts></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-shell">
+        <div>© <span data-year></span> Green Room Partners. All rights reserved.</div>
+        <div><a href="./contact.html">Connect with us</a></div>
+      </div>
+    </footer>
+    <script src="./news-data.js"></script>
+    <script src="./app.js?v=20260225n" defer></script>
+    <script src="./cms.js?v=20260227a" defer></script>
+    <script src="./news.js" defer></script>
+  </body>
+</html>
