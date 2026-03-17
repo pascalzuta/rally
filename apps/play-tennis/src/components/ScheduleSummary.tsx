@@ -214,22 +214,26 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
                     className={`calendar-match ${tier === 'auto' ? 'calendar-match--auto' : tier === 'needs-accept' ? 'calendar-match--needs-accept' : 'calendar-match--needs-negotiation'}`}
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
-                    {slot && (
-                      <div className="calendar-match-time">{formatMatchDate(slot, weekStart)}</div>
-                    )}
+                    <div className={`calendar-match-eyebrow ${tier === 'auto' ? 'calendar-match-eyebrow--confirmed' : tier === 'needs-accept' ? 'calendar-match-eyebrow--proposed' : 'calendar-match-eyebrow--unscheduled'}`}>
+                      {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Action needed' : 'Schedule needed'}
+                    </div>
                     <div className="calendar-match-opponent">vs {getPlayerName(tournament, opponentId)}</div>
-                    <div className={`calendar-match-status ${tier === 'auto' ? 'calendar-match-status--auto' : tier === 'needs-accept' ? 'calendar-match-status--accept' : 'calendar-match-status--negotiate'}`}>
-                      {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Awaiting confirmation' : 'Pick a time'}
+                    <div className="calendar-match-detail">
+                      {slot ? formatMatchDate(slot, weekStart) : 'No time set'}
                     </div>
                     {tier === 'needs-accept' && onConfirmMatch && (
-                      <button className="match-card-action-btn match-card-action-btn--accept" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>
-                        Confirm
-                      </button>
+                      <div className="calendar-match-actions">
+                        <button className="action-card-btn calendar-action-btn--respond" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>
+                          Pick Time
+                        </button>
+                      </div>
                     )}
                     {tier === 'needs-negotiation' && onScheduleMatch && (
-                      <button className="match-card-action-btn match-card-action-btn--negotiate" onClick={(e) => { e.stopPropagation(); onScheduleMatch(match.id) }}>
-                        Find a time
-                      </button>
+                      <div className="calendar-match-actions">
+                        <button className="action-card-btn calendar-action-btn--schedule" onClick={(e) => { e.stopPropagation(); onScheduleMatch(match.id) }}>
+                          Find a Time
+                        </button>
+                      </div>
                     )}
                   </div>
                 )

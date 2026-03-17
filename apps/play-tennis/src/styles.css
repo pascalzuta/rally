@@ -6575,19 +6575,10 @@ select:focus {
   font-size: var(--font-body-sm, 13px);
 }
 
-.calendar-match-status {
-  font-size: var(--font-body-sm, 13px);
-  margin-top: 2px;
-}
-
-.calendar-match-status--auto { color: var(--color-positive-primary); }
-.calendar-match-status--accept { color: var(--color-accent-primary, #2563EB); }
-.calendar-match-status--negotiate { color: var(--color-warning-primary, #F59E0B); }
-
 .calendar-match-detail {
   font-size: var(--font-body-sm, 13px);
   color: var(--color-text-secondary);
-  margin-top: var(--space-xs);
+  margin-top: 2px;
   line-height: 1.4;
 }
 
@@ -6595,6 +6586,17 @@ select:focus {
   margin-top: var(--space-sm);
   display: flex;
   gap: var(--space-sm);
+}
+
+/* Calendar action buttons — match the Home action card button style */
+.calendar-action-btn--respond {
+  background: var(--color-accent-bg, #DCE7FF);
+  color: var(--color-accent-primary, #2563EB);
+}
+
+.calendar-action-btn--schedule {
+  background: var(--color-warning-bg, #FEF3C7);
+  color: var(--color-warning-primary, #F59E0B);
 }
 
 .calendar-reschedule-link {
