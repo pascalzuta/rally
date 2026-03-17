@@ -8063,6 +8063,15 @@ select:focus {
 /* ================================================
    RM-01: Tournament Match Header & Tier Badges
    ================================================ */
+
+/* Card-level: white background + left border accent */
+.pn-tournament-match-card {
+  border-left: 4px solid var(--color-divider);
+}
+.pn-match-confirmed { border-left-color: var(--color-positive-primary); }
+.pn-match-proposed { border-left-color: var(--color-accent-primary, #2563EB); }
+.pn-match-unscheduled { border-left-color: var(--color-warning-primary, #F59E0B); }
+
 .pn-tournament-match-header {
   display: flex;
   justify-content: space-between;
@@ -8074,6 +8083,12 @@ select:focus {
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.pn-tournament-match-details {
+  font-size: var(--font-caption, 13px);
+  color: var(--color-text-secondary);
+  margin-top: 4px;
 }
 
 .pn-tier-badge {
@@ -8093,8 +8108,8 @@ select:focus {
 }
 
 .pn-tier-proposed {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
+  background: var(--color-accent-bg, #DCE7FF);
+  color: var(--color-accent-primary, #2563EB);
 }
 
 .pn-tier-unscheduled {

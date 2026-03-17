@@ -145,12 +145,12 @@ function getPlayerTournamentMatches(t: Tournament, playerId: string): (Match & {
     })
 }
 
-function schedulingTierLabel(match: Match): { label: string; className: string } {
+function schedulingTierLabel(match: Match): { label: string; className: string; border: string } {
   const tier = match.schedule?.schedulingTier
-  if (tier === 'auto') return { label: 'Confirmed', className: 'pn-tier-confirmed' }
-  if (tier === 'needs-accept') return { label: 'Proposed', className: 'pn-tier-proposed' }
-  if (tier === 'needs-negotiation') return { label: 'Needs Scheduling', className: 'pn-tier-unscheduled' }
-  return { label: 'Unscheduled', className: 'pn-tier-unscheduled' }
+  if (tier === 'auto') return { label: 'Confirmed', className: 'pn-tier-confirmed', border: 'confirmed' }
+  if (tier === 'needs-accept') return { label: 'Proposed', className: 'pn-tier-proposed', border: 'proposed' }
+  if (tier === 'needs-negotiation') return { label: 'Needs Scheduling', className: 'pn-tier-unscheduled', border: 'unscheduled' }
+  return { label: 'Unscheduled', className: 'pn-tier-unscheduled', border: 'unscheduled' }
 }
 
 function formatSlotTime(match: Match): string {
@@ -277,7 +277,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {tournamentMatches.map(m => {
               const tier = schedulingTierLabel(m)
               return (
-                <div key={m.id} className={`card pn-tournament-match-card ${tier.className}`}>
+                <div key={m.id} className={`card pn-tournament-match-card pn-match-${tier.border}`}>
                   <div className="pn-tournament-match-header">
                     <span className="pn-tournament-match-opponent">vs {m.opponentName}</span>
                     <span className={`pn-tier-badge ${tier.className}`}>{tier.label}</span>
