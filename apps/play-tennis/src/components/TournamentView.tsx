@@ -364,25 +364,34 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
       </header>
 
       <main className="content">
-        {/* R-18: Tournament progress banner */}
-        {tournament.status === 'in-progress' && totalMatches > 0 && (
-          <div className="tournament-progress-banner">
-            <div className="tournament-progress-header">
-              <span className="tournament-progress-title">
-                Round robin &mdash; {completedMatchCount} of {totalMatches} matches complete
-              </span>
-              {tournamentStartDate && (
-                <span className="tournament-progress-date">Started {tournamentStartDate}</span>
-              )}
+        {/* Phase stepper with date info */}
+        {tournament.status === 'in-progress' && hasGroupPhase && (
+          <div className="tournament-phase-card">
+            <div className="schedule-phase-stepper">
+              <div className="schedule-phase-step">
+                <div className={`schedule-phase-dot ${groupComplete ? 'completed' : 'active'}`} />
+                <span className={`schedule-phase-label ${groupComplete ? 'completed' : 'active'}`}>
+                  Round Robin ({groupMatchesCompleted}/{groupMatchesTotal})
+                </span>
+              </div>
+              <div className={`schedule-phase-line ${groupComplete ? 'completed' : ''}`} />
+              <div className="schedule-phase-step">
+                <div className={`schedule-phase-dot ${groupComplete ? (knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
+                <span className={`schedule-phase-label ${groupComplete ? 'active' : 'upcoming'}`}>
+                  Semifinals
+                </span>
+              </div>
+              <div className={`schedule-phase-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
+              <div className="schedule-phase-step">
+                <div className={`schedule-phase-dot ${knockoutMatches.some(m => m.round === 3 && m.completed) ? 'completed' : knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`} />
+                <span className={`schedule-phase-label ${knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`}>
+                  Final
+                </span>
+              </div>
             </div>
-            <div className="tournament-progress-bar-container">
-              <div className="tournament-progress-bar" style={{ width: `${completionPct}%` }} />
-            </div>
-            <div className="tournament-progress-footer">
-              <span className="tournament-progress-pct">{completionPct}%</span>
-              {estimatedEndDate && (
-                <span className="tournament-progress-est">Est. finish: {estimatedEndDate}</span>
-              )}
+            <div className="tournament-phase-dates">
+              {tournamentStartDate && <span>Started {tournamentStartDate}</span>}
+              {estimatedEndDate && <span>Est. finish {estimatedEndDate}</span>}
             </div>
           </div>
         )}
