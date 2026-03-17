@@ -8153,6 +8153,13 @@ select:focus {
    RM-01: Tournament Match Header & Tier Badges
    ================================================ */
 
+/* Tournament match list spacing */
+.pn-tournament-match-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 12px);
+}
+
 /* Card-level: white background + left accent bar via pseudo-element */
 .pn-tournament-match-card {
   position: relative;
