@@ -173,31 +173,27 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
       </div>
 
       {/* Next match card */}
-      {nextMatch && (
-        <div className={`card match-card schedule-next-match-card ${nextMatch.schedule?.schedulingTier === 'auto' ? 'sched-confirmed' : nextMatch.schedule?.schedulingTier === 'needs-accept' ? 'sched-proposed' : 'sched-unscheduled'}`}>
-          <div className="match-card-eyebrow" style={{ color: 'var(--color-positive-primary)' }}>NEXT MATCH</div>
-          <div className="schedule-next-match-row">
-            <span className="schedule-next-opponent">
-              vs {getPlayerName(tournament, nextMatch.player1Id === currentPlayerId ? nextMatch.player2Id : nextMatch.player1Id)}
-            </span>
-            {nextMatch.schedule?.confirmedSlot && (
-              <span className="schedule-next-time">
-                {formatMatchDate(nextMatch.schedule.confirmedSlot, weekGroups.get(1)?.weekStart)}
-              </span>
-            )}
-          </div>
-          {nextMatch.schedule?.confirmedSlot && (
-            <div className="schedule-next-reason">
-              Both free {nextMatch.schedule.confirmedSlot.day.charAt(0).toUpperCase() + nextMatch.schedule.confirmedSlot.day.slice(1)} mornings
+      {nextMatch && (() => {
+        const opponentId = nextMatch.player1Id === currentPlayerId ? nextMatch.player2Id : nextMatch.player1Id
+        const tier = nextMatch.schedule?.schedulingTier
+        const tierType = tier === 'auto' ? 'score' : tier === 'needs-accept' ? 'respond' : 'schedule'
+        return (
+          <div className={`card action-card action-${tierType}`}>
+            <div className="action-card-type">Next Match</div>
+            <div className="action-card-opponent">vs {getPlayerName(tournament, opponentId)}</div>
+            <div className="action-card-detail">
+              {nextMatch.schedule?.confirmedSlot
+                ? formatMatchDate(nextMatch.schedule.confirmedSlot, weekGroups.get(1)?.weekStart)
+                : 'Time not yet set'}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )
+      })()}
 
       {/* Week-by-week agenda */}
       {weekGroups.size > 0 && (
         <div className="schedule-agenda">
-          <div className="schedule-agenda-title">Your Schedule</div>
+          <div className="section-header">Schedule</div>
           {[...weekGroups.entries()].map(([week, { matches, weekStart }]) => (
             <div key={week} className="schedule-week">
               <div className="schedule-week-header">
@@ -211,26 +207,26 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
                 return (
                   <div
                     key={match.id}
-                    className={`calendar-match ${tier === 'auto' ? 'calendar-match--auto' : tier === 'needs-accept' ? 'calendar-match--needs-accept' : 'calendar-match--needs-negotiation'}`}
+                    className={`card action-card ${tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'}`}
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
-                    <div className={`calendar-match-eyebrow ${tier === 'auto' ? 'calendar-match-eyebrow--confirmed' : tier === 'needs-accept' ? 'calendar-match-eyebrow--proposed' : 'calendar-match-eyebrow--unscheduled'}`}>
+                    <div className="action-card-type">
                       {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Action needed' : 'Schedule needed'}
                     </div>
-                    <div className="calendar-match-opponent">vs {getPlayerName(tournament, opponentId)}</div>
-                    <div className="calendar-match-detail">
+                    <div className="action-card-opponent">vs {getPlayerName(tournament, opponentId)}</div>
+                    <div className="action-card-detail">
                       {slot ? formatMatchDate(slot, weekStart) : 'No time set'}
                     </div>
                     {tier === 'needs-accept' && onConfirmMatch && (
-                      <div className="calendar-match-actions">
-                        <button className="action-card-btn calendar-action-btn--respond" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>
+                      <div className="action-card-buttons">
+                        <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>
                           Pick Time
                         </button>
                       </div>
                     )}
                     {tier === 'needs-negotiation' && onScheduleMatch && (
-                      <div className="calendar-match-actions">
-                        <button className="action-card-btn calendar-action-btn--schedule" onClick={(e) => { e.stopPropagation(); onScheduleMatch(match.id) }}>
+                      <div className="action-card-buttons">
+                        <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onScheduleMatch(match.id) }}>
                           Find a Time
                         </button>
                       </div>

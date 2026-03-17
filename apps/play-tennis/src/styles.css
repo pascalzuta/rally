@@ -561,6 +561,18 @@ body {
 }
 
 /* ================================================
+   Section Headers (unified, Polymarket-inspired)
+   ================================================ */
+.section-header {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md, 12px);
+}
+
+/* ================================================
    Cards
    ================================================ */
 .card-list {
@@ -4055,19 +4067,31 @@ select:focus {
   border-radius: var(--radius-card);
   padding: 20px;
   box-shadow: var(--shadow);
-  border-left: 4px solid var(--color-divider);
+  position: relative;
+  overflow: hidden;
   cursor: pointer;
   transition: transform 0.1s;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-divider);
 }
 
 .action-card:active {
   transform: scale(0.98);
 }
 
-.action-card.action-score { border-left-color: var(--color-warning-primary); }
-.action-card.action-respond { border-left-color: var(--color-accent-primary); }
-.action-card.action-schedule { border-left-color: var(--color-text-muted); }
-.action-card.action-escalated { border-left-color: var(--color-negative-primary); }
+.action-card.action-score::before { background: var(--color-warning-primary); }
+.action-card.action-respond::before { background: var(--color-accent-primary); }
+.action-card.action-schedule::before { background: var(--color-text-muted); }
+.action-card.action-escalated::before { background: var(--color-negative-primary); }
+.action-card.action-completed::before { background: var(--color-text-muted); }
 
 .action-card-type {
   font-size: var(--font-body-sm);
@@ -4082,6 +4106,7 @@ select:focus {
 .action-respond .action-card-type { color: var(--color-accent-primary); }
 .action-schedule .action-card-type { color: var(--color-text-secondary); }
 .action-escalated .action-card-type { color: var(--color-negative-primary); }
+.action-completed .action-card-type { color: var(--color-text-muted); }
 
 .action-card-opponent {
   font-size: var(--font-title-sm);

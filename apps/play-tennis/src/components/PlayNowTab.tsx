@@ -147,10 +147,10 @@ function getPlayerTournamentMatches(t: Tournament, playerId: string): (Match & {
 
 function schedulingTierLabel(match: Match): { label: string; className: string; border: string } {
   const tier = match.schedule?.schedulingTier
-  if (tier === 'auto') return { label: 'Confirmed', className: 'pn-tier-confirmed', border: 'confirmed' }
-  if (tier === 'needs-accept') return { label: 'Proposed', className: 'pn-tier-proposed', border: 'proposed' }
-  if (tier === 'needs-negotiation') return { label: 'Needs Scheduling', className: 'pn-tier-unscheduled', border: 'unscheduled' }
-  return { label: 'Unscheduled', className: 'pn-tier-unscheduled', border: 'unscheduled' }
+  if (tier === 'auto') return { label: 'Confirmed', className: 'pn-tier-confirmed', border: 'score' }
+  if (tier === 'needs-accept') return { label: 'Proposed', className: 'pn-tier-proposed', border: 'respond' }
+  if (tier === 'needs-negotiation') return { label: 'Needs Scheduling', className: 'pn-tier-unscheduled', border: 'schedule' }
+  return { label: 'Unscheduled', className: 'pn-tier-unscheduled', border: 'schedule' }
 }
 
 function formatSlotTime(match: Match): string {
@@ -271,21 +271,16 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       {/* === TOURNAMENT MATCHES SECTION === */}
       {tournamentMatches.length > 0 && (
         <div className="pn-section">
-          <h3 className="pn-section-title pn-section-title-tournament">Tournament Matches</h3>
-          <p className="pn-section-desc">Bracket matches that count toward your tournament standings.</p>
+          <div className="section-header">Your Matches</div>
           <div className="pn-tournament-match-list">
             {tournamentMatches.map(m => {
               const tier = schedulingTierLabel(m)
               return (
-                <div key={m.id} className={`card pn-tournament-match-card pn-match-${tier.border}`}>
-                  <div className="pn-tournament-match-header">
-                    <span className="pn-tournament-match-opponent">vs {m.opponentName}</span>
-                    <span className={`pn-tier-badge ${tier.className}`}>{tier.label}</span>
-                  </div>
-                  <div className="pn-tournament-match-details">
-                    <span>Round {m.round}</span>
-                    {m.schedule?.confirmedSlot && <span> · {formatSlotTime(m)}</span>}
-                    {m.schedule?.confirmedSlot && <span> · {m.schedule.confirmedSlot.day}</span>}
+                <div key={m.id} className={`card action-card action-${tier.border}`}>
+                  <div className="action-card-type">{tier.label}</div>
+                  <div className="action-card-opponent">vs {m.opponentName}</div>
+                  <div className="action-card-detail">
+                    Round {m.round}{m.schedule?.confirmedSlot ? ` · ${formatSlotTime(m)} · ${m.schedule.confirmedSlot.day}` : ''}
                   </div>
                 </div>
               )
@@ -296,7 +291,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {incomingOffers.length > 0 && (
         <div className="pn-section">
-          <h3 className="pn-section-title">Incoming Match Requests</h3>
+          <div className="section-header">Incoming Requests</div>
           <div className="offer-list">
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
@@ -315,7 +310,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {outgoingOffers.length > 0 && (
         <div className="pn-section">
-          <h3 className="pn-section-title">Your Pending Requests</h3>
+          <div className="section-header">Sent Requests</div>
           <div className="offer-list">
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
@@ -367,8 +362,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* === CASUAL PLAY SECTION === */}
       <div className="pn-section">
-        <h3 className="pn-section-title pn-section-title-casual">Casual Play</h3>
-        <p className="pn-section-desc">Find pickup games with other tournament players. These don't affect standings.</p>
+        <div className="section-header">Available Players</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
             <div className="pn-empty-title">No players available right now</div>

@@ -143,77 +143,42 @@ export default function MatchCalendar({ tournament, currentPlayerId, onTournamen
             const tier = getTier(match)
             const slot = match.schedule?.confirmedSlot ?? match.schedule?.proposals?.[0]
             const isCompleted = match.completed
-            const didWin = match.winnerId === currentPlayerId
             const score = formatScoreDisplay(match)
-
-            const tierClass = isCompleted
-              ? (didWin ? 'calendar-match--won' : 'calendar-match--lost')
-              : tier === 'auto' ? 'calendar-match--auto'
-              : tier === 'needs-accept' ? 'calendar-match--needs-accept'
-              : 'calendar-match--needs-negotiation'
 
             return (
               <div
                 key={match.id}
-                className={`calendar-match ${tierClass} ${isMyMatch ? 'calendar-match--mine' : ''}`}
+                className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
                 onClick={() => onExpandMatch?.(match.id)}
               >
-                {/* Eyebrow */}
-                <div className={`calendar-match-eyebrow ${
-                  isCompleted ? 'calendar-match-eyebrow--completed' :
-                  tier === 'auto' ? 'calendar-match-eyebrow--confirmed' :
-                  tier === 'needs-accept' ? 'calendar-match-eyebrow--proposed' :
-                  'calendar-match-eyebrow--unscheduled'
-                }`}>
-                  {isCompleted ? 'COMPLETED' :
-                   tier === 'auto' ? 'SCHEDULED' :
-                   tier === 'needs-accept' ? 'SUGGESTED TIME' :
-                   'PICK A TIME'}
+                <div className="action-card-type">
+                  {isCompleted ? 'Completed' :
+                   tier === 'auto' ? 'Scheduled' :
+                   tier === 'needs-accept' ? 'Action needed' :
+                   'Schedule needed'}
                 </div>
-
-                {/* Match content */}
-                <div className="calendar-match-body">
-                  <div className="calendar-match-opponent">vs {getPlayerName(tournament, opponentId)}</div>
-                  {slot && !isCompleted ? (
-                    <div className="calendar-match-time">{formatSlotTime(slot, week.weekStart)}</div>
-                  ) : isCompleted && score ? (
-                    <div className="calendar-match-score">{score}</div>
-                  ) : (
-                    <div className="calendar-match-time calendar-match-time--none">No time set</div>
-                  )}
+                <div className="action-card-opponent">vs {getPlayerName(tournament, opponentId)}</div>
+                <div className="action-card-detail">
+                  {isCompleted && score ? score :
+                   slot ? formatSlotTime(slot, week.weekStart) :
+                   'No time set'}
                 </div>
-
-                {/* Detail text */}
-                {!isCompleted && tier === 'needs-accept' && isMyMatch && (
-                  <div className="calendar-match-detail">
-                    {getPlayerName(tournament, opponentId)} is free then. Tap to confirm or pick another time.
-                  </div>
-                )}
-                {!isCompleted && tier === 'needs-negotiation' && isMyMatch && (
-                  <div className="calendar-match-detail">
-                    Your schedules don't overlap much. Send {getPlayerName(tournament, opponentId)} a few options.
-                  </div>
-                )}
-
-                {/* Action button */}
                 {!isCompleted && isMyMatch && tier === 'needs-accept' && (
-                  <div className="calendar-match-actions">
-                    <button className="match-card-action-btn match-card-action-btn--accept" onClick={(e) => { e.stopPropagation(); handleConfirm(match) }}>
-                      Confirm
+                  <div className="action-card-buttons">
+                    <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); handleConfirm(match) }}>
+                      Pick Time
                     </button>
                   </div>
                 )}
                 {!isCompleted && isMyMatch && tier === 'needs-negotiation' && (
-                  <div className="calendar-match-actions">
-                    <button className="match-card-action-btn match-card-action-btn--negotiate" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
-                      Find a time
+                  <div className="action-card-buttons">
+                    <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
+                      Find a Time
                     </button>
                   </div>
                 )}
-
-                {/* Reschedule link for confirmed */}
                 {!isCompleted && isMyMatch && tier === 'auto' && (
-                  <div className="calendar-match-actions">
+                  <div className="action-card-buttons">
                     <button className="btn-link calendar-reschedule-link" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
                       Reschedule
                     </button>
