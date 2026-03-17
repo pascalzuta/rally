@@ -6479,6 +6479,9 @@ select:focus {
 
 .schedule-week {
   margin-bottom: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 12px);
 }
 
 .schedule-week-header {
