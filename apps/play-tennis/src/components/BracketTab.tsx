@@ -170,11 +170,12 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   if (!tournament) {
     return (
       <div className="bracket-tab">
-        <div className="card">
-          <div className="caught-up">
-            <p>No active tournament</p>
-            <p className="caught-up-sub">Join a tournament from the Home tab to see the bracket</p>
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8m-4-4v4m-4.5-8a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 0 4.5 4.5M6.5 13A4.5 4.5 0 0 1 2 8.5" /><path d="M12 2v1m-7 3H4m16 0h-1m-2.64-3.36-.7.7M8.64 3.64l-.7-.7" /></svg>
           </div>
+          <div className="empty-state-title">No active tournament</div>
+          <div className="empty-state-message">Join a tournament from the Home tab to see the bracket</div>
         </div>
       </div>
     )

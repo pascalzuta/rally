@@ -14,6 +14,7 @@ import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
 import DevTools from './components/DevTools'
+import { ToastProvider } from './components/Toast'
 import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
@@ -239,6 +240,7 @@ export default function App() {
   }
 
   return (
+    <ToastProvider>
     <div className="app">
       <div className="screen">
         <nav className="top-nav">
@@ -489,5 +491,6 @@ export default function App() {
         />
       )}
     </div>
+    </ToastProvider>
   )
 }

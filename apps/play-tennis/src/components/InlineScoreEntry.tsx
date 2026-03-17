@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { saveMatchScore, getPlayerName, getPlayerRating, getSeeds, winProbability } from '../store'
 import { Tournament } from '../types'
+import { useToast } from './Toast'
 
 function isValidSet(s1: number, s2: number): boolean {
   if (s1 === 6 && s2 <= 4) return true
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props) {
+  const { showSuccess, showError } = useToast()
   const match = tournament.matches.find(m => m.id === matchId)!
   const p1Name = getPlayerName(tournament, match.player1Id)
   const p2Name = getPlayerName(tournament, match.player2Id)
@@ -117,9 +119,11 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
     try {
       await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
       setSaveState('success')
+      showSuccess('Score saved!')
       setTimeout(() => onSaved(), 2000)
     } catch {
       setSaveState('error')
+      showError('Failed to save score')
     }
   }
 

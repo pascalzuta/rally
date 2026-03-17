@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability, switchProfile } from '../store'
 import type { RatingSnapshot, MatchHistoryEntry } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, Trophy, TrophyTier, Badge } from '../types'
+import { useToast } from './Toast'
 
 interface Props {
   profile: PlayerProfile
@@ -208,6 +209,7 @@ function BadgeIcon({ type }: { type: Badge['type'] }) {
 // --- Main Profile ---
 
 export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboard, onViewHelp }: Props) {
+  const { showSuccess } = useToast()
   const rating = getPlayerRating(profile.id, profile.name)
   const label = getRatingLabel(rating.rating)
   const tournaments = getPlayerTournaments(profile.id)
@@ -229,7 +231,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   const [preferredCourts, setPreferredCourts] = useState<string[]>(profile.preferredCourts ?? [])
   const [newCourt, setNewCourt] = useState('')
   const [slots, setSlots] = useState<AvailabilitySlot[]>(() => getAvailability(profile.id))
-  const [detailedMode, setDetailedMode] = useState(false)
+  const [availMode, setAvailMode] = useState<'quick' | 'custom'>('quick')
   const [detailDay, setDetailDay] = useState<DayOfWeek>('monday')
   const [detailStart, setDetailStart] = useState(9)
   const [detailEnd, setDetailEnd] = useState(12)
@@ -308,12 +310,13 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   function handleSaveAvailability() {
     saveAvailability(profile.id, slots)
     setEditing(false)
+    showSuccess('Changes saved')
   }
 
   function handleCancelEdit() {
     setSlots(getAvailability(profile.id))
     setEditing(false)
-    setDetailedMode(false)
+    setAvailMode('quick')
   }
 
   // R-20: Profile management helpers
@@ -715,24 +718,37 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
         ) : (
           <>
-            <div className="quick-slots">
-              {QUICK_SLOTS.map(qs => (
-                <button
-                  key={qs.label}
-                  className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
-                  onClick={() => toggleQuickSlot(qs)}
-                >
-                  <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
-                  {qs.label}
-                </button>
-              ))}
+            <div className="avail-segmented-control">
+              <button
+                className={`avail-segment-btn ${availMode === 'quick' ? 'active' : ''}`}
+                onClick={() => setAvailMode('quick')}
+              >
+                Quick Presets
+              </button>
+              <button
+                className={`avail-segment-btn ${availMode === 'custom' ? 'active' : ''}`}
+                onClick={() => setAvailMode('custom')}
+              >
+                Custom Times
+              </button>
             </div>
 
-            <button className="btn-link" onClick={() => setDetailedMode(!detailedMode)}>
-              {detailedMode ? 'Hide specific times' : 'Add specific times'}
-            </button>
+            {availMode === 'quick' && (
+              <div className="quick-slots">
+                {QUICK_SLOTS.map(qs => (
+                  <button
+                    key={qs.label}
+                    className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
+                    onClick={() => toggleQuickSlot(qs)}
+                  >
+                    <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
+                    {qs.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
-            {detailedMode && (
+            {availMode === 'custom' && (
               <div className="detailed-add-row">
                 <select value={detailDay} onChange={e => setDetailDay(e.target.value as DayOfWeek)}>
                   {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}

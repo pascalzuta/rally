@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom } from '../store'
 import { Tournament, Match, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
+import { useToast } from './Toast'
 
 interface Props {
   tournament: Tournament | null
@@ -169,15 +170,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const [askingRow, setAskingRow] = useState<OpponentRow | null>(null)
   const [messagingPlayerId, setMessagingPlayerId] = useState<string | null>(null)
   const [showInfoTooltip, setShowInfoTooltip] = useState(false)
-  const [toast, setToast] = useState<string | null>(null)
+  const { showSuccess } = useToast()
   const [, setTick] = useState(0)
-
-  // Auto-dismiss toast after 3 seconds
-  useEffect(() => {
-    if (!toast) return
-    const timer = setTimeout(() => setToast(null), 3000)
-    return () => clearTimeout(timer)
-  }, [toast])
 
   useEffect(() => {
     const interval = setInterval(() => { cleanExpiredOffers(); setTick(t => t + 1) }, 30000)
@@ -185,7 +179,17 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }, [])
 
   if (!tournament || tournament.status !== 'in-progress') {
-    return (<div className="playnow-tab"><div className="card"><p className="subtle">Join an active tournament to use Find Match</p></div></div>)
+    return (
+      <div className="playnow-tab">
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+          </div>
+          <div className="empty-state-title">No active tournament</div>
+          <div className="empty-state-message">Join an active tournament to find matches and play</div>
+        </div>
+      </div>
+    )
   }
 
   const myBroadcast = getPlayerActiveBroadcast(currentPlayerId)
@@ -207,7 +211,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     const result = createBroadcast(currentPlayerId, currentPlayerName, tournament!.id, date, startTime, endTime, location.trim(), message.trim() || undefined)
     if (result) {
       setShowForm(false); setLocation(''); setMessage('')
-      setToast("You're now visible to other players!")
+      showSuccess("You're now visible to other players!")
     } else {
       setFeedback('You already have an active broadcast'); setTimeout(() => setFeedback(''), 2000)
     }
@@ -248,13 +252,6 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   return (
     <div className="playnow-tab">
       {feedback && <div className="broadcast-feedback">{feedback}</div>}
-
-      {/* === TOAST === */}
-      {toast && (
-        <div className="pn-toast">
-          <span className="pn-toast-icon">&#10003;</span> {toast}
-        </div>
-      )}
 
       {/* === INFO BANNER: Clarify Tournament vs Casual === */}
       <div className="pn-info-banner">
