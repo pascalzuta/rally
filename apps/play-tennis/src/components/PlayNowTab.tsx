@@ -257,7 +257,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       <div className="pn-info-banner">
         <div className="pn-info-banner-content">
           <span className="pn-info-banner-icon" onClick={() => setShowInfoTooltip(!showInfoTooltip)} role="button" tabIndex={0} aria-label="More info">&#9432;</span>
-          <span className="pn-info-banner-text">Find opponents and schedule games</span>
+          <span className="pn-info-banner-text">See who's available and start a match — Rally handles the scheduling</span>
         </div>
         {showInfoTooltip && (
           <div className="pn-info-tooltip">
@@ -268,26 +268,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         )}
       </div>
 
-      {/* === TOURNAMENT MATCHES SECTION === */}
-      {tournamentMatches.length > 0 && (
-        <div className="pn-section">
-          <div className="section-header">Your Matches</div>
-          <div className="pn-tournament-match-list">
-            {tournamentMatches.map(m => {
-              const tier = schedulingTierLabel(m)
-              return (
-                <div key={m.id} className={`card action-card action-${tier.border}`}>
-                  <div className="action-card-type">{tier.label}</div>
-                  <div className="action-card-opponent">vs {m.opponentName}</div>
-                  <div className="action-card-detail">
-                    Round {m.round}{m.schedule?.confirmedSlot ? ` · ${formatSlotTime(m)} · ${m.schedule.confirmedSlot.day}` : ''}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {/* Tournament matches removed — they belong on the Tournament tab */}
 
       {incomingOffers.length > 0 && (
         <div className="pn-section">
@@ -343,8 +324,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       ) : !showForm ? (
         <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
-          <span className="play-now-text">Play Now</span>
-          <span className="play-now-sub">Let tournament players know when you're free</span>
+          <span className="play-now-text">I'm Free to Play</span>
+          <span className="play-now-sub">Broadcast your availability — get matched with someone nearby</span>
         </button>
       ) : (
         <div className="card broadcast-form">
@@ -362,7 +343,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* === CASUAL PLAY SECTION === */}
       <div className="pn-section">
-        <div className="section-header">Available Players</div>
+        <div className="section-header">Who's Free</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
             <div className="pn-empty-title">No players available right now</div>

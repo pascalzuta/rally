@@ -47,8 +47,8 @@ function OverviewSection() {
   return (
     <div className="help-section">
       <p className="help-intro">
-        Rally runs monthly tennis tournaments in your county.
-        Everyone plays everyone, then the top players compete in finals.
+        Rally runs monthly tennis tournaments in your county — and schedules every match automatically.
+        Play everyone, climb the rankings, and compete in the finals.
       </p>
 
       <div className="help-phases">
@@ -58,7 +58,7 @@ function OverviewSection() {
             <div className="help-phase-step">1</div>
             <div>
               <strong>Join the Lobby</strong>
-              <p>Sign up and join the waiting pool for your county. Invite friends to fill it faster.</p>
+              <p>Sign up and join the player pool for your county. Invite friends to start the tournament sooner.</p>
             </div>
           </div>
         </div>
@@ -68,9 +68,9 @@ function OverviewSection() {
           <div className="help-phase-content">
             <div className="help-phase-step">2</div>
             <div>
-              <strong>Tournament Forms</strong>
+              <strong>Tournament Starts</strong>
               <span className="help-phase-detail">When 6+ players join</span>
-              <p>A tournament is automatically created where everyone plays everyone.</p>
+              <p>A round-robin tournament is automatically created. You'll play every other player once.</p>
             </div>
           </div>
         </div>
@@ -80,9 +80,9 @@ function OverviewSection() {
           <div className="help-phase-content">
             <div className="help-phase-step">3</div>
             <div>
-              <strong>Play Matches</strong>
+              <strong>Play Your Matches</strong>
               <span className="help-phase-detail">~3 weeks</span>
-              <p>Matches are auto-scheduled from your availability. Play each opponent once and report scores.</p>
+              <p>Rally auto-schedules matches based on when you and your opponent are both free. Just show up, play, and report your score.</p>
             </div>
           </div>
         </div>
@@ -92,9 +92,9 @@ function OverviewSection() {
           <div className="help-phase-content">
             <div className="help-phase-step">4</div>
             <div>
-              <strong>Finals</strong>
+              <strong>Playoffs</strong>
               <span className="help-phase-detail">Top 4 compete</span>
-              <p>Top 4 advance to playoff semifinals and final. Win the championship trophy.</p>
+              <p>The top 4 players advance to single-elimination playoffs. Win the championship and see your rating soar.</p>
             </div>
           </div>
         </div>
@@ -261,7 +261,7 @@ function FAQSection() {
 
   const items = [
     { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the waiting pool. Once enough players join (minimum 4), a tournament is automatically created.' },
-    { q: 'What tournament formats are available?', a: 'Rally supports Everyone Plays Everyone (round robin), Elimination (single elimination), and Group Stage + Playoffs. The format is chosen based on player count.' },
+    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Elimination (single elimination), and Group Stage + Playoffs. The format is chosen based on player count.' },
     { q: 'How are matches scheduled?', a: 'Rally uses your availability preferences to find overlapping times. The system proposes slots automatically. You can also use "Play Now" to broadcast availability for an immediate match.' },
     { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
     { q: 'How do I change my availability?', a: 'Go to the Profile tab, find the availability section, and tap "Edit". You can choose quick presets or set specific time slots.' },

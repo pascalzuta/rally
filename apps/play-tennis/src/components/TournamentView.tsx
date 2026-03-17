@@ -55,11 +55,11 @@ function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): {
     if (match.resolution.type === 'double-loss') return { label: 'Canceled' }
     return { label: 'Resolved' }
   }
-  if (canScore) return { label: 'Score Match' }
+  if (canScore) return { label: 'Report Score' }
   if (!match.schedule) return { label: 'Waiting on players' }
   if (match.schedule.status === 'confirmed') return { label: 'Confirmed' }
   if (match.schedule.status === 'escalated') return { label: 'Escalated' }
-  if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Pick a time' }
+  if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Rally Suggested' }
   if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Schedule' }
   return { label: 'Waiting on players' }
 }
@@ -69,8 +69,8 @@ function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean
   if (canScore) return 'Enter Score'
   if (!isMyMatch) return null
   if (!match.schedule) return null
-  if (match.schedule.status === 'proposed') return 'Pick Time'
-  if (match.schedule.status === 'escalated') return 'Pick a Time'
+  if (match.schedule.status === 'proposed') return 'Confirm Time'
+  if (match.schedule.status === 'escalated') return 'Confirm Time'
   if (match.schedule.status === 'unscheduled') return 'Schedule Match'
   return null
 }
@@ -369,7 +369,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           <div className="tournament-progress-banner">
             <div className="tournament-progress-header">
               <span className="tournament-progress-title">
-                Everyone plays everyone &mdash; {completedMatchCount} of {totalMatches} matches complete
+                Round robin &mdash; {completedMatchCount} of {totalMatches} matches complete
               </span>
               {tournamentStartDate && (
                 <span className="tournament-progress-date">Started {tournamentStartDate}</span>
@@ -406,7 +406,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         {tab === 'matches' && (
           <div className="details-toggle-row">
             <button className="btn-link details-toggle-btn" onClick={(e) => { e.stopPropagation(); const next = !showDetails; setShowDetails(next); try { localStorage.setItem('rally-show-details', String(next)) } catch {} }}>
-              {showDetails ? 'Hide details' : 'Show details'}
+              {showDetails ? 'Hide Advanced Stats' : 'Show Advanced Stats'}
             </button>
           </div>
         )}
@@ -462,7 +462,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
               <div className="round-progress-item">
                 <div className={`round-progress-dot ${groupComplete ? 'completed' : 'active'}`} />
                 <span className={`round-progress-label ${groupComplete ? 'completed' : 'active'}`}>
-                  All play all ({groupMatchesCompleted}/{groupMatchesTotal})
+                  Round Robin ({groupMatchesCompleted}/{groupMatchesTotal})
                 </span>
                 <div className={`round-progress-line ${groupComplete ? 'completed' : ''}`} />
               </div>
@@ -515,7 +515,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                     <table className="group-standings-table">
                       <thead>
                         <tr>
-                          <th>#</th>
+                          <th>Rank</th>
                           <th>Player</th>
                           <th>W</th>
                           <th>L</th>
@@ -571,7 +571,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                     <table className="group-standings-table">
                       <thead>
                         <tr>
-                          <th>#</th>
+                          <th>Rank</th>
                           <th>Player</th>
                           <th>W</th>
                           <th>L</th>

@@ -352,7 +352,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   return (
     <div className="schedule-panel">
       <div className={`schedule-status-badge ${pendingProposals.length > 0 ? 'badge-proposed' : 'badge-unscheduled'}`}>
-        {acceptableProposals.length > 0 ? 'Choose a Time'
+        {acceptableProposals.length > 0 ? 'Rally Found These Times for You'
           : myPendingProposals.length > 0 ? 'Waiting for Opponent'
           : 'No Times Available'}
       </div>
@@ -378,14 +378,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                   </span>
                 )}
                 {p.proposedBy === 'system' && (
-                  <span className="proposal-from">best overlap</span>
+                  <span className="proposal-from">Best match for both of you</span>
                 )}
               </div>
               <button
                 className="btn btn-primary btn-small"
                 onClick={(e) => { e.stopPropagation(); handleAccept(p.id) }}
               >
-                Accept
+                Confirm This Time
               </button>
             </div>
           ))}
@@ -398,7 +398,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             <div key={p.id} className="proposal-card proposal-mine">
               <div className="proposal-info">
                 <span className="proposal-time">{proposalLabel(p)}</span>
-                <span className="proposal-from">your proposal {'\u2014'} waiting</span>
+                <span className="proposal-from">Your suggestion {'\u2014'} waiting for response</span>
               </div>
             </div>
           ))}
@@ -410,7 +410,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           className="btn-link propose-link"
           onClick={(e) => { e.stopPropagation(); setShowPropose(true) }}
         >
-          Propose a different time
+          Suggest a different time instead
         </button>
       ) : (
         <div className="propose-form" onClick={e => e.stopPropagation()}>

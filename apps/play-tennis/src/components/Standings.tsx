@@ -72,7 +72,7 @@ export default function Standings({ tournament }: Props) {
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th>Rank</th>
             <th>Player</th>
             <th>W-L</th>
             {showDetails && <th>Win %</th>}

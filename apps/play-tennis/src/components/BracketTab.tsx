@@ -300,11 +300,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (match.resolution.type === 'double-loss') return { label: 'Canceled', type: 'muted' }
       return { label: 'Resolved', type: 'muted' }
     }
-    if (canScore) return { label: 'Score Match', type: 'score' }
+    if (canScore) return { label: 'Report Score', type: 'score' }
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
     if (match.schedule.status === 'confirmed') return { label: 'Confirmed', type: 'confirmed' }
     if (match.schedule.status === 'escalated') return { label: 'Escalated', type: 'escalated' }
-    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Pick a time', type: 'proposed' }
+    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Rally Suggested', type: 'proposed' }
     if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Find a time', type: 'unscheduled' }
     return { label: 'Pending', type: 'pending' }
   }
@@ -314,7 +314,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     if (canScore) return 'Enter Score'
     if (!isMyMatch) return null
     if (!match.schedule) return null
-    if (match.schedule.status === 'proposed') return 'Choose a time'
+    if (match.schedule.status === 'proposed') return 'Confirm Time'
     if (match.schedule.status === 'escalated') return 'Respond Now'
     if (match.schedule.status === 'unscheduled') return 'Find a time'
     return null
@@ -387,7 +387,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 <span className="scheduling-badge-icon">
                   {match.schedule.schedulingTier === 'auto' ? '✓' : match.schedule.schedulingTier === 'needs-accept' ? '●' : '○'}
                 </span>
-                {match.schedule.schedulingTier === 'auto' ? 'Confirmed' : match.schedule.schedulingTier === 'needs-accept' ? 'Awaiting confirmation' : 'Pick a time'}
+                {match.schedule.schedulingTier === 'auto' ? 'Confirmed' : match.schedule.schedulingTier === 'needs-accept' ? 'Awaiting time confirmation' : 'Pick a time'}
               </span>
             )}
           </div>
@@ -560,7 +560,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       <div className="bracket-tab-header">
         <h2>{tournament.name}</h2>
         <div className="bracket-tab-meta">
-          {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Everyone plays everyone'} · {tournament.players.length} players
+          {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}
         </div>
       </div>
 
@@ -569,7 +569,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         <div className="tournament-progress-banner">
           <div className="tournament-progress-header">
             <span className="tournament-progress-title">
-              Everyone plays everyone &mdash; {completedMatchCount} of {totalMatches} matches complete
+              Round robin &mdash; {completedMatchCount} of {totalMatches} matches complete
             </span>
             {tournamentStartDate && (
               <span className="tournament-progress-date">Started {tournamentStartDate}</span>
@@ -750,7 +750,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               localStorage.setItem('rally-show-details', String(next))
             }}
           >
-            {showDetails ? 'Hide details' : 'Show details'}
+            {showDetails ? 'Hide Advanced Stats' : 'Show Advanced Stats'}
           </button>
         </div>
       )}
@@ -781,7 +781,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               <div className="round-progress-item">
                 <div className={`round-progress-dot ${groupComplete ? 'completed' : 'active'}`} />
                 <span className={`round-progress-label ${groupComplete ? 'completed' : 'active'}`}>
-                  All play all ({groupMatchesCompleted}/{groupMatchesTotal})
+                  Round Robin ({groupMatchesCompleted}/{groupMatchesTotal})
                 </span>
                 <div className={`round-progress-line ${groupComplete ? 'completed' : ''}`} />
               </div>
@@ -836,7 +836,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                     <table className="group-standings-table">
                       <thead>
                         <tr>
-                          <th>#</th>
+                          <th>Rank</th>
                           <th>Player</th>
                           <th>W</th>
                           <th>L</th>
@@ -904,12 +904,12 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                         {remainingUpcoming.length > 0 && (
                           showAllMatches || !nextMatch ? (
                             <>
-                              {nextMatch && <div className="upcoming-matches-section"><div className="results-section-label">Upcoming matches ({remainingUpcoming.length})</div></div>}
+                              {nextMatch && <div className="upcoming-matches-section"><div className="results-section-label">{remainingUpcoming.length} more matches to play</div></div>}
                               {remainingUpcoming.map(m => renderMatchCard(m))}
                             </>
                           ) : (
                             <button className="show-more-matches-btn" onClick={() => setShowAllMatches(true)}>
-                              Upcoming matches ({remainingUpcoming.length} more)
+                              {remainingUpcoming.length} more matches to play
                             </button>
                           )
                         )}
@@ -935,7 +935,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                     <table className="group-standings-table">
                       <thead>
                         <tr>
-                          <th>#</th>
+                          <th>Rank</th>
                           <th>Player</th>
                           <th>W</th>
                           <th>L</th>

@@ -109,7 +109,7 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
       {/* Match-based x-axis */}
       {xLabelIndices.map(i => (
         <text key={i} x={pathPoints[i].x} y={H - 6} textAnchor="middle" fontSize="7" fill="var(--color-text-secondary)">
-          {i === 0 ? 'Start' : `M${i}`}
+          {i === 0 ? 'Start' : `Match ${i}`}
         </text>
       ))}
 
@@ -414,12 +414,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
           <h2 className="profile-name">{profile.name}</h2>
           <p className="profile-county">{profile.county}</p>
-          {(profile.skillLevel || profile.gender) && (
-            <p className="profile-details">
-              {profile.skillLevel && <span className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}{profile.skillLevel === 'beginner' ? ' (NTRP 2.0-2.5)' : profile.skillLevel === 'intermediate' ? ' (NTRP 3.0-3.5)' : profile.skillLevel === 'advanced' ? ' (NTRP 4.0+)' : ''}</span>}
-              {profile.skillLevel && profile.gender && <span className="profile-detail-sep"> &middot; </span>}
-              {profile.gender && <span className="profile-gender">{profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}</span>}
-            </p>
+          {profile.skillLevel && (
+            <div className="profile-details">
+              <p className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)} &middot; {profile.skillLevel === 'beginner' ? 'NTRP 2.0\u20132.5' : profile.skillLevel === 'intermediate' ? 'NTRP 3.0\u20133.5' : profile.skillLevel === 'advanced' ? 'NTRP 4.0+' : ''}</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 2 }}>Your starting level — updates to Rally Rating after first matches</p>
+            </div>
           )}
           {bio && <p className="profile-bio-display" style={{ marginTop: 6, fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{bio}</p>}
           {playingStyle.length > 0 && (
@@ -435,7 +434,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
       {/* Bio & Playing Style */}
       <div className="card profile-section">
-        <h3 className="profile-section-title"><span>About You</span></h3>
+        <h3 className="profile-section-title"><span>Your Tennis Profile</span></h3>
 
         {/* Bio */}
         <div style={{ marginBottom: 16 }}>
@@ -443,7 +442,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           <input
             type="text"
             className="form-input"
-            placeholder="Tell others about yourself..."
+            placeholder="Introduce yourself to opponents..."
             value={bio}
             maxLength={150}
             onChange={e => handleBioChange(e.target.value)}
@@ -471,7 +470,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
         {/* Preferred Courts */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Preferred Courts (max 3)</label>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Home Courts (max 3)</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: preferredCourts.length > 0 ? 8 : 0 }}>
             {preferredCourts.map(court => (
               <span key={court} style={{
@@ -496,7 +495,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
               <input
                 type="text"
                 className="form-input"
-                placeholder="Add a court name"
+                placeholder="Where do you usually play?"
                 value={newCourt}
                 onChange={e => setNewCourt(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') addCourt() }}
@@ -520,7 +519,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             )}
           </div>
         </div>
-        <div className="rating-hero-label">{label} Level</div>
+        <div className="rating-hero-label">Your Rally Rating</div>
         <div className="rating-level-bar">
           <div className="rating-level-fill" style={{ width: `${Math.min(100, Math.max(5, ((rating.rating - 800) / 1600) * 100))}%` }} />
         </div>
@@ -539,12 +538,15 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             </span>
           )}
         </div>
+        <div className="rating-hero-explanation" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>
+          Ratings adjust after each match — win against stronger players for a bigger boost
+        </div>
         {engagementPrompt && (
           <div className="engagement-prompt">{engagementPrompt}</div>
         )}
         <div className="rating-hero-actions">
           {onViewLeaderboard && rankInfo.total > 1 && (
-            <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View leaderboard</button>
+            <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View full leaderboard</button>
           )}
         </div>
       </div>
@@ -564,8 +566,8 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
         ) : (
           <div className="trophy-empty">
             <div className="trophy-empty-icon">🏆</div>
-            <p className="trophy-empty-title">Your first trophy awaits</p>
-            <p className="trophy-empty-desc">Win your first match to start collecting</p>
+            <p className="trophy-empty-title">Your trophy case is empty — for now</p>
+            <p className="trophy-empty-desc">Win matches to earn tournament trophies and badges</p>
           </div>
         )}
       </div>
@@ -587,7 +589,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
       {/* Performance Section */}
       <div className="card profile-section">
-        <h3 className="profile-section-title"><span>Performance</span></h3>
+        <h3 className="profile-section-title"><span>Your Record</span></h3>
         <div className="performance-grid">
           <div className="performance-item">
             <div className="performance-value">{totalMatches}</div>
@@ -671,8 +673,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
       {/* Rating History */}
       <div className="card profile-section">
-        <h3 className="profile-section-title"><span>Rating Progress</span></h3>
+        <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
         <RatingChart history={ratingHistory} currentRating={rating.rating} />
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
         {completedTournaments.length > 0 && (
           <div className="tournament-history">
             {completedTournaments.map(t => {
@@ -681,7 +684,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
                 <div key={t.id} className="history-card">
                   <div className="history-card-info">
                     <div className="history-card-name">{t.name}</div>
-                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Elimination' : t.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Everyone plays everyone'}</div>
+                    <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Elimination' : t.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}</div>
                   </div>
                   <span className={`history-card-result ${result === 'Won' ? 'won' : result === 'Lost' ? 'lost' : ''}`}>{result}</span>
                 </div>
@@ -694,9 +697,10 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
       {/* Availability Section */}
       <div className="card profile-section">
         <h3 className="profile-section-title">
-          <span>{slots.length > 0 ? 'Available' : 'When You Play'}</span>
+          <span>Your Availability</span>
           {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
         </h3>
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
         {!editing ? (
           <div className="availability-current">
             {slots.length === 0 ? (
@@ -795,7 +799,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
       <div className="card profile-section">
         <h3 className="profile-section-title">
           <button className="btn-link" onClick={() => setShowRatingInfo(!showRatingInfo)}>
-            {showRatingInfo ? 'Hide rating info ▾' : 'How ratings work ▸'}
+            {showRatingInfo ? 'Hide rating info ▾' : 'How Rally Ratings work — and why they make matches fairer ▸'}
           </button>
         </h3>
         {showRatingInfo && (

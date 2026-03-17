@@ -142,8 +142,8 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
       {/* Hero stat */}
       <div className="schedule-hero">
         <div className="schedule-hero-number">{animatedCount}</div>
-        <div className="schedule-hero-qualifier">of {totalMatches} matches scheduled</div>
-        <div className="schedule-hero-subtitle">Your tournament is ready.</div>
+        <div className="schedule-hero-qualifier">of {totalMatches} matches confirmed</div>
+        <div className="schedule-hero-subtitle">Confirm your match times to get playing!</div>
       </div>
 
       {/* Three-tier summary bar */}
@@ -156,12 +156,12 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
       <div className="schedule-tier-labels">
         <span className="schedule-tier-label">
           <span className="schedule-tier-dot" style={{ background: 'var(--color-positive-primary)' }} />
-          {summary.confirmed} Scheduled
+          {summary.confirmed} Confirmed
         </span>
         {summary.needsAccept > 0 && (
           <span className="schedule-tier-label">
             <span className="schedule-tier-dot" style={{ background: 'var(--color-accent-primary)' }} />
-            {summary.needsAccept} Need confirmation
+            {summary.needsAccept} Awaiting your response
           </span>
         )}
         {summary.needsNegotiation > 0 && (
@@ -179,12 +179,12 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
         const tierType = tier === 'auto' ? 'score' : tier === 'needs-accept' ? 'respond' : 'schedule'
         return (
           <div className={`card action-card action-${tierType}`}>
-            <div className="action-card-type">Next Match</div>
+            <div className="action-card-type">Up Next</div>
             <div className="action-card-opponent">vs {getPlayerName(tournament, opponentId)}</div>
             <div className="action-card-detail">
               {nextMatch.schedule?.confirmedSlot
                 ? formatMatchDate(nextMatch.schedule.confirmedSlot, weekGroups.get(1)?.weekStart)
-                : 'Time not yet set'}
+                : 'No time set yet — tap to schedule'}
             </div>
           </div>
         )
@@ -211,7 +211,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <div className="action-card-type">
-                      {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Action needed' : 'Schedule needed'}
+                      {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Rally Suggested' : 'Schedule needed'}
                     </div>
                     <div className="action-card-opponent">vs {getPlayerName(tournament, opponentId)}</div>
                     <div className="action-card-detail">
@@ -220,7 +220,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
                     {tier === 'needs-accept' && onConfirmMatch && (
                       <div className="action-card-buttons">
                         <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>
-                          Pick Time
+                          Confirm Time
                         </button>
                       </div>
                     )}
@@ -241,7 +241,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, onViewBra
 
       {/* View Full Bracket button */}
       <button className="btn btn-large schedule-view-bracket" onClick={onViewBracket}>
-        View Full Bracket
+        See All Matchups
       </button>
     </div>
   )

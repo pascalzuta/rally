@@ -39,10 +39,10 @@ function getActivationSteps(
   )
 
   return [
-    { label: 'Create profile', completed: true },
-    { label: 'Start or join tournament', completed: inTournament || hasPlayedMatch },
-    { label: 'Add availability', completed: hasAvailability },
-    { label: 'Play your first match', completed: hasPlayedMatch },
+    { label: 'Set up your profile', completed: true },
+    { label: 'Join your local tournament', completed: inTournament || hasPlayedMatch },
+    { label: 'Tell us when you\'re free (we\'ll auto-schedule your matches)', completed: hasAvailability },
+    { label: 'Play your first match and get rated', completed: hasPlayedMatch },
   ]
 }
 
@@ -133,7 +133,7 @@ function buildActionCards(
       if (schedule?.status === 'confirmed' && schedule.confirmedSlot) {
         cards.push({
           type: 'score',
-          label: 'Score Match',
+          label: 'Report Score',
           detail: 'Match confirmed — enter result',
           opponentId: opponentId!,
           opponentName,
@@ -158,8 +158,8 @@ function buildActionCards(
         if (respondableCount > 0) {
           cards.push({
             type: 'respond',
-            label: 'Action needed',
-            detail: `${respondableCount} time slot${respondableCount === 1 ? '' : 's'} proposed`,
+            label: 'Match Ready',
+            detail: 'Rally found a time — confirm it',
             opponentId: opponentId!,
             opponentName,
             tournamentId: tournament.id,
@@ -502,8 +502,8 @@ export default function Home({
       {/* Onboarding (shows until all steps complete) */}
       {showOnboarding && (
         <div className="card onboarding-card">
-          <h3 className="onboarding-title">Welcome to Rally</h3>
-          <p className="onboarding-subtitle">Your next steps</p>
+          <h3 className="onboarding-title">Welcome to Rally!</h3>
+          <p className="onboarding-subtitle">Here's how to get started — we'll handle the scheduling.</p>
           <div className="onboarding-steps">
             {activationSteps.map((step, i) => (
               <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
@@ -523,7 +523,7 @@ export default function Home({
               </div>
             ))}
           </div>
-          <button className="btn btn-primary onboarding-cta" onClick={() => handleInvite(profile.county)}>Invite Players</button>
+          <button className="btn btn-primary onboarding-cta" onClick={() => handleInvite(profile.county)}>Invite Friends — Fill Your Tournament Faster</button>
         </div>
       )}
 
@@ -534,10 +534,10 @@ export default function Home({
         const progressPct = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
         return (
           <div key={tournament.id} className="card tournament-card" onClick={() => onViewTournament(tournament.id)}>
-            <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Tournament</div>
+            <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Your Tournament</div>
             <div className="card-title">{tournament.name}</div>
             <div className="card-secondary">
-              {tournament.format === 'single-elimination' ? 'Playoffs' : tournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Everyone Plays Everyone'} · {tournament.players.length} players · {getProgressText(tournament)}
+              {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Playoffs' : tournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Round robin'} · {getProgressText(tournament)}
             </div>
             <div className="tournament-progress-bar">
               <div className="tournament-progress-fill" style={{ width: `${progressPct}%` }} />
@@ -596,7 +596,7 @@ export default function Home({
                       e.stopPropagation()
                       setExpandedCardKey(cardKey)
                     }}>
-                      {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Pick Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
+                      {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Confirm Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
                     </button>
                   ) : null}
                   {card.type !== 'message' && (
@@ -699,7 +699,8 @@ export default function Home({
       {/* Leaderboard Teaser */}
       {topPlayers.length > 1 && (
         <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
-          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Leaderboard</div>
+          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Rally Ratings</div>
+          <div className="card-secondary" style={{ marginBottom: 8 }}>Ratings update after each match</div>
           {topPlayers.map(entry => (
             <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
               <span className="leaderboard-rank">#{entry.rank}</span>
@@ -714,7 +715,7 @@ export default function Home({
       {/* View All */}
       <div className="home-view-all">
         <button className="btn-link" onClick={() => onViewTournament(activeTournaments[0].id)}>
-          View bracket
+          View full bracket and standings
         </button>
       </div>
     </div>
