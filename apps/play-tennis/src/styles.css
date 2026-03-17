@@ -537,7 +537,12 @@ body {
   box-shadow: var(--shadow);
   cursor: pointer;
   position: relative;
-  transition: transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.15s;
+  border: none;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
 }
 
 .card:active {
@@ -1289,7 +1294,7 @@ select:focus {
    Winner Banner
    ================================================ */
 .winner-banner {
-  background: linear-gradient(135deg, var(--color-positive-bg) 0%, #FEF3C7 100%);
+  background: linear-gradient(135deg, var(--color-positive-bg) 0%, var(--color-warning-bg) 100%);
   padding: var(--space-xl);
   border-radius: var(--radius-card);
   text-align: center;
@@ -3110,7 +3115,7 @@ select:focus {
   padding: 0 var(--space-sm);
   border-radius: var(--radius-button);
   border: 1px solid var(--color-divider);
-  font-size: 13px;
+  font-size: var(--font-caption);
   background: var(--color-bg-surface);
   font-family: inherit;
 }
@@ -5032,7 +5037,7 @@ select:focus {
 }
 
 .trophy-modal {
-  background: white;
+  background: var(--color-bg-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
   max-width: 340px;
@@ -5958,8 +5963,8 @@ select:focus {
 }
 
 .inbox-title {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
   flex: 1;
 }
