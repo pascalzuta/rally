@@ -401,7 +401,7 @@ export default function Home({
               </div>
             </div>
             <div className="how-rally-footer">
-              ~30 days per season
+              New seasons every ~30 days
               {onViewHelp && <button className="how-rally-learn-more" onClick={onViewHelp}>Learn more</button>}
             </div>
           </div>
