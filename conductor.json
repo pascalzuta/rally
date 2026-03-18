@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "setup": "npm install",
+    "run": "cd apps/play-tennis && npx vite --port ${CONDUCTOR_PORT:-5180} --host"
+  },
+  "runScriptMode": "nonconcurrent"
+}
