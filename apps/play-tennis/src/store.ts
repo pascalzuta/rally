@@ -1429,7 +1429,8 @@ export async function saveMatchScore(
   matchId: string,
   score1: number[],
   score2: number[],
-  winnerId: string
+  winnerId: string,
+  reportedBy?: string
 ): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
@@ -1501,14 +1502,62 @@ export async function saveMatchScore(
     }
   }
 
-  // Phase 1 fallback: local score + advancement
+  // Phase 1 fallback: local score — mark as reported, not completed
   match.score1 = score1
   match.score2 = score2
   match.winnerId = winnerId
+  match.scoreReportedBy = reportedBy ?? winnerId // Reporter is the current player
+  match.scoreReportedAt = new Date().toISOString()
+  // Don't set completed=true — wait for opponent confirmation
+
+  // Send notification to opponent
+  const reporterName = t.players.find(p => p.id === match.scoreReportedBy)?.name ?? 'Your opponent'
+  const opponentId = match.player1Id === match.scoreReportedBy ? match.player2Id : match.player1Id
+  if (opponentId) {
+    const scoreStr = score1.map((s, i) => `${s}-${score2[i]}`).join(', ')
+    addNotification({
+      type: 'score_reported',
+      recipientId: opponentId,
+      senderId: match.scoreReportedBy,
+      senderName: reporterName,
+      message: `${reporterName} reported a score: ${scoreStr}. Please confirm.`,
+      detail: scoreStr,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function confirmMatchScore(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreReportedBy || match.completed) return undefined
+
+  // Only the non-reporting player can confirm
+  const isReporter = match.scoreReportedBy === currentPlayerId
+  if (isReporter) return undefined
+
+  const winnerId = match.winnerId
   match.completed = true
 
+  // Update ELO ratings
+  const p1 = t.players.find(p => p.id === match.player1Id)
+  const p2 = t.players.find(p => p.id === match.player2Id)
+  if (p1 && p2 && winnerId) {
+    await updateRatings(p1, p2, winnerId)
+  }
+
   // Advance winner in single-elimination
-  if (t.format === 'single-elimination') {
+  if (t.format === 'single-elimination' && winnerId) {
     const nextRoundMatches = t.matches.filter(m => m.round === match.round + 1)
     const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
     if (nextMatch) {
@@ -1517,7 +1566,6 @@ export async function saveMatchScore(
       } else {
         nextMatch.player2Id = winnerId
       }
-      // Generate schedule when both players are known
       if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
         nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
       }
@@ -1532,8 +1580,7 @@ export async function saveMatchScore(
       if (allGroupDone && !t.groupPhaseComplete) {
         generateKnockoutPhase(t)
       }
-    } else if (match.phase === 'knockout') {
-      // Advance in knockout bracket (semis → final)
+    } else if (match.phase === 'knockout' && winnerId) {
       const nextRoundMatches = t.matches.filter(m => m.round === match.round + 1 && m.phase === 'knockout')
       const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
       if (nextMatch) {
@@ -1547,6 +1594,20 @@ export async function saveMatchScore(
         }
       }
     }
+  }
+
+  // Notify reporter that score was confirmed
+  if (match.scoreReportedBy) {
+    const confirmerName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+    addNotification({
+      type: 'score_reported',
+      recipientId: match.scoreReportedBy,
+      senderId: currentPlayerId,
+      senderName: confirmerName,
+      message: `${confirmerName} confirmed the score.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
   }
 
   const allDone = t.matches.every(m => m.completed)

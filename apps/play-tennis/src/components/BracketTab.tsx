@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions, confirmMatchScore } from '../store'
 import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
@@ -73,7 +73,19 @@ interface Props {
 }
 
 function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
-  const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
+  // Resolve to actual date from current week
+  const DAY_MAP: Record<string, number> = {
+    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+    thursday: 4, friday: 5, saturday: 6,
+  }
+  const target = DAY_MAP[slot.day] ?? 1
+  const today = new Date()
+  const mondayOffset = (today.getDay() + 6) % 7
+  const thisMonday = new Date(today)
+  thisMonday.setDate(today.getDate() - mondayOffset)
+  const date = new Date(thisMonday)
+  date.setDate(thisMonday.getDate() + ((target - 1 + 7) % 7))
+  const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   const period = slot.startHour >= 12 ? 'pm' : 'am'
   const hour = slot.startHour % 12 || 12
   return { day, time: `${hour}${period}` }
@@ -121,9 +133,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [viewMode, setViewMode] = useState<'calendar' | 'bracket'>('calendar') // default calendar for round-robin
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
-  const [showDetails, setShowDetails] = useState<boolean>(() => {
-    try { return localStorage.getItem('rally-show-details') === 'true' } catch { return false }
-  }) // R-27
   const [showAllMatches, setShowAllMatches] = useState(false) // R-28
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const pendingScrollId = useRef<string | null>(null)
@@ -300,6 +309,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (match.resolution.type === 'double-loss') return { label: 'Canceled', type: 'muted' }
       return { label: 'Resolved', type: 'muted' }
     }
+    // Score reported — waiting for confirmation
+    if (match.scoreReportedBy) {
+      if (match.scoreReportedBy === currentPlayerId) return { label: 'Score Reported', type: 'score' }
+      return { label: 'Confirm Score', type: 'score' }
+    }
     if (canScore) return { label: 'Report Score', type: 'score' }
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
     if (match.schedule.status === 'confirmed') return { label: 'Confirmed', type: 'confirmed' }
@@ -311,6 +325,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean): string | null {
     if (match.completed) return null
+    // Score reported — show confirm or waiting
+    if (match.scoreReportedBy) {
+      if (match.scoreReportedBy === currentPlayerId) return null // waiting for opponent
+      return 'Confirm Score'
+    }
     if (canScore) return 'Enter Score'
     if (!isMyMatch) return null
     if (!match.schedule) return null
@@ -350,10 +369,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
-
-    // Win probability for unplayed matches with both players
-    const showWinProb = !match.completed && match.player1Id && match.player2Id && r1 && r2
-    const p1WinProb = (showWinProb && r1 && r2) ? winProbability(r1.rating, r2.rating) : 0.5
 
     const scored = hasScores(match)
     const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore)
@@ -395,9 +410,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           <div className="match-players-row">
             <div className="match-players-names">
               <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                {showDetails && showWinProb && <div className="prob-indicator prob-indicator-p1" />}
                 <span className="match-player-name">
-                  {p1}{showDetails && seed1 != null && <span className="seed-label"> ({seed1})</span>}
+                  {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
                 </span>
                 {scored && (
                   <span className="match-sets">
@@ -409,9 +423,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
               </div>
               <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                {showDetails && showWinProb && <div className="prob-indicator prob-indicator-p2" />}
                 <span className="match-player-name">
-                  {p2}{showDetails && seed2 != null && <span className="seed-label"> ({seed2})</span>}
+                  {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
                 </span>
                 {scored && (
                   <span className="match-sets">
@@ -433,18 +446,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               )
             })()}
           </div>
-
-            {/* Win probability split bar */}
-            {showDetails && showWinProb && (
-              <div className="prob-split">
-                <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
-                <div className="prob-split-bar">
-                  <div className="prob-split-fill-left" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
-                  <div className="prob-split-fill-right" style={{ width: `${Math.round((1 - p1WinProb) * 100)}%` }} />
-                </div>
-                <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
-              </div>
-            )}
 
             {/* Resolution indicator */}
             {match.resolution && (
@@ -469,9 +470,27 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               </div>
             )}
 
+            {/* Score reported detail */}
+            {match.scoreReportedBy && !match.completed && (
+              <div className="reported-score-detail">
+                Score: {match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')}
+                {match.scoreReportedBy === currentPlayerId
+                  ? ' — waiting for opponent'
+                  : ''}
+              </div>
+            )}
+
             {/* Action row: action button + message button */}
             <div className="match-card-actions-row">
-              {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
+              {actionLabel === 'Confirm Score' ? (
+                <button className="match-card-action-btn" onClick={async e => {
+                  e.stopPropagation()
+                  await confirmMatchScore(tournament!.id, match.id, currentPlayerId)
+                  refresh()
+                }}>Confirm Score</button>
+              ) : actionLabel ? (
+                <button className="match-card-action-btn">{actionLabel}</button>
+              ) : null}
               {isMyMatch && match.player1Id && match.player2Id && (() => {
                 const msgOpponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
                 const msgUnread = hasUnreadFrom(currentPlayerId, msgOpponentId!)
@@ -514,6 +533,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   <InlineScoreEntry
                     tournament={tournament!}
                     matchId={match.id}
+                    currentPlayerId={currentPlayerId}
                     onSaved={handleScoreSaved}
                   />
                 ) : match.schedule ? (

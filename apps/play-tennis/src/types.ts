@@ -93,6 +93,8 @@ export interface Match {
   score2: number[]
   winnerId: string | null
   completed: boolean
+  scoreReportedBy?: string | null
+  scoreReportedAt?: string | null
   schedule?: MatchSchedule
   resolution?: MatchResolution
   phase?: MatchPhase
@@ -220,7 +222,7 @@ export interface DirectMessage {
 
 // --- Notifications ---
 
-export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder'
+export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder' | 'score_reported'
 
 export interface RallyNotification {
   id: string
@@ -231,6 +233,8 @@ export interface RallyNotification {
   message: string
   detail?: string
   relatedOfferId?: string
+  relatedMatchId?: string
+  relatedTournamentId?: string
   createdAt: string
   read: boolean
 }

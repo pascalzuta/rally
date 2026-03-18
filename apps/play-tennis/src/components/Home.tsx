@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -65,7 +65,7 @@ function handleInvite(county: string) {
   }
 }
 
-type ActionType = 'score' | 'respond' | 'schedule' | 'escalated' | 'message'
+type ActionType = 'score' | 'respond' | 'schedule' | 'escalated' | 'message' | 'confirm-score'
 
 interface ActionCard {
   type: ActionType
@@ -113,6 +113,27 @@ function buildActionCards(
       const opponentId = getOpponentId(match, playerId)
       const opponentName = playerNameWithSeed(tournament, opponentId)
       const schedule = match.schedule
+
+      // Score reported by opponent — needs confirmation
+      if (match.scoreReportedBy && match.scoreReportedBy !== playerId) {
+        const scoreStr = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
+        cards.push({
+          type: 'confirm-score',
+          label: 'Confirm Score',
+          detail: `${opponentName} reported: ${scoreStr}`,
+          opponentId: opponentId!,
+          opponentName,
+          tournamentId: tournament.id,
+          matchId: match.id,
+          priority: 0.5,
+        })
+        continue
+      }
+
+      // Score already reported by me — waiting for opponent
+      if (match.scoreReportedBy && match.scoreReportedBy === playerId) {
+        continue // Don't show any action card — waiting for confirmation
+      }
 
       // Escalated matches
       if (schedule?.status === 'escalated') {
@@ -591,6 +612,16 @@ export default function Home({
                     }}>
                       Reply
                     </button>
+                  ) : card.type === 'confirm-score' ? (
+                    <button className="action-card-btn" onClick={async e => {
+                      e.stopPropagation()
+                      if (cardTournament && cardMatch) {
+                        await confirmMatchScore(cardTournament.id, cardMatch.id, profile.id)
+                        onDataChanged?.()
+                      }
+                    }}>
+                      Confirm Score
+                    </button>
                   ) : !isExpanded ? (
                     <button className="action-card-btn" onClick={e => {
                       e.stopPropagation()
@@ -629,6 +660,7 @@ export default function Home({
                       <InlineScoreEntry
                         tournament={cardTournament}
                         matchId={cardMatch.id}
+                        currentPlayerId={profile.id}
                         onSaved={() => {
                           setExpandedCardKey(null)
                           onDataChanged?.()
@@ -685,6 +717,7 @@ export default function Home({
                 <InlineScoreEntry
                   tournament={upNext.tournament}
                   matchId={upNext.match.id}
+                  currentPlayerId={profile.id}
                   onSaved={() => {
                     setExpandedCardKey(null)
                     onDataChanged?.()

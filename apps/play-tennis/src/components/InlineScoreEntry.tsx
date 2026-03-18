@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { saveMatchScore, getPlayerName, getPlayerRating, getSeeds, winProbability } from '../store'
+import { useState, useRef, useEffect } from 'react'
+import { saveMatchScore, getPlayerName, getSeeds } from '../store'
 import { Tournament } from '../types'
 import { useToast } from './Toast'
 
@@ -16,21 +16,15 @@ function isValidSet(s1: number, s2: number): boolean {
 interface Props {
   tournament: Tournament
   matchId: string
+  currentPlayerId?: string
   onSaved: () => void
 }
 
-export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props) {
+export default function InlineScoreEntry({ tournament, matchId, currentPlayerId, onSaved }: Props) {
   const { showSuccess, showError } = useToast()
   const match = tournament.matches.find(m => m.id === matchId)!
   const p1Name = getPlayerName(tournament, match.player1Id)
   const p2Name = getPlayerName(tournament, match.player2Id)
-  const seeds = getSeeds(tournament)
-  const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
-  const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
-
-  const r1 = getPlayerRating(match.player1Id!, p1Name)
-  const r2 = getPlayerRating(match.player2Id!, p2Name)
-  const p1WinProb = winProbability(r1.rating, r2.rating)
 
   const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -103,9 +97,26 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
     return (s1a > s1b ? 1 : 2) !== (s2a > s2b ? 1 : 2)
   })()
 
+  const prevShowThirdSet = useRef(false)
+
+  // Auto-focus the first input of set 3 when it appears
+  useEffect(() => {
+    if (showThirdSet && !prevShowThirdSet.current) {
+      // Set 3 player 1 input is at index 4 (0-based: set0p1=0, set0p2=1, set1p1=2, set1p2=3, set2p1=4)
+      setTimeout(() => {
+        const thirdSetInput = inputRefs.current[4]
+        if (thirdSetInput) {
+          thirdSetInput.focus()
+          thirdSetInput.select()
+        }
+      }, 50)
+    }
+    prevShowThirdSet.current = showThirdSet
+  }, [showThirdSet])
+
   const visibleSets = showThirdSet ? 3 : 2
 
-  // R-07: Confirmation + R-16: Success feedback state machine
+  // Confirmation + success feedback state machine
   const [saveState, setSaveState] = useState<'idle' | 'confirming' | 'saving' | 'success' | 'error'>('idle')
 
   function handleSaveClick() {
@@ -117,9 +128,9 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
     if (!scores || !winnerId) return
     setSaveState('saving')
     try {
-      await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId)
+      await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId, currentPlayerId)
       setSaveState('success')
-      showSuccess('Score saved!')
+      showSuccess('Score reported — waiting for opponent to confirm')
       setTimeout(() => onSaved(), 2000)
     } catch {
       setSaveState('error')
@@ -127,12 +138,11 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
     }
   }
 
-  // R-16: Success toast
   if (saveState === 'success') {
     return (
       <div className="score-toast score-toast--success">
         <span className="score-toast-check">✓</span>
-        <strong>Score saved!</strong>
+        <strong>Score reported!</strong>
         <div style={{ fontSize: '13px', marginTop: '4px', opacity: 0.8 }}>
           Your opponent has 48 hours to confirm.
         </div>
@@ -151,7 +161,6 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
     )
   }
 
-  // R-07: Confirmation step
   if (saveState === 'confirming' && scores && winnerId) {
     const scoreSummary = scores.score1.map((s, i) => `${s}-${scores.score2[i]}`).join(', ')
     return (
@@ -170,16 +179,6 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
 
   return (
     <div className="inline-score-entry">
-      <div className="prob-split">
-        <span className="prob-split-label prob-split-p1">{Math.round(p1WinProb * 100)}%</span>
-        <div className="prob-split-bar">
-          <div className="prob-split-fill-left" style={{ width: `${Math.round(p1WinProb * 100)}%` }} />
-          <div className="prob-split-fill-right" style={{ width: `${Math.round((1 - p1WinProb) * 100)}%` }} />
-        </div>
-        <span className="prob-split-label prob-split-p2">{Math.round((1 - p1WinProb) * 100)}%</span>
-      </div>
-
-      {/* R-26: Player labels with You/Opponent distinction */}
       <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>
         <div className="score-header"></div>
         {sets.slice(0, visibleSets).map((_, i) => (
@@ -221,12 +220,6 @@ export default function InlineScoreEntry({ tournament, matchId, onSaved }: Props
         const err = setValidation(i)
         return err ? <div key={i} className="score-error">Set {i + 1}: {err}</div> : null
       })}
-
-      {winnerId && (
-        <div className="winner-preview">
-          Winner: <strong>{getPlayerName(tournament, winnerId)}</strong>
-        </div>
-      )}
 
       <button className="btn btn-primary" onClick={handleSaveClick} disabled={!canSave} style={{ width: '100%', marginTop: '0.5rem' }}>
         Save Score
