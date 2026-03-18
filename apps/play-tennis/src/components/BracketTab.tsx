@@ -472,7 +472,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             {/* Action row: action button + message button */}
             <div className="match-card-actions-row">
               {actionLabel && <button className="match-card-action-btn">{actionLabel}</button>}
-              {isMyMatch && match.player1Id && match.player2Id && !match.completed && (() => {
+              {isMyMatch && match.player1Id && match.player2Id && (() => {
                 const msgOpponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
                 const msgUnread = hasUnreadFrom(currentPlayerId, msgOpponentId!)
                 return (
@@ -579,6 +579,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         <ScheduleSummary
           tournament={tournament}
           currentPlayerId={currentPlayerId}
+          currentPlayerName={currentPlayerName}
           onViewBracket={() => setShowScheduleSummary(false)}
           onConfirmMatch={async (matchId) => {
             const match = tournament.matches.find(m => m.id === matchId)
@@ -622,6 +623,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         <MatchCalendar
           tournament={tournament}
           currentPlayerId={currentPlayerId}
+          currentPlayerName={currentPlayerName}
           onTournamentUpdated={refresh}
           onExpandMatch={(matchId) => {
             setViewMode('bracket')

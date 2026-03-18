@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
-import { getPlayerName, acceptProposal } from '../store'
+import { getPlayerName, acceptProposal, hasUnreadFrom } from '../store'
+import MessagePanel from './MessagePanel'
 
 interface Props {
   tournament: Tournament
   currentPlayerId: string
+  currentPlayerName: string
   onTournamentUpdated: () => void
   onExpandMatch?: (matchId: string) => void
 }
@@ -91,7 +94,8 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
   return weeks
 }
 
-export default function MatchCalendar({ tournament, currentPlayerId, onTournamentUpdated, onExpandMatch }: Props) {
+export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, onExpandMatch }: Props) {
+  const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
   const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
   const weeks = groupByWeek(sorted)
@@ -139,49 +143,72 @@ export default function MatchCalendar({ tournament, currentPlayerId, onTournamen
 
           {week.matches.map(match => {
             const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
+            const opponentName = getPlayerName(tournament, opponentId)
             const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
             const tier = getTier(match)
             const slot = match.schedule?.confirmedSlot ?? match.schedule?.proposals?.[0]
             const isCompleted = match.completed
             const score = formatScoreDisplay(match)
+            const isMessaging = messagingMatchId === match.id
+            const msgUnread = isMyMatch && opponentId ? hasUnreadFrom(currentPlayerId, opponentId) : false
 
             return (
-              <div
-                key={match.id}
-                className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
-                onClick={() => onExpandMatch?.(match.id)}
-              >
-                <div className="action-card-type">
-                  {isCompleted ? 'Completed' :
-                   tier === 'auto' ? 'Scheduled' :
-                   tier === 'needs-accept' ? 'Action needed' :
-                   'Schedule needed'}
-                </div>
-                <div className="action-card-opponent">vs {getPlayerName(tournament, opponentId)}</div>
-                <div className="action-card-detail">
-                  {isCompleted && score ? score :
-                   slot ? formatSlotTime(slot, week.weekStart) :
-                   'No time set'}
-                </div>
-                {!isCompleted && isMyMatch && tier === 'needs-accept' && (
-                  <div className="action-card-buttons">
-                    <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); handleConfirm(match) }}>
-                      Pick Time
-                    </button>
+              <div key={match.id}>
+                <div
+                  className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
+                  onClick={() => onExpandMatch?.(match.id)}
+                >
+                  <div className="action-card-type">
+                    {isCompleted ? 'Completed' :
+                     tier === 'auto' ? 'Scheduled' :
+                     tier === 'needs-accept' ? 'Action needed' :
+                     'Schedule needed'}
                   </div>
-                )}
-                {!isCompleted && isMyMatch && tier === 'needs-negotiation' && (
-                  <div className="action-card-buttons">
-                    <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
-                      Find a Time
-                    </button>
+                  <div className="action-card-opponent">vs {opponentName}</div>
+                  <div className="action-card-detail">
+                    {isCompleted && score ? score :
+                     slot ? formatSlotTime(slot, week.weekStart) :
+                     'No time set'}
                   </div>
-                )}
-                {!isCompleted && isMyMatch && tier === 'auto' && (
                   <div className="action-card-buttons">
-                    <button className="btn-link calendar-reschedule-link" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
-                      Reschedule
-                    </button>
+                    {!isCompleted && isMyMatch && tier === 'needs-accept' && (
+                      <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); handleConfirm(match) }}>
+                        Pick Time
+                      </button>
+                    )}
+                    {!isCompleted && isMyMatch && tier === 'needs-negotiation' && (
+                      <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
+                        Find a Time
+                      </button>
+                    )}
+                    {!isCompleted && isMyMatch && tier === 'auto' && (
+                      <button className="btn-link calendar-reschedule-link" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
+                        Reschedule
+                      </button>
+                    )}
+                    {isMyMatch && opponentId && (
+                      <button
+                        className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
+                        onClick={e => { e.stopPropagation(); setMessagingMatchId(isMessaging ? null : match.id) }}
+                        aria-label="Message opponent"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                        </svg>
+                        {msgUnread && <span className="msg-unread-dot" />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {isMessaging && opponentId && (
+                  <div onClick={e => e.stopPropagation()}>
+                    <MessagePanel
+                      currentPlayerId={currentPlayerId}
+                      currentPlayerName={currentPlayerName}
+                      otherPlayerId={opponentId}
+                      otherPlayerName={opponentName}
+                      onClose={() => setMessagingMatchId(null)}
+                    />
                   </div>
                 )}
               </div>
