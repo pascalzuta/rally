@@ -788,13 +788,22 @@ export default function Home({
               <span className="upnext-time-day">{st.day}</span>
               <span className="upnext-time-hour">{st.time}</span>
             </div>
+            <button
+              className="action-card-btn"
+              onClick={e => {
+                e.stopPropagation()
+                setExpandedCardKey(upNextExpanded ? null : upNextKey)
+              }}
+            >
+              Change Time
+            </button>
             {upNextExpanded && (
               <div onClick={e => e.stopPropagation()} style={{ gridColumn: '1 / -1' }}>
-                <InlineScoreEntry
+                <MatchSchedulePanel
                   tournament={upNext.tournament}
-                  matchId={upNext.match.id}
+                  match={upNext.match}
                   currentPlayerId={profile.id}
-                  onSaved={() => {
+                  onUpdated={() => {
                     setExpandedCardKey(null)
                     onDataChanged?.()
                   }}
