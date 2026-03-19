@@ -137,6 +137,16 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const opponentName = tournament.players.find(p => p.id === opponentId)?.name?.split(' ')[0] ?? 'Opponent'
   const hasCustomRescheduleSlot = Boolean(reschedDay) && reschedStart < reschedEnd
 
+  function renderPanelHeader(statusLabel: string, tone: 'slate' | 'blue' | 'green' | 'amber' | 'red', title: string, copy: string) {
+    return (
+      <div className="workflow-header">
+        <div className={`workflow-status workflow-status--${tone}`}>{statusLabel}</div>
+        <div className="schedule-panel-title">{title}</div>
+        <div className="schedule-panel-copy">{copy}</div>
+      </div>
+    )
+  }
+
   function resetRescheduleForm() {
     setShowReschedule(false)
     setRescheduleIntent('soft')
@@ -313,17 +323,20 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
       : null
     return (
       <div className="schedule-panel schedule-confirmed">
-        <div className={`schedule-status-badge ${
-          rescheduleUiState === 'soft_request_sent' || rescheduleUiState === 'soft_request_received'
-            ? 'badge-proposed'
-            : 'badge-confirmed'
-        }`}>
-          {rescheduleUiState === 'soft_request_sent'
+        {renderPanelHeader(
+          rescheduleUiState === 'soft_request_sent'
             ? 'Reschedule Requested'
             : rescheduleUiState === 'soft_request_received'
               ? 'Change Requested'
-              : 'Confirmed'}
-        </div>
+              : 'Confirmed',
+          rescheduleUiState === 'soft_request_sent' || rescheduleUiState === 'soft_request_received' ? 'blue' : 'green',
+          'Current confirmed time',
+          rescheduleUiState === 'soft_request_sent'
+            ? `Your current match time still holds unless ${opponentName} accepts a new one.`
+            : rescheduleUiState === 'soft_request_received'
+              ? `${opponentName} asked to move this match. Review the new options below.`
+              : 'This is the locked-in match time for your match.'
+        )}
         <div className="confirmed-slot">
           <span className="confirmed-day">{dayLabel(s.day)}</span>
           <span className="confirmed-time">{formatHour(s.startHour)}{'\u2013'}{formatHour(s.endHour)}</span>
@@ -344,9 +357,6 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
 
         {rescheduleUiState === 'soft_request_sent' && (
           <>
-            <div className="proposal-from">
-              Your match stays on at the current time unless {opponentName} accepts a new one.
-            </div>
             {pendingProposals.length > 0 && (
               <div className="proposal-list">
                 {pendingProposals.map(p => (
@@ -364,9 +374,6 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
 
         {rescheduleUiState === 'soft_request_received' && (
           <>
-            <div className="proposal-from">
-              {opponentName} asked to move this match. The current time still stands unless you accept a new one.
-            </div>
             {pendingProposals.length > 0 && (
               <div className="proposal-list">
                 {pendingProposals.map(p => (
@@ -473,12 +480,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     const original = activeRequest.originalSlot
     return (
       <div className="schedule-panel">
-        <div className="schedule-status-badge badge-escalated">Needs New Time</div>
-        <div className="proposal-from">
-          {rescheduleUiState === 'hard_request_sent'
-            ? 'You canceled the original confirmed time.'
-            : `${opponentName} can no longer make the original confirmed time.`}
-        </div>
+        {renderPanelHeader(
+          'Needs New Time',
+          'red',
+          'Find a replacement time',
+          rescheduleUiState === 'hard_request_sent'
+            ? 'You canceled the original confirmed slot. Send a new option to keep this match moving.'
+            : `${opponentName} can no longer make the original confirmed slot. Send a new option below.`
+        )}
         <div className="proposal-card proposal-mine">
           <div className="proposal-info">
             <span className="proposal-time">{slotLabel(original)}</span>
@@ -569,11 +578,16 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
       const isWinner = r.winnerId === currentPlayerId
       return (
         <div className="schedule-panel">
-          <div className="schedule-status-badge badge-walkover">Match Awarded</div>
+          {renderPanelHeader(
+            'Match Awarded',
+            'amber',
+            'Walkover result applied',
+            isWinner
+              ? 'Your opponent did not participate in scheduling. The match was awarded to you.'
+              : `${winnerName} was awarded the match because the other player did not participate in scheduling.`
+          )}
           <div className="resolution-detail">
-            {isWinner
-              ? 'Your opponent did not participate in scheduling. You have been awarded the match.'
-              : `${winnerName} was awarded the match. Opponent did not participate in scheduling.`}
+            Auto-resolution closes the scheduling flow for this match.
           </div>
         </div>
       )
@@ -581,8 +595,12 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     if (r.type === 'forced-match' && r.forcedSlot) {
       return (
         <div className="schedule-panel">
-          <div className="schedule-status-badge badge-forced">Final Match Assigned</div>
-          <div className="resolution-detail">Both players participated but could not agree on a time.</div>
+          {renderPanelHeader(
+            'Final Match Assigned',
+            'red',
+            'Rally assigned the final time',
+            'Both players participated but could not agree on a slot, so Rally set the final match time.'
+          )}
           <div className="confirmed-slot">
             <span className="confirmed-day">{dayLabel(r.forcedSlot.day)}</span>
             <span className="confirmed-time">{formatHour(r.forcedSlot.startHour)}{'\u2013'}{formatHour(r.forcedSlot.endHour)}</span>
@@ -593,8 +611,12 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     if (r.type === 'double-loss') {
       return (
         <div className="schedule-panel">
-          <div className="schedule-status-badge badge-double-loss">Match Canceled</div>
-          <div className="resolution-detail">Neither player participated in scheduling. Both receive a loss.</div>
+          {renderPanelHeader(
+            'Match Canceled',
+            'slate',
+            'Double loss applied',
+            'Neither player participated in scheduling, so both players receive a loss.'
+          )}
         </div>
       )
     }
@@ -606,7 +628,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     const daysLeft = Math.max(0, 4 - day)
     return (
       <div className="schedule-panel schedule-escalated">
-        <div className="schedule-status-badge badge-escalated">Needs Resolution</div>
+        {renderPanelHeader(
+          'Needs Resolution',
+          'red',
+          'Respond before auto-resolution',
+          daysLeft > 0
+            ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining before Rally resolves the match automatically.`
+            : 'The response window is up. Rally may auto-resolve this match now.'
+        )}
         <div className="escalation-timeline">
           <div className="escalation-bar">
             <div className="escalation-fill" style={{ width: `${Math.min(100, (day / 4) * 100)}%` }} />
@@ -669,11 +698,24 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const escalationDay = schedule.escalationDay ?? 0
   return (
     <div className="schedule-panel">
-      <div className={`schedule-status-badge ${pendingProposals.length > 0 ? 'badge-proposed' : 'badge-unscheduled'}`}>
-        {acceptableProposals.length > 0 ? 'Rally Found These Times for You'
-          : myPendingProposals.length > 0 ? 'Waiting for Opponent'
-          : 'No Times Available'}
-      </div>
+      {renderPanelHeader(
+        acceptableProposals.length > 0
+          ? 'Match Ready'
+          : myPendingProposals.length > 0
+            ? 'Awaiting Response'
+            : 'Needs Scheduling',
+        acceptableProposals.length > 0 || myPendingProposals.length > 0 ? 'blue' : 'amber',
+        acceptableProposals.length > 0
+          ? 'Review Rally\'s time options'
+          : myPendingProposals.length > 0
+            ? `Waiting on ${opponentName}`
+            : 'Suggest a new time',
+        acceptableProposals.length > 0
+          ? 'Choose the best available slot or send a different one.'
+          : myPendingProposals.length > 0
+            ? 'Your latest suggestion is pending. You can still send another option if needed.'
+            : 'No overlap was found automatically, so you need to schedule this one manually.'
+      )}
 
       {escalationDay > 0 && (
         <div className="escalation-timeline escalation-timeline-subtle">
@@ -703,7 +745,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 className="btn btn-primary btn-small"
                 onClick={(e) => { e.stopPropagation(); handleAccept(p.id) }}
               >
-                Confirm This Time
+                Confirm Time
               </button>
             </div>
           ))}

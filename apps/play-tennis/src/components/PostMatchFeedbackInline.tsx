@@ -52,12 +52,15 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
   if (saved) {
     const bothSubmitted = hasBothFeedback(matchId)
     return (
-      <div className="post-match-feedback" onClick={e => e.stopPropagation()}>
-        <div className="feedback-thankyou">
-          Thanks for your feedback!
-          {!bothSubmitted && (
-            <div className="feedback-blind-note">Feedback is anonymous until both players respond.</div>
-          )}
+      <div className="post-match-feedback workflow-module" onClick={e => e.stopPropagation()}>
+        <div className="workflow-header">
+          <div className="workflow-status workflow-status--green">Feedback Saved</div>
+          <div className="schedule-panel-title">Thanks for your feedback</div>
+          <div className="schedule-panel-copy">
+            {bothSubmitted
+              ? 'Both players have now responded.'
+              : 'Feedback stays anonymous until both players respond.'}
+          </div>
         </div>
       </div>
     )
@@ -65,8 +68,12 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
 
   if (showIssueForm) {
     return (
-      <div className="post-match-feedback" onClick={e => e.stopPropagation()}>
-        <div className="feedback-title">What happened?</div>
+      <div className="post-match-feedback workflow-module" onClick={e => e.stopPropagation()}>
+        <div className="workflow-header">
+          <div className="workflow-status workflow-status--red">Report Issue</div>
+          <div className="schedule-panel-title">What happened?</div>
+          <div className="schedule-panel-copy">Choose the issue that best describes the match.</div>
+        </div>
         <div className="feedback-issue-list">
           {ISSUE_OPTIONS.map(opt => (
             <label key={opt.value} className="feedback-issue-option">
@@ -103,8 +110,12 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
   }
 
   return (
-    <div className="post-match-feedback" onClick={e => e.stopPropagation()}>
-      <div className="feedback-title">How was the match with {opponentName}?</div>
+    <div className="post-match-feedback workflow-module" onClick={e => e.stopPropagation()}>
+      <div className="workflow-header">
+        <div className="workflow-status workflow-status--slate">Rate Match</div>
+        <div className="schedule-panel-title">How was the match with {opponentName}?</div>
+        <div className="schedule-panel-copy">Your feedback stays anonymous until both players respond.</div>
+      </div>
       <div className="feedback-sentiment-row">
         <button
           className={`feedback-sentiment-btn feedback-sentiment--positive ${sentiment === 'positive' ? 'selected' : ''}`}

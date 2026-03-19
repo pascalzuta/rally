@@ -15,16 +15,23 @@ const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!']
 export default function MessagePanel({ currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, onClose }: Props) {
   const [messages, setMessages] = useState<DirectMessage[]>([])
   const [text, setText] = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const hasMountedRef = useRef(false)
 
   useEffect(() => {
     refresh()
-    inputRef.current?.focus()
+    inputRef.current?.focus({ preventScroll: true })
   }, [currentPlayerId, otherPlayerId])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const body = bodyRef.current
+    if (!body) return
+    body.scrollTo({
+      top: body.scrollHeight,
+      behavior: hasMountedRef.current ? 'smooth' : 'auto',
+    })
+    hasMountedRef.current = true
   }, [messages.length])
 
   function refresh() {
@@ -66,14 +73,17 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
   return (
     <div className="message-panel">
       <div className="message-panel-header">
-        <span className="message-panel-name">{otherPlayerName}</span>
+        <div className="message-panel-title-group">
+          <div className="workflow-status workflow-status--slate">Message</div>
+          <span className="message-panel-name">{otherPlayerName}</span>
+        </div>
         <button className="message-panel-close" onClick={onClose} aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
       </div>
-      <div className="message-panel-body">
+      <div ref={bodyRef} className="message-panel-body">
         {messages.length === 0 && (
           <p className="message-panel-empty">No messages yet. Say hi!</p>
         )}
@@ -86,7 +96,6 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
             <div className="message-time">{formatTime(msg.createdAt)}</div>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
       <div className="quick-messages">
         {QUICK_MESSAGES.map(qm => (

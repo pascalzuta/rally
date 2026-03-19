@@ -629,6 +629,12 @@ body {
   border-top: 1px solid var(--color-divider);
 }
 
+.card-expansion-panel > *,
+.action-card-expansion > *,
+.match-card-expansion > * {
+  width: 100%;
+}
+
 .card-meta-chip {
   display: inline-flex;
   align-items: center;
@@ -718,6 +724,43 @@ body {
   font-size: var(--font-body-md);
   color: var(--color-text-secondary);
   margin-top: 2px;
+}
+
+.workflow-module {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.workflow-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workflow-status {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.workflow-status--slate { color: var(--color-text-secondary); }
+.workflow-status--blue { color: var(--color-accent-primary); }
+.workflow-status--green { color: var(--color-positive-primary); }
+.workflow-status--amber { color: var(--color-warning-primary); }
+.workflow-status--red { color: var(--color-negative-primary); }
+
+.workflow-divider {
+  height: 1px;
+  background: var(--color-divider);
+}
+
+.workflow-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 /* --- Card Action Button --- */
@@ -3234,6 +3277,9 @@ select:focus {
   background: var(--color-neutral-bg);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-button);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
 .inline-score-entry {
@@ -3242,18 +3288,13 @@ select:focus {
   background: var(--color-neutral-bg);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-button);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
 .schedule-panel.schedule-confirmed { }
 .schedule-panel.schedule-escalated { }
-
-.schedule-panel > * + * {
-  margin-top: var(--space-md);
-}
-
-.inline-score-entry > * + * {
-  margin-top: var(--space-md);
-}
 
 .schedule-panel--danger {
   background: rgba(253, 236, 236, 0.55);
@@ -3362,9 +3403,10 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-sm) var(--space-md);
-  background: var(--color-neutral-bg);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-button);
   border: 1px solid var(--color-divider);
+  gap: var(--space-sm);
 }
 
 .proposal-card.proposal-mine {
@@ -3394,10 +3436,10 @@ select:focus {
 }
 
 .propose-form {
-  background: var(--color-neutral-bg);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius-button);
-  padding: 10px var(--space-md);
-  margin-top: var(--space-sm);
+  padding: var(--space-md);
 }
 
 .propose-row {
@@ -3419,7 +3461,22 @@ select:focus {
 
 .propose-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.propose-actions .btn {
+  flex: 1;
+}
+
+.confirmed-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.confirmed-actions .btn-link {
+  margin-top: 0;
 }
 
 /* Match Notes */
@@ -6191,8 +6248,7 @@ select:focus {
   border-radius: var(--radius-md, 12px);
   margin-top: 0;
   overflow: hidden;
-  background: var(--color-bg-surface);
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+  background: var(--color-neutral-bg);
   border: 1px solid var(--color-divider);
 }
 
@@ -6200,8 +6256,14 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: var(--space-md) var(--space-lg);
   border-bottom: 1px solid var(--color-divider);
+}
+
+.message-panel-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .message-panel-name {
@@ -6236,6 +6298,8 @@ select:focus {
   flex-direction: column;
   gap: 8px;
   min-height: 80px;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
 .message-panel-empty {
@@ -6286,7 +6350,7 @@ select:focus {
 .quick-messages {
   display: flex;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 10px 16px;
   flex-wrap: wrap;
   border-top: 1px solid var(--color-divider);
 }
@@ -6406,7 +6470,9 @@ select:focus {
 }
 
 .pn-message-panel-wrapper {
-  padding: 0 16px 16px;
+  margin-top: var(--space-md);
+  padding: var(--space-md) 16px 16px;
+  border-top: 1px solid var(--color-divider);
 }
 
 /* --- Envelope icon + Inbox --- */
@@ -8488,10 +8554,12 @@ select:focus {
 /* Post-match feedback (replaces old reaction UI) */
 .post-match-feedback {
   padding: var(--space-md);
-  background: var(--color-surface);
-  border-radius: var(--radius-card);
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-button);
   border: 1px solid var(--color-divider);
-  margin-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 .feedback-title {
   font-size: var(--font-body-md);
@@ -8599,7 +8667,10 @@ select:focus {
 .feedback-issue-actions {
   display: flex;
   gap: var(--space-sm);
-  justify-content: flex-end;
+}
+
+.feedback-issue-actions .btn {
+  flex: 1;
 }
 
 /* Score confirmation panel */

@@ -87,6 +87,28 @@ function scheduleStatusClass(match: Match): string {
   }
 }
 
+function smoothScrollIntoViewport(el: HTMLElement) {
+  const rect = el.getBoundingClientRect()
+  const topPadding = 112
+  const bottomPadding = 28
+  const viewportHeight = window.innerHeight
+
+  if (rect.top < topPadding) {
+    window.scrollBy({
+      top: rect.top - topPadding,
+      behavior: 'smooth',
+    })
+    return
+  }
+
+  if (rect.bottom > viewportHeight - bottomPadding) {
+    window.scrollBy({
+      top: rect.bottom - viewportHeight + bottomPadding,
+      behavior: 'smooth',
+    })
+  }
+}
+
 export default function BracketTab({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
@@ -139,7 +161,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     requestAnimationFrame(() => {
       const el = matchRefs.current.get(id)
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        smoothScrollIntoViewport(el)
       }
     })
   })
