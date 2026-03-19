@@ -179,6 +179,8 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
 
   return (
     <div className="inline-score-entry">
+      <div className="score-entry-title">Report Score</div>
+      <div className="score-entry-copy">Enter the final result, then save it for your opponent to confirm.</div>
       <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>
         <div className="score-header"></div>
         {sets.slice(0, visibleSets).map((_, i) => (

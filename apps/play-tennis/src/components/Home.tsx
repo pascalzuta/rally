@@ -202,7 +202,7 @@ function buildActionCards(
         const dateHint = pendingProposal ? ` · ${formatSlotInline(pendingProposal)}` : ''
         cards.push({
           type: 'escalated',
-          label: 'Urgent',
+          label: 'Needs Resolution',
           detail: `Escalation day ${schedule.escalationDay} — respond now${dateHint}`,
           opponentId: opponentId!,
           opponentName,
@@ -266,8 +266,8 @@ function buildActionCards(
       ) {
         cards.push({
           type: 'schedule',
-          label: 'Schedule',
-          detail: 'Find a time to play',
+          label: 'Needs Scheduling',
+          detail: 'No time set yet',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -376,6 +376,16 @@ export default function Home({
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
   const [hiwDismissed, setHiwDismissed] = useState(() => localStorage.getItem('rally_hiw_dismissed') === '1')
+
+  function toggleCardExpansion(cardKey: string) {
+    setMessagingCardKey(null)
+    setExpandedCardKey(prev => prev === cardKey ? null : cardKey)
+  }
+
+  function toggleCardMessaging(cardKey: string) {
+    setExpandedCardKey(null)
+    setMessagingCardKey(prev => prev === cardKey ? null : cardKey)
+  }
 
   const activeTournaments = useMemo(
     () => tournaments.filter(
@@ -663,18 +673,22 @@ export default function Home({
                 key={cardKey}
                 className={`action-card action-${card.type}`}
                 onClick={() => card.type === 'message'
-                  ? setMessagingCardKey(isMessaging ? null : cardKey)
-                  : setExpandedCardKey(isExpanded ? null : cardKey)
+                  ? toggleCardMessaging(cardKey)
+                  : toggleCardExpansion(cardKey)
                 }
               >
-                <div className="action-card-type">{card.label}</div>
-                <div className="action-card-opponent">{card.type === 'message' ? 'from' : 'vs'} {card.opponentName}</div>
-                <div className="action-card-detail">{card.detail}</div>
+                <div className="action-card-status-row">
+                  <div className="action-card-type">{card.label}</div>
+                </div>
+                <div className="action-card-main">
+                  <div className="action-card-opponent">{card.type === 'message' ? card.opponentName : `vs ${card.opponentName}`}</div>
+                  <div className="action-card-supporting">{card.type === 'message' ? card.detail : card.detail}</div>
+                </div>
                 <div className="action-card-buttons">
                   {card.type === 'message' ? (
                     <button className="action-card-btn" onClick={e => {
                       e.stopPropagation()
-                      setMessagingCardKey(isMessaging ? null : cardKey)
+                      toggleCardMessaging(cardKey)
                     }}>
                       Reply
                     </button>
@@ -691,7 +705,7 @@ export default function Home({
                   ) : !isExpanded ? (
                     <button className="action-card-btn" onClick={e => {
                       e.stopPropagation()
-                      setExpandedCardKey(cardKey)
+                      toggleCardExpansion(cardKey)
                     }}>
                       {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Confirm Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
                     </button>
@@ -699,7 +713,7 @@ export default function Home({
                   {card.type !== 'message' && (
                     <button
                       className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                      onClick={e => { e.stopPropagation(); setMessagingCardKey(isMessaging ? null : cardKey) }}
+                      onClick={e => { e.stopPropagation(); toggleCardMessaging(cardKey) }}
                       aria-label="Message opponent"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -710,7 +724,7 @@ export default function Home({
                   )}
                 </div>
                 {isMessaging && card.opponentId && (
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                     <MessagePanel
                       currentPlayerId={profile.id}
                       currentPlayerName={profile.name}
@@ -721,7 +735,7 @@ export default function Home({
                   </div>
                 )}
                 {isExpanded && cardTournament && cardMatch && (
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                     {card.type === 'score' ? (
                       <InlineScoreEntry
                         tournament={cardTournament}
@@ -770,35 +784,22 @@ export default function Home({
           const dayStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
           const period = slot.startHour >= 12 ? 'pm' : 'am'
           const hour = slot.startHour % 12 || 12
-          return { day: dayStr, time: `${hour}${period}` }
+          return `${dayStr}, ${hour}:00 ${period.toUpperCase()}`
         })()
-        const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
-        const upNextExpanded = expandedCardKey === upNextKey
         return (
-          <div className="card upnext-card" onClick={() => setExpandedCardKey(upNextExpanded ? null : upNextKey)}>
-            <div>
+          <div className="card upnext-card" onClick={() => onViewMatch(upNext.tournament.id, upNext.match.id)}>
+            <div className="card-status-row">
               <div className="upnext-label">Confirmed</div>
+            </div>
+            <div className="card-summary-main">
               <div className="upnext-opponent">
                 vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
               </div>
+              <div className="upnext-time">{st}</div>
             </div>
-            <div className="upnext-time">
-              <span className="upnext-time-day">{st.day}</span>
-              <span className="upnext-time-hour">{st.time}</span>
+            <div className="match-card-actions-row">
+              <button className="match-card-action-btn">View Match</button>
             </div>
-            {upNextExpanded && (
-              <div onClick={e => e.stopPropagation()} style={{ gridColumn: '1 / -1' }}>
-                <InlineScoreEntry
-                  tournament={upNext.tournament}
-                  matchId={upNext.match.id}
-                  currentPlayerId={profile.id}
-                  onSaved={() => {
-                    setExpandedCardKey(null)
-                    onDataChanged?.()
-                  }}
-                />
-              </div>
-            )}
           </div>
         )
       })()}

@@ -265,7 +265,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                       style={{ animationDelay: `${i * 50}ms` }}
                     >
                       <div className="action-card-type">
-                        {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Rally Suggested' : 'Schedule needed'}
+                        {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Match Ready' : 'Needs Scheduling'}
                       </div>
                       <div className="action-card-opponent">vs {opponentName}</div>
                       <div className="action-card-detail">
@@ -279,7 +279,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                         )}
                         {tier === 'needs-negotiation' && onScheduleMatch && (
                           <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onScheduleMatch(match.id) }}>
-                            Find a Time
+                            Schedule Match
                           </button>
                         )}
                         {opponentId && (

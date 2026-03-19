@@ -16,15 +16,14 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
     <div className="waitlist-container">
       {/* Status card */}
       <div className="card waitlist-status-card">
-        <div className="waitlist-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12,6 12,12 16,14" />
-          </svg>
+        <div className="waitlist-card-status-row">
+          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Waitlisted</div>
         </div>
-        <div className="waitlist-title">We're finding you a group</div>
-        <div className="waitlist-body">
+        <div className="waitlist-card-main">
+          <div className="waitlist-title">We're finding you a group</div>
+          <div className="waitlist-card-supporting">
           Your schedule didn't overlap enough with this round's groups. We'll match you in the next round.
+          </div>
         </div>
         <div className="waitlist-next">
           <span className="waitlist-next-label">Next round starts</span>
@@ -34,9 +33,14 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
 
       {/* Availability improvement prompt */}
       <div className="card waitlist-improve-card">
-        <div className="waitlist-improve-title">Want to match faster?</div>
-        <div className="waitlist-improve-body">
+        <div className="waitlist-card-status-row">
+          <div className="card-eyebrow" style={{ color: 'var(--color-accent-primary)' }}>Improve Match Rate</div>
+        </div>
+        <div className="waitlist-card-main">
+          <div className="waitlist-improve-title">Want to match faster?</div>
+          <div className="waitlist-card-supporting">
           Players with flexible schedules get matched 3x faster. Adding just one more time slot could put you in a group.
+          </div>
         </div>
         <div className="waitlist-improve-suggestion">
           Most players in {county.split(',')[0]} are free Saturday mornings.
@@ -48,9 +52,14 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
 
       {/* Find Match fallback */}
       <div className="card waitlist-findmatch-card">
-        <div className="waitlist-findmatch-title">Play this weekend instead?</div>
-        <div className="waitlist-findmatch-body">
+        <div className="waitlist-card-status-row">
+          <div className="card-eyebrow" style={{ color: 'var(--color-positive-primary)' }}>Play Instead</div>
+        </div>
+        <div className="waitlist-card-main">
+          <div className="waitlist-findmatch-title">Play this weekend instead?</div>
+          <div className="waitlist-card-supporting">
           Find a one-off match while you wait for the next tournament round.
+          </div>
         </div>
         <button className="btn btn-primary" onClick={onFindMatch}>
           Find a Match

@@ -592,6 +592,77 @@ body {
   border: none;
 }
 
+.card-status-row,
+.action-card-status-row,
+.offer-card-status-row,
+.waitlist-card-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.card-summary-main,
+.action-card-main,
+.offer-card-main,
+.waitlist-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-supporting,
+.action-card-supporting,
+.match-card-supporting,
+.offer-card-supporting,
+.waitlist-card-supporting {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+}
+
+.card-expansion-panel,
+.action-card-expansion,
+.match-card-expansion {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-divider);
+}
+
+.card-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-chip);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-neutral-bg);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-meta-chip--blue {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+}
+
+.card-meta-chip--green {
+  background: var(--color-positive-bg);
+  color: var(--color-positive-primary);
+}
+
+.card-meta-chip--amber {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
+}
+
+.card-meta-chip--red {
+  background: var(--color-negative-bg);
+  color: var(--color-negative-primary);
+}
+
 .card:hover {
   box-shadow: var(--shadow-hover);
 }
@@ -1067,7 +1138,7 @@ select:focus {
 }
 
 .match-card.sched-unscheduled {
-  border-left-color: var(--color-text-muted);
+  border-left-color: var(--color-warning-primary);
 }
 
 .match-card.sched-resolved { }
@@ -1089,10 +1160,19 @@ select:focus {
   margin-bottom: var(--space-sm);
 }
 
+.match-card-supporting {
+  margin-top: var(--space-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.match-card-supporting--danger {
+  color: var(--color-negative-primary);
+}
+
 .match-card.sched-confirmed .match-card-eyebrow { color: var(--color-positive-primary); }
 .match-card.sched-proposed .match-card-eyebrow { color: var(--color-accent-primary); }
 .match-card.sched-escalated .match-card-eyebrow { color: var(--color-negative-primary); }
-.match-card.sched-unscheduled .match-card-eyebrow { color: var(--color-text-muted); }
+.match-card.sched-unscheduled .match-card-eyebrow { color: var(--color-warning-primary); }
 
 /* Match card action button */
 .match-card-action-btn {
@@ -1124,6 +1204,12 @@ select:focus {
 .match-card.sched-escalated .match-card-action-btn {
   background: var(--color-negative-bg);
   color: var(--color-negative-primary);
+}
+
+.match-card.sched-unscheduled .match-card-action-btn,
+.match-card.scoreable .match-card-action-btn {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
 }
 
 /* Players row: names on left, scheduled time on right (where scores go post-match) */
@@ -3071,19 +3157,92 @@ select:focus {
    Scheduling
    ================================================ */
 .schedule-panel {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-divider);
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--color-neutral-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-button);
 }
 
 .inline-score-entry {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-divider);
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--color-neutral-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-button);
 }
 
 .schedule-panel.schedule-confirmed { }
 .schedule-panel.schedule-escalated { }
+
+.schedule-panel > * + * {
+  margin-top: var(--space-md);
+}
+
+.inline-score-entry > * + * {
+  margin-top: var(--space-md);
+}
+
+.schedule-panel--danger {
+  background: rgba(253, 236, 236, 0.55);
+  border-color: rgba(214, 69, 69, 0.2);
+}
+
+.schedule-panel--info {
+  background: rgba(220, 231, 255, 0.35);
+  border-color: rgba(42, 91, 215, 0.18);
+}
+
+.schedule-panel--success {
+  background: rgba(230, 246, 236, 0.5);
+  border-color: rgba(31, 157, 85, 0.15);
+}
+
+.schedule-panel-title {
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.schedule-panel-copy {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.schedule-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.schedule-panel-link {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-accent-primary);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.schedule-panel-link--danger {
+  color: var(--color-negative-primary);
+}
+
+.score-entry-title {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-warning-primary);
+}
+
+.score-entry-copy {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
 
 .schedule-status-badge {
   font-size: 11px;
@@ -3150,6 +3309,7 @@ select:focus {
 .proposal-time {
   font-size: var(--font-body-md);
   font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
 }
 
 .proposal-from {
@@ -3605,15 +3765,22 @@ select:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 
 .offer-card-label {
   font-size: var(--font-body-sm);
   font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.06em;
+}
+
+.offer-card-incoming .offer-card-label {
+  color: var(--color-accent-primary);
+}
+
+.offer-card-outgoing .offer-card-label {
+  color: var(--color-text-secondary);
 }
 
 .offer-card-expires {
@@ -3645,6 +3812,7 @@ select:focus {
 .offer-card-actions {
   display: flex;
   gap: var(--space-sm);
+  margin-top: var(--space-md);
 }
 
 .offer-accept-btn {
@@ -4103,10 +4271,11 @@ select:focus {
 
 .action-card.action-score::before { background: var(--color-warning-primary); }
 .action-card.action-respond::before { background: var(--color-accent-primary); }
-.action-card.action-schedule::before { background: var(--color-text-muted); }
+.action-card.action-schedule::before { background: var(--color-warning-primary); }
 .action-card.action-escalated::before { background: var(--color-negative-primary); }
 .action-card.action-completed::before { background: var(--color-text-muted); }
-.action-card.action-confirm-score::before { background: var(--color-warning-primary); }
+.action-card.action-confirm-score::before,
+.action-card.action-message::before { background: var(--color-accent-primary); }
 
 .action-card-type {
   font-size: var(--font-body-sm);
@@ -4119,10 +4288,11 @@ select:focus {
 
 .action-score .action-card-type { color: var(--color-warning-primary); }
 .action-respond .action-card-type { color: var(--color-accent-primary); }
-.action-schedule .action-card-type { color: var(--color-text-secondary); }
+.action-schedule .action-card-type { color: var(--color-warning-primary); }
 .action-escalated .action-card-type { color: var(--color-negative-primary); }
 .action-completed .action-card-type { color: var(--color-text-muted); }
-.action-confirm-score .action-card-type { color: var(--color-warning-primary); }
+.action-confirm-score .action-card-type,
+.action-message .action-card-type { color: var(--color-accent-primary); }
 
 .action-card-opponent {
   font-size: var(--font-title-sm);
@@ -4160,15 +4330,20 @@ select:focus {
   color: var(--color-accent-primary);
 }
 
-.action-schedule .action-card-btn,
-.action-escalated .action-card-btn {
-  background: var(--color-positive-bg);
-  color: var(--color-positive-primary);
-}
-
-.action-confirm-score .action-card-btn {
+.action-schedule .action-card-btn {
   background: var(--color-warning-bg);
   color: var(--color-warning-primary);
+}
+
+.action-escalated .action-card-btn {
+  background: var(--color-negative-bg);
+  color: var(--color-negative-primary);
+}
+
+.action-confirm-score .action-card-btn,
+.action-message .action-card-btn {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
 }
 
 /* Up Next card */
@@ -4176,9 +4351,6 @@ select:focus {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-left: 4px solid var(--color-positive-primary);
 }
 
@@ -4197,23 +4369,8 @@ select:focus {
 }
 
 .upnext-time {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.1;
-}
-
-.upnext-time-day {
-  font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
-  letter-spacing: 0;
-}
-
-.upnext-time-hour {
-  font-size: var(--font-title-sm);
-  font-weight: var(--weight-bold);
-  color: var(--color-positive-primary);
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -5912,10 +6069,11 @@ select:focus {
 
 .message-panel {
   border-radius: var(--radius-md, 12px);
-  margin-top: 12px;
+  margin-top: 0;
   overflow: hidden;
-  background: var(--color-surface);
+  background: var(--color-bg-surface);
   box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+  border: 1px solid var(--color-divider);
 }
 
 .message-panel-header {
@@ -6088,7 +6246,7 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: var(--space-md);
 }
 
 .match-card-actions-row .match-card-action-btn {
@@ -6096,10 +6254,15 @@ select:focus {
 }
 
 .match-card-msg-btn {
-  background: none;
+  background: var(--color-bg-surface);
   border: 1px solid var(--color-divider);
-  border-radius: 8px;
-  padding: 6px 8px;
+  border-radius: var(--radius-chip);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: var(--color-text-secondary);
   line-height: 0;
@@ -6986,8 +7149,7 @@ select:focus {
 }
 
 .waitlist-status-card {
-  text-align: center;
-  border-left: none;
+  border-left: 4px solid var(--color-divider);
 }
 
 .waitlist-icon {

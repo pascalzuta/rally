@@ -161,8 +161,8 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   <div className="action-card-type">
                     {isCompleted ? 'Completed' :
                      tier === 'auto' ? 'Scheduled' :
-                     tier === 'needs-accept' ? 'Action needed' :
-                     'Schedule needed'}
+                     tier === 'needs-accept' ? 'Match Ready' :
+                     'Needs Scheduling'}
                   </div>
                   <div className="action-card-opponent">vs {opponentName}</div>
                   <div className="action-card-detail">
@@ -173,12 +173,12 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   <div className="action-card-buttons">
                     {!isCompleted && isMyMatch && tier === 'needs-accept' && (
                       <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); handleConfirm(match) }}>
-                        Pick Time
+                        Confirm Time
                       </button>
                     )}
                     {!isCompleted && isMyMatch && tier === 'needs-negotiation' && (
                       <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
-                        Find a Time
+                        Schedule Match
                       </button>
                     )}
                     {!isCompleted && isMyMatch && tier === 'auto' && (

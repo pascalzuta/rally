@@ -276,9 +276,14 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="offer-list">
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
-                <div className="offer-card-header"><span className="offer-card-label">Respond</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
-                <div className="card-title">{offer.senderName}</div>
-                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                <div className="offer-card-status-row">
+                  <span className="offer-card-label">Awaiting Response</span>
+                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
+                </div>
+                <div className="offer-card-main">
+                  <div className="card-title">{offer.senderName}</div>
+                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                </div>
                 <div className="offer-card-actions">
                   <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
                   <button className="btn offer-decline-btn" onClick={() => handleDeclineOffer(offer)}>Decline</button>
@@ -295,9 +300,14 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="offer-list">
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
-                <div className="offer-card-header"><span className="offer-card-label">Pending</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
-                <div className="card-title">to {offer.recipientName}</div>
-                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                <div className="offer-card-status-row">
+                  <span className="offer-card-label">Pending</span>
+                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
+                </div>
+                <div className="offer-card-main">
+                  <div className="card-title">to {offer.recipientName}</div>
+                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                </div>
                 <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
               </div>
             ))}
