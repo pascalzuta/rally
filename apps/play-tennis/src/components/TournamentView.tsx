@@ -68,9 +68,9 @@ function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean, cu
   if (canScore) return { label: 'Report Score' }
   if (!match.schedule) return { label: 'Waiting on players' }
   if (match.schedule.status === 'confirmed') return { label: 'Confirmed' }
-  if (match.schedule.status === 'escalated') return { label: 'Needs Resolution' }
-  if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Match Ready' }
-  if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Needs Scheduling' }
+  if (match.schedule.status === 'escalated') return { label: 'Escalated' }
+  if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Rally Suggested' }
+  if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Schedule' }
   return { label: 'Waiting on players' }
 }
 
@@ -87,7 +87,7 @@ function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean
     return 'Find a time'
   }
   if (match.schedule.status === 'proposed') return 'Confirm Time'
-  if (match.schedule.status === 'escalated') return 'Respond Now'
+  if (match.schedule.status === 'escalated') return 'Confirm Time'
   if (match.schedule.status === 'unscheduled') return 'Schedule Match'
   return null
 }

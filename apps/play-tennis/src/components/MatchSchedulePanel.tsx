@@ -311,7 +311,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
       ? `${dayLabel(latestHistory.fromSlot.day)} ${formatHour(latestHistory.fromSlot.startHour)}${'\u2013'}${formatHour(latestHistory.fromSlot.endHour)}`
       : null
     return (
-      <div className="schedule-panel schedule-confirmed schedule-panel--success">
+      <div className="schedule-panel schedule-confirmed">
         <div className={`schedule-status-badge ${
           rescheduleUiState === 'soft_request_sent' || rescheduleUiState === 'soft_request_received'
             ? 'badge-proposed'
@@ -323,7 +323,6 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               ? 'Change Requested'
               : 'Confirmed'}
         </div>
-        <div className="schedule-panel-copy">This match is locked in. Use chat for court details, then report the score here after you play.</div>
         <div className="confirmed-slot">
           <span className="confirmed-day">{dayLabel(s.day)}</span>
           <span className="confirmed-time">{formatHour(s.startHour)}{'\u2013'}{formatHour(s.endHour)}</span>
@@ -417,25 +416,27 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             </div>
           </div>
         ) : (
-          <div className="schedule-panel-actions confirmed-actions">
+          <div className="confirmed-actions">
             {rescheduleUiState === 'soft_request_sent' && (
-              <button
-                className="schedule-panel-link"
-                onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
-              >
-                Withdraw Request
-              </button>
+              <>
+                <button
+                  className="btn-link propose-link"
+                  onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
+                >
+                  Withdraw Request
+                </button>
+              </>
             )}
             {rescheduleUiState === 'soft_request_received' && (
               <>
                 <button
-                  className="schedule-panel-link"
+                  className="btn-link propose-link"
                   onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
                 >
                   Suggest Another
                 </button>
                 <button
-                  className="schedule-panel-link"
+                  className="btn-link propose-link"
                   onClick={(e) => { e.stopPropagation(); handleDeclineSoftRequest() }}
                 >
                   Keep Current Time
@@ -444,14 +445,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             )}
             {rescheduleUiState === 'none' && canReschedule && (
               <button
-                className="schedule-panel-link"
+                className="btn-link propose-link"
                 onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
               >
                 Change Time
               </button>
             )}
             <button
-              className="schedule-panel-link schedule-panel-link--danger"
+              className="btn-link propose-link cancel-link"
               onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
             >
               Cancel Match
@@ -558,9 +559,9 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
       const winnerName = tournament.players.find(p => p.id === r.winnerId)?.name ?? 'Unknown'
       const isWinner = r.winnerId === currentPlayerId
       return (
-        <div className="schedule-panel schedule-panel--danger">
+        <div className="schedule-panel">
           <div className="schedule-status-badge badge-walkover">Match Awarded</div>
-          <div className="schedule-panel-copy resolution-detail">
+          <div className="resolution-detail">
             {isWinner
               ? 'Your opponent did not participate in scheduling. You have been awarded the match.'
               : `${winnerName} was awarded the match. Opponent did not participate in scheduling.`}
@@ -570,9 +571,9 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     }
     if (r.type === 'forced-match' && r.forcedSlot) {
       return (
-        <div className="schedule-panel schedule-panel--info">
+        <div className="schedule-panel">
           <div className="schedule-status-badge badge-forced">Final Match Assigned</div>
-          <div className="schedule-panel-copy resolution-detail">Both players participated but could not agree on a time. Rally assigned the final slot below.</div>
+          <div className="resolution-detail">Both players participated but could not agree on a time.</div>
           <div className="confirmed-slot">
             <span className="confirmed-day">{dayLabel(r.forcedSlot.day)}</span>
             <span className="confirmed-time">{formatHour(r.forcedSlot.startHour)}{'\u2013'}{formatHour(r.forcedSlot.endHour)}</span>
@@ -582,9 +583,9 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     }
     if (r.type === 'double-loss') {
       return (
-        <div className="schedule-panel schedule-panel--danger">
+        <div className="schedule-panel">
           <div className="schedule-status-badge badge-double-loss">Match Canceled</div>
-          <div className="schedule-panel-copy resolution-detail">Neither player participated in scheduling. Both players receive a loss.</div>
+          <div className="resolution-detail">Neither player participated in scheduling. Both receive a loss.</div>
         </div>
       )
     }
@@ -595,7 +596,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     const day = schedule.escalationDay ?? 0
     const daysLeft = Math.max(0, 4 - day)
     return (
-      <div className="schedule-panel schedule-escalated schedule-panel--danger">
+      <div className="schedule-panel schedule-escalated">
         <div className="schedule-status-badge badge-escalated">Needs Resolution</div>
         <div className="escalation-timeline">
           <div className="escalation-bar">
@@ -617,10 +618,10 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
 
         {!showPropose ? (
           <button
-            className="match-card-action-btn match-card-action-btn--negotiate"
+            className="btn btn-primary btn-small"
             onClick={(e) => { e.stopPropagation(); setShowPropose(true) }}
           >
-            Respond Now
+            Propose a time now
           </button>
         ) : (
           <div className="propose-form" onClick={e => e.stopPropagation()}>
@@ -642,7 +643,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               </select>
             </div>
             <div className="propose-actions">
-              <button className="match-card-action-btn match-card-action-btn--negotiate" onClick={handlePropose} disabled={!propDay || propStart >= propEnd}>
+              <button className="btn btn-primary btn-small" onClick={handlePropose} disabled={!propDay || propStart >= propEnd}>
                 Send Proposal
               </button>
               <button className="btn btn-small" onClick={(e) => { e.stopPropagation(); setShowPropose(false) }}>
@@ -658,18 +659,11 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   // Proposed / Unscheduled state
   const escalationDay = schedule.escalationDay ?? 0
   return (
-    <div className={`schedule-panel ${acceptableProposals.length > 0 || pendingProposals.length > 0 ? 'schedule-panel--info' : ''}`}>
+    <div className="schedule-panel">
       <div className={`schedule-status-badge ${pendingProposals.length > 0 ? 'badge-proposed' : 'badge-unscheduled'}`}>
         {acceptableProposals.length > 0 ? 'Rally Found These Times for You'
           : myPendingProposals.length > 0 ? 'Waiting for Opponent'
           : 'No Times Available'}
-      </div>
-      <div className="schedule-panel-copy">
-        {acceptableProposals.length > 0
-          ? 'Review the best available options below. If none work, propose a different time.'
-          : myPendingProposals.length > 0
-          ? 'You already suggested a time. Your opponent still needs to respond.'
-          : 'No overlap is available yet. Propose a time to keep this match moving.'}
       </div>
 
       {escalationDay > 0 && (
@@ -697,10 +691,10 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 )}
               </div>
               <button
-                className="match-card-action-btn"
+                className="btn btn-primary btn-small"
                 onClick={(e) => { e.stopPropagation(); handleAccept(p.id) }}
               >
-                Confirm Time
+                Confirm This Time
               </button>
             </div>
           ))}
@@ -722,7 +716,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
 
       {!showPropose ? (
         <button
-          className="schedule-panel-link"
+          className="btn-link propose-link"
           onClick={(e) => { e.stopPropagation(); setShowPropose(true) }}
         >
           Suggest a different time instead
@@ -748,7 +742,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           </div>
           <div className="propose-actions">
             <button
-              className="match-card-action-btn match-card-action-btn--negotiate"
+              className="btn btn-primary btn-small"
               onClick={handlePropose}
               disabled={!propDay || propStart >= propEnd}
             >
