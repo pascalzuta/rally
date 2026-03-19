@@ -281,6 +281,10 @@ body {
   height: 24px;
 }
 
+.tab-icon--profile {
+  color: var(--color-positive-primary);
+}
+
 .tab-text {
   font-size: var(--font-body-sm);
   font-weight: var(--weight-medium);
