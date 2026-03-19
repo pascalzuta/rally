@@ -1332,6 +1332,15 @@ main {
   text-decoration: underline;
 }
 
+/* Advisory board disclaimer */
+.advisor-disclaimer {
+  margin: 1.5rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #4e607b;
+  font-style: italic;
+}
+
 /* Sector cards */
 .sector-grid {
   display: grid;
