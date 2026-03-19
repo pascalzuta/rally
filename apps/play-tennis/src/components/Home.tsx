@@ -432,19 +432,84 @@ export default function Home({
   )
   const myRating = getPlayerRating(profile.id, profile.name)
 
+  const availabilityReminder = !hasAvailability ? (
+    <div className="card card-inline-alert card-inline-alert--warning">
+      <div className="card-status-row">
+        <div className="card-status-label card-status-label--amber">Needs Setup</div>
+      </div>
+      <div className="card-summary-main">
+        <div className="card-title">Add your availability</div>
+        <div className="card-supporting">Matches schedule around your calendar. Go to Profile to set your times.</div>
+      </div>
+    </div>
+  ) : null
+
+  const renderUserStatusCard = (headline: string, supporting: string, statusLabel: string) => (
+    <div className="card user-status-card">
+      <div className="card-status-row">
+        <div className="card-status-label card-status-label--slate">{statusLabel}</div>
+        <div className="card-meta-chip card-meta-chip--blue">Rating {Math.round(myRating.rating)}</div>
+      </div>
+      <div className="card-summary-main">
+        <div className="card-title">{headline}</div>
+        <div className="card-supporting">{supporting}</div>
+      </div>
+    </div>
+  )
+
+  const renderLeaderboardTeaser = (title: string, supporting: string) => {
+    if (topPlayers.length <= 1) return null
+    return (
+      <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
+        <div className="card-status-row">
+          <div className="card-status-label card-status-label--blue">Leaderboard</div>
+          <div className="card-meta-chip">{profile.county}</div>
+        </div>
+        <div className="card-summary-main">
+          <div className="card-title">{title}</div>
+          <div className="card-supporting">{supporting}</div>
+        </div>
+        <div className="leaderboard-teaser-list">
+          {topPlayers.map(entry => (
+            <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
+              <span className="leaderboard-rank">#{entry.rank}</span>
+              <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
+              <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
+            </div>
+          ))}
+          {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
+            <>
+              <div className="leaderboard-teaser-divider" />
+              <div className="leaderboard-teaser-row is-me">
+                <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
+                <span className="leaderboard-name">You</span>
+                <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
+              </div>
+            </>
+          )}
+          {!myLeaderboardEntry && (
+            <>
+              <div className="leaderboard-teaser-divider" />
+              <div className="leaderboard-teaser-row is-me">
+                <span className="leaderboard-rank">—</span>
+                <span className="leaderboard-name">You</span>
+                <span className="leaderboard-rating">{Math.round(myRating.rating)}</span>
+              </div>
+            </>
+          )}
+        </div>
+        <button className="btn-link leaderboard-see-all">See full leaderboard</button>
+      </div>
+    )
+  }
+
   // No active or setup tournament: show lobby + status + leaderboard
   if (activeTournaments.length === 0 && setupTournaments.length === 0) {
     return (
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
-        {!hasAvailability && (
-          <div className="card" style={{ borderLeft: '3px solid var(--color-warning, #f59e0b)', background: 'var(--color-surface)' }}>
-            <div style={{ padding: '2px 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-              <strong>Add your availability</strong> so matches can be scheduled around your calendar. Go to Profile to set your times.
-            </div>
-          </div>
-        )}
+        {availabilityReminder}
 
         {/* How Rally Works card */}
         {!hiwDismissed && (
@@ -484,54 +549,10 @@ export default function Home({
         )}
 
         {/* User Status Block */}
-        <div className="card user-status-card">
-          <div className="user-status-row">
-            <div className="user-status-info">
-              <div className="user-status-headline">Not in a tournament</div>
-              <div className="user-status-sub">Join the lobby above to start competing</div>
-            </div>
-            <div className="user-status-rating">
-              <span className="user-status-rating-value">{Math.round(myRating.rating)}</span>
-              <span className="user-status-rating-label">Elo</span>
-            </div>
-          </div>
-        </div>
+        {renderUserStatusCard('Not in a tournament', 'Join the lobby above to start competing.', 'Status')}
 
         {/* Leaderboard Block */}
-        {topPlayers.length > 1 && (
-          <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
-            <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
-            {topPlayers.map(entry => (
-              <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
-                <span className="leaderboard-rank">#{entry.rank}</span>
-                <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
-                <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
-              </div>
-            ))}
-            {/* Show user's own rank if not in top 3 */}
-            {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
-              <>
-                <div className="leaderboard-teaser-divider" />
-                <div className="leaderboard-teaser-row is-me">
-                  <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
-                  <span className="leaderboard-name">You</span>
-                  <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
-                </div>
-              </>
-            )}
-            {!myLeaderboardEntry && (
-              <>
-                <div className="leaderboard-teaser-divider" />
-                <div className="leaderboard-teaser-row is-me">
-                  <span className="leaderboard-rank">—</span>
-                  <span className="leaderboard-name">You</span>
-                  <span className="leaderboard-rating">{Math.round(myRating.rating)}</span>
-                </div>
-              </>
-            )}
-            <button className="btn-link leaderboard-see-all">See full leaderboard</button>
-          </div>
-        )}
+        {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'See where you stand before your next tournament.')}
 
       </div>
     )
@@ -543,52 +564,13 @@ export default function Home({
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
-        {!hasAvailability && (
-          <div className="card" style={{ borderLeft: '3px solid var(--color-warning, #f59e0b)', background: 'var(--color-surface)' }}>
-            <div style={{ padding: '2px 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-              <strong>Add your availability</strong> so matches can be scheduled around your calendar. Go to Profile to set your times.
-            </div>
-          </div>
-        )}
+        {availabilityReminder}
 
         {/* User Status Block */}
-        <div className="card user-status-card">
-          <div className="user-status-row">
-            <div className="user-status-info">
-              <div className="user-status-headline">Tournament forming</div>
-              <div className="user-status-sub">Waiting for more players to join</div>
-            </div>
-            <div className="user-status-rating">
-              <span className="user-status-rating-value">{Math.round(myRating.rating)}</span>
-              <span className="user-status-rating-label">Elo</span>
-            </div>
-          </div>
-        </div>
+        {renderUserStatusCard('Tournament forming', 'Waiting for more players to join your bracket.', 'Status')}
 
         {/* Leaderboard Block */}
-        {topPlayers.length > 1 && (
-          <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
-            <h3 className="leaderboard-teaser-title">Top Players in {profile.county}</h3>
-            {topPlayers.map(entry => (
-              <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
-                <span className="leaderboard-rank">#{entry.rank}</span>
-                <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
-                <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
-              </div>
-            ))}
-            {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
-              <>
-                <div className="leaderboard-teaser-divider" />
-                <div className="leaderboard-teaser-row is-me">
-                  <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
-                  <span className="leaderboard-name">You</span>
-                  <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
-                </div>
-              </>
-            )}
-            <button className="btn-link leaderboard-see-all">See full leaderboard</button>
-          </div>
-        )}
+        {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each result, even while the bracket is forming.')}
       </div>
     )
   }
@@ -599,8 +581,14 @@ export default function Home({
       {/* Onboarding (shows until all steps complete) */}
       {showOnboarding && (
         <div className="card onboarding-card">
-          <h3 className="onboarding-title">Welcome to Rally!</h3>
-          <p className="onboarding-subtitle">Here's how to get started — we'll handle the scheduling.</p>
+          <div className="card-status-row">
+            <div className="card-status-label card-status-label--blue">Get Started</div>
+            <div className="card-meta-chip">{activationSteps.filter(step => step.completed).length}/{activationSteps.length} complete</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">Welcome to Rally</div>
+            <div className="card-supporting">Finish these steps and Rally will handle the scheduling for you.</div>
+          </div>
           <div className="onboarding-steps">
             {activationSteps.map((step, i) => (
               <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
@@ -631,10 +619,15 @@ export default function Home({
         const progressPct = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
         return (
           <div key={tournament.id} className="card tournament-card" onClick={() => onViewTournament(tournament.id)}>
-            <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Your Tournament</div>
-            <div className="card-title">{tournament.name}</div>
-            <div className="card-secondary">
-              {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Playoffs' : tournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Round robin'} · {getProgressText(tournament)}
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Your Tournament</div>
+              <div className="card-meta-chip">{progressPct}% complete</div>
+            </div>
+            <div className="card-summary-main">
+              <div className="card-title">{tournament.name}</div>
+              <div className="card-supporting">
+                {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Playoffs' : tournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Round robin'} · {getProgressText(tournament)}
+              </div>
             </div>
             <div className="tournament-progress-bar">
               <div className="tournament-progress-fill" style={{ width: `${progressPct}%` }} />
@@ -649,8 +642,14 @@ export default function Home({
         if (incoming.length === 0) return null
         return (
           <div className="card offer-summary-card" onClick={onViewOffers} style={{ cursor: 'pointer' }}>
-            <div className="card-eyebrow" style={{ color: 'var(--color-accent-blue, #2563eb)' }}>Match Offers</div>
-            <div className="card-title">{incoming.length} offer{incoming.length !== 1 ? 's' : ''} waiting</div>
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--blue">Match Offers</div>
+              <div className="card-meta-chip card-meta-chip--blue">{incoming.length} waiting</div>
+            </div>
+            <div className="card-summary-main">
+              <div className="card-title">{incoming.length} offer{incoming.length !== 1 ? 's' : ''} waiting</div>
+              <div className="card-supporting">Reply from the Find Match tab to keep your requests organized.</div>
+            </div>
             <button className="btn-link">View on Find Match</button>
           </div>
         )
@@ -764,10 +763,13 @@ export default function Home({
           })}
         </div>
       ) : (
-        <div className="card" style={{ cursor: 'default' }}>
-          <div className="caught-up">
-            <p>You're all caught up</p>
-            <p className="caught-up-sub">No matches need your attention right now</p>
+        <div className="card card-inline-alert" style={{ cursor: 'default' }}>
+          <div className="card-status-row">
+            <div className="card-status-label card-status-label--green">All Clear</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">You're all caught up</div>
+            <div className="card-supporting">No matches need your attention right now.</div>
           </div>
         </div>
       )}
@@ -805,20 +807,7 @@ export default function Home({
       })()}
 
       {/* Leaderboard Teaser */}
-      {topPlayers.length > 1 && (
-        <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
-          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Rally Ratings</div>
-          <div className="card-secondary" style={{ marginBottom: 8 }}>Ratings update after each match</div>
-          {topPlayers.map(entry => (
-            <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
-              <span className="leaderboard-rank">#{entry.rank}</span>
-              <span className="leaderboard-name">{entry.name}</span>
-              <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
-            </div>
-          ))}
-          <button className="btn-link leaderboard-see-all">See full leaderboard</button>
-        </div>
-      )}
+      {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each match.')}
 
       {/* View All */}
       <div className="home-view-all">

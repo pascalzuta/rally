@@ -17,7 +17,7 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
       {/* Status card */}
       <div className="card waitlist-status-card">
         <div className="waitlist-card-status-row">
-          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Waitlisted</div>
+          <div className="card-status-label card-status-label--slate">Waitlisted</div>
         </div>
         <div className="waitlist-card-main">
           <div className="waitlist-title">We're finding you a group</div>
@@ -34,7 +34,7 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
       {/* Availability improvement prompt */}
       <div className="card waitlist-improve-card">
         <div className="waitlist-card-status-row">
-          <div className="card-eyebrow" style={{ color: 'var(--color-accent-primary)' }}>Improve Match Rate</div>
+          <div className="card-status-label card-status-label--blue">Improve Match Rate</div>
         </div>
         <div className="waitlist-card-main">
           <div className="waitlist-improve-title">Want to match faster?</div>
@@ -53,7 +53,7 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
       {/* Find Match fallback */}
       <div className="card waitlist-findmatch-card">
         <div className="waitlist-card-status-row">
-          <div className="card-eyebrow" style={{ color: 'var(--color-positive-primary)' }}>Play Instead</div>
+          <div className="card-status-label card-status-label--green">Play Instead</div>
         </div>
         <div className="waitlist-card-main">
           <div className="waitlist-findmatch-title">Play this weekend instead?</div>

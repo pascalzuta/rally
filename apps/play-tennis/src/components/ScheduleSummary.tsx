@@ -201,33 +201,53 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         const opponentName = getPlayerName(tournament, opponentId)
         const tier = nextMatch.schedule?.schedulingTier
         const tierType = tier === 'auto' ? 'score' : tier === 'needs-accept' ? 'respond' : 'schedule'
+        const nextSlot = nextMatch.schedule?.confirmedSlot ?? nextMatch.schedule?.proposals?.[0]
         const isMessaging = messagingMatchId === nextMatch.id
         const msgUnread = opponentId ? hasUnreadFrom(currentPlayerId, opponentId) : false
         return (
           <>
             <div className={`card action-card action-${tierType}`}>
-              <div className="action-card-type">Up Next</div>
-              <div className="action-card-opponent">vs {opponentName}</div>
-              <div className="action-card-detail">
-                {nextMatch.schedule?.confirmedSlot
-                  ? formatMatchDate(nextMatch.schedule.confirmedSlot, weekGroups.get(1)?.weekStart)
-                  : 'No time set yet — tap to schedule'}
+              <div className="action-card-status-row">
+                <div className="action-card-type">Up Next</div>
+                {nextSlot && <div className="card-meta-chip">{formatMatchDate(nextSlot, weekGroups.get(1)?.weekStart)}</div>}
               </div>
-              {opponentId && (
-                <button
-                  className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                  onClick={e => { e.stopPropagation(); setMessagingMatchId(isMessaging ? null : nextMatch.id) }}
-                  aria-label="Message opponent"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                  </svg>
-                  {msgUnread && <span className="msg-unread-dot" />}
-                </button>
-              )}
+              <div className="action-card-main">
+                <div className="action-card-opponent">vs {opponentName}</div>
+                <div className="action-card-supporting">
+                  {tier === 'auto'
+                    ? 'Confirmed and ready to play.'
+                    : tier === 'needs-accept'
+                      ? 'Review the proposed time and confirm if it works.'
+                      : 'Set a time with your opponent.'}
+                </div>
+              </div>
+              <div className="action-card-buttons">
+                {tier === 'needs-accept' && onConfirmMatch && (
+                  <button className="action-card-btn" onClick={e => { e.stopPropagation(); onConfirmMatch(nextMatch.id) }}>
+                    Confirm Time
+                  </button>
+                )}
+                {tier === 'needs-negotiation' && onScheduleMatch && (
+                  <button className="action-card-btn" onClick={e => { e.stopPropagation(); onScheduleMatch(nextMatch.id) }}>
+                    Schedule Match
+                  </button>
+                )}
+                {opponentId && (
+                  <button
+                    className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
+                    onClick={e => { e.stopPropagation(); setMessagingMatchId(isMessaging ? null : nextMatch.id) }}
+                    aria-label="Message opponent"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    </svg>
+                    {msgUnread && <span className="msg-unread-dot" />}
+                  </button>
+                )}
+              </div>
             </div>
             {isMessaging && opponentId && (
-              <div onClick={e => e.stopPropagation()}>
+              <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                 <MessagePanel
                   currentPlayerId={currentPlayerId}
                   currentPlayerName={currentPlayerName}
@@ -264,12 +284,21 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                       className={`card action-card ${tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'}`}
                       style={{ animationDelay: `${i * 50}ms` }}
                     >
-                      <div className="action-card-type">
-                        {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Match Ready' : 'Needs Scheduling'}
+                      <div className="action-card-status-row">
+                        <div className="action-card-type">
+                          {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Needs Response' : 'Needs Scheduling'}
+                        </div>
+                        {slot && <div className="card-meta-chip">{formatMatchDate(slot, weekStart)}</div>}
                       </div>
-                      <div className="action-card-opponent">vs {opponentName}</div>
-                      <div className="action-card-detail">
-                        {slot ? formatMatchDate(slot, weekStart) : 'No time set'}
+                      <div className="action-card-main">
+                        <div className="action-card-opponent">vs {opponentName}</div>
+                        <div className="action-card-supporting">
+                          {tier === 'auto'
+                            ? 'Ready to play.'
+                            : tier === 'needs-accept'
+                              ? 'Awaiting your confirmation.'
+                              : 'Choose a time with your opponent.'}
+                        </div>
                       </div>
                       <div className="action-card-buttons">
                         {tier === 'needs-accept' && onConfirmMatch && (
@@ -297,7 +326,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                       </div>
                     </div>
                     {isMessaging && opponentId && (
-                      <div onClick={e => e.stopPropagation()}>
+                      <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                         <MessagePanel
                           currentPlayerId={currentPlayerId}
                           currentPlayerName={currentPlayerName}
