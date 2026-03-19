@@ -6,14 +6,15 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 ## Tech Stack
 - React 18 + TypeScript + Vite
 - Supabase (Realtime Database for multi-user sync)
-- GitHub Pages (deploy via `.github/workflows/deploy-pages.yml`)
-- Custom domain: play-rally.com (CNAME configured)
+- GitHub Pages (production deploy via `.github/workflows/deploy-pages.yml`)
+- Vercel (staging/preview deploys — automatic per branch)
+- Custom domain: play-rally.com (GitHub Pages, DNS: 185.199.x.x)
 
-## Deployment
-- **One branch**: `main` — all work happens here
-- **Deploy process**: Push to `main` → GitHub Actions (`deploy-pages.yml`) builds `apps/play-tennis` → deployed to GitHub Pages at play-rally.com
-- **No Netlify** — play-rally.com is served by GitHub Pages (DNS: 185.199.x.x)
-- CDN cache can take a few minutes to update after deploy
+## Deployment (two environments)
+- **Production**: play-rally.com — GitHub Pages, deploys on push to `main` via `deploy-pages.yml`
+- **Staging**: rally-play-tennis.vercel.app — Vercel, deploys on push to `staging` branch
+- **Workflow**: Develop on feature branches → merge to `staging` → check rally-play-tennis.vercel.app → user says "deploy to live" → merge `staging` into `main` → play-rally.com updates
+- Both environments share the same Supabase database
 
 ## Key Architecture
 - `apps/play-tennis/` — The Rally Tennis web app (the only tennis frontend)
@@ -93,5 +94,8 @@ npm run dev        # Dev server on port 5180
 npm run build      # TypeScript check + Vite build
 ```
 
-## Branch
-Active development on `main` (single branch — no feature branches)
+## Branch Strategy
+- **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is critical — `main` is the production branch and updates play-rally.com immediately.
+- All work happens on feature branches branched from `staging`.
+- When work is done, merge the feature branch into `staging` and push. This updates rally-play-tennis.vercel.app for the user to review.
+- When the user says "deploy to live" (or similar), merge `staging` into `main` and push. This updates play-rally.com.
