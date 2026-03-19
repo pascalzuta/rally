@@ -1,67 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { Tournament, Match, MatchReaction } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions, confirmMatchScore } from '../store'
+import { Tournament, Match } from '../types'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, confirmMatchScore, checkAutoAcceptScores } from '../store'
 import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
 import ScheduleSummary from './ScheduleSummary'
 import MatchCalendar from './MatchCalendar'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
+import ScoreConfirmationPanel from './ScoreConfirmationPanel'
+import ReliabilityIndicator from './ReliabilityIndicator'
 
 type MatchFilterMode = 'upcoming' | 'completed' | 'all'
-
-function PostMatchReactionInline({ matchId, playerId }: { matchId: string; playerId: string }) {
-  const existing = getMatchReactions(matchId).find(r => r.playerId === playerId)
-  const [fun, setFun] = useState(existing?.fun ?? 0)
-  const [fair, setFair] = useState(existing?.fair ?? 0)
-  const [playAgain, setPlayAgain] = useState(existing?.playAgain ?? false)
-  const [saved, setSaved] = useState(!!existing)
-
-  function handleSave() {
-    if (fun === 0 || fair === 0) return
-    saveMatchReaction({ matchId, playerId, fun, fair, playAgain, createdAt: new Date().toISOString() })
-    setSaved(true)
-  }
-
-  if (saved) {
-    return (
-      <div className="post-match-reaction" onClick={e => e.stopPropagation()}>
-        <div className="reaction-thankyou">Thanks for your feedback!</div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="post-match-reaction" onClick={e => e.stopPropagation()}>
-      <div className="reaction-title">How was this match?</div>
-      <div className="reaction-row">
-        <span className="reaction-label">Fun</span>
-        <div className="reaction-stars">
-          {[1, 2, 3, 4, 5].map(n => (
-            <span key={n} className={`reaction-star ${n <= fun ? 'reaction-star--active' : ''}`} onClick={() => setFun(n)}>★</span>
-          ))}
-        </div>
-      </div>
-      <div className="reaction-row">
-        <span className="reaction-label">Fair</span>
-        <div className="reaction-stars">
-          {[1, 2, 3, 4, 5].map(n => (
-            <span key={n} className={`reaction-star ${n <= fair ? 'reaction-star--active' : ''}`} onClick={() => setFair(n)}>★</span>
-          ))}
-        </div>
-      </div>
-      <div className="reaction-row">
-        <label className="reaction-toggle">
-          <input type="checkbox" checked={playAgain} onChange={e => setPlayAgain(e.target.checked)} />
-          Play again?
-        </label>
-      </div>
-      <button className="btn btn-primary" onClick={handleSave} disabled={fun === 0 || fair === 0} style={{ width: '100%', marginTop: '8px' }}>
-        Submit
-      </button>
-    </div>
-  )
-}
 
 interface Props {
   tournament: Tournament | null
@@ -153,6 +103,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const pendingScrollId = useRef<string | null>(null)
   // R-05: Track rendered match IDs to prevent duplicates
   const renderedMatchIds = useRef<Set<string>>(new Set())
+
+  // Check for auto-accept (48h timeout) on mount
+  useEffect(() => { checkAutoAcceptScores() }, [])
 
   // R-15: Deep-link focus — scroll to match and highlight with pulse effect
   useEffect(() => {
@@ -318,12 +271,19 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string; type: string } | null {
+    if (match.completed && match.splitDecision) return { label: 'Split Decision', type: 'muted' }
     if (match.completed) return null
     if (match.resolution) {
       if (match.resolution.type === 'walkover') return { label: 'Walkover', type: 'muted' }
       if (match.resolution.type === 'double-loss') return { label: 'Canceled', type: 'muted' }
       return { label: 'Resolved', type: 'muted' }
     }
+    // Score dispute states
+    if (match.scoreDispute?.status === 'pending') {
+      if (match.scoreReportedBy === currentPlayerId) return { label: 'Review Dispute', type: 'score' }
+      return { label: 'Correction Submitted', type: 'score' }
+    }
+    if (match.scoreDispute?.status === 'admin-review') return { label: 'Under Review', type: 'muted' }
     // Score reported — waiting for confirmation
     if (match.scoreReportedBy) {
       if (match.scoreReportedBy === currentPlayerId) return { label: 'Score Reported', type: 'score' }
@@ -340,6 +300,12 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean): string | null {
     if (match.completed) return null
+    // Score dispute states
+    if (match.scoreDispute?.status === 'pending') {
+      if (match.scoreReportedBy === currentPlayerId) return 'Review Dispute'
+      return null // disputer is waiting
+    }
+    if (match.scoreDispute?.status === 'admin-review') return null
     // Score reported — show confirm or waiting
     if (match.scoreReportedBy) {
       if (match.scoreReportedBy === currentPlayerId) return null // waiting for opponent
@@ -427,6 +393,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
                 <span className="match-player-name">
                   {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
+                  {match.player1Id && <ReliabilityIndicator playerId={match.player1Id} isOrganizer={isOrganizer} />}
                 </span>
                 {scored && (
                   <span className="match-sets">
@@ -440,6 +407,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
                 <span className="match-player-name">
                   {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
+                  {match.player2Id && <ReliabilityIndicator playerId={match.player2Id} isOrganizer={isOrganizer} />}
                 </span>
                 {scored && (
                   <span className="match-sets">
@@ -531,12 +499,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
             {/* Action row: action button + message button */}
             <div className="match-card-actions-row">
-              {actionLabel === 'Confirm Score' ? (
-                <button className="match-card-action-btn" onClick={async e => {
+              {(actionLabel === 'Confirm Score' || actionLabel === 'Review Dispute') ? (
+                <button className="match-card-action-btn" onClick={e => {
                   e.stopPropagation()
-                  await confirmMatchScore(tournament!.id, match.id, currentPlayerId)
-                  refresh()
-                }}>Confirm Score</button>
+                  setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                }}>{actionLabel}</button>
               ) : actionLabel ? (
                 <button className="match-card-action-btn">{actionLabel}</button>
               ) : null}
@@ -575,10 +542,25 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               )
             })()}
 
-            {/* Expanded inline scoring or scheduling panel */}
+            {/* Expanded inline scoring, confirmation, or scheduling panel */}
             {isExpanded && !match.completed && (
               <div onClick={e => e.stopPropagation()}>
-                {canScore ? (
+                {/* Score confirmation/dispute panel */}
+                {match.scoreReportedBy && match.scoreReportedBy !== currentPlayerId && !match.scoreDispute ? (
+                  <ScoreConfirmationPanel
+                    tournament={tournament!}
+                    match={match}
+                    currentPlayerId={currentPlayerId}
+                    onUpdated={() => { setExpandedMatchId(null); refresh() }}
+                  />
+                ) : match.scoreDispute?.status === 'pending' && match.scoreReportedBy === currentPlayerId ? (
+                  <ScoreConfirmationPanel
+                    tournament={tournament!}
+                    match={match}
+                    currentPlayerId={currentPlayerId}
+                    onUpdated={() => { setExpandedMatchId(null); refresh() }}
+                  />
+                ) : canScore ? (
                   <InlineScoreEntry
                     tournament={tournament!}
                     matchId={match.id}
@@ -596,16 +578,27 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               </div>
             )}
 
-            {/* R-23: Post-match reaction for completed matches */}
-            {match.completed && isMyMatch && (
-              <PostMatchReactionInline matchId={match.id} playerId={currentPlayerId} />
-            )}
+            {/* R-23: Post-match feedback for completed matches */}
+            {match.completed && isMyMatch && match.player1Id && match.player2Id && (() => {
+              const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
+              const opponentName = getPlayerName(tournament!, opponentId)
+              return (
+                <PostMatchFeedbackInline
+                  matchId={match.id}
+                  tournamentId={tournament!.id}
+                  playerId={currentPlayerId}
+                  opponentId={opponentId}
+                  opponentName={opponentName}
+                />
+              )
+            })()}
         </>
       </div>
     )
   }
 
   const isParticipant = tournament.players.some(p => p.id === currentPlayerId)
+  const isOrganizer = tournament.players[0]?.id === currentPlayerId
 
   // R-05: Clear rendered IDs before each render pass to reset dedup tracking
   renderedMatchIds.current.clear()

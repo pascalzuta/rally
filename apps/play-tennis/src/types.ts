@@ -95,9 +95,62 @@ export interface Match {
   completed: boolean
   scoreReportedBy?: string | null
   scoreReportedAt?: string | null
+  scoreConfirmedBy?: string | null
+  scoreConfirmedAt?: string | null
+  scoreDispute?: ScoreDispute | null
+  splitDecision?: boolean
   schedule?: MatchSchedule
   resolution?: MatchResolution
   phase?: MatchPhase
+}
+
+// --- Score Disputes ---
+
+export type DisputeStatus = 'pending' | 'accepted' | 'rejected' | 'admin-review'
+
+export interface ScoreDispute {
+  id: string
+  type: 'correction' | 'issue'
+  proposedScore1?: number[]
+  proposedScore2?: number[]
+  proposedWinnerId?: string | null
+  issueText?: string
+  disputedBy: string
+  disputedAt: string
+  status: DisputeStatus
+  resolvedAt?: string
+  resolvedBy?: string
+}
+
+// --- Match Feedback (Reliability Rating) ---
+
+export type FeedbackSentiment = 'positive' | 'neutral' | 'negative'
+export type IssueCategory = 'showed_up_late' | 'left_early' | 'disputed_unfairly' | 'unsportsmanlike' | 'other'
+
+export interface MatchFeedback {
+  id: string
+  matchId: string
+  tournamentId: string
+  fromPlayerId: string
+  toPlayerId: string
+  sentiment: FeedbackSentiment
+  issueCategories?: IssueCategory[]
+  issueText?: string
+  createdAt: string
+  revealedAt?: string
+}
+
+// --- Reliability Score ---
+
+export interface ReliabilityScore {
+  playerId: string
+  overallScore: number
+  showUpRate: number
+  fairnessRating: number
+  noDisputesAgainst: number
+  confirmationSpeed: number
+  matchesConsidered: number
+  lastUpdated: string
 }
 
 export interface SchedulingSummary {
@@ -174,6 +227,9 @@ export type BadgeType =
   | 'comeback-win'
   | 'five-tournaments'
   | 'ten-matches'
+  | 'reliable-player'
+  | 'good-sport'
+  | 'community-regular'
 
 export interface Badge {
   id: string
@@ -222,7 +278,7 @@ export interface DirectMessage {
 
 // --- Notifications ---
 
-export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder' | 'score_reported'
+export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder' | 'score_reported' | 'score_correction_proposed' | 'score_correction_resolved' | 'score_issue_reported' | 'feedback_requested' | 'reliability_nudge'
 
 export interface RallyNotification {
   id: string

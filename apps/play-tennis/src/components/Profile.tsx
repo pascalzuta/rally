@@ -200,6 +200,9 @@ function BadgeIcon({ type }: { type: Badge['type'] }) {
     'comeback-win': '↺',
     'five-tournaments': '5',
     'ten-matches': '10',
+    'reliable-player': '✓',
+    'good-sport': '♥',
+    'community-regular': '♦',
   }
   return (
     <div className="badge-icon">{icons[type] ?? '●'}</div>
