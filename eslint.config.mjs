@@ -19,6 +19,7 @@ export default [
     },
     rules: {
       ...tseslint.configs.recommended.rules,
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/explicit-function-return-type": "off"
     }
@@ -29,71 +30,32 @@ export default [
       ...prettier.rules
     }
   },
-  // GRP static site files (browser IIFEs)
+  // Node.js server files
   {
-    files: ["apps/grp/app.js", "apps/grp/cms.js", "apps/grp/news.js", "apps/grp/news-data.js", "apps/grp-v2/app.js", "apps/grp-v2/cms.js", "apps/grp-v2/news.js", "apps/grp-v2/news-data.js"],
+    files: ["apps/tennis-server/**/*.ts"],
     languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: "script",
       globals: {
-        window: "readonly",
-        document: "readonly",
-        localStorage: "readonly",
-        HTMLElement: "readonly",
-        HTMLFormElement: "readonly",
-        HTMLAnchorElement: "readonly",
-        HTMLButtonElement: "readonly",
-        HTMLImageElement: "readonly",
-        HTMLIFrameElement: "readonly",
-        HTMLTextAreaElement: "readonly",
-        FormData: "readonly",
-        URLSearchParams: "readonly",
-        alert: "readonly",
-        console: "readonly",
-      }
-    },
-    rules: {
-      "no-console": "off",
-      "eqeqeq": "error",
-      "no-var": "error",
-      "prefer-const": "error",
-      "no-unused-vars": "warn",
-    }
-  },
-  // GRP test files and helper library
-  {
-    files: ["apps/grp/tests/**/*.js", "apps/grp/lib/**/*.js", "apps/grp-v2/tests/**/*.js", "apps/grp-v2/lib/**/*.js"],
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: "module",
-      globals: {
-        localStorage: "readonly",
-        console: "readonly",
-      }
-    },
-    rules: {
-      "no-console": "off",
-      "no-unused-vars": "warn",
-    }
-  },
-  // Node.js CommonJS files (database, scripts)
-  {
-    files: ["db/**/*.js", "scripts/**/*.mjs"],
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: "commonjs",
-      globals: {
-        require: "readonly",
-        module: "readonly",
-        exports: "readonly",
-        __dirname: "readonly",
-        __filename: "readonly",
         process: "readonly",
         console: "readonly",
+        require: "readonly",
+        Buffer: "readonly",
+        NodeJS: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        fetch: "readonly",
+        AbortController: "readonly",
       }
-    },
-    rules: {
-      "no-console": "off",
+    }
+  },
+  // Test files
+  {
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
+    languageOptions: {
+      globals: {
+        crypto: "readonly",
+      }
     }
   },
   {

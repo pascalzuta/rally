@@ -1,5 +1,5 @@
 {
-  "name": "daily-priorities",
+  "name": "rally",
   "private": true,
   "version": "0.1.0",
   "workspaces": [
@@ -7,47 +7,22 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w @daily-priorities/web",
-    "dev:server": "npm run dev -w @painful-dollar/server",
-    "build:web": "npm run build -w @daily-priorities/web",
-    "build:server": "npm run build -w @painful-dollar/server",
+    "dev:play-tennis": "npm run dev -w @play-tennis/web",
+    "build:play-tennis": "npm run build -w @play-tennis/web",
     "dev:tennis-server": "npm run dev -w @rally/server",
     "build:tennis-server": "npm run build -w @rally/server",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "vitest run --config apps/grp/vitest.config.js",
-    "test:workspaces": "npm run test --workspaces --if-present",
-    "audit": "npm audit --workspaces --audit-level=high",
-    "db:migrate": "knex --knexfile db/knexfile.js migrate:latest",
-    "db:seed": "knex --knexfile db/knexfile.js seed:run",
-    "db:rollback": "knex --knexfile db/knexfile.js migrate:rollback",
-    "db:backup": "bash scripts/backup-db.sh",
-    "assets:optimize": "node scripts/optimize-images.mjs",
-    "test:coverage": "vitest run --coverage --config apps/grp/vitest.config.js",
-    "ci": "npm run lint:grp && npm run test:coverage",
-    "lint:grp": "eslint apps/grp/app.js apps/grp/cms.js apps/grp/news.js apps/grp/news-data.js apps/grp/lib/ apps/grp/tests/",
-    "dev:grp": "npx serve apps/grp -l 3500 --no-clipboard",
-    "prepare": "husky || true",
-    "dev:cms": "npm run dev -w @grp/cms",
-    "build:cms": "npm run build -w @grp/cms",
-    "dev:play-tennis": "npm run dev -w @play-tennis/web",
-    "build:play-tennis": "npm run build -w @play-tennis/web"
+    "test": "npm run test --workspaces --if-present",
+    "audit": "npm audit --workspaces --audit-level=high"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
     "@types/node": "^22.13.4",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@typescript-eslint/parser": "^8.24.1",
-    "@vitest/coverage-v8": "^3.0.7",
-    "better-sqlite3": "^11.0.0",
-    "dotenv": "^16.4.0",
     "eslint": "^9.20.1",
     "eslint-config-prettier": "^10.0.1",
-    "husky": "^9.0.0",
-    "jsdom": "^25.0.0",
-    "knex": "^3.1.0",
-    "lint-staged": "^15.0.0",
-    "sharp": "^0.33.5",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"
   }
