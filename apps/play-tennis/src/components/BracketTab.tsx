@@ -90,6 +90,7 @@ function scheduleStatusClass(match: Match): string {
 export default function BracketTab({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, focusMatchId, onFocusConsumed }: Props) {
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
+  const [feedbackMatchId, setFeedbackMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [showOverflow, setShowOverflow] = useState(false)
@@ -211,14 +212,22 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
     if (canScore || (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id)) {
+      setFeedbackMatchId(null)
       setMessagingMatchId(null)
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
     }
   }
 
   function toggleMatchMessaging(matchId: string) {
+    setFeedbackMatchId(null)
     setExpandedMatchId(null)
     setMessagingMatchId(prev => prev === matchId ? null : matchId)
+  }
+
+  function toggleFeedback(matchId: string) {
+    setExpandedMatchId(null)
+    setMessagingMatchId(null)
+    setFeedbackMatchId(prev => prev === matchId ? null : matchId)
   }
 
   const winner = tournament.status === 'completed' && (tournament.format === 'single-elimination' || tournament.format === 'group-knockout')
@@ -279,7 +288,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string; type: string } | null {
     const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
     if (match.completed && match.splitDecision) return { label: 'Split Decision', type: 'muted' }
-    if (match.completed) return null
+    if (match.completed) return { label: 'Completed', type: 'completed' }
     if (match.resolution) {
       if (match.resolution.type === 'walkover') return { label: 'Walkover', type: 'muted' }
       if (match.resolution.type === 'double-loss') return { label: 'Canceled', type: 'muted' }
@@ -339,13 +348,17 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     return null
   }
 
-  function getMatchSupportingText(match: Match, isMyMatch: boolean): { text: string; tone?: 'danger' } | null {
+  function getMatchSupportingText(match: Match, isMyMatch: boolean, canScore: boolean): { text: string; tone?: 'danger' } | null {
     if (match.scoreReportedBy && match.score1.length > 0) {
       const scoreSummary = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
       if (match.scoreReportedBy === currentPlayerId) {
         return { text: `Score submitted: ${scoreSummary} — waiting for opponent` }
       }
       return { text: `Opponent reported ${scoreSummary}` }
+    }
+
+    if (canScore) {
+      return { text: 'Enter the final result after you play.' }
     }
 
     if (match.completed) {
@@ -420,12 +433,22 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     )
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
+    const isFeedbackOpen = feedbackMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
 
     const scored = hasScores(match)
     const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore)
     const actionLabel = getMatchActionLabel(match, isMyMatch, !!canScore)
-    const supporting = getMatchSupportingText(match, isMyMatch)
+    const supporting = getMatchSupportingText(match, isMyMatch, !!canScore)
+    const scoreStateClass = match.scoreReportedBy && match.scoreReportedBy !== currentPlayerId
+      ? 'match-card--needs-confirmation'
+      : canScore
+        ? 'match-card--needs-score'
+        : ''
+    const showSchedulingBadge = !match.completed && !canScore && !match.scoreReportedBy && !match.scoreDispute
+    const opponentName = isMyMatch ? (match.player1Id === currentPlayerId ? p2 : p1) : null
+    const opponentSeed = isMyMatch ? (match.player1Id === currentPlayerId ? seed2 : seed1) : null
+    const useActionTitle = isMyMatch && !match.completed
 
     if (isBye) {
       const byePlayer = match.player1Id ? p1 : p2
@@ -443,14 +466,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       <div
         key={match.id}
         ref={el => { if (el) matchRefs.current.set(match.id, el); else matchRefs.current.delete(match.id) }}
-        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)} ${highlightedMatchId === match.id ? 'match-card-highlighted' : ''}`}
+        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)} ${scoreStateClass} ${highlightedMatchId === match.id ? 'match-card-highlighted' : ''}`}
         onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
       >
         <>
           {/* Eyebrow label with scheduling tier badge */}
           <div className="match-card-eyebrow-row">
             {eyebrow && <div className="match-card-eyebrow">{eyebrow.label}</div>}
-            {!match.completed && match.schedule?.schedulingTier && (
+            {showSchedulingBadge && match.schedule?.schedulingTier && (
               <span className={`scheduling-badge scheduling-badge--${match.schedule.schedulingTier === 'auto' ? 'auto' : match.schedule.schedulingTier === 'needs-accept' ? 'accept' : 'negotiate'}`}>
                 <span className="scheduling-badge-icon">
                   {match.schedule.schedulingTier === 'auto' ? '✓' : match.schedule.schedulingTier === 'needs-accept' ? '●' : '○'}
@@ -462,34 +485,45 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
           <div className="match-players-row">
             <div className="match-players-names">
-              <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                <span className="match-player-name">
-                  {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
-                  {match.player1Id && <ReliabilityIndicator playerId={match.player1Id} isOrganizer={isOrganizer} />}
-                </span>
-                {scored && (
-                  <span className="match-sets">
-                    {match.score1.map((s, i) => (
-                      <span key={i} className={`set-score ${s > match.score2[i] ? 'set-won' : ''}`}>{s}</span>
-                    ))}
-                  </span>
-                )}
-                {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
-              </div>
-              <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                <span className="match-player-name">
-                  {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
-                  {match.player2Id && <ReliabilityIndicator playerId={match.player2Id} isOrganizer={isOrganizer} />}
-                </span>
-                {scored && (
-                  <span className="match-sets">
-                    {match.score2.map((s, i) => (
-                      <span key={i} className={`set-score ${s > match.score1[i] ? 'set-won' : ''}`}>{s}</span>
-                    ))}
-                  </span>
-                )}
-                {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
-              </div>
+              {useActionTitle && opponentName ? (
+                <div className="match-card-title-block">
+                  <div className="match-card-title">
+                    vs {opponentName}{opponentSeed != null && <span className="seed-label"> ({opponentSeed})</span>}
+                  </div>
+                  <div className="match-card-self">You ({currentPlayerName})</div>
+                </div>
+              ) : (
+                <>
+                  <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+                    <span className="match-player-name">
+                      {p1}{seed1 != null && <span className="seed-label"> ({seed1})</span>}
+                      {match.player1Id && <ReliabilityIndicator playerId={match.player1Id} isOrganizer={isOrganizer} />}
+                    </span>
+                    {scored && (
+                      <span className="match-sets">
+                        {match.score1.map((s, i) => (
+                          <span key={i} className={`set-score ${s > match.score2[i] ? 'set-won' : ''}`}>{s}</span>
+                        ))}
+                      </span>
+                    )}
+                    {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
+                  </div>
+                  <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+                    <span className="match-player-name">
+                      {p2}{seed2 != null && <span className="seed-label"> ({seed2})</span>}
+                      {match.player2Id && <ReliabilityIndicator playerId={match.player2Id} isOrganizer={isOrganizer} />}
+                    </span>
+                    {scored && (
+                      <span className="match-sets">
+                        {match.score2.map((s, i) => (
+                          <span key={i} className={`set-score ${s > match.score1[i] ? 'set-won' : ''}`}>{s}</span>
+                        ))}
+                      </span>
+                    )}
+                    {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
+                  </div>
+                </>
+              )}
             </div>
             {/* Time badge — confirmed, proposed, or completed */}
             {(() => {
@@ -547,10 +581,18 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               {(actionLabel === 'Confirm Score' || actionLabel === 'Review Dispute') ? (
                 <button className="match-card-action-btn" onClick={e => {
                   e.stopPropagation()
+                  setFeedbackMatchId(null)
                   setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
                 }}>{actionLabel}</button>
               ) : actionLabel ? (
                 <button className="match-card-action-btn">{actionLabel}</button>
+              ) : match.completed && isMyMatch ? (
+                <button className="match-card-action-btn" onClick={e => {
+                  e.stopPropagation()
+                  toggleFeedback(match.id)
+                }}>
+                  Rate Match
+                </button>
               ) : null}
               {isMyMatch && match.player1Id && match.player2Id && (() => {
                 const msgOpponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
@@ -623,17 +665,19 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             )}
 
             {/* R-23: Post-match feedback for completed matches */}
-            {match.completed && isMyMatch && match.player1Id && match.player2Id && (() => {
+            {match.completed && isFeedbackOpen && isMyMatch && match.player1Id && match.player2Id && (() => {
               const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
               const opponentName = getPlayerName(tournament!, opponentId)
               return (
-                <PostMatchFeedbackInline
-                  matchId={match.id}
-                  tournamentId={tournament!.id}
-                  playerId={currentPlayerId}
-                  opponentId={opponentId}
-                  opponentName={opponentName}
-                />
+                <div className="match-card-expansion" onClick={e => e.stopPropagation()}>
+                  <PostMatchFeedbackInline
+                    matchId={match.id}
+                    tournamentId={tournament!.id}
+                    playerId={currentPlayerId}
+                    opponentId={opponentId}
+                    opponentName={opponentName}
+                  />
+                </div>
               )
             })()}
         </>

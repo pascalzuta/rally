@@ -1107,6 +1107,14 @@ select:focus {
   /* No colored border; completion shown via badge */
 }
 
+.match-card.match-card--needs-score {
+  border-left-color: var(--color-warning-primary);
+}
+
+.match-card.match-card--needs-confirmation {
+  border-left-color: var(--color-accent-primary);
+}
+
 .match-card.scoreable {
   cursor: pointer;
 }
@@ -1173,6 +1181,26 @@ select:focus {
 .match-card.sched-proposed .match-card-eyebrow { color: var(--color-accent-primary); }
 .match-card.sched-escalated .match-card-eyebrow { color: var(--color-negative-primary); }
 .match-card.sched-unscheduled .match-card-eyebrow { color: var(--color-warning-primary); }
+.match-card.completed .match-card-eyebrow { color: var(--color-text-secondary); }
+.match-card.match-card--needs-score .match-card-eyebrow { color: var(--color-warning-primary); }
+.match-card.match-card--needs-confirmation .match-card-eyebrow { color: var(--color-accent-primary); }
+
+.match-card-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.match-card-title {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.match-card-self {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
 
 /* Match card action button */
 .match-card-action-btn {
@@ -1210,6 +1238,11 @@ select:focus {
 .match-card.scoreable .match-card-action-btn {
   background: var(--color-warning-bg);
   color: var(--color-warning-primary);
+}
+
+.match-card.completed .match-card-action-btn {
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-primary);
 }
 
 /* Players row: names on left, scheduled time on right (where scores go post-match) */
