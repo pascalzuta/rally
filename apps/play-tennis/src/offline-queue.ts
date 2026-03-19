@@ -5,7 +5,7 @@ const QUEUE_KEY = 'rally-offline-queue'
 
 export interface QueuedWrite {
   id: string
-  type: 'tournament' | 'lobby_add' | 'lobby_remove' | 'rating' | 'availability' | 'match_schedule'
+  type: 'tournament' | 'lobby_add' | 'lobby_remove' | 'rating' | 'availability' | 'match_schedule' | 'feedback'
   payload: unknown
   createdAt: string
 }
