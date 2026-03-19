@@ -10,6 +10,7 @@ let stripe: StripeClient | null = null;
 export async function initStripe(config: AppConfig): Promise<void> {
   if (config.STRIPE_SECRET_KEY) {
     try {
+      // @ts-expect-error stripe is an optional dependency
       const mod = await import("stripe") as Record<string, unknown>;
       const Stripe = (mod.default ?? mod) as new (key: string) => StripeClient;
       stripe = new Stripe(config.STRIPE_SECRET_KEY);
