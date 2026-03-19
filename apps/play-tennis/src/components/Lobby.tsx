@@ -236,8 +236,14 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       {/* Doubles Partner Selection */}
       {lobbyMode === 'doubles' && (
         <div className="card doubles-partner-card">
-          <h3 className="doubles-partner-title">Choose Your Partner</h3>
-          <p className="doubles-partner-desc">Select a player from the lobby to form a doubles team.</p>
+          <div className="card-status-row">
+            <div className="card-status-label card-status-label--blue">Doubles Team</div>
+            <div className="card-meta-chip">{availablePartners.length} available</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">Choose your partner</div>
+            <div className="card-supporting">Select a player from the lobby to form a doubles team.</div>
+          </div>
           {availablePartners.length === 0 ? (
             <p className="doubles-partner-empty">No other players in lobby yet. Invite players to form a doubles team.</p>
           ) : (
@@ -271,10 +277,22 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       {/* Tournament Formation Card (Singles mode) */}
       {lobbyMode === 'singles' && (
         <div className="card formation-hero">
+          <div className="card-status-row">
+            <div className={`card-status-label ${tournamentReady ? 'card-status-label--green' : 'card-status-label--blue'}`}>
+              {tournamentReady ? 'Starting Soon' : 'Tournament Forming'}
+            </div>
+            <div className="card-meta-chip">{tournamentReady ? `${setupPlayers.length}/${maxPlayers}` : `${totalJoined}/${targetPlayers}`}</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">{profile.county} Tournament {tournamentReady ? 'Starting' : 'Forming'}</div>
+            <div className="card-supporting">
+              {tournamentReady
+                ? 'Bracket is filling up. Tournament begins when the countdown ends.'
+                : '6-8 players compete in a local elimination tournament.'}
+            </div>
+          </div>
           {tournamentReady ? (
             <>
-              <h2 className="formation-title">{profile.county} Tournament<br />Starting</h2>
-              <p className="formation-desc">Bracket is filling up. Tournament begins when the countdown ends.</p>
               {countdown && (
                 <div className="formation-countdown">
                   <div className="formation-countdown-label">Starts in</div>
@@ -306,8 +324,6 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
             </>
           ) : (
             <>
-              <h2 className="formation-title">{profile.county} Tournament<br />Forming</h2>
-              <p className="formation-desc">6-8 players compete in a local elimination tournament</p>
               <div className="formation-player-count">
                 <span className="formation-count-mono">{totalJoined}</span>
                 <span className="formation-count-sep">/</span>
@@ -338,8 +354,15 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
         const confidence = getSchedulingConfidence(profile.county)
         if (confidence.playersWithAvailability < 2) return null
         return (
-          <div className="scheduling-confidence">
-            <div className="confidence-header">Scheduling confidence</div>
+          <div className="card scheduling-confidence">
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Scheduling Confidence</div>
+              <div className="card-meta-chip">{confidence.score}%</div>
+            </div>
+            <div className="card-summary-main">
+              <div className="card-title">How likely matches are to auto-schedule</div>
+              <div className="card-supporting">Based on {confidence.playersWithAvailability} players&apos; saved availability.</div>
+            </div>
             <div className="confidence-bar">
               <div
                 className={`confidence-fill confidence-fill--${confidence.label}`}
@@ -357,9 +380,6 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
               {confidence.label === 'high' ? 'High -- most matches can be auto-scheduled' :
                confidence.label === 'medium' ? 'Medium -- some matches may need manual scheduling' :
                'Low -- many matches will need manual scheduling'}
-            </div>
-            <div className="confidence-footnote">
-              Based on {confidence.playersWithAvailability} players' availability
             </div>
           </div>
         )

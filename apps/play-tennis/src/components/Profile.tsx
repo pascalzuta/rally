@@ -397,7 +397,15 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   return (
     <div className="profile-content">
       {/* Player Identity */}
-      <div className="card">
+      <div className="card profile-identity-card">
+        <div className="card-status-row">
+          <div className="card-status-label card-status-label--slate">Player Profile</div>
+          {profile.skillLevel && (
+            <div className="card-meta-chip">
+              {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}
+            </div>
+          )}
+        </div>
         <div className="profile-card">
           {/* Profile Photo */}
           <div className="profile-photo-section" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
@@ -512,6 +520,16 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
       {/* Rating Hero Card */}
       <div className="card rating-hero">
+        <div className="card-status-row">
+          <div className="card-status-label card-status-label--blue">Rally Rating</div>
+          {rankInfo.total > 1 && (
+            <div className="card-meta-chip card-meta-chip--blue">Rank #{rankInfo.rank}</div>
+          )}
+        </div>
+        <div className="card-summary-main rating-hero-summary">
+          <div className="card-title">Your current rating</div>
+          <div className="card-supporting">Ratings adjust after each match and help keep matchups fair.</div>
+        </div>
         <div className="rating-hero-top">
           <div className="rating-hero-number">
             {Math.round(rating.rating)}

@@ -88,7 +88,9 @@ export default function Leaderboard({ county, currentPlayerId, currentPlayerName
 
       {recentResults.length > 0 && (
         <div className="card recent-activity" style={{ marginTop: '16px' }}>
-          <div className="card-eyebrow" style={{ color: 'var(--color-text-secondary)' }}>Recent Matches</div>
+          <div className="card-status-row">
+            <div className="card-status-label card-status-label--slate">Recent Matches</div>
+          </div>
           <div className="recent-results-list">
             {recentResults.map(result => (
               <div key={result.matchId} className="recent-result-item">

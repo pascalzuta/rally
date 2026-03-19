@@ -158,17 +158,26 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
                   onClick={() => onExpandMatch?.(match.id)}
                 >
-                  <div className="action-card-type">
-                    {isCompleted ? 'Completed' :
-                     tier === 'auto' ? 'Scheduled' :
-                     tier === 'needs-accept' ? 'Match Ready' :
-                     'Needs Scheduling'}
+                  <div className="action-card-status-row">
+                    <div className="action-card-type">
+                      {isCompleted ? 'Completed' :
+                       tier === 'auto' ? 'Scheduled' :
+                       tier === 'needs-accept' ? 'Needs Response' :
+                       'Needs Scheduling'}
+                    </div>
+                    {slot && !isCompleted && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
                   </div>
-                  <div className="action-card-opponent">vs {opponentName}</div>
-                  <div className="action-card-detail">
-                    {isCompleted && score ? score :
-                     slot ? formatSlotTime(slot, week.weekStart) :
-                     'No time set'}
+                  <div className="action-card-main">
+                    <div className="action-card-opponent">vs {opponentName}</div>
+                    <div className="action-card-supporting">
+                      {isCompleted
+                        ? (score || 'Final score recorded.')
+                        : tier === 'auto'
+                          ? 'Confirmed and ready to play.'
+                          : tier === 'needs-accept'
+                            ? 'Review the proposed time and confirm it.'
+                            : 'Set a time with your opponent.'}
+                    </div>
                   </div>
                   <div className="action-card-buttons">
                     {!isCompleted && isMyMatch && tier === 'needs-accept' && (
@@ -201,7 +210,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   </div>
                 </div>
                 {isMessaging && opponentId && (
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                     <MessagePanel
                       currentPlayerId={currentPlayerId}
                       currentPlayerName={currentPlayerName}

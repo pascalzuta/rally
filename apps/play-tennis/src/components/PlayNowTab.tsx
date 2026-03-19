@@ -317,12 +317,16 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {myBroadcast ? (
         <div className="card pn-my-broadcast pn-my-broadcast-active">
-          <div className="broadcast-card-header">
-            <span className="broadcast-player-name">
+          <div className="card-status-row">
+            <div className="broadcast-player-name">
               <span className="pn-active-indicator" />
-              You're Available
-            </span>
-            <span className="badge badge-live">Active</span>
+              <span className="card-status-label card-status-label--green">Available Now</span>
+            </div>
+            <div className="card-meta-chip card-meta-chip--green">Active</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">You&apos;re available to play</div>
+            <div className="card-supporting">Players in your tournament can request this time slot.</div>
           </div>
           <div className="broadcast-card-details">
             <span className="broadcast-detail">{formatDate(myBroadcast.date)}</span>
@@ -339,7 +343,13 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         </button>
       ) : (
         <div className="card broadcast-form">
-          <h3 className="broadcast-form-title">I Want To Play</h3>
+          <div className="card-status-row">
+            <div className="card-status-label card-status-label--blue">Create Broadcast</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">I want to play</div>
+            <div className="card-supporting">Share a time and place so nearby players can send a match request.</div>
+          </div>
           <div className="field"><label className="field-label">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} /></div>
           <div className="broadcast-time-row">
             <div className="field field-half"><label className="field-label">From</label><input type="time" value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="select-input" /></div>
