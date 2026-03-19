@@ -132,6 +132,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const activeRequest = schedule.activeRescheduleRequest
   const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
   const latestHistory = schedule.scheduleHistory?.[schedule.scheduleHistory.length - 1]
+  const isParticipant = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
   const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
   const opponentName = tournament.players.find(p => p.id === opponentId)?.name?.split(' ')[0] ?? 'Opponent'
   const hasCustomRescheduleSlot = Boolean(reschedDay) && reschedStart < reschedEnd
@@ -387,7 +388,11 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           </>
         )}
 
-        {showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? (
+        {!isParticipant ? (
+          <div className="proposal-from">
+            This match time is view-only because you are not one of the two players.
+          </div>
+        ) : showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? (
           <div className="propose-form cancel-form" onClick={e => e.stopPropagation()}>
             <div className="propose-form-title">Cancel match</div>
             <p className="cancel-warning">Your opponent will be awarded a walkover win.</p>
@@ -504,7 +509,11 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           </div>
         )}
 
-        {showReschedule ? renderRescheduleForm('counter') : showCancel ? (
+        {!isParticipant ? (
+          <div className="proposal-from">
+            This match time is view-only because you are not one of the two players.
+          </div>
+        ) : showReschedule ? renderRescheduleForm('counter') : showCancel ? (
           <div className="propose-form cancel-form" onClick={e => e.stopPropagation()}>
             <div className="propose-form-title">Cancel match</div>
             <p className="cancel-warning">Your opponent will be awarded a walkover win.</p>

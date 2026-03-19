@@ -210,7 +210,15 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
-    if (canScore || (isMyMatch && !match.completed && match.schedule && match.player1Id && match.player2Id)) {
+    const canOpenSchedule = Boolean(
+      !match.completed &&
+      match.schedule &&
+      match.player1Id &&
+      match.player2Id &&
+      (isMyMatch || (match.schedule.status === 'confirmed' && match.schedule.confirmedSlot))
+    )
+
+    if (canScore || canOpenSchedule) {
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
     }
   }
@@ -318,15 +326,17 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       return 'Confirm Score'
     }
     if (canScore) return 'Enter Score'
-    if (!isMyMatch) return null
     if (!match.schedule) return null
     const request = match.schedule.activeRescheduleRequest
     if (request) {
+      if (!isMyMatch) return 'View Time'
       if (request.intent === 'soft') {
         return request.requestedBy === currentPlayerId ? null : 'Respond'
       }
       return 'Find a time'
     }
+    if (match.schedule.status === 'confirmed') return isMyMatch ? 'Change Time' : 'View Time'
+    if (!isMyMatch) return null
     if (match.schedule.status === 'proposed') return 'Confirm Time'
     if (match.schedule.status === 'escalated') return 'Respond Now'
     if (match.schedule.status === 'unscheduled') return 'Find a time'
@@ -526,7 +536,15 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
                 }}>{actionLabel}</button>
               ) : actionLabel ? (
-                <button className="match-card-action-btn">{actionLabel}</button>
+                <button
+                  className="match-card-action-btn"
+                  onClick={e => {
+                    e.stopPropagation()
+                    setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                  }}
+                >
+                  {actionLabel}
+                </button>
               ) : null}
               {isMyMatch && match.player1Id && match.player2Id && (() => {
                 const msgOpponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
