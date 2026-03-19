@@ -58,10 +58,52 @@ export interface MatchProposal {
 
 export type SchedulingTier = 'auto' | 'needs-accept' | 'needs-negotiation'
 
+export interface MatchSlot {
+  day: DayOfWeek
+  startHour: number
+  endHour: number
+}
+
+export type RescheduleIntent = 'soft' | 'hard'
+
+export type RescheduleReason =
+  | 'conflict'
+  | 'weather'
+  | 'court_issue'
+  | 'injury_illness'
+  | 'other'
+
+export type RescheduleRequestStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn'
+
+export interface RescheduleRequest {
+  id: string
+  intent: RescheduleIntent
+  requestedBy: string
+  requestedAt: string
+  reason: RescheduleReason
+  note?: string
+  originalSlot: MatchSlot
+  status: RescheduleRequestStatus
+  respondedBy?: string
+  respondedAt?: string
+  selectedProposalId?: string
+  countsTowardLimit: boolean
+  originalSlotReleasedAt?: string
+}
+
+export interface ScheduleHistoryEntry {
+  id: string
+  type: 'initial-confirmation' | 'rescheduled' | 'original-slot-released'
+  changedBy: string
+  changedAt: string
+  fromSlot?: MatchSlot
+  toSlot?: MatchSlot
+}
+
 export interface MatchSchedule {
   status: SchedulingStatus
   proposals: MatchProposal[]
-  confirmedSlot: { day: DayOfWeek; startHour: number; endHour: number } | null
+  confirmedSlot: MatchSlot | null
   createdAt: string          // when scheduling started
   escalationDay: number      // 0-4, tracks escalation timeline
   lastEscalation: string     // ISO date of last escalation check
@@ -69,6 +111,8 @@ export interface MatchSchedule {
   resolution?: MatchResolution
   schedulingTier?: SchedulingTier  // how the match was scheduled
   rescheduleCount?: number
+  activeRescheduleRequest?: RescheduleRequest
+  scheduleHistory?: ScheduleHistoryEntry[]
 }
 
 export type ResolutionType = 'walkover' | 'forced-match' | 'double-loss'
@@ -78,7 +122,7 @@ export interface MatchResolution {
   winnerId: string | null      // null for double-loss
   reason: string               // human-readable explanation
   resolvedAt: string           // ISO timestamp
-  forcedSlot?: { day: DayOfWeek; startHour: number; endHour: number }  // for forced-match
+  forcedSlot?: MatchSlot  // for forced-match
 }
 
 export type MatchPhase = 'group' | 'knockout'

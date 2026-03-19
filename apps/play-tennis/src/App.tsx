@@ -115,6 +115,7 @@ export default function App() {
         !m.schedule ||
         m.schedule.status === 'unscheduled' ||
         m.schedule.status === 'escalated' ||
+        (m.schedule.activeRescheduleRequest && m.schedule.activeRescheduleRequest.requestedBy !== profile?.id) ||
         (m.schedule.status === 'confirmed' && m.schedule.confirmedSlot) ||
         (m.schedule.status === 'proposed' && m.schedule.proposals.some(
           p => p.status === 'pending' && p.proposedBy !== profile?.id

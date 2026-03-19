@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament } from '../store'
+import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament, getRescheduleUiState } from '../store'
 import { Tournament, Match } from '../types'
 import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -37,9 +37,13 @@ function formatStartTime(slot: { day: string; startHour: number }): { day: strin
 
 function matchSortPriority(match: Match, currentPlayerId: string): number {
   const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
+  const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
   if (match.completed) return 5
   if (!match.player1Id || !match.player2Id) return 4
   const s = match.schedule
+  if (isMyMatch && (rescheduleUiState === 'soft_request_received' || rescheduleUiState === 'hard_request_received')) return 0.25
+  if (isMyMatch && rescheduleUiState === 'hard_request_sent') return 0.75
+  if (isMyMatch && rescheduleUiState === 'soft_request_sent') return 1
   if (isMyMatch && s?.status === 'confirmed') return 0
   if (isMyMatch && s?.status === 'escalated') return 0.5
   if (isMyMatch && s?.status === 'proposed') return 1
@@ -48,12 +52,18 @@ function matchSortPriority(match: Match, currentPlayerId: string): number {
   return 3
 }
 
-function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string } | null {
+function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean, currentPlayerId: string): { label: string } | null {
+  const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
   if (match.completed) return { label: 'Completed' }
   if (match.resolution) {
     if (match.resolution.type === 'walkover') return { label: 'Walkover' }
     if (match.resolution.type === 'double-loss') return { label: 'Canceled' }
     return { label: 'Resolved' }
+  }
+  if (match.schedule?.activeRescheduleRequest) {
+    if (rescheduleUiState === 'soft_request_sent') return { label: 'Reschedule Requested' }
+    if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested' }
+    return { label: 'Needs New Time' }
   }
   if (canScore) return { label: 'Report Score' }
   if (!match.schedule) return { label: 'Waiting on players' }
@@ -64,11 +74,18 @@ function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): {
   return { label: 'Waiting on players' }
 }
 
-function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean): string | null {
+function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean, currentPlayerId: string): string | null {
   if (match.completed) return null
   if (canScore) return 'Enter Score'
   if (!isMyMatch) return null
   if (!match.schedule) return null
+  const request = match.schedule.activeRescheduleRequest
+  if (request) {
+    if (request.intent === 'soft') {
+      return request.requestedBy === currentPlayerId ? null : 'Respond'
+    }
+    return 'Find a time'
+  }
   if (match.schedule.status === 'proposed') return 'Confirm Time'
   if (match.schedule.status === 'escalated') return 'Confirm Time'
   if (match.schedule.status === 'unscheduled') return 'Schedule Match'
@@ -210,7 +227,15 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
     const hasSchedule = match.schedule && match.player1Id && match.player2Id
     const isConfirmed = match.schedule?.status === 'confirmed'
-    const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch
+    const canScore = Boolean(
+      match.player1Id &&
+      match.player2Id &&
+      !match.completed &&
+      isMyMatch &&
+      match.schedule?.status === 'confirmed' &&
+      match.schedule?.confirmedSlot &&
+      !match.schedule?.activeRescheduleRequest
+    )
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
@@ -224,8 +249,8 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
       ? formatMatchScores(match.score1, match.score2)
       : null
 
-    const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore)
-    const actionLabel = getMatchActionLabel(match, isMyMatch, !!canScore)
+    const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore, currentPlayerId)
+    const actionLabel = getMatchActionLabel(match, isMyMatch, !!canScore, currentPlayerId)
 
     return (
       <div

@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -589,6 +589,74 @@ export function generateMatchSchedule(
   }
 }
 
+function createProposalObjects(
+  proposedBy: 'system' | string,
+  slots: MatchSlot[]
+): MatchProposal[] {
+  return slots.map(slot => ({
+    id: generateId(),
+    proposedBy,
+    day: slot.day,
+    startHour: slot.startHour,
+    endHour: slot.endHour,
+    status: 'pending',
+  }))
+}
+
+function createScheduleHistoryEntry(
+  type: ScheduleHistoryEntry['type'],
+  changedBy: string,
+  fromSlot?: MatchSlot,
+  toSlot?: MatchSlot
+): ScheduleHistoryEntry {
+  return {
+    id: generateId(),
+    type,
+    changedBy,
+    changedAt: new Date().toISOString(),
+    fromSlot,
+    toSlot,
+  }
+}
+
+function clearActiveRescheduleRequest(schedule: MatchSchedule): void {
+  delete schedule.activeRescheduleRequest
+}
+
+function getOpponentIdForPlayer(match: Match, playerId: string): string | null {
+  if (match.player1Id === playerId) return match.player2Id
+  if (match.player2Id === playerId) return match.player1Id
+  return null
+}
+
+function canStartReschedule(match: Match): match is Match & { schedule: MatchSchedule } {
+  return Boolean(
+    match.schedule &&
+    match.schedule.status === 'confirmed' &&
+    match.schedule.confirmedSlot &&
+    !match.completed &&
+    !match.scoreReportedBy &&
+    !match.schedule.activeRescheduleRequest
+  )
+}
+
+export type RescheduleUiState =
+  | 'none'
+  | 'soft_request_sent'
+  | 'soft_request_received'
+  | 'hard_request_sent'
+  | 'hard_request_received'
+
+export function getRescheduleUiState(match: Match, currentPlayerId: string): RescheduleUiState {
+  const request = match.schedule?.activeRescheduleRequest
+  if (!request || request.status !== 'pending') return 'none'
+  const isRequester = request.requestedBy === currentPlayerId
+  if (request.intent === 'soft') {
+    return isRequester ? 'soft_request_sent' : 'soft_request_received'
+  }
+  return isRequester ? 'hard_request_sent' : 'hard_request_received'
+}
+
 export async function acceptProposal(
   tournamentId: string,
   matchId: string,
@@ -612,18 +680,241 @@ export async function acceptProposal(
 
   match.schedule.status = 'confirmed'
   match.schedule.schedulingTier = 'auto'
-  match.schedule.confirmedSlot = {
+  const nextSlot: MatchSlot = {
     day: proposal.day,
     startHour: proposal.startHour,
     endHour: proposal.endHour,
   }
+  match.schedule.confirmedSlot = nextSlot
 
   // Track participation: +4 for accepting
   if (!match.schedule.participationScores) match.schedule.participationScores = {}
   match.schedule.participationScores[acceptedBy] = (match.schedule.participationScores[acceptedBy] ?? 0) + 4
 
+  if (match.schedule.activeRescheduleRequest?.status === 'pending') {
+    const request = match.schedule.activeRescheduleRequest
+    request.status = 'accepted'
+    request.respondedBy = acceptedBy
+    request.respondedAt = new Date().toISOString()
+    request.selectedProposalId = proposalId
+    if (request.countsTowardLimit) {
+      match.schedule.rescheduleCount = (match.schedule.rescheduleCount ?? 0) + 1
+    }
+    if (!match.schedule.scheduleHistory) match.schedule.scheduleHistory = []
+    match.schedule.scheduleHistory.push(
+      createScheduleHistoryEntry('rescheduled', acceptedBy, request.originalSlot, nextSlot)
+    )
+    clearActiveRescheduleRequest(match.schedule)
+  }
+
   // Invalidate cached summary so it recomputes from match data
   delete t.schedulingSummary
+
+  await saveAndSync(all, t)
+  return t
+}
+
+async function requestRescheduleInternal(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string,
+  intent: RescheduleIntent,
+  reason: RescheduleReason,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !canStartReschedule(match)) return undefined
+
+  const currentCount = match.schedule.rescheduleCount ?? 0
+  if (currentCount >= 2) return undefined
+
+  const currentSlot = match.schedule.confirmedSlot
+  if (!currentSlot) return undefined
+
+  match.schedule.activeRescheduleRequest = {
+    id: generateId(),
+    intent,
+    requestedBy: requesterId,
+    requestedAt: new Date().toISOString(),
+    reason,
+    note: note?.trim() || undefined,
+    originalSlot: currentSlot,
+    status: 'pending',
+    countsTowardLimit: true,
+    originalSlotReleasedAt: intent === 'hard' ? new Date().toISOString() : undefined,
+  }
+
+  match.schedule.proposals = createProposalObjects(requesterId, slots)
+
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[requesterId] = (match.schedule.participationScores[requesterId] ?? 0) + 3
+
+  if (intent === 'hard') {
+    if (!match.schedule.scheduleHistory) match.schedule.scheduleHistory = []
+    match.schedule.scheduleHistory.push(
+      createScheduleHistoryEntry('original-slot-released', requesterId, currentSlot)
+    )
+    match.schedule.confirmedSlot = null
+    match.schedule.status = match.schedule.proposals.length > 0 ? 'proposed' : 'unscheduled'
+  } else {
+    match.schedule.status = 'confirmed'
+  }
+
+  const requesterName = t.players.find(p => p.id === requesterId)?.name ?? 'Your opponent'
+  const opponentId = getOpponentIdForPlayer(match, requesterId)
+  if (opponentId) {
+    addNotification({
+      type: 'match_reminder',
+      recipientId: opponentId,
+      senderId: requesterId,
+      senderName: requesterName,
+      message: intent === 'hard'
+        ? `${requesterName} can't make the current match time. This match needs a new time.`
+        : `${requesterName} asked to move the current match time.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function requestSoftReschedule(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string,
+  reason: RescheduleReason,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  if (slots.length === 0) return undefined
+  return requestRescheduleInternal(tournamentId, matchId, requesterId, 'soft', reason, slots, note)
+}
+
+export async function requestHardReschedule(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string,
+  reason: RescheduleReason,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  return requestRescheduleInternal(tournamentId, matchId, requesterId, 'hard', reason, slots, note)
+}
+
+export async function declineSoftReschedule(
+  tournamentId: string,
+  matchId: string,
+  responderId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule?.activeRescheduleRequest) return undefined
+
+  const request = match.schedule.activeRescheduleRequest
+  if (request.intent !== 'soft' || request.requestedBy === responderId) return undefined
+
+  request.status = 'declined'
+  request.respondedBy = responderId
+  request.respondedAt = new Date().toISOString()
+  match.schedule.proposals = []
+  clearActiveRescheduleRequest(match.schedule)
+
+  const responderName = t.players.find(p => p.id === responderId)?.name ?? 'Your opponent'
+  addNotification({
+    type: 'match_reminder',
+    recipientId: request.requestedBy,
+    senderId: responderId,
+    senderName: responderName,
+    message: `${responderName} kept the current match time.`,
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function counterReschedule(
+  tournamentId: string,
+  matchId: string,
+  responderId: string,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  if (slots.length === 0) return undefined
+
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule?.activeRescheduleRequest) return undefined
+
+  const request = match.schedule.activeRescheduleRequest
+  if (request.requestedBy === responderId) return undefined
+
+  match.schedule.proposals = createProposalObjects(responderId, slots)
+  if (note?.trim()) {
+    request.note = note.trim()
+  }
+
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[responderId] = (match.schedule.participationScores[responderId] ?? 0) + 3
+
+  const responderName = t.players.find(p => p.id === responderId)?.name ?? 'Your opponent'
+  addNotification({
+    type: 'match_reminder',
+    recipientId: request.requestedBy,
+    senderId: responderId,
+    senderName: responderName,
+    message: `${responderName} suggested another match time.`,
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function withdrawSoftReschedule(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule?.activeRescheduleRequest) return undefined
+
+  const request = match.schedule.activeRescheduleRequest
+  if (request.intent !== 'soft' || request.requestedBy !== requesterId) return undefined
+
+  request.status = 'withdrawn'
+  clearActiveRescheduleRequest(match.schedule)
+  match.schedule.proposals = []
+
+  const requesterName = t.players.find(p => p.id === requesterId)?.name ?? 'Your opponent'
+  const opponentId = getOpponentIdForPlayer(match, requesterId)
+  if (opponentId) {
+    addNotification({
+      type: 'match_reminder',
+      recipientId: opponentId,
+      senderId: requesterId,
+      senderName: requesterName,
+      message: `${requesterName} withdrew the reschedule request. The original match time still stands.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
 
   await saveAndSync(all, t)
   return t
@@ -1665,30 +1956,15 @@ export async function rescheduleMatch(
   newStartHour: number,
   newEndHour: number
 ): Promise<Tournament | undefined> {
-  const all = load()
-  const t = all.find(x => x.id === tournamentId)
-  if (!t) return undefined
-
-  const match = t.matches.find(m => m.id === matchId)
-  if (!match || !match.schedule) return undefined
-
-  const currentCount = match.schedule.rescheduleCount ?? 0
-  if (currentCount >= 2) return undefined // Max 2 reschedules
-
-  match.schedule.rescheduleCount = currentCount + 1
-  match.schedule.confirmedSlot = null
-  match.schedule.status = 'proposed'
-  match.schedule.proposals.push({
-    id: generateId(),
-    proposedBy: 'system',
-    day: newDay,
-    startHour: newStartHour,
-    endHour: newEndHour,
-    status: 'pending',
-  })
-
-  await saveAndSync(all, t)
-  return t
+  const profile = getProfile()
+  if (!profile) return undefined
+  return requestHardReschedule(
+    tournamentId,
+    matchId,
+    profile.id,
+    'conflict',
+    [{ day: newDay, startHour: newStartHour, endHour: newEndHour }]
+  )
 }
 
 export async function cancelMatch(

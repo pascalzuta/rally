@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions, confirmMatchScore } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions, confirmMatchScore, getRescheduleUiState } from '../store'
 import InlineScoreEntry from './InlineScoreEntry'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
@@ -303,6 +303,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string; type: string } | null {
+    const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
     if (match.completed) return null
     if (match.resolution) {
       if (match.resolution.type === 'walkover') return { label: 'Walkover', type: 'muted' }
@@ -313,6 +314,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     if (match.scoreReportedBy) {
       if (match.scoreReportedBy === currentPlayerId) return { label: 'Score Reported', type: 'score' }
       return { label: 'Confirm Score', type: 'score' }
+    }
+    if (match.schedule?.activeRescheduleRequest) {
+      if (rescheduleUiState === 'soft_request_sent') return { label: 'Reschedule Requested', type: 'proposed' }
+      if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested', type: 'proposed' }
+      return { label: 'Needs New Time', type: 'unscheduled' }
     }
     if (canScore) return { label: 'Report Score', type: 'score' }
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
@@ -333,6 +339,13 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     if (canScore) return 'Enter Score'
     if (!isMyMatch) return null
     if (!match.schedule) return null
+    const request = match.schedule.activeRescheduleRequest
+    if (request) {
+      if (request.intent === 'soft') {
+        return request.requestedBy === currentPlayerId ? null : 'Respond'
+      }
+      return 'Find a time'
+    }
     if (match.schedule.status === 'proposed') return 'Confirm Time'
     if (match.schedule.status === 'escalated') return 'Respond Now'
     if (match.schedule.status === 'unscheduled') return 'Find a time'
@@ -365,7 +378,15 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
     const hasSchedule = match.schedule && match.player1Id && match.player2Id
     const isConfirmed = match.schedule?.status === 'confirmed'
-    const canScore = match.player1Id && match.player2Id && !match.completed && isMyMatch
+    const canScore = Boolean(
+      match.player1Id &&
+      match.player2Id &&
+      !match.completed &&
+      isMyMatch &&
+      match.schedule?.status === 'confirmed' &&
+      match.schedule?.confirmedSlot &&
+      !match.schedule?.activeRescheduleRequest
+    )
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)

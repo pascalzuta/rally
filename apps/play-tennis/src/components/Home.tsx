@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore, getRescheduleUiState } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -113,6 +113,7 @@ function buildActionCards(
       const opponentId = getOpponentId(match, playerId)
       const opponentName = playerNameWithSeed(tournament, opponentId)
       const schedule = match.schedule
+      const rescheduleUiState = getRescheduleUiState(match, playerId)
 
       // Score reported by opponent — needs confirmation
       if (match.scoreReportedBy && match.scoreReportedBy !== playerId) {
@@ -126,6 +127,48 @@ function buildActionCards(
           tournamentId: tournament.id,
           matchId: match.id,
           priority: 0.5,
+        })
+        continue
+      }
+
+      if (rescheduleUiState === 'soft_request_received') {
+        cards.push({
+          type: 'respond',
+          label: 'Respond',
+          detail: `${opponentName} asked to move the match`,
+          opponentId: opponentId!,
+          opponentName,
+          tournamentId: tournament.id,
+          matchId: match.id,
+          priority: 1,
+        })
+        continue
+      }
+
+      if (rescheduleUiState === 'hard_request_received') {
+        cards.push({
+          type: 'schedule',
+          label: 'Needs New Time',
+          detail: `${opponentName} can no longer make the original time`,
+          opponentId: opponentId!,
+          opponentName,
+          tournamentId: tournament.id,
+          matchId: match.id,
+          priority: 1,
+        })
+        continue
+      }
+
+      if (rescheduleUiState === 'hard_request_sent') {
+        cards.push({
+          type: 'schedule',
+          label: 'Needs New Time',
+          detail: 'You canceled the original match time',
+          opponentId: opponentId!,
+          opponentName,
+          tournamentId: tournament.id,
+          matchId: match.id,
+          priority: 1.5,
         })
         continue
       }
