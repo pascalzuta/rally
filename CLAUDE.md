@@ -10,11 +10,30 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 - Vercel (staging/preview deploys — automatic per branch)
 - Custom domain: play-rally.com (GitHub Pages, DNS: 185.199.x.x)
 
-## Deployment (two environments)
-- **Production**: play-rally.com — GitHub Pages, deploys on push to `main` via `deploy-pages.yml`
-- **Staging**: rally-play-tennis.vercel.app — Vercel, deploys on push to `staging` branch
-- **Workflow**: Develop on feature branches → merge to `staging` → check rally-play-tennis.vercel.app → user says "deploy to live" → merge `staging` into `main` → play-rally.com updates
-- Both environments share the same Supabase database
+## Deployment & Branch Rules (READ THIS FIRST)
+
+There are two environments. Both share the same Supabase database.
+
+| Environment | URL | Branch | Deploys via |
+|-------------|-----|--------|-------------|
+| **Staging** | rally-play-tennis.vercel.app | `staging` | Vercel (automatic) |
+| **Production** | play-rally.com | `main` | GitHub Pages (automatic) |
+
+### How to deploy (step by step)
+
+1. **Create a feature branch** off `staging` (not `main`)
+2. **Do your work** on the feature branch, commit and push
+3. **Merge into `staging`** and push → Vercel auto-deploys to rally-play-tennis.vercel.app
+4. **Stop here.** Tell the user the staging URL is updated. Do NOT touch `main`.
+5. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → GitHub Pages auto-deploys to play-rally.com
+
+### Rules
+
+- **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is the #1 rule. `main` is production and updates play-rally.com immediately. There are no exceptions.
+- **Always branch from `staging`**, not from `main`.
+- **After merging to `staging`**, always push so Vercel picks it up.
+- **Do not ask the user whether to deploy to production.** Just deploy to staging and let them decide.
+- If you cannot push (e.g. auth error), tell the user and stop. Do not force-push or use workarounds.
 
 ## Key Architecture
 - `apps/play-tennis/` — The Rally Tennis web app (the only tennis frontend)
@@ -95,7 +114,4 @@ npm run build      # TypeScript check + Vite build
 ```
 
 ## Branch Strategy
-- **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is critical — `main` is the production branch and updates play-rally.com immediately.
-- All work happens on feature branches branched from `staging`.
-- When work is done, merge the feature branch into `staging` and push. This updates rally-play-tennis.vercel.app for the user to review.
-- When the user says "deploy to live" (or similar), merge `staging` into `main` and push. This updates play-rally.com.
+See "Deployment & Branch Rules" above — that section is the single source of truth for branching and deployment.
