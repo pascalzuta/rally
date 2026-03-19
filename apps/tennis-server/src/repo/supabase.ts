@@ -2,24 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
 import type { AuthRepo, AvailabilityRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
-// ── Helpers: camelCase ↔ snake_case ─────────────────────────────────────────────
-
-function toSnake(obj: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)] = v;
-  }
-  return out;
-}
-
-function toCamel(obj: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    out[k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())] = v;
-  }
-  return out;
-}
-
 // ── AuthUser mapping ────────────────────────────────────────────────────────────
 
 function authUserToRow(u: AuthUser): Record<string, unknown> {
@@ -67,7 +49,7 @@ function rowToPlayer(row: Record<string, unknown>): Player {
     ntrp: Number(row.ntrp) || 3.0,
     rating: Number(row.rating) || 1000,
     ratingConfidence: Number(row.rating_confidence) || 0,
-    provisionalRemaining: Number(row.provisional_remaining) ?? 5,
+    provisionalRemaining: Number(row.provisional_remaining) || 5,
     wins: Number(row.wins) || 0,
     losses: Number(row.losses) || 0,
     subscription: (row.subscription as Player["subscription"]) || "free",

@@ -1,12 +1,18 @@
 import type { AppConfig } from "../config.js";
-import type { PlayerRepo } from "../repo/interfaces.js";
 
-let stripe: any = null;
+interface StripeClient {
+  checkout: { sessions: { create(opts: Record<string, unknown>): Promise<{ url: string }> } };
+  billingPortal: { sessions: { create(opts: Record<string, unknown>): Promise<{ url: string }> } };
+}
 
-export function initStripe(config: AppConfig): void {
+let stripe: StripeClient | null = null;
+
+export async function initStripe(config: AppConfig): Promise<void> {
   if (config.STRIPE_SECRET_KEY) {
     try {
-      const Stripe = require("stripe");
+      // @ts-expect-error stripe is an optional dependency
+      const mod = await import("stripe") as Record<string, unknown>;
+      const Stripe = (mod.default ?? mod) as new (key: string) => StripeClient;
       stripe = new Stripe(config.STRIPE_SECRET_KEY);
     } catch {
       console.warn("[Stripe] stripe package not installed, payment features disabled");

@@ -4,7 +4,7 @@ import { generateRoundRobin, computeStandings } from "@rally/core";
 import type { AvailabilityRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "../repo/interfaces.js";
 import type { Logger } from "pino";
 import { autoScheduleTournament } from "./autoScheduler.js";
-import { findOverlaps, buildProposalsFromOverlaps, formatProposalLabel } from "./scheduler.js";
+import { findOverlaps, buildProposalsFromOverlaps } from "./scheduler.js";
 import {
   PACE_RULES,
   addAutoAction,
