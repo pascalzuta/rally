@@ -65,7 +65,7 @@ function handleInvite(county: string) {
   }
 }
 
-type ActionType = 'score' | 'respond' | 'schedule' | 'escalated' | 'message' | 'confirm-score'
+type ActionType = 'score' | 'respond' | 'schedule' | 'confirmed' | 'escalated' | 'message' | 'confirm-score'
 
 interface ActionCard {
   type: ActionType
@@ -217,9 +217,9 @@ function buildActionCards(
       if (schedule?.status === 'confirmed' && schedule.confirmedSlot) {
         const dateStr = formatSlotInline(schedule.confirmedSlot)
         cards.push({
-          type: 'score',
-          label: 'Report Score',
-          detail: dateStr,
+          type: 'confirmed',
+          label: 'Confirmed',
+          detail: `Ready to play · ${dateStr}`,
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -692,7 +692,15 @@ export default function Home({
                       e.stopPropagation()
                       setExpandedCardKey(cardKey)
                     }}>
-                      {card.type === 'score' ? 'Enter Score' : card.type === 'respond' ? 'Confirm Time' : card.type === 'escalated' ? 'Respond Now' : 'Schedule Match'}
+                      {card.type === 'score'
+                        ? 'Enter Score'
+                        : card.type === 'respond'
+                          ? 'Confirm Time'
+                          : card.type === 'confirmed'
+                            ? 'Change Time'
+                            : card.type === 'escalated'
+                              ? 'Respond Now'
+                              : 'Schedule Match'}
                     </button>
                   ) : null}
                   {card.type !== 'message' && (
