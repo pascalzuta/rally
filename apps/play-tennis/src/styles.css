@@ -1150,8 +1150,7 @@ select:focus {
   font-size: var(--font-body-sm);
   color: var(--color-text-muted);
   font-weight: var(--weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 .match-time-hour {
@@ -1159,6 +1158,21 @@ select:focus {
   font-weight: var(--weight-bold);
   color: var(--color-positive-primary);
   font-variant-numeric: tabular-nums;
+}
+
+/* Proposed time variant — less prominent */
+.match-time-slot--proposed .match-time-day {
+  color: var(--color-accent-primary, #4F46E5);
+}
+.match-time-slot--proposed .match-time-hour {
+  color: var(--color-accent-primary, #4F46E5);
+}
+
+/* Completed time variant — muted, no time */
+.match-time-slot--completed .match-time-day {
+  color: var(--color-text-muted, #9CA3AF);
+  text-transform: none;
+  font-size: var(--font-body-sm, 13px);
 }
 
 .match-player {
@@ -4193,8 +4207,7 @@ select:focus {
   font-size: var(--font-body-sm);
   color: var(--color-text-muted);
   font-weight: var(--weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 .upnext-time-hour {

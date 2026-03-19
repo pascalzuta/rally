@@ -72,23 +72,38 @@ interface Props {
   onFocusConsumed?: () => void
 }
 
+const DAY_MAP: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+}
+
+/** Resolve a { day, startHour } slot to a calendar date string + time.
+ *  Returns { day: "Mon, Mar 16", time: "6pm" } for the time badge. */
 function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
-  // Resolve to actual date from current week
-  const DAY_MAP: Record<string, number> = {
-    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-    thursday: 4, friday: 5, saturday: 6,
-  }
   const target = DAY_MAP[slot.day] ?? 1
   const today = new Date()
-  const mondayOffset = (today.getDay() + 6) % 7
-  const thisMonday = new Date(today)
-  thisMonday.setDate(today.getDate() - mondayOffset)
-  const date = new Date(thisMonday)
-  date.setDate(thisMonday.getDate() + ((target - 1 + 7) % 7))
+  const diff = (target - today.getDay() + 7) % 7
+  const date = new Date(today)
+  date.setDate(today.getDate() + diff)
   const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   const period = slot.startHour >= 12 ? 'pm' : 'am'
   const hour = slot.startHour % 12 || 12
   return { day, time: `${hour}${period}` }
+}
+
+/** Format a slot as a single inline string: "Mon, Mar 16, 6:00 PM" */
+function formatSlotInline(slot: { day: string; startHour: number }): string {
+  const st = formatStartTime(slot)
+  const mins = '00'
+  const period = slot.startHour >= 12 ? 'PM' : 'AM'
+  const hour = slot.startHour % 12 || 12
+  return `${st.day}, ${hour}:${mins} ${period}`
+}
+
+/** Format an ISO date string as "Mon, Mar 16" */
+function formatISODate(isoStr: string): string {
+  const d = new Date(isoStr)
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 function matchSortPriority(match: Match, currentPlayerId: string): number {
@@ -436,14 +451,48 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
               </div>
             </div>
-            {!match.completed && isConfirmed && match.schedule?.confirmedSlot && (() => {
-              const st = formatStartTime(match.schedule!.confirmedSlot!)
-              return (
-                <div className="match-time-slot">
-                  <span className="match-time-day">{st.day}</span>
-                  <span className="match-time-hour">{st.time}</span>
-                </div>
-              )
+            {/* Time badge — confirmed, proposed, or completed */}
+            {(() => {
+              // Confirmed matches: show confirmed slot
+              if (!match.completed && isConfirmed && match.schedule?.confirmedSlot) {
+                const st = formatStartTime(match.schedule!.confirmedSlot!)
+                return (
+                  <div className="match-time-slot">
+                    <span className="match-time-day">{st.day}</span>
+                    <span className="match-time-hour">{st.time}</span>
+                  </div>
+                )
+              }
+              // Proposed matches: show first pending proposal time
+              if (!match.completed && match.schedule?.status === 'proposed') {
+                const pending = match.schedule.proposals.find(p => p.status === 'pending')
+                if (pending) {
+                  const st = formatStartTime(pending)
+                  return (
+                    <div className="match-time-slot match-time-slot--proposed">
+                      <span className="match-time-day">{st.day}</span>
+                      <span className="match-time-hour">{st.time}</span>
+                    </div>
+                  )
+                }
+              }
+              // Completed matches: show date from scoreReportedAt or confirmedSlot
+              if (match.completed && match.schedule?.confirmedSlot) {
+                const st = formatStartTime(match.schedule!.confirmedSlot!)
+                return (
+                  <div className="match-time-slot match-time-slot--completed">
+                    <span className="match-time-day">{st.day}</span>
+                  </div>
+                )
+              }
+              if (match.completed && match.scoreReportedAt) {
+                return (
+                  <div className="match-time-slot match-time-slot--completed">
+                    <span className="match-time-day">{formatISODate(match.scoreReportedAt)}</span>
+                  </div>
+                )
+              }
+              return null
             })()}
           </div>
 
@@ -456,7 +505,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               </div>
             )}
 
-            {/* R-17: Completed match details — show date and winner for completed matches */}
+            {/* Completed match details — show winner */}
             {match.completed && isMyMatch && (
               <div className="completed-match-detail">
                 <span className="completed-match-winner">
