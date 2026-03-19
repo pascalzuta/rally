@@ -31,12 +31,12 @@ function formatMatchDate(slot: { day: string; startHour: number }, weekStart?: D
   const hour = slot.startHour % 12 || 12
   if (weekStart) {
     const date = resolveDate(weekStart, slot.day)
-    const dayLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+    const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
     return `${dayLabel}, ${hour}:00 ${period}`
   }
   const dayNames: Record<string, string> = {
-    monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
-    thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
+    monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed',
+    thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun',
   }
   const day = dayNames[slot.day] ?? slot.day
   return `${day}, ${hour}:00 ${period}`

@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -24,6 +24,8 @@ const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
 const OFFERS_KEY = 'rally-match-offers'
 const NOTIFICATIONS_KEY = 'rally-notifications'
 const MESSAGES_KEY = 'rally-direct-messages'
+const FEEDBACK_KEY = 'play-tennis-feedback'
+const RELIABILITY_KEY = 'play-tennis-reliability'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -1596,9 +1598,10 @@ export function getGroupStandings(tournament: Tournament): { id: string; name: s
   }))
 
   // For both group-knockout and round-robin, count only group phase matches
+  // Skip split-decision matches (disputed, don't count for standings)
   const groupMatches = tournament.matches.filter(m => m.phase === 'group')
   for (const match of groupMatches) {
-    if (!match.completed) continue
+    if (!match.completed || match.splitDecision) continue
     const s1 = stats.find(s => s.id === match.player1Id)
     const s2 = stats.find(s => s.id === match.player2Id)
     if (!s1 || !s2) continue
@@ -1839,6 +1842,8 @@ export async function confirmMatchScore(
 
   const winnerId = match.winnerId
   match.completed = true
+  match.scoreConfirmedBy = currentPlayerId
+  match.scoreConfirmedAt = new Date().toISOString()
 
   // Update ELO ratings
   const p1 = t.players.find(p => p.id === match.player1Id)
@@ -2681,6 +2686,9 @@ const BADGE_DEFS: Record<BadgeType, { label: string; description: string }> = {
   'comeback-win': { label: 'Comeback', description: 'Won a match after losing the first set' },
   'five-tournaments': { label: 'Veteran', description: 'Completed 5 tournaments' },
   'ten-matches': { label: 'Seasoned', description: 'Played 10 rated matches' },
+  'reliable-player': { label: 'Reliable', description: 'Consistently shows up and confirms promptly' },
+  'good-sport': { label: 'Good Sport', description: 'Highly rated for fairness by opponents' },
+  'community-regular': { label: 'Regular', description: 'Played 15+ matches across 3+ tournaments' },
 }
 
 function awardBadge(playerId: string, type: BadgeType, tournamentId?: string): void {
@@ -3692,4 +3700,530 @@ export function markConversationRead(playerId: string, otherPlayerId: string): v
 
 export function hasUnreadFrom(playerId: string, otherPlayerId: string): boolean {
   return loadMessages().some(m => m.recipientId === playerId && m.senderId === otherPlayerId && !m.read)
+}
+
+// --- Score Disputes ---
+
+export async function proposeScoreCorrection(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string,
+  proposedScore1: number[],
+  proposedScore2: number[],
+  proposedWinnerId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreReportedBy || match.completed) return undefined
+
+  // Only the non-reporter can propose a correction
+  if (match.scoreReportedBy === currentPlayerId) return undefined
+
+  match.scoreDispute = {
+    id: generateId(),
+    type: 'correction',
+    proposedScore1,
+    proposedScore2,
+    proposedWinnerId,
+    disputedBy: currentPlayerId,
+    disputedAt: new Date().toISOString(),
+    status: 'pending',
+  }
+
+  const disputerName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+  const scoreStr = proposedScore1.map((s, i) => `${s}-${proposedScore2[i]}`).join(', ')
+  addNotification({
+    type: 'score_correction_proposed',
+    recipientId: match.scoreReportedBy,
+    senderId: currentPlayerId,
+    senderName: disputerName,
+    message: `${disputerName} suggests the score was ${scoreStr}.`,
+    detail: scoreStr,
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function resolveScoreDispute(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string,
+  action: 'accept' | 'reject'
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreDispute || match.scoreDispute.status !== 'pending') return undefined
+
+  // Only the original reporter can resolve
+  if (match.scoreReportedBy !== currentPlayerId) return undefined
+
+  const dispute = match.scoreDispute
+
+  if (action === 'accept') {
+    // Apply the proposed score
+    if (dispute.proposedScore1) match.score1 = dispute.proposedScore1
+    if (dispute.proposedScore2) match.score2 = dispute.proposedScore2
+    if (dispute.proposedWinnerId) match.winnerId = dispute.proposedWinnerId
+    dispute.status = 'accepted'
+    dispute.resolvedAt = new Date().toISOString()
+    dispute.resolvedBy = currentPlayerId
+
+    // Now complete the match (same logic as confirmMatchScore)
+    match.completed = true
+    match.scoreConfirmedBy = dispute.disputedBy
+    match.scoreConfirmedAt = new Date().toISOString()
+
+    const winnerId = match.winnerId
+    const p1 = t.players.find(p => p.id === match.player1Id)
+    const p2 = t.players.find(p => p.id === match.player2Id)
+    if (p1 && p2 && winnerId) {
+      await updateRatings(p1, p2, winnerId)
+    }
+
+    // Bracket advancement
+    if (match.winnerId) advanceWinner(t, match, match.winnerId)
+
+    const resolverName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+    addNotification({
+      type: 'score_correction_resolved',
+      recipientId: dispute.disputedBy,
+      senderId: currentPlayerId,
+      senderName: resolverName,
+      message: `${resolverName} accepted your score correction.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  } else {
+    // Reject → split decision
+    dispute.status = 'rejected'
+    dispute.resolvedAt = new Date().toISOString()
+    dispute.resolvedBy = currentPlayerId
+    match.completed = true
+    match.splitDecision = true
+    // No ELO update, no bracket advancement for split decisions
+
+    const resolverName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+    addNotification({
+      type: 'score_correction_resolved',
+      recipientId: dispute.disputedBy,
+      senderId: currentPlayerId,
+      senderName: resolverName,
+      message: `Score dispute resulted in a split decision. The match won't count toward standings.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  // Check tournament completion
+  const allDone = t.matches.every(m => m.completed)
+  if (allDone) {
+    t.status = 'completed'
+    awardTournamentTrophies(t.id, t)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id, t)
+    }
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function reportMatchIssue(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string,
+  issueText: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreReportedBy || match.completed) return undefined
+
+  match.scoreDispute = {
+    id: generateId(),
+    type: 'issue',
+    issueText,
+    disputedBy: currentPlayerId,
+    disputedAt: new Date().toISOString(),
+    status: 'admin-review',
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+// --- Match Feedback (Reliability Rating) ---
+
+function loadFeedback(): MatchFeedback[] {
+  try {
+    const data = localStorage.getItem(FEEDBACK_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveFeedbackToStorage(feedback: MatchFeedback[]): void {
+  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback))
+}
+
+export async function saveMatchFeedback(
+  feedback: Omit<MatchFeedback, 'id' | 'createdAt' | 'revealedAt'>
+): Promise<void> {
+  const all = loadFeedback()
+  const existing = all.findIndex(f => f.matchId === feedback.matchId && f.fromPlayerId === feedback.fromPlayerId)
+
+  const entry: MatchFeedback = {
+    ...feedback,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+  }
+
+  if (existing >= 0) {
+    all[existing] = entry
+  } else {
+    all.push(entry)
+  }
+
+  // Double-blind: check if both players have submitted
+  const matchFeedbacks = all.filter(f => f.matchId === feedback.matchId)
+  if (matchFeedbacks.length >= 2) {
+    const now = new Date().toISOString()
+    for (const f of matchFeedbacks) {
+      if (!f.revealedAt) f.revealedAt = now
+    }
+  }
+
+  saveFeedbackToStorage(all)
+
+  // Sync to Supabase
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        await client.from('match_feedback').upsert({
+          id: entry.id,
+          match_id: entry.matchId,
+          tournament_id: entry.tournamentId,
+          from_player_id: entry.fromPlayerId,
+          to_player_id: entry.toPlayerId,
+          sentiment: entry.sentiment,
+          issue_categories: entry.issueCategories ?? [],
+          issue_text: entry.issueText ?? null,
+          created_at: entry.createdAt,
+          revealed_at: entry.revealedAt ?? null,
+        })
+      } catch {
+        enqueue('feedback', entry)
+      }
+    }
+  }
+
+  // Recalculate reliability for the rated player
+  recalculateReliability(feedback.toPlayerId)
+}
+
+export function getMatchFeedback(matchId: string): MatchFeedback[] {
+  return loadFeedback().filter(f => f.matchId === matchId)
+}
+
+export function getPlayerFeedbackForMatch(matchId: string, playerId: string): MatchFeedback | null {
+  return loadFeedback().find(f => f.matchId === matchId && f.fromPlayerId === playerId) ?? null
+}
+
+export function hasBothFeedback(matchId: string): boolean {
+  return loadFeedback().filter(f => f.matchId === matchId).length >= 2
+}
+
+// --- Reliability Score ---
+
+function loadReliability(): Record<string, ReliabilityScore> {
+  try {
+    const data = localStorage.getItem(RELIABILITY_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveReliabilityToStorage(scores: Record<string, ReliabilityScore>): void {
+  localStorage.setItem(RELIABILITY_KEY, JSON.stringify(scores))
+}
+
+export function recalculateReliability(playerId: string): ReliabilityScore {
+  const tournaments = load()
+  const feedback = loadFeedback()
+  const now = Date.now()
+
+  // Gather last 20 completed matches for this player
+  const playerMatches: { match: Match; tournament: Tournament }[] = []
+  for (const t of tournaments) {
+    for (const m of t.matches) {
+      if (!m.completed) continue
+      if (m.player1Id !== playerId && m.player2Id !== playerId) continue
+      playerMatches.push({ match: m, tournament: t })
+    }
+  }
+
+  // Sort by completion time (most recent first), take last 20
+  playerMatches.sort((a, b) => {
+    const aTime = a.match.scoreConfirmedAt ?? a.match.scoreReportedAt ?? ''
+    const bTime = b.match.scoreConfirmedAt ?? b.match.scoreReportedAt ?? ''
+    return bTime.localeCompare(aTime)
+  })
+  const recent = playerMatches.slice(0, 20)
+
+  if (recent.length === 0) {
+    const score: ReliabilityScore = {
+      playerId,
+      overallScore: 100,
+      showUpRate: 1,
+      fairnessRating: 1,
+      noDisputesAgainst: 1,
+      confirmationSpeed: 1,
+      matchesConsidered: 0,
+      lastUpdated: new Date().toISOString(),
+    }
+    const scores = loadReliability()
+    scores[playerId] = score
+    saveReliabilityToStorage(scores)
+    return score
+  }
+
+  // Phase 2: Apply decay (6-month half-life)
+  function decayWeight(matchTimeStr: string | undefined): number {
+    if (!matchTimeStr) return 1
+    const ageMs = now - new Date(matchTimeStr).getTime()
+    const ageMonths = ageMs / (30 * 24 * 60 * 60 * 1000)
+    return Math.pow(0.5, ageMonths / 6)
+  }
+
+  // 1. Show-up rate (40%) — fraction of matches that weren't walkovers against this player
+  let showUpWeightedSum = 0
+  let showUpWeightTotal = 0
+  for (const { match } of recent) {
+    const weight = decayWeight(match.scoreConfirmedAt ?? match.scoreReportedAt ?? undefined)
+    const isWalkoverAgainst = match.resolution?.type === 'walkover' && match.resolution.winnerId !== playerId
+    showUpWeightedSum += weight * (isWalkoverAgainst ? 0 : 1)
+    showUpWeightTotal += weight
+  }
+  const showUpRate = showUpWeightTotal > 0 ? showUpWeightedSum / showUpWeightTotal : 1
+
+  // 2. Fairness rating (25%) — weighted average of opponent feedback sentiment
+  const feedbackReceived = feedback.filter(f => f.toPlayerId === playerId)
+  let fairnessWeightedSum = 0
+  let fairnessWeightTotal = 0
+  for (const f of feedbackReceived) {
+    const weight = decayWeight(f.createdAt)
+    const sentimentScore = f.sentiment === 'positive' ? 1 : f.sentiment === 'neutral' ? 0.5 : 0
+    fairnessWeightedSum += weight * sentimentScore
+    fairnessWeightTotal += weight
+  }
+  const fairnessRating = fairnessWeightTotal > 0 ? fairnessWeightedSum / fairnessWeightTotal : 1
+
+  // 3. No disputes against (20%) — fraction of matches with no dispute filed against this player
+  let disputeWeightedSum = 0
+  let disputeWeightTotal = 0
+  for (const { match } of recent) {
+    const weight = decayWeight(match.scoreConfirmedAt ?? match.scoreReportedAt ?? undefined)
+    const hasDisputeAgainst = match.scoreDispute && match.scoreReportedBy === playerId && match.scoreDispute.type === 'correction'
+    disputeWeightedSum += weight * (hasDisputeAgainst ? 0 : 1)
+    disputeWeightTotal += weight
+  }
+  const noDisputesAgainst = disputeWeightTotal > 0 ? disputeWeightedSum / disputeWeightTotal : 1
+
+  // 4. Confirmation speed (15%) — normalized average time to confirm (faster = higher)
+  let speedWeightedSum = 0
+  let speedWeightTotal = 0
+  for (const { match } of recent) {
+    if (match.scoreReportedBy === playerId) continue // only count when this player was the confirmer
+    if (!match.scoreReportedAt || !match.scoreConfirmedAt) continue
+    const weight = decayWeight(match.scoreConfirmedAt)
+    const hoursToConfirm = (new Date(match.scoreConfirmedAt).getTime() - new Date(match.scoreReportedAt).getTime()) / (1000 * 60 * 60)
+    // Normalize: 0-1h = 1.0, 48h+ = 0.0, linear between
+    const speedScore = Math.max(0, Math.min(1, 1 - hoursToConfirm / 48))
+    speedWeightedSum += weight * speedScore
+    speedWeightTotal += weight
+  }
+  const confirmationSpeed = speedWeightTotal > 0 ? speedWeightedSum / speedWeightTotal : 1
+
+  // Weighted composite
+  const overallScore = Math.round(
+    (0.40 * showUpRate + 0.25 * fairnessRating + 0.20 * noDisputesAgainst + 0.15 * confirmationSpeed) * 100
+  )
+
+  const score: ReliabilityScore = {
+    playerId,
+    overallScore,
+    showUpRate,
+    fairnessRating,
+    noDisputesAgainst,
+    confirmationSpeed,
+    matchesConsidered: recent.length,
+    lastUpdated: new Date().toISOString(),
+  }
+
+  const scores = loadReliability()
+  scores[playerId] = score
+  saveReliabilityToStorage(scores)
+
+  // Phase 2: Nudge notifications
+  checkReliabilityNudge(playerId, score)
+
+  // Phase 2: Award reliability badges
+  checkReliabilityBadges(playerId, score, feedbackReceived.length, recent.length, tournaments)
+
+  return score
+}
+
+export function getReliabilityScore(playerId: string): ReliabilityScore | null {
+  const scores = loadReliability()
+  return scores[playerId] ?? null
+}
+
+export type ReliabilityLevel = 'green' | 'yellow' | 'red' | null
+
+export function getReliabilityLevel(playerId: string): ReliabilityLevel {
+  const score = getReliabilityScore(playerId)
+  if (!score || score.matchesConsidered < 5) return null // not enough data
+  if (score.overallScore >= 75) return 'green'
+  if (score.overallScore >= 50) return 'yellow'
+  return 'red'
+}
+
+// Phase 2: Nudge notifications for declining reliability
+const NUDGE_COOLDOWN_KEY = 'play-tennis-reliability-nudge'
+
+function checkReliabilityNudge(playerId: string, score: ReliabilityScore): void {
+  if (score.matchesConsidered < 5) return
+
+  // Check cooldown (max once per week)
+  try {
+    const data = localStorage.getItem(NUDGE_COOLDOWN_KEY)
+    const nudges: Record<string, string> = data ? JSON.parse(data) : {}
+    const lastNudge = nudges[playerId]
+    if (lastNudge) {
+      const weekMs = 7 * 24 * 60 * 60 * 1000
+      if (Date.now() - new Date(lastNudge).getTime() < weekMs) return
+    }
+
+    let message = ''
+    if (score.overallScore < 30) {
+      message = 'Your reliability is critically low. Organizers may deprioritize your match scheduling.'
+    } else if (score.overallScore < 50) {
+      message = 'Some of your recent opponents flagged issues. Showing up on time and confirming scores promptly helps everyone have a better experience.'
+    } else {
+      return // no nudge needed
+    }
+
+    addNotification({
+      type: 'reliability_nudge',
+      recipientId: playerId,
+      message,
+    })
+
+    nudges[playerId] = new Date().toISOString()
+    localStorage.setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(nudges))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+// Phase 2: Check and award reliability-based badges
+function checkReliabilityBadges(
+  playerId: string,
+  score: ReliabilityScore,
+  feedbackCount: number,
+  matchCount: number,
+  tournaments: Tournament[]
+): void {
+  // Reliable Player: overallScore >= 85 and 10+ matches considered
+  if (score.overallScore >= 85 && score.matchesConsidered >= 10) {
+    awardBadge(playerId, 'reliable-player')
+  }
+
+  // Good Sport: fairnessRating >= 0.9 and 10+ feedback records
+  if (score.fairnessRating >= 0.9 && feedbackCount >= 10) {
+    awardBadge(playerId, 'good-sport')
+  }
+
+  // Community Regular: 15+ matches across 3+ tournaments
+  if (matchCount >= 15) {
+    const tournamentsPlayed = new Set<string>()
+    for (const t of tournaments) {
+      for (const m of t.matches) {
+        if (m.completed && (m.player1Id === playerId || m.player2Id === playerId)) {
+          tournamentsPlayed.add(t.id)
+        }
+      }
+    }
+    if (tournamentsPlayed.size >= 3) {
+      awardBadge(playerId, 'community-regular')
+    }
+  }
+}
+
+// --- Auto-accept timeout (48h) ---
+
+export function checkAutoAcceptScores(): void {
+  const all = load()
+  let changed = false
+  const now = Date.now()
+  const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000
+
+  for (const t of all) {
+    for (const match of t.matches) {
+      if (!match.scoreReportedBy || !match.scoreReportedAt || match.completed) continue
+      // Skip matches with pending disputes
+      if (match.scoreDispute?.status === 'pending') continue
+
+      const reportedTime = new Date(match.scoreReportedAt).getTime()
+      if (now - reportedTime >= FORTY_EIGHT_HOURS) {
+        match.completed = true
+        match.scoreConfirmedBy = 'auto'
+        match.scoreConfirmedAt = new Date().toISOString()
+        changed = true
+
+        // Notify the reporter
+        if (match.scoreReportedBy) {
+          addNotification({
+            type: 'score_reported',
+            recipientId: match.scoreReportedBy,
+            message: 'Score auto-confirmed after 48 hours.',
+            relatedMatchId: match.id,
+            relatedTournamentId: t.id,
+          })
+        }
+
+        // Bracket advancement
+        if (match.winnerId) advanceWinner(t, match, match.winnerId)
+
+        // Check tournament completion
+        const allDone = t.matches.every(m => m.completed)
+        if (allDone) {
+          t.status = 'completed'
+          awardTournamentTrophies(t.id, t)
+          for (const p of t.players) {
+            checkAndAwardBadges(p.id, t.id, t)
+          }
+        }
+      }
+    }
+  }
+
+  if (changed) {
+    save(all)
+    // Sync changed tournaments
+    for (const t of all) {
+      syncTournament(t)
+    }
+  }
 }

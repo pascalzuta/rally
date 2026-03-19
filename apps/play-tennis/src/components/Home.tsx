@@ -98,6 +98,24 @@ function playerNameWithSeed(tournament: Tournament, playerId: string | null): st
   return seed != null ? `${name} [#${seed}]` : name
 }
 
+const HOME_DAY_MAP: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+}
+
+/** Format a { day, startHour } slot as inline text: "Mon, Mar 16, 6:00 PM" */
+function formatSlotInline(slot: { day: string; startHour: number }): string {
+  const target = HOME_DAY_MAP[slot.day] ?? 1
+  const today = new Date()
+  const diff = (target - today.getDay() + 7) % 7
+  const date = new Date(today)
+  date.setDate(today.getDate() + diff)
+  const dayStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const period = slot.startHour >= 12 ? 'PM' : 'AM'
+  const hour = slot.startHour % 12 || 12
+  return `${dayStr}, ${hour}:00 ${period}`
+}
+
 function buildActionCards(
   tournaments: Tournament[],
   playerId: string
@@ -180,10 +198,12 @@ function buildActionCards(
 
       // Escalated matches
       if (schedule?.status === 'escalated') {
+        const pendingProposal = schedule.proposals.find(p => p.status === 'pending')
+        const dateHint = pendingProposal ? ` · ${formatSlotInline(pendingProposal)}` : ''
         cards.push({
           type: 'escalated',
           label: 'Urgent',
-          detail: `Escalation day ${schedule.escalationDay} — respond now`,
+          detail: `Escalation day ${schedule.escalationDay} — respond now${dateHint}`,
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -195,10 +215,11 @@ function buildActionCards(
 
       // Matches needing scoring: confirmed + not completed + is my match
       if (schedule?.status === 'confirmed' && schedule.confirmedSlot) {
+        const dateStr = formatSlotInline(schedule.confirmedSlot)
         cards.push({
           type: 'score',
           label: 'Report Score',
-          detail: 'Match confirmed — enter result',
+          detail: dateStr,
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -220,10 +241,12 @@ function buildActionCards(
         const respondableCount = pendingFromOpponent.length + pendingSystem.length
 
         if (respondableCount > 0) {
+          const firstPending = [...pendingSystem, ...pendingFromOpponent][0]
+          const dateStr = firstPending ? formatSlotInline(firstPending) : 'Rally found a time'
           cards.push({
             type: 'respond',
             label: 'Match Ready',
-            detail: 'Rally found a time — confirm it',
+            detail: dateStr,
             opponentId: opponentId!,
             opponentName,
             tournamentId: tournament.id,
@@ -738,9 +761,17 @@ export default function Home({
       {/* Up Next Card */}
       {upNext && upNext.match.schedule?.confirmedSlot && (() => {
         const slot = upNext.match.schedule!.confirmedSlot!
-        const day = slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3)
-        const period = slot.startHour >= 12 ? 'pm' : 'am'
-        const hour = slot.startHour % 12 || 12
+        const st = (() => {
+          const target = HOME_DAY_MAP[slot.day] ?? 1
+          const today = new Date()
+          const diff = (target - today.getDay() + 7) % 7
+          const date = new Date(today)
+          date.setDate(today.getDate() + diff)
+          const dayStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+          const period = slot.startHour >= 12 ? 'pm' : 'am'
+          const hour = slot.startHour % 12 || 12
+          return { day: dayStr, time: `${hour}${period}` }
+        })()
         const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
         const upNextExpanded = expandedCardKey === upNextKey
         return (
@@ -752,8 +783,8 @@ export default function Home({
               </div>
             </div>
             <div className="upnext-time">
-              <span className="upnext-time-day">{day}</span>
-              <span className="upnext-time-hour">{hour}{period}</span>
+              <span className="upnext-time-day">{st.day}</span>
+              <span className="upnext-time-hour">{st.time}</span>
             </div>
             {upNextExpanded && (
               <div onClick={e => e.stopPropagation()} style={{ gridColumn: '1 / -1' }}>
