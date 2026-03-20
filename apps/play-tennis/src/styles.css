@@ -1334,8 +1334,7 @@ select:focus {
   color: var(--color-negative-primary);
 }
 
-.match-card.sched-unscheduled .match-card-action-btn,
-.match-card.scoreable .match-card-action-btn {
+.match-card.sched-unscheduled .match-card-action-btn {
   background: var(--color-warning-bg);
   color: var(--color-warning-primary);
 }

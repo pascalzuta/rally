@@ -215,7 +215,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         const opponentId = nextMatch.player1Id === currentPlayerId ? nextMatch.player2Id : nextMatch.player1Id
         const opponentName = getPlayerName(tournament, opponentId)
         const tier = nextMatch.schedule?.schedulingTier
-        const tierType = tier === 'auto' ? 'score' : tier === 'needs-accept' ? 'respond' : 'schedule'
+        const tierType = tier === 'auto' ? 'confirmed' : tier === 'needs-accept' ? 'respond' : 'schedule'
         const nextSlot = nextMatch.schedule?.confirmedSlot ?? nextMatch.schedule?.proposals?.[0]
         const isMessaging = messagingMatchId === nextMatch.id
         const msgUnread = opponentId ? hasUnreadFrom(currentPlayerId, opponentId) : false
@@ -319,7 +319,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                 return (
                   <div key={match.id}>
                     <div
-                      className={`card action-card ${tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'}`}
+                      className={`card action-card ${tier === 'auto' ? 'action-confirmed' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'}`}
                       style={{ animationDelay: `${i * 50}ms` }}
                       onClick={() => {
                         if (!canExpandMatch(match, currentPlayerId)) return

@@ -163,7 +163,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
             return (
               <div key={match.id}>
                 <div
-                  className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
+                  className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-confirmed' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
                   onClick={() => {
                     if (!canExpandMatch(match, currentPlayerId)) return
                     setMessagingMatchId(null)
