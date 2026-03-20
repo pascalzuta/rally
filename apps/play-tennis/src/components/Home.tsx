@@ -170,8 +170,8 @@ function buildActionCards(
       if (rescheduleUiState === 'soft_request_received') {
         cards.push({
           type: 'respond',
-          label: 'Respond',
-          detail: `${opponentName} asked to move the match`,
+          label: 'Needs Response',
+          detail: 'Your opponent asked to move the current time.',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -185,7 +185,7 @@ function buildActionCards(
         cards.push({
           type: 'schedule',
           label: 'Needs New Time',
-          detail: `${opponentName} can no longer make the original time`,
+          detail: 'Find a new time for this match.',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -199,7 +199,7 @@ function buildActionCards(
         cards.push({
           type: 'schedule',
           label: 'Needs New Time',
-          detail: 'You canceled the original match time',
+          detail: 'Find a new time for this match.',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -216,12 +216,10 @@ function buildActionCards(
 
       // Escalated matches
       if (schedule?.status === 'escalated') {
-        const pendingProposal = schedule.proposals.find(p => p.status === 'pending')
-        const dateHint = pendingProposal ? ` · ${formatSlotInline(pendingProposal)}` : ''
         cards.push({
           type: 'escalated',
-          label: 'Urgent',
-          detail: `Escalation day ${schedule.escalationDay} — respond now${dateHint}`,
+          label: 'Respond Now',
+          detail: 'Scheduling needs your response.',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -233,11 +231,10 @@ function buildActionCards(
 
       // Matches needing scoring: confirmed + not completed + is my match
       if (schedule?.status === 'confirmed' && schedule.confirmedSlot) {
-        const dateStr = formatSlotInline(schedule.confirmedSlot)
         cards.push({
           type: 'confirmed',
           label: 'Confirmed',
-          detail: `Ready to play · ${dateStr}`,
+          detail: 'Confirmed and ready to play.',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -263,8 +260,8 @@ function buildActionCards(
           const dateStr = firstPending ? formatSlotInline(firstPending) : 'Rally found a time'
           cards.push({
             type: 'respond',
-            label: 'Match Ready',
-            detail: dateStr,
+            label: 'Needs Response',
+            detail: 'Review the proposed time and confirm if it works.',
             opponentId: opponentId!,
             opponentName,
             tournamentId: tournament.id,
@@ -284,8 +281,8 @@ function buildActionCards(
       ) {
         cards.push({
           type: 'schedule',
-          label: 'Schedule',
-          detail: 'Find a time to play',
+          label: 'Needs Scheduling',
+          detail: 'Set a time with your opponent.',
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -726,10 +723,10 @@ export default function Home({
                         : card.type === 'respond'
                           ? 'Confirm Time'
                           : card.type === 'confirmed'
-                            ? 'Change Time'
+                            ? 'View Match'
                             : card.type === 'escalated'
                               ? 'Respond Now'
-                              : 'Schedule Match'}
+                              : 'Find a Time'}
                     </button>
                   ) : null}
                   {card.type !== 'message' && (
@@ -834,7 +831,7 @@ export default function Home({
               <div className="action-card-opponent">
                 vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
               </div>
-              <div className="action-card-supporting">Locked in and ready to adjust if needed.</div>
+              <div className="action-card-supporting">Confirmed and ready to play.</div>
             </div>
             <div className="action-card-buttons">
               <button
@@ -845,7 +842,7 @@ export default function Home({
                   setExpandedCardKey(upNextExpanded ? null : upNextKey)
                 }}
               >
-                Change Time
+                View Match
               </button>
             </div>
             {upNextExpanded && (

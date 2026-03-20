@@ -336,15 +336,15 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     }
     if (match.schedule?.activeRescheduleRequest) {
       if (rescheduleUiState === 'soft_request_sent') return { label: 'Reschedule Requested', type: 'proposed' }
-      if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested', type: 'proposed' }
+      if (rescheduleUiState === 'soft_request_received') return { label: 'Needs Response', type: 'proposed' }
       return { label: 'Needs New Time', type: 'unscheduled' }
     }
     if (canScore) return { label: 'Confirmed', type: 'confirmed' }
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
     if (match.schedule.status === 'confirmed') return { label: 'Confirmed', type: 'confirmed' }
-    if (match.schedule.status === 'escalated') return { label: 'Escalated', type: 'escalated' }
-    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Rally Suggested', type: 'proposed' }
-    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Find a time', type: 'unscheduled' }
+    if (match.schedule.status === 'escalated') return { label: 'Respond Now', type: 'escalated' }
+    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Needs Response', type: 'proposed' }
+    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Needs Scheduling', type: 'unscheduled' }
     return { label: 'Pending', type: 'pending' }
   }
 
@@ -369,13 +369,13 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (request.intent === 'soft') {
         return request.requestedBy === currentPlayerId ? null : 'Respond'
       }
-      return 'Find a time'
+      return 'Find a Time'
     }
-    if (match.schedule.status === 'confirmed') return isMyMatch ? 'Change Time' : 'View Time'
+    if (match.schedule.status === 'confirmed') return isMyMatch ? 'View Match' : 'View Time'
     if (!isMyMatch) return null
     if (match.schedule.status === 'proposed') return 'Confirm Time'
     if (match.schedule.status === 'escalated') return 'Respond Now'
-    if (match.schedule.status === 'unscheduled') return 'Find a time'
+    if (match.schedule.status === 'unscheduled') return 'Find a Time'
     return null
   }
 
@@ -493,9 +493,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (canScore) return 'Enter the final result after the match.'
       if (!match.schedule) return isMyMatch ? 'Rally is still creating a match time.' : 'Waiting for a match time.'
       if (match.schedule.status === 'confirmed') return isMyMatch ? 'Confirmed and ready to play.' : 'Confirmed match time.'
-      if (match.schedule.status === 'proposed') return isMyMatch ? 'Review the suggested match time.' : 'Suggested time awaiting a response.'
+      if (match.schedule.status === 'proposed') return isMyMatch ? 'Review the proposed time and confirm if it works.' : 'Suggested time awaiting a response.'
       if (match.schedule.status === 'escalated') return isMyMatch ? 'Scheduling needs your response.' : 'Scheduling needs organizer help.'
-      if (match.schedule.status === 'unscheduled') return isMyMatch ? 'Pick a time that works for both players.' : 'Players still need to choose a time.'
+      if (match.schedule.status === 'unscheduled') return isMyMatch ? 'Set a time with your opponent.' : 'Players still need to choose a time.'
       return null
     })()
 

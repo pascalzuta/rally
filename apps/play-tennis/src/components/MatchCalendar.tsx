@@ -50,7 +50,7 @@ function getTier(match: Match): SchedulingTier | null {
 
 function getPrimaryActionLabel(match: Match): string {
   const tier = getTier(match)
-  if (tier === 'auto') return 'Change Time'
+  if (tier === 'auto') return 'View Match'
   if (tier === 'needs-accept') return 'Confirm Time'
   return 'Find a Time'
 }
@@ -173,7 +173,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   <div className="action-card-status-row">
                     <div className={`card-status-label card-status-label--${getTierTone(tier, isCompleted)}`}>
                       {isCompleted ? 'Completed' :
-                       tier === 'auto' ? 'Scheduled' :
+                       tier === 'auto' ? 'Confirmed' :
                        tier === 'needs-accept' ? 'Needs Response' :
                        'Needs Scheduling'}
                     </div>
@@ -187,7 +187,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                         : tier === 'auto'
                           ? 'Confirmed and ready to play.'
                           : tier === 'needs-accept'
-                            ? 'Review the proposed time and confirm it.'
+                            ? 'Review the proposed time and confirm if it works.'
                             : 'Set a time with your opponent.'}
                     </div>
                   </div>

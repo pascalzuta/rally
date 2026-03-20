@@ -85,7 +85,7 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
 
 function getPrimaryActionLabel(match: Match): string {
   const tier = match.schedule?.schedulingTier
-  if (tier === 'auto') return 'Change Time'
+  if (tier === 'auto') return 'View Match'
   if (tier === 'needs-accept') return 'Confirm Time'
   return 'Find a Time'
 }
@@ -229,7 +229,9 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
             }}
           >
             <div className="action-card-status-row">
-              <div className={`card-status-label card-status-label--${getTierTone(tier)}`}>Up Next</div>
+              <div className={`card-status-label card-status-label--${getTierTone(tier)}`}>
+                {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Needs Response' : 'Needs Scheduling'}
+              </div>
               {nextSlot && <div className="card-meta-chip">{formatMatchDate(nextSlot, weekGroups.get(1)?.weekStart)}</div>}
             </div>
             <div className="action-card-main">
@@ -337,10 +339,10 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                         <div className="action-card-opponent">vs {opponentName}</div>
                         <div className="action-card-supporting">
                           {tier === 'auto'
-                            ? 'Ready to play.'
+                            ? 'Confirmed and ready to play.'
                             : tier === 'needs-accept'
-                              ? 'Awaiting your confirmation.'
-                              : 'Choose a time with your opponent.'}
+                              ? 'Review the proposed time and confirm if it works.'
+                              : 'Set a time with your opponent.'}
                         </div>
                       </div>
                       <div className="action-card-buttons">
