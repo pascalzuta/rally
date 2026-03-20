@@ -277,8 +277,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
                 <div className="offer-card-status-row">
-                  <span className="offer-card-label">Awaiting Response</span>
-                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
+                  <span className="card-status-label card-status-label--blue">Awaiting Response</span>
+                  <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
                   <div className="card-title">{offer.senderName}</div>
@@ -301,8 +301,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
                 <div className="offer-card-status-row">
-                  <span className="offer-card-label">Pending</span>
-                  <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
+                  <span className="card-status-label card-status-label--slate">Pending</span>
+                  <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
                   <div className="card-title">to {offer.recipientName}</div>
@@ -337,9 +337,14 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Cancel Broadcast</button>
         </div>
       ) : !showForm ? (
-        <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
-          <span className="play-now-text">I'm Free to Play</span>
-          <span className="play-now-sub">Broadcast your availability — get matched nearby</span>
+        <button className="card action-card action-confirmed broadcast-play-now-btn" onClick={() => setShowForm(true)}>
+          <span className="action-card-status-row">
+            <span className="card-status-label card-status-label--green">Quick Play</span>
+          </span>
+          <span className="action-card-main">
+            <span className="action-card-opponent">I&apos;m Free to Play</span>
+            <span className="action-card-supporting">Broadcast your availability so nearby tournament players can send a request.</span>
+          </span>
         </button>
       ) : (
         <div className="card broadcast-form">
@@ -376,30 +381,42 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <div className="pn-opponent-list">
               {group.entries.map((row, i) => (
                 <div key={`${row.playerId}-${row.date}-${i}`}>
-                  <div className="pn-opponent-row pn-opponent-actionable" onClick={() => setAskingRow(row)}>
-                    <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
-                    <div className="pn-opponent-info">
-                      <div className="pn-opponent-name">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
-                      <div className="pn-opponent-meta">
-                        {row.isNow && <span className="pn-available-now">Available now</span>}
-                        <span>{row.dateLabel} · {row.timeLabel}</span>
-                        {row.location && <span> · {row.location}</span>}
+                  <div
+                    className={`card action-card ${row.isNow ? 'action-confirmed' : 'action-respond'} pn-opponent-row pn-opponent-actionable`}
+                    onClick={() => {
+                      setMessagingPlayerId(null)
+                      setAskingRow(row)
+                    }}
+                  >
+                    <div className="action-card-status-row">
+                      <div className={`card-status-label ${row.isNow ? 'card-status-label--green' : 'card-status-label--blue'}`}>
+                        {row.isNow ? 'Available Now' : 'Available'}
                       </div>
-                      {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
+                      <div className="card-meta-chip">{`${row.dateLabel} ${row.timeLabel}`}</div>
                     </div>
-                    <div className="pn-opponent-actions">
+                    <div className="pn-opponent-card-main">
+                      <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
+                      <div className="pn-opponent-info">
+                        <div className="action-card-opponent">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
+                        <div className="action-card-supporting">
+                          {row.location ? row.location : 'Tournament player available for a casual match.'}
+                        </div>
+                        {row.message && <div className="pn-opponent-message">&quot;{row.message}&quot;</div>}
+                      </div>
+                    </div>
+                    <div className="action-card-buttons">
+                      <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setMessagingPlayerId(null); setAskingRow(row) }}>Send Match Request</button>
                       <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
                         {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
                       </button>
-                      <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setAskingRow(row) }}>Send Match Request</button>
                     </div>
+                    {messagingPlayerId === row.playerId && (
+                      <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
+                        <MessagePanel currentPlayerId={currentPlayerId} currentPlayerName={currentPlayerName} otherPlayerId={row.playerId} otherPlayerName={row.playerName} onClose={() => setMessagingPlayerId(null)} />
+                      </div>
+                    )}
                   </div>
-                  {messagingPlayerId === row.playerId && (
-                    <div className="pn-message-panel-wrapper" onClick={e => e.stopPropagation()}>
-                      <MessagePanel currentPlayerId={currentPlayerId} currentPlayerName={currentPlayerName} otherPlayerId={row.playerId} otherPlayerName={row.playerName} onClose={() => setMessagingPlayerId(null)} />
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

@@ -658,7 +658,7 @@ export default function Home({
               <div className="card-title">{incoming.length} offer{incoming.length !== 1 ? 's' : ''} waiting</div>
               <div className="card-supporting">Reply from the Find Match tab to keep your requests organized.</div>
             </div>
-            <button className="btn-link">View on Find Match</button>
+            <button className="btn btn-small">View on Find Match</button>
           </div>
         )
       })()}
@@ -819,32 +819,42 @@ export default function Home({
         const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
         const upNextExpanded = expandedCardKey === upNextKey
         return (
-          <div className="card upnext-card" onClick={() => setExpandedCardKey(upNextExpanded ? null : upNextKey)}>
-            <div>
-              <div className="upnext-label">Confirmed</div>
-              <div className="upnext-opponent">
+          <div
+            className="card action-card action-confirmed upnext-card"
+            onClick={() => {
+              setMessagingCardKey(null)
+              setExpandedCardKey(upNextExpanded ? null : upNextKey)
+            }}
+          >
+            <div className="action-card-status-row">
+              <div className="card-status-label card-status-label--green">Confirmed</div>
+              <div className="card-meta-chip">{`${st.day} ${st.time}`}</div>
+            </div>
+            <div className="action-card-main">
+              <div className="action-card-opponent">
                 vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
               </div>
+              <div className="action-card-supporting">Locked in and ready to adjust if needed.</div>
             </div>
-            <div className="upnext-time">
-              <span className="upnext-time-day">{st.day}</span>
-              <span className="upnext-time-hour">{st.time}</span>
+            <div className="action-card-buttons">
+              <button
+                className="action-card-btn"
+                onClick={e => {
+                  e.stopPropagation()
+                  setMessagingCardKey(null)
+                  setExpandedCardKey(upNextExpanded ? null : upNextKey)
+                }}
+              >
+                Change Time
+              </button>
             </div>
-            <button
-              className="action-card-btn"
-              onClick={e => {
-                e.stopPropagation()
-                setExpandedCardKey(upNextExpanded ? null : upNextKey)
-              }}
-            >
-              Change Time
-            </button>
             {upNextExpanded && (
-              <div onClick={e => e.stopPropagation()} style={{ gridColumn: '1 / -1' }}>
+              <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                 <UpcomingMatchPanel
                   tournament={upNext.tournament}
                   match={upNext.match}
                   currentPlayerId={profile.id}
+                  mode="schedule"
                   onUpdated={() => {
                     setExpandedCardKey(null)
                     onDataChanged?.()

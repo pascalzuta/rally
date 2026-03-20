@@ -3562,40 +3562,22 @@ select:focus {
 /* Play Now button */
 .broadcast-play-now-btn {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: var(--space-lg) var(--space-xl);
   margin-bottom: var(--space-lg);
-  background: var(--color-accent-primary);
-  color: white;
   border: none;
-  border-radius: var(--radius-card);
   cursor: pointer;
-  transition: transform 0.1s;
   font-family: inherit;
+  text-align: left;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
 }
 
 .broadcast-play-now-btn:active {
   transform: scale(0.98);
 }
 
-.play-now-icon {
-  font-size: 20px;
-}
-
-.play-now-text {
-  font-size: 16px;
-  font-weight: var(--weight-semibold, 600);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.play-now-sub {
-  font-size: 13px;
-  opacity: 0.75;
-  font-weight: var(--weight-regular);
+.broadcast-play-now-btn .action-card-status-row,
+.broadcast-play-now-btn .action-card-main {
+  width: 100%;
 }
 
 /* Floating action buttons */
@@ -4224,13 +4206,16 @@ select:focus {
 
 .pn-opponent-row {
   display: flex;
-  align-items: center;
-  gap: var(--space-md);
+  flex-direction: column;
+  gap: 0;
   padding: 20px;
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow);
   transition: background 0.1s;
+}
+
+.pn-opponent-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
 }
 
 .pn-opponent-actionable {
