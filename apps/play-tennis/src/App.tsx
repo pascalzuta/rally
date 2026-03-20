@@ -4,7 +4,7 @@ import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
-import { initSupabase, getSession } from './supabase'
+import { initSupabase, getSession, onAuthStateChange } from './supabase'
 import Register from './components/Register'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
@@ -152,15 +152,12 @@ export default function App() {
     retroactivelyAwardTrophies()
   }, [])
 
-  // Initialize Supabase client + sync when profile is available
+  // Initialize Supabase sync when profile is available
   useEffect(() => {
     if (!profile) return
-    initSupabase()
-    // Session already exists from OTP verification — init sync directly
     getSession().then(() => initSync(profile.county))
     const handler = () => setRefreshKey(r => r + 1)
     window.addEventListener(SYNC_EVENT, handler)
-    // Flush offline queue when connectivity is restored
     const onlineHandler = () => { flushQueue() }
     window.addEventListener('online', onlineHandler)
     return () => {

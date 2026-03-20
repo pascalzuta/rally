@@ -5,12 +5,21 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJ
 
 let client: SupabaseClient | null = null
 
+// Initialize immediately so magic link hash tokens are picked up on page load
 export function initSupabase(): SupabaseClient | null {
   if (client) return client
 
-  client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+    },
+  })
   return client
 }
+
+// Auto-init on module load so the client exists before any component renders
+initSupabase()
 
 export function getClient(): SupabaseClient | null {
   return client
@@ -88,4 +97,18 @@ export async function getAuthUserId(): Promise<string | null> {
   if (!client) return null
   const { data } = await client.auth.getSession()
   return data.session?.user?.id ?? null
+}
+
+/**
+ * Listen for auth state changes (magic link redirect, session refresh, etc.)
+ * Returns an unsubscribe function.
+ */
+export function onAuthStateChange(
+  callback: (event: string, userId: string | null, email: string | null) => void,
+): () => void {
+  if (!client) return () => {}
+  const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+    callback(event, session?.user?.id ?? null, session?.user?.email ?? null)
+  })
+  return () => subscription.unsubscribe()
 }

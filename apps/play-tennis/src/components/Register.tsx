@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, getSession, initSupabase } from '../supabase'
+import { sendOtp, verifyOtp, getSession, onAuthStateChange } from '../supabase'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -120,19 +120,26 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [resendCountdown, setResendCountdown] = useState(0)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
 
-  // Check for existing session on mount
+  // Check for existing session on mount + listen for magic link auth
   useEffect(() => {
-    initSupabase()
+    // Check if already authenticated (e.g. page refresh with valid session)
     getSession().then(session => {
       if (session) {
         setAuthUserId(session.userId)
         setEmail(session.email)
-        // Already authenticated — skip to profile setup
-        if (step === 'email' || step === 'verify') {
-          setStep('signup')
-        }
+        setStep('signup')
       }
     })
+
+    // Listen for magic link redirect (tokens arrive via URL hash)
+    const unsub = onAuthStateChange((event, userId, userEmail) => {
+      if (event === 'SIGNED_IN' && userId) {
+        setAuthUserId(userId)
+        if (userEmail) setEmail(userEmail)
+        setStep('signup')
+      }
+    })
+    return unsub
   }, [])
 
   // Resend countdown timer
