@@ -1,3 +1,4 @@
+import { formatHourCompact } from '../dateUtils'
 import { useState } from 'react'
 import {
   acceptProposal,
@@ -54,14 +55,6 @@ function resolveNextDate(dayOfWeek: string): Date {
   return result
 }
 
-function formatHour(h: number): string {
-  const whole = Math.floor(h)
-  const half = h % 1 >= 0.5
-  const suffix = half ? ':30' : ''
-  if (whole === 0 || whole === 24) return `12${suffix}am`
-  if (whole === 12) return `12${suffix}pm`
-  return whole < 12 ? `${whole}${suffix}am` : `${whole - 12}${suffix}pm`
-}
 
 function dayLabel(day: DayOfWeek): string {
   const date = resolveNextDate(day)
@@ -74,11 +67,11 @@ function dayLabelShort(day: DayOfWeek): string {
 }
 
 function proposalLabel(p: MatchProposal): string {
-  return `${dayLabelShort(p.day)} ${formatHour(p.startHour)}\u2013${formatHour(p.endHour)}`
+  return `${dayLabelShort(p.day)} ${formatHourCompact(p.startHour)}\u2013${formatHourCompact(p.endHour)}`
 }
 
 function slotLabel(slot: MatchSlot): string {
-  return `${dayLabelShort(slot.day)} ${formatHour(slot.startHour)}\u2013${formatHour(slot.endHour)}`
+  return `${dayLabelShort(slot.day)} ${formatHourCompact(slot.startHour)}\u2013${formatHourCompact(slot.endHour)}`
 }
 
 function getVenueSuggestion(
@@ -285,13 +278,13 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           </select>
           <select value={reschedStart} onChange={e => setReschedStart(Number(e.target.value))}>
             {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-              <option key={h} value={h}>{formatHour(h)}</option>
+              <option key={h} value={h}>{formatHourCompact(h)}</option>
             ))}
           </select>
           <span>{'\u2013'}</span>
           <select value={reschedEnd} onChange={e => setReschedEnd(Number(e.target.value))}>
             {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-              <option key={h} value={h}>{formatHour(h)}</option>
+              <option key={h} value={h}>{formatHourCompact(h)}</option>
             ))}
           </select>
         </div>
@@ -319,7 +312,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     const s = schedule.confirmedSlot
     const venue = getVenueSuggestion(tournament, match, currentPlayerId)
     const lastRescheduled = latestHistory?.type === 'rescheduled' && latestHistory.fromSlot
-      ? `${dayLabel(latestHistory.fromSlot.day)} ${formatHour(latestHistory.fromSlot.startHour)}${'\u2013'}${formatHour(latestHistory.fromSlot.endHour)}`
+      ? `${dayLabel(latestHistory.fromSlot.day)} ${formatHourCompact(latestHistory.fromSlot.startHour)}${'\u2013'}${formatHourCompact(latestHistory.fromSlot.endHour)}`
       : null
     return (
       <div className="schedule-panel schedule-confirmed">
@@ -339,7 +332,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         )}
         <div className="confirmed-slot">
           <span className="confirmed-day">{dayLabel(s.day)}</span>
-          <span className="confirmed-time">{formatHour(s.startHour)}{'\u2013'}{formatHour(s.endHour)}</span>
+          <span className="confirmed-time">{formatHourCompact(s.startHour)}{'\u2013'}{formatHourCompact(s.endHour)}</span>
         </div>
         {venue ? <div className="venue-suggestion">{venue}</div> : null}
         {lastRescheduled ? (
@@ -603,7 +596,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           )}
           <div className="confirmed-slot">
             <span className="confirmed-day">{dayLabel(r.forcedSlot.day)}</span>
-            <span className="confirmed-time">{formatHour(r.forcedSlot.startHour)}{'\u2013'}{formatHour(r.forcedSlot.endHour)}</span>
+            <span className="confirmed-time">{formatHourCompact(r.forcedSlot.startHour)}{'\u2013'}{formatHourCompact(r.forcedSlot.endHour)}</span>
           </div>
         </div>
       )
@@ -670,13 +663,13 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               </select>
               <select value={propStart} onChange={e => setPropStart(Number(e.target.value))}>
                 {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-                  <option key={h} value={h}>{formatHour(h)}</option>
+                  <option key={h} value={h}>{formatHourCompact(h)}</option>
                 ))}
               </select>
               <span>{'\u2013'}</span>
               <select value={propEnd} onChange={e => setPropEnd(Number(e.target.value))}>
                 {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-                  <option key={h} value={h}>{formatHour(h)}</option>
+                  <option key={h} value={h}>{formatHourCompact(h)}</option>
                 ))}
               </select>
             </div>
@@ -781,13 +774,13 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             </select>
             <select value={propStart} onChange={e => setPropStart(Number(e.target.value))}>
               {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-                <option key={h} value={h}>{formatHour(h)}</option>
+                <option key={h} value={h}>{formatHourCompact(h)}</option>
               ))}
             </select>
             <span>{'\u2013'}</span>
             <select value={propEnd} onChange={e => setPropEnd(Number(e.target.value))}>
               {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-                <option key={h} value={h}>{formatHour(h)}</option>
+                <option key={h} value={h}>{formatHourCompact(h)}</option>
               ))}
             </select>
           </div>

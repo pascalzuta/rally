@@ -1,3 +1,4 @@
+import { formatHourCompact } from '../dateUtils'
 import { useState, useRef } from 'react'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability, switchProfile } from '../store'
 import type { RatingSnapshot, MatchHistoryEntry } from '../store'
@@ -36,11 +37,6 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
   { label: 'Sunday afternoons', slots: [{ day: 'sunday', startHour: 13, endHour: 17 }]},
 ]
 
-function formatHour(h: number): string {
-  if (h === 0 || h === 24) return '12am'
-  if (h === 12) return '12pm'
-  return h < 12 ? `${h}am` : `${h - 12}pm`
-}
 
 // --- Rating Chart ---
 
@@ -421,17 +417,17 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
               style={{ display: 'none' }}
               onChange={handlePhotoUpload}
             />
-            <div className="profile-photo-hint" style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: 4 }}>Tap to change photo</div>
+            <div className="profile-photo-hint text-muted" style={{ marginTop: 4 }}>Tap to change photo</div>
           </div>
           <h2 className="profile-name">{profile.name}</h2>
           <p className="profile-county">{profile.county}</p>
           {profile.skillLevel && (
             <div className="profile-details">
               <p className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)} &middot; {profile.skillLevel === 'beginner' ? 'NTRP 2.0\u20132.5' : profile.skillLevel === 'intermediate' ? 'NTRP 3.0\u20133.5' : profile.skillLevel === 'advanced' ? 'NTRP 4.0+' : ''}</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 2 }}>Your starting level — updates to Rally Rating after first matches</p>
+              <p className="text-muted" style={{ marginTop: 2 }}>Your starting level — updates to Rally Rating after first matches</p>
             </div>
           )}
-          {bio && <p className="profile-bio-display" style={{ marginTop: 6, fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{bio}</p>}
+          {bio && <p className="profile-bio-display text-muted" style={{ marginTop: 6 }}>{bio}</p>}
           {playingStyle.length > 0 && (
             <div className="profile-style-tags-display" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, justifyContent: 'center' }}>
               {playingStyle.map(s => (
@@ -449,7 +445,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
         {/* Bio */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4, color: 'var(--color-text-secondary)' }}>Bio</label>
+          <label className="text-muted" style={{ display: 'block', fontWeight: 500, marginBottom: 4 }}>Bio</label>
           <input
             type="text"
             className="form-input"
@@ -459,12 +455,12 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             onChange={e => handleBioChange(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box' }}
           />
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textAlign: 'right', marginTop: 2 }}>{150 - bio.length} characters remaining</div>
+          <div className="text-muted" style={{ textAlign: 'right', marginTop: 2 }}>{150 - bio.length} characters remaining</div>
         </div>
 
         {/* Playing Style Tags */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Playing Style</label>
+          <label className="text-muted" style={{ display: 'block', fontWeight: 500, marginBottom: 8 }}>Playing Style</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {STYLE_OPTIONS.map(style => (
               <button
@@ -481,7 +477,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
 
         {/* Preferred Courts */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Home Courts (max 3)</label>
+          <label className="text-muted" style={{ display: 'block', fontWeight: 500, marginBottom: 8 }}>Home Courts (max 3)</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: preferredCourts.length > 0 ? 8 : 0 }}>
             {preferredCourts.map(court => (
               <span key={court} style={{
@@ -559,7 +555,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             </span>
           )}
         </div>
-        <div className="rating-hero-explanation" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>
+        <div className="rating-hero-explanation text-muted" style={{ marginTop: 8 }}>
           Ratings adjust after each match — win against stronger players for a bigger boost
         </div>
         {engagementPrompt && (
@@ -696,7 +692,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
       <div className="card profile-section">
         <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
         <RatingChart history={ratingHistory} currentRating={rating.rating} />
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
+        <p className="text-muted" style={{ marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
         {completedTournaments.length > 0 && (
           <div className="tournament-history">
             {completedTournaments.map(t => {
@@ -721,7 +717,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           <span>Your Availability</span>
           {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
         </h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
+        <p className="text-muted" style={{ marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
         {!editing ? (
           <div className="availability-current">
             {slots.length === 0 ? (
@@ -735,7 +731,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
                 return (
                   <div key={i} className="availability-slot-item">
                     <span className="availability-slot-day">{dayInfo?.short ?? slot.day}</span>
-                    <span className="availability-slot-hours">{formatHour(slot.startHour).replace(':00', '')}–{formatHour(slot.endHour).replace(':00', '')}</span>
+                    <span className="availability-slot-hours">{formatHourCompact(slot.startHour).replace(':00', '')}–{formatHourCompact(slot.endHour).replace(':00', '')}</span>
                   </div>
                 )
               })
@@ -780,13 +776,13 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
                 </select>
                 <select value={detailStart} onChange={e => setDetailStart(Number(e.target.value))}>
                   {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-                    <option key={h} value={h}>{formatHour(h)}</option>
+                    <option key={h} value={h}>{formatHourCompact(h)}</option>
                   ))}
                 </select>
                 <span>–</span>
                 <select value={detailEnd} onChange={e => setDetailEnd(Number(e.target.value))}>
                   {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-                    <option key={h} value={h}>{formatHour(h)}</option>
+                    <option key={h} value={h}>{formatHourCompact(h)}</option>
                   ))}
                 </select>
                 <button className="btn btn-small" onClick={addDetailedSlot}>Add</button>
@@ -800,7 +796,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
                   return (
                     <div key={i} className="availability-slot-item">
                       <span className="availability-slot-day">{dayInfo?.label ?? slot.day}</span>
-                      <span className="availability-slot-hours">{formatHour(slot.startHour)}–{formatHour(slot.endHour)}</span>
+                      <span className="availability-slot-hours">{formatHourCompact(slot.startHour)}–{formatHourCompact(slot.endHour)}</span>
                       <button className="btn-icon" onClick={() => removeSlot(i)}>✕</button>
                     </div>
                   )
