@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions, confirmMatchScore, checkAutoAcceptScores, getRescheduleUiState } from '../store'
-import InlineScoreEntry from './InlineScoreEntry'
-import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
 import ScheduleSummary from './ScheduleSummary'
@@ -10,6 +8,8 @@ import MatchCalendar from './MatchCalendar'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import ReliabilityIndicator from './ReliabilityIndicator'
+import UpcomingMatchPanel from './UpcomingMatchPanel'
+import { canEnterScore, canExpandMatch } from '../matchCapabilities'
 
 type MatchFilterMode = 'upcoming' | 'completed' | 'all'
 
@@ -252,16 +252,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     refresh()
   }
 
-  function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
-    const canOpenSchedule = Boolean(
-      !match.completed &&
-      match.schedule &&
-      match.player1Id &&
-      match.player2Id &&
-      (isMyMatch || (match.schedule.status === 'confirmed' && match.schedule.confirmedSlot))
-    )
-
-    if (canScore || canOpenSchedule) {
+  function handleMatchClick(match: Match, canScore: boolean) {
+    if (canScore || canExpandMatch(match, currentPlayerId)) {
       setMessagingMatchId(null)
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
     }
@@ -347,7 +339,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested', type: 'proposed' }
       return { label: 'Needs New Time', type: 'unscheduled' }
     }
-    if (canScore) return { label: 'Report Score', type: 'score' }
+    if (canScore) return { label: 'Confirmed', type: 'confirmed' }
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
     if (match.schedule.status === 'confirmed') return { label: 'Confirmed', type: 'confirmed' }
     if (match.schedule.status === 'escalated') return { label: 'Escalated', type: 'escalated' }
@@ -369,7 +361,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (match.scoreReportedBy === currentPlayerId) return null // waiting for opponent
       return 'Confirm Score'
     }
-    if (canScore) return 'Enter Score'
+    if (canScore) return 'View Match'
     if (!match.schedule) return null
     const request = match.schedule.activeRescheduleRequest
     if (request) {
@@ -437,15 +429,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
     const hasSchedule = match.schedule && match.player1Id && match.player2Id
     const isConfirmed = match.schedule?.status === 'confirmed'
-    const canScore = Boolean(
-      match.player1Id &&
-      match.player2Id &&
-      !match.completed &&
-      isMyMatch &&
-      match.schedule?.status === 'confirmed' &&
-      match.schedule?.confirmedSlot &&
-      !match.schedule?.activeRescheduleRequest
-    )
+    const canScore = canEnterScore(match, currentPlayerId)
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
@@ -532,7 +516,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         key={match.id}
         ref={el => { if (el) matchRefs.current.set(match.id, el); else matchRefs.current.delete(match.id) }}
         className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)} ${highlightedMatchId === match.id ? 'match-card-highlighted' : ''}`}
-        onClick={() => handleMatchClick(match, !!canScore, isMyMatch)}
+        onClick={() => handleMatchClick(match, !!canScore)}
       >
         <>
           <div className="match-card-eyebrow-row">
@@ -670,19 +654,13 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   currentPlayerId={currentPlayerId}
                   onUpdated={() => { setExpandedMatchId(null); refresh() }}
                 />
-              ) : canScore ? (
-                <InlineScoreEntry
-                  tournament={tournament!}
-                  matchId={match.id}
-                  currentPlayerId={currentPlayerId}
-                  onSaved={handleScoreSaved}
-                />
               ) : match.schedule ? (
-                <MatchSchedulePanel
+                <UpcomingMatchPanel
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
                   onUpdated={refresh}
+                  onScoreSaved={handleScoreSaved}
                 />
               ) : null}
             </div>

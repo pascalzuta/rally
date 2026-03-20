@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament, getRescheduleUiState } from '../store'
 import { Tournament, Match } from '../types'
-import InlineScoreEntry from './InlineScoreEntry'
-import MatchSchedulePanel from './MatchSchedulePanel'
 import Standings from './Standings'
 import BroadcastPanel from './BroadcastPanel'
+import UpcomingMatchPanel from './UpcomingMatchPanel'
+import { canEnterScore, canExpandMatch } from '../matchCapabilities'
 
 interface Props {
   tournamentId: string
@@ -65,7 +65,7 @@ function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean, cu
     if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested' }
     return { label: 'Needs New Time' }
   }
-  if (canScore) return { label: 'Report Score' }
+  if (canScore) return { label: 'Confirmed' }
   if (!match.schedule) return { label: 'Waiting on players' }
   if (match.schedule.status === 'confirmed') return { label: 'Confirmed' }
   if (match.schedule.status === 'escalated') return { label: 'Escalated' }
@@ -76,7 +76,7 @@ function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean, cu
 
 function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean, currentPlayerId: string): string | null {
   if (match.completed) return null
-  if (canScore) return 'Enter Score'
+  if (canScore) return 'View Match'
   if (!match.schedule) return null
   const request = match.schedule.activeRescheduleRequest
   if (request) {
@@ -141,16 +141,8 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     onBack()
   }
 
-  function handleMatchClick(match: Match, canScore: boolean, isMyMatch: boolean) {
-    const canOpenSchedule = Boolean(
-      !match.completed &&
-      match.schedule &&
-      match.player1Id &&
-      match.player2Id &&
-      (isMyMatch || (match.schedule.status === 'confirmed' && match.schedule.confirmedSlot))
-    )
-
-    if (canScore || canOpenSchedule) {
+  function handleMatchClick(match: Match, canScore: boolean) {
+    if (canScore || canExpandMatch(match, currentPlayerId)) {
       setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
     }
   }
@@ -237,15 +229,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
     const hasSchedule = match.schedule && match.player1Id && match.player2Id
     const isConfirmed = match.schedule?.status === 'confirmed'
-    const canScore = Boolean(
-      match.player1Id &&
-      match.player2Id &&
-      !match.completed &&
-      isMyMatch &&
-      match.schedule?.status === 'confirmed' &&
-      match.schedule?.confirmedSlot &&
-      !match.schedule?.activeRescheduleRequest
-    )
+    const canScore = canEnterScore(match, currentPlayerId)
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
@@ -268,7 +252,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)}`}
         onClick={() => {
           if (isBye) return
-          handleMatchClick(match, !!canScore, isMyMatch)
+          handleMatchClick(match, !!canScore)
         }}
       >
         {isBye ? (
@@ -355,21 +339,15 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
             {/* Expanded inline scoring or scheduling panel */}
             {isExpanded && !match.completed && (
               <div onClick={e => e.stopPropagation()}>
-                {canScore ? (
-                  <InlineScoreEntry
-                    tournament={tournament!}
-                    matchId={match.id}
-                    onSaved={() => {
-                      setExpandedMatchId(null)
-                      refresh()
-                    }}
-                  />
-                ) : match.schedule ? (
-                  <MatchSchedulePanel
+                {match.schedule ? (
+                  <UpcomingMatchPanel
                     tournament={tournament!}
                     match={match}
                     currentPlayerId={currentPlayerId}
-                    onUpdated={refresh}
+                    onUpdated={() => {
+                      setExpandedMatchId(null)
+                      refresh()
+                    }}
                   />
                 ) : null}
               </div>

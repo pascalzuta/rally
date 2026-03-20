@@ -92,6 +92,7 @@ Full briefing: `apps/play-tennis/docs/scheduling-briefing.md` (18 sections)
 - Monospace tabular-nums for all counts, percentages, timers
 - Color-coded left borders: green (auto/confirmed), blue (needs-accept), orange (needs-negotiation)
 - Card style: `var(--color-surface)`, `var(--radius-md)`, `var(--shadow-sm)`, no visible border except status
+- Full UI standards: `apps/play-tennis/docs/design-guidelines.md`
 
 ### Implementation Priority
 1. **P0**: Availability sync to Supabase (unblocks everything)

@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore, getRescheduleUiState } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
-import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
 import InlineScoreEntry from './InlineScoreEntry'
+import UpcomingMatchPanel from './UpcomingMatchPanel'
 
 interface Props {
   profile: PlayerProfile
@@ -729,22 +729,22 @@ export default function Home({
                 )}
                 {isExpanded && cardTournament && cardMatch && (
                   <div onClick={e => e.stopPropagation()}>
-                    {card.type === 'score' ? (
+                    {cardMatch.schedule ? (
+                      <UpcomingMatchPanel
+                        tournament={cardTournament}
+                        match={cardMatch}
+                        currentPlayerId={profile.id}
+                        onUpdated={() => {
+                          setExpandedCardKey(null)
+                          onDataChanged?.()
+                        }}
+                      />
+                    ) : card.type === 'score' ? (
                       <InlineScoreEntry
                         tournament={cardTournament}
                         matchId={cardMatch.id}
                         currentPlayerId={profile.id}
                         onSaved={() => {
-                          setExpandedCardKey(null)
-                          onDataChanged?.()
-                        }}
-                      />
-                    ) : cardMatch.schedule ? (
-                      <MatchSchedulePanel
-                        tournament={cardTournament}
-                        match={cardMatch}
-                        currentPlayerId={profile.id}
-                        onUpdated={() => {
                           setExpandedCardKey(null)
                           onDataChanged?.()
                         }}
@@ -807,7 +807,7 @@ export default function Home({
             </button>
             {upNextExpanded && (
               <div onClick={e => e.stopPropagation()} style={{ gridColumn: '1 / -1' }}>
-                <MatchSchedulePanel
+                <UpcomingMatchPanel
                   tournament={upNext.tournament}
                   match={upNext.match}
                   currentPlayerId={profile.id}
