@@ -99,18 +99,19 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   process.on("SIGTERM", () => engine.stop());
   process.on("SIGINT", () => engine.stop());
 
-  app.use(
-    "/v1",
-    createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine })
-  );
-
   // Frontend-compatible routes (work with live Supabase schema)
+  // Must be mounted BEFORE /v1 so /v1/fe/* isn't caught by the /v1 auth middleware
   if (useSupabase) {
     const { createClient } = await import("@supabase/supabase-js");
     const frontendSupabase = createClient(config.SUPABASE_URL!, config.SUPABASE_SERVICE_ROLE_KEY!);
     app.use("/v1/fe", createFrontendRoutes({ config, supabase: frontendSupabase }));
     logger.info("Frontend routes mounted at /v1/fe");
   }
+
+  app.use(
+    "/v1",
+    createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine })
+  );
 
   // Global error handler — catches sync errors and, with express-async-errors,
   // also catches unhandled promise rejections from async route handlers.
