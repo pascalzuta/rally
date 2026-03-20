@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, acceptProposal, saveMatchReaction, getMatchReactions, confirmMatchScore, checkAutoAcceptScores, getRescheduleUiState } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, confirmMatchScore, checkAutoAcceptScores, getRescheduleUiState } from '../store'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
 import ScheduleSummary from './ScheduleSummary'
@@ -733,19 +733,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           currentPlayerId={currentPlayerId}
           currentPlayerName={currentPlayerName}
           onViewBracket={() => setShowScheduleSummary(false)}
-          onConfirmMatch={async (matchId) => {
-            const match = tournament.matches.find(m => m.id === matchId)
-            if (!match?.schedule?.proposals?.length) return
-            const pending = match.schedule.proposals.find(p => p.status === 'pending')
-            if (pending) {
-              await acceptProposal(tournament.id, matchId, pending.id, currentPlayerId)
-              refresh()
-            }
-          }}
-          onScheduleMatch={(matchId) => {
-            setShowScheduleSummary(false)
-            setExpandedMatchId(matchId)
-          }}
+          onTournamentUpdated={refresh}
         />
       )}
 
@@ -777,10 +765,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           currentPlayerId={currentPlayerId}
           currentPlayerName={currentPlayerName}
           onTournamentUpdated={refresh}
-          onExpandMatch={(matchId) => {
-            setViewMode('bracket')
-            setExpandedMatchId(matchId)
-          }}
         />
       )}
 

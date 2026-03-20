@@ -2,14 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, SchedulingSummary } from '../types'
 import { getSchedulingSummary, getPlayerName, hasUnreadFrom } from '../store'
 import MessagePanel from './MessagePanel'
+import UpcomingMatchPanel from './UpcomingMatchPanel'
+import { canExpandMatch } from '../matchCapabilities'
 
 interface Props {
   tournament: Tournament
   currentPlayerId: string
   currentPlayerName: string
   onViewBracket: () => void
-  onConfirmMatch?: (matchId: string) => void
-  onScheduleMatch?: (matchId: string) => void
+  onTournamentUpdated?: () => void
 }
 
 const DAY_INDEX: Record<string, number> = {
@@ -82,9 +83,17 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
   return weeks
 }
 
-export default function ScheduleSummary({ tournament, currentPlayerId, currentPlayerName, onViewBracket, onConfirmMatch, onScheduleMatch }: Props) {
+function getPrimaryActionLabel(match: Match): string {
+  const tier = match.schedule?.schedulingTier
+  if (tier === 'auto') return 'View Match'
+  if (tier === 'needs-accept') return 'Confirm Time'
+  return 'Find a Time'
+}
+
+export default function ScheduleSummary({ tournament, currentPlayerId, currentPlayerName, onViewBracket, onTournamentUpdated }: Props) {
   const [visible, setVisible] = useState(false)
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
 
   const summary = getSchedulingSummary(tournament)
   const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
@@ -206,7 +215,14 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         const msgUnread = opponentId ? hasUnreadFrom(currentPlayerId, opponentId) : false
         return (
           <>
-            <div className={`card action-card action-${tierType}`}>
+            <div
+              className={`card action-card action-${tierType}`}
+              onClick={() => {
+                if (!canExpandMatch(nextMatch, currentPlayerId)) return
+                setMessagingMatchId(null)
+                setExpandedMatchId(expandedMatchId === nextMatch.id ? null : nextMatch.id)
+              }}
+            >
               <div className="action-card-status-row">
                 <div className="action-card-type">Up Next</div>
                 {nextSlot && <div className="card-meta-chip">{formatMatchDate(nextSlot, weekGroups.get(1)?.weekStart)}</div>}
@@ -222,16 +238,16 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                 </div>
               </div>
               <div className="action-card-buttons">
-                {tier === 'needs-accept' && onConfirmMatch && (
-                  <button className="action-card-btn" onClick={e => { e.stopPropagation(); onConfirmMatch(nextMatch.id) }}>
-                    Confirm Time
-                  </button>
-                )}
-                {tier === 'needs-negotiation' && onScheduleMatch && (
-                  <button className="action-card-btn" onClick={e => { e.stopPropagation(); onScheduleMatch(nextMatch.id) }}>
-                    Schedule Match
-                  </button>
-                )}
+                <button
+                  className="action-card-btn"
+                  onClick={e => {
+                    e.stopPropagation()
+                    setMessagingMatchId(null)
+                    setExpandedMatchId(expandedMatchId === nextMatch.id ? null : nextMatch.id)
+                  }}
+                >
+                  {getPrimaryActionLabel(nextMatch)}
+                </button>
                 {opponentId && (
                   <button
                     className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
@@ -254,6 +270,19 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                   otherPlayerId={opponentId}
                   otherPlayerName={opponentName}
                   onClose={() => setMessagingMatchId(null)}
+                />
+              </div>
+            )}
+            {expandedMatchId === nextMatch.id && (
+              <div onClick={e => e.stopPropagation()}>
+                <UpcomingMatchPanel
+                  tournament={tournament}
+                  match={nextMatch}
+                  currentPlayerId={currentPlayerId}
+                  onUpdated={() => {
+                    setExpandedMatchId(null)
+                    onTournamentUpdated?.()
+                  }}
                 />
               </div>
             )}
@@ -283,6 +312,11 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                     <div
                       className={`card action-card ${tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'}`}
                       style={{ animationDelay: `${i * 50}ms` }}
+                      onClick={() => {
+                        if (!canExpandMatch(match, currentPlayerId)) return
+                        setMessagingMatchId(null)
+                        setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                      }}
                     >
                       <div className="action-card-status-row">
                         <div className="action-card-type">
@@ -301,16 +335,16 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                         </div>
                       </div>
                       <div className="action-card-buttons">
-                        {tier === 'needs-accept' && onConfirmMatch && (
-                          <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onConfirmMatch(match.id) }}>
-                            Confirm Time
-                          </button>
-                        )}
-                        {tier === 'needs-negotiation' && onScheduleMatch && (
-                          <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onScheduleMatch(match.id) }}>
-                            Schedule Match
-                          </button>
-                        )}
+                        <button
+                          className="action-card-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setMessagingMatchId(null)
+                            setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                          }}
+                        >
+                          {getPrimaryActionLabel(match)}
+                        </button>
                         {opponentId && (
                           <button
                             className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
@@ -333,6 +367,19 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                           otherPlayerId={opponentId}
                           otherPlayerName={opponentName}
                           onClose={() => setMessagingMatchId(null)}
+                        />
+                      </div>
+                    )}
+                    {expandedMatchId === match.id && (
+                      <div onClick={e => e.stopPropagation()}>
+                        <UpcomingMatchPanel
+                          tournament={tournament}
+                          match={match}
+                          currentPlayerId={currentPlayerId}
+                          onUpdated={() => {
+                            setExpandedMatchId(null)
+                            onTournamentUpdated?.()
+                          }}
                         />
                       </div>
                     )}

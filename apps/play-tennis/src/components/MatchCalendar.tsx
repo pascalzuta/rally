@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
-import { getPlayerName, acceptProposal, hasUnreadFrom } from '../store'
+import { getPlayerName, hasUnreadFrom } from '../store'
 import MessagePanel from './MessagePanel'
+import UpcomingMatchPanel from './UpcomingMatchPanel'
+import { canExpandMatch } from '../matchCapabilities'
 
 interface Props {
   tournament: Tournament
   currentPlayerId: string
   currentPlayerName: string
   onTournamentUpdated: () => void
-  onExpandMatch?: (matchId: string) => void
 }
 
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -45,6 +46,13 @@ function formatScoreDisplay(match: Match): string {
 
 function getTier(match: Match): SchedulingTier | null {
   return match.schedule?.schedulingTier ?? null
+}
+
+function getPrimaryActionLabel(match: Match): string {
+  const tier = getTier(match)
+  if (tier === 'auto') return 'View Match'
+  if (tier === 'needs-accept') return 'Confirm Time'
+  return 'Find a Time'
 }
 
 function sortMatchesForCalendar(matches: Match[], currentPlayerId: string): Match[] {
@@ -94,8 +102,9 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
   return weeks
 }
 
-export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, onExpandMatch }: Props) {
+export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated }: Props) {
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
   const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
   const weeks = groupByWeek(sorted)
@@ -105,14 +114,6 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
   const pending = allMatches.filter(m => m.schedule?.schedulingTier === 'needs-accept').length
   const unscheduled = allMatches.filter(m => m.schedule?.schedulingTier === 'needs-negotiation').length
   const completed = allMatches.filter(m => m.completed).length
-
-  async function handleConfirm(match: Match) {
-    if (!match.schedule?.proposals?.length) return
-    const pendingProposal = match.schedule.proposals.find(p => p.status === 'pending')
-    if (!pendingProposal) return
-    await acceptProposal(tournament.id, match.id, pendingProposal.id, currentPlayerId)
-    onTournamentUpdated()
-  }
 
   return (
     <div className="match-calendar">
@@ -156,7 +157,11 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
               <div key={match.id}>
                 <div
                   className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-score' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
-                  onClick={() => onExpandMatch?.(match.id)}
+                  onClick={() => {
+                    if (!canExpandMatch(match, currentPlayerId)) return
+                    setMessagingMatchId(null)
+                    setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                  }}
                 >
                   <div className="action-card-status-row">
                     <div className="action-card-type">
@@ -180,19 +185,17 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                     </div>
                   </div>
                   <div className="action-card-buttons">
-                    {!isCompleted && isMyMatch && tier === 'needs-accept' && (
-                      <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); handleConfirm(match) }}>
-                        Confirm Time
-                      </button>
-                    )}
-                    {!isCompleted && isMyMatch && tier === 'needs-negotiation' && (
-                      <button className="action-card-btn" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
-                        Schedule Match
-                      </button>
-                    )}
-                    {!isCompleted && isMyMatch && tier === 'auto' && (
-                      <button className="btn-link calendar-reschedule-link" onClick={(e) => { e.stopPropagation(); onExpandMatch?.(match.id) }}>
-                        Reschedule
+                    {!isCompleted && (
+                      <button
+                        className="action-card-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!canExpandMatch(match, currentPlayerId)) return
+                          setMessagingMatchId(null)
+                          setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                        }}
+                      >
+                        {getPrimaryActionLabel(match)}
                       </button>
                     )}
                     {isMyMatch && opponentId && (
@@ -217,6 +220,19 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       otherPlayerId={opponentId}
                       otherPlayerName={opponentName}
                       onClose={() => setMessagingMatchId(null)}
+                    />
+                  </div>
+                )}
+                {expandedMatchId === match.id && (
+                  <div onClick={e => e.stopPropagation()}>
+                    <UpcomingMatchPanel
+                      tournament={tournament}
+                      match={match}
+                      currentPlayerId={currentPlayerId}
+                      onUpdated={() => {
+                        setExpandedMatchId(null)
+                        onTournamentUpdated()
+                      }}
                     />
                   </div>
                 )}
