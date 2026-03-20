@@ -6,14 +6,34 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 ## Tech Stack
 - React 18 + TypeScript + Vite
 - Supabase (Realtime Database for multi-user sync)
-- GitHub Pages (deploy via `.github/workflows/deploy-pages.yml`)
-- Custom domain: play-rally.com (CNAME configured)
+- GitHub Pages (production deploy via `.github/workflows/deploy-pages.yml`)
+- Vercel (staging/preview deploys — automatic per branch)
+- Custom domain: play-rally.com (GitHub Pages, DNS: 185.199.x.x)
 
-## Deployment
-- **One branch**: `main` — all work happens here
-- **Deploy process**: Push to `main` → GitHub Actions (`deploy-pages.yml`) builds `apps/play-tennis` → deployed to GitHub Pages at play-rally.com
-- **No Netlify** — play-rally.com is served by GitHub Pages (DNS: 185.199.x.x)
-- CDN cache can take a few minutes to update after deploy
+## Deployment & Branch Rules (READ THIS FIRST)
+
+There are two environments. Both share the same Supabase database.
+
+| Environment | URL | Branch | Deploys via |
+|-------------|-----|--------|-------------|
+| **Staging** | rally-play-tennis.vercel.app | `staging` | Vercel (automatic) |
+| **Production** | play-rally.com | `main` | GitHub Pages (automatic) |
+
+### How to deploy (step by step)
+
+1. **Create a feature branch** off `staging` (not `main`)
+2. **Do your work** on the feature branch, commit and push
+3. **Merge into `staging`** and push → Vercel auto-deploys to rally-play-tennis.vercel.app
+4. **Stop here.** Tell the user the staging URL is updated. Do NOT touch `main`.
+5. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → GitHub Pages auto-deploys to play-rally.com
+
+### Rules
+
+- **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is the #1 rule. `main` is production and updates play-rally.com immediately. There are no exceptions.
+- **Always branch from `staging`**, not from `main`.
+- **After merging to `staging`**, always push so Vercel picks it up.
+- **Do not ask the user whether to deploy to production.** Just deploy to staging and let them decide.
+- If you cannot push (e.g. auth error), tell the user and stop. Do not force-push or use workarounds.
 
 ## Key Architecture
 - `apps/play-tennis/` — The Rally Tennis web app (the only tennis frontend)
@@ -72,6 +92,7 @@ Full briefing: `apps/play-tennis/docs/scheduling-briefing.md` (18 sections)
 - Monospace tabular-nums for all counts, percentages, timers
 - Color-coded left borders: green (auto/confirmed), blue (needs-accept), orange (needs-negotiation)
 - Card style: `var(--color-surface)`, `var(--radius-md)`, `var(--shadow-sm)`, no visible border except status
+- Full UI standards: `apps/play-tennis/docs/design-guidelines.md`
 
 ### Implementation Priority
 1. **P0**: Availability sync to Supabase (unblocks everything)
@@ -93,5 +114,5 @@ npm run dev        # Dev server on port 5180
 npm run build      # TypeScript check + Vite build
 ```
 
-## Branch
-Active development on `main` (single branch — no feature branches)
+## Branch Strategy
+See "Deployment & Branch Rules" above — that section is the single source of truth for branching and deployment.
