@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName } from '../store'
 import { Tournament, Match } from '../types'
 
+const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
+
 function isValidSet(s1: number, s2: number): boolean {
   if (s1 === 6 && s2 <= 4) return true
   if (s2 === 6 && s1 <= 4) return true
@@ -21,6 +23,31 @@ interface Props {
 
 type Mode = 'options' | 'correction' | 'issue' | 'dispute-review'
 
+function formatCountdown(ms: number): string {
+  const totalMinutes = Math.max(0, Math.ceil(ms / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24)
+    const remHours = hours % 24
+    return `${days}d ${remHours}h left`
+  }
+  if (hours > 0) return `${hours}h ${minutes}m left`
+  return `${minutes}m left`
+}
+
+function formatDeadline(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const deadline = new Date(new Date(iso).getTime() + SCORE_CONFIRMATION_WINDOW_MS)
+  return deadline.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export default function ScoreConfirmationPanel({ tournament, match, currentPlayerId, onUpdated }: Props) {
   const isReporter = match.scoreReportedBy === currentPlayerId
   const hasDispute = match.scoreDispute?.status === 'pending'
@@ -30,11 +57,17 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])
   const [issueText, setIssueText] = useState('')
   const [saving, setSaving] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const p1Name = getPlayerName(tournament, match.player1Id)
   const p2Name = getPlayerName(tournament, match.player2Id)
   const reportedScore = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
+  const reporterName = getPlayerName(tournament, match.scoreReportedBy ?? null)
+  const countdownDeadline = formatDeadline(match.scoreReportedAt)
+  const remainingMs = match.scoreReportedAt
+    ? Math.max(0, new Date(match.scoreReportedAt).getTime() + SCORE_CONFIRMATION_WINDOW_MS - now)
+    : SCORE_CONFIRMATION_WINDOW_MS
 
   // Correction score logic
   function getScores(): { score1: number[]; score2: number[] } | null {
@@ -120,6 +153,11 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     prevShowThirdSet.current = showThirdSet
   }, [showThirdSet])
 
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60000)
+    return () => window.clearInterval(interval)
+  }, [])
+
   async function handleConfirm() {
     setSaving(true)
     await confirmMatchScore(tournament.id, match.id, currentPlayerId)
@@ -194,9 +232,13 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   // Correction entry mode
   if (mode === 'correction') {
     return (
-      <div className="score-confirmation-panel" onClick={e => e.stopPropagation()}>
+      <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
+        <div className="workflow-header">
+          <div className="workflow-status workflow-status--red">Dispute Score</div>
+          <div className="schedule-panel-title">Enter the correct result</div>
+          <div className="schedule-panel-copy">Use this if the reported set scores are wrong. If the issue is broader than the scoreline, report an issue instead.</div>
+        </div>
         <div className="correction-header">
-          <div className="correction-title">Suggest a correction</div>
           <div className="correction-reported">Reported: {reportedScore}</div>
         </div>
 
@@ -243,7 +285,8 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         })}
 
         <div className="correction-actions">
-          <button className="btn" onClick={() => setMode('options')}>Cancel</button>
+          <button className="btn" onClick={() => setMode('options')}>Back</button>
+          <button className="btn" onClick={() => setMode('issue')}>Report Issue Instead</button>
           <button className="btn btn-primary" onClick={handleSubmitCorrection} disabled={!canSubmitCorrection || saving}>
             Submit Correction
           </button>
@@ -255,10 +298,11 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   // Issue report mode
   if (mode === 'issue') {
     return (
-      <div className="score-confirmation-panel" onClick={e => e.stopPropagation()}>
-        <div className="issue-header">
-          <div className="issue-title">Report an issue</div>
-          <div className="issue-desc">Describe what happened. This will be reviewed by the organizer.</div>
+      <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
+        <div className="workflow-header">
+          <div className="workflow-status workflow-status--red">Dispute Score</div>
+          <div className="schedule-panel-title">Report an issue</div>
+          <div className="schedule-panel-copy">Use this when the reported score cannot be fixed with a simple correction.</div>
         </div>
         <textarea
           className="issue-text"
@@ -268,7 +312,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
           rows={3}
         />
         <div className="issue-actions">
-          <button className="btn" onClick={() => setMode('options')}>Cancel</button>
+          <button className="btn" onClick={() => setMode('options')}>Back</button>
           <button className="btn btn-primary" onClick={handleSubmitIssue} disabled={!issueText.trim() || saving}>
             Submit Report
           </button>
@@ -277,22 +321,29 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     )
   }
 
-  // Default: three options
+  // Default: confirm or dispute
   return (
-    <div className="score-confirmation-panel" onClick={e => e.stopPropagation()}>
+    <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
+      <div className="workflow-header">
+        <div className="workflow-status workflow-status--blue">Confirm Score</div>
+        <div className="schedule-panel-title">Review the reported result</div>
+        <div className="schedule-panel-copy">{reporterName} reported this score. Confirm it if it is correct, or dispute it within 48 hours.</div>
+      </div>
+      <div className="score-confirm-deadline-card">
+        <div className="score-confirm-deadline-label">Auto-confirms in</div>
+        <div className="score-confirm-deadline-value">{formatCountdown(remainingMs)}</div>
+        {countdownDeadline && <div className="score-confirm-deadline-meta">Deadline {countdownDeadline}</div>}
+      </div>
       <div className="confirm-reported-score">
         Score: {reportedScore}
         <span className="confirm-winner-label"> — Winner: {getPlayerName(tournament, match.winnerId)}</span>
       </div>
-      <div className="confirm-options">
+      <div className="workflow-actions score-confirm-primary-actions">
+        <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
+          Dispute Score
+        </button>
         <button className="btn btn-primary confirm-option-btn" onClick={handleConfirm} disabled={saving}>
           Confirm Score
-        </button>
-        <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
-          Suggest Correction
-        </button>
-        <button className="btn confirm-option-btn confirm-option--issue" onClick={() => setMode('issue')}>
-          Report Issue
         </button>
       </div>
     </div>

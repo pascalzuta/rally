@@ -1,7 +1,7 @@
 import { formatSlotInline as formatSlotInlineNumeric } from '../dateUtils'
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, confirmMatchScore, checkAutoAcceptScores, getRescheduleUiState } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, checkAutoAcceptScores, getRescheduleUiState } from '../store'
 import MessagePanel from './MessagePanel'
 import Standings from './Standings'
 import ScheduleSummary from './ScheduleSummary'
@@ -28,6 +28,8 @@ const DAY_MAP: Record<string, number> = {
   thursday: 4, friday: 5, saturday: 6,
 }
 
+const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
+
 /** Resolve a { day, startHour } slot to a calendar date string + time.
  *  Returns { day: "Mon, Mar 16", time: "6pm" } for the time badge. */
 function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
@@ -52,6 +54,20 @@ function formatSlotInline(slot: { day: string; startHour: number }): string {
 function formatISODate(isoStr: string): string {
   const d = new Date(isoStr)
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+function formatScoreConfirmationTimeLeft(isoStr: string): string {
+  const remainingMs = Math.max(0, new Date(isoStr).getTime() + SCORE_CONFIRMATION_WINDOW_MS - Date.now())
+  const totalMinutes = Math.ceil(remainingMs / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24)
+    const remHours = hours % 24
+    return `${days}d ${remHours}h left`
+  }
+  if (hours > 0) return `${hours}h ${minutes}m left`
+  return `${Math.max(0, totalMinutes)}m left`
 }
 
 function formatScoreSummary(match: Match): string | null {
@@ -378,6 +394,10 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function getMatchMetaLabel(match: Match): string | null {
+    if (!match.completed && match.scoreReportedBy && match.scoreReportedAt) {
+      return formatScoreConfirmationTimeLeft(match.scoreReportedAt)
+    }
+
     if (!match.completed && match.schedule?.confirmedSlot) {
       const st = formatStartTime(match.schedule.confirmedSlot)
       return `${st.day} ${st.time}`

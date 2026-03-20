@@ -1,11 +1,12 @@
 import { formatSlotInline as formatSlotInlineNumeric, formatTimeFull } from '../dateUtils'
 import { useMemo, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore, getRescheduleUiState } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, getRescheduleUiState } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MessagePanel from './MessagePanel'
 import InlineScoreEntry from './InlineScoreEntry'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
+import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 
 interface Props {
   profile: PlayerProfile
@@ -122,10 +123,27 @@ const HOME_DAY_MAP: Record<string, number> = {
   thursday: 4, friday: 5, saturday: 6,
 }
 
+const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
+
 /** Format a { day, startHour } slot as inline text using shared dateUtils */
 function formatSlotInline(slot: { day: string; startHour: number }): string {
   const dayNum = HOME_DAY_MAP[slot.day] ?? 1
   return formatSlotInlineNumeric({ day: dayNum, startHour: slot.startHour })
+}
+
+function formatScoreConfirmationTimeLeft(reportedAt: string | null | undefined): string | null {
+  if (!reportedAt) return null
+  const remainingMs = Math.max(0, new Date(reportedAt).getTime() + SCORE_CONFIRMATION_WINDOW_MS - Date.now())
+  const totalMinutes = Math.ceil(remainingMs / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24)
+    const remHours = hours % 24
+    return `${days}d ${remHours}h left`
+  }
+  if (hours > 0) return `${hours}h ${minutes}m left`
+  return `${Math.max(0, totalMinutes)}m left`
 }
 
 function buildActionCards(
@@ -148,10 +166,11 @@ function buildActionCards(
       // Score reported by opponent — needs confirmation
       if (match.scoreReportedBy && match.scoreReportedBy !== playerId) {
         const scoreStr = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
+        const timeLeft = formatScoreConfirmationTimeLeft(match.scoreReportedAt)
         cards.push({
           type: 'confirm-score',
           label: 'CONFIRM SCORE',
-          detail: `${opponentName} reported: ${scoreStr}`,
+          detail: timeLeft ? `${opponentName} reported: ${scoreStr} · ${timeLeft}` : `${opponentName} reported: ${scoreStr}`,
           opponentId: opponentId!,
           opponentName,
           tournamentId: tournament.id,
@@ -697,12 +716,10 @@ export default function Home({
                       Reply
                     </button>
                   ) : card.type === 'confirm-score' ? (
-                    <button className="action-card-btn" onClick={async e => {
+                    <button className="action-card-btn" onClick={e => {
                       e.stopPropagation()
-                      if (cardTournament && cardMatch) {
-                        await confirmMatchScore(cardTournament.id, cardMatch.id, profile.id)
-                        onDataChanged?.()
-                      }
+                      setMessagingCardKey(null)
+                      setExpandedCardKey(isExpanded ? null : cardKey)
                     }}>
                       Confirm Score
                     </button>
@@ -753,7 +770,17 @@ export default function Home({
                 )}
                 {isExpanded && cardTournament && cardMatch && (
                   <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
-                    {cardMatch.schedule ? (
+                    {card.type === 'confirm-score' ? (
+                      <ScoreConfirmationPanel
+                        tournament={cardTournament}
+                        match={cardMatch}
+                        currentPlayerId={profile.id}
+                        onUpdated={() => {
+                          setExpandedCardKey(null)
+                          onDataChanged?.()
+                        }}
+                      />
+                    ) : cardMatch.schedule ? (
                       <UpcomingMatchPanel
                         tournament={cardTournament}
                         match={cardMatch}

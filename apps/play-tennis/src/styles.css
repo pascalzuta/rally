@@ -8828,6 +8828,37 @@ select:focus {
   border: 1px solid var(--color-divider);
   margin-top: var(--space-sm);
 }
+
+.score-confirm-deadline-card {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-button);
+  border: 1px solid rgba(42, 91, 215, 0.16);
+  background: rgba(220, 231, 255, 0.42);
+}
+
+.score-confirm-deadline-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent-primary);
+}
+
+.score-confirm-deadline-value {
+  margin-top: 2px;
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-confirm-deadline-meta {
+  margin-top: 2px;
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
 .confirm-reported-score {
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
@@ -8843,12 +8874,22 @@ select:focus {
   gap: var(--space-xs);
 }
 .confirm-option-btn {
-  width: 100%;
+  flex: 1;
   text-align: center;
 }
 .confirm-option--issue {
   color: var(--color-text-muted);
   font-size: var(--font-body-sm);
+}
+
+.score-confirm-primary-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.score-confirm-primary-actions .btn {
+  min-width: 0;
 }
 
 /* Correction entry */
@@ -8904,6 +8945,7 @@ select:focus {
   display: flex;
   gap: var(--space-sm);
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 /* Dispute review panel */
