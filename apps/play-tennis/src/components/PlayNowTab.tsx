@@ -379,13 +379,18 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div key={group.date} className="pn-date-group">
             <div className="pn-date-header">{group.dateLabel}</div>
             <div className="pn-opponent-list">
-              {group.entries.map((row, i) => (
+              {group.entries.map((row, i) => {
+                const isAsking = askingRow?.playerId === row.playerId &&
+                  askingRow?.date === row.date &&
+                  askingRow?.startHour === row.startHour
+
+                return (
                 <div key={`${row.playerId}-${row.date}-${i}`}>
                   <div
                     className={`card action-card ${row.isNow ? 'action-confirmed' : 'action-respond'} pn-opponent-row pn-opponent-actionable`}
                     onClick={() => {
                       setMessagingPlayerId(null)
-                      setAskingRow(row)
+                      setAskingRow(isAsking ? null : row)
                     }}
                   >
                     <div className="action-card-status-row">
@@ -405,12 +410,33 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                       </div>
                     </div>
                     <div className="action-card-buttons">
-                      <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setMessagingPlayerId(null); setAskingRow(row) }}>Send Match Request</button>
-                      <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
+                      <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setMessagingPlayerId(null); setAskingRow(isAsking ? null : row) }}>Send Match Request</button>
+                      <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setAskingRow(null); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
                         {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
                       </button>
                     </div>
+                    {isAsking && (
+                      <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
+                        <div className="workflow-module quickplay-request-panel">
+                          <div className="workflow-header">
+                            <div className="workflow-status workflow-status--blue">Match Request</div>
+                            <div className="schedule-panel-title">Propose match vs {row.playerName}</div>
+                            <div className="schedule-panel-copy">{row.playerName} will have 2 hours to accept or decline.</div>
+                          </div>
+                          <div className="workflow-divider" />
+                          <div className="quickplay-request-summary">
+                            <div className="offer-confirm-time">{row.timeLabel}</div>
+                            <div className="offer-confirm-date">{row.dateLabel}</div>
+                            {row.location && <div className="broadcast-claim-detail">{row.location}</div>}
+                          </div>
+                          <div className="workflow-actions">
+                            <button className="btn" onClick={() => setAskingRow(null)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={() => handleAskToPlay(row)}>Send Match Request</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {messagingPlayerId === row.playerId && (
                       <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                         <MessagePanel currentPlayerId={currentPlayerId} currentPlayerName={currentPlayerName} otherPlayerId={row.playerId} otherPlayerName={row.playerName} onClose={() => setMessagingPlayerId(null)} />
@@ -418,29 +444,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ))}
       </div>
-
-      {askingRow && (
-        <div className="broadcast-claim-overlay" onClick={() => setAskingRow(null)}>
-          <div className="broadcast-claim-modal" onClick={e => e.stopPropagation()}>
-            <h3 className="broadcast-claim-title">Propose match vs {askingRow.playerName}</h3>
-            <div className="broadcast-claim-info">
-              <div className="offer-confirm-time">{askingRow.timeLabel}</div>
-              <div className="offer-confirm-date">{askingRow.dateLabel}</div>
-              {askingRow.location && <div className="broadcast-claim-detail">{askingRow.location}</div>}
-            </div>
-            <p className="offer-confirm-note">{askingRow.playerName} will have 2 hours to accept or decline.</p>
-            <div className="broadcast-claim-actions">
-              <button className="btn" onClick={() => setAskingRow(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={() => handleAskToPlay(askingRow)}>Send Match Request</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

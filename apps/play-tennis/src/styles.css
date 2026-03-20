@@ -3990,6 +3990,13 @@ select:focus {
   margin-bottom: var(--space-sm);
 }
 
+.quickplay-request-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
 .offer-confirm-note {
   font-size: var(--font-body-sm);
   color: var(--color-text-muted);
