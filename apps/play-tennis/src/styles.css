@@ -3474,6 +3474,106 @@ select:focus {
   padding: var(--space-md);
 }
 
+.schedule-workflow-card {
+  padding: var(--space-md);
+}
+
+.schedule-workflow-card--danger {
+  background: rgba(253, 236, 236, 0.55);
+  border-color: rgba(214, 69, 69, 0.18);
+}
+
+.schedule-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.schedule-form-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.schedule-choice-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.schedule-choice-pill {
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-divider);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-body-sm);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.schedule-choice-pill.is-selected {
+  border-color: rgba(42, 91, 215, 0.28);
+  background: rgba(220, 231, 255, 0.45);
+  color: var(--color-accent-primary);
+}
+
+.schedule-choice-pill--danger.is-selected {
+  border-color: rgba(214, 69, 69, 0.24);
+  background: rgba(253, 236, 236, 0.72);
+  color: var(--color-negative-primary);
+}
+
+.schedule-form-note {
+  padding: var(--space-sm);
+  border-radius: var(--radius-button);
+  border: 1px solid var(--color-divider);
+  background: rgba(247, 247, 247, 0.75);
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.schedule-time-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-sm);
+}
+
+.schedule-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedule-form-select {
+  min-height: 40px;
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-button);
+  border: 1px solid var(--color-divider);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-body-md);
+  font-family: inherit;
+}
+
+.schedule-note-field {
+  min-height: 88px;
+}
+
+.schedule-locked-note {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-button);
+  border: 1px solid rgba(31, 157, 85, 0.16);
+  background: rgba(230, 246, 236, 0.5);
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  line-height: 1.5;
+}
+
 .propose-row {
   display: flex;
   gap: 6px;
@@ -3510,6 +3610,12 @@ select:focus {
 .confirmed-actions .btn,
 .confirmed-actions .btn-link {
   margin-top: 0;
+}
+
+@media (max-width: 520px) {
+  .schedule-time-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Match Notes */

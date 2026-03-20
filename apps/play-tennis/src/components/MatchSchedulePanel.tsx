@@ -129,6 +129,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
   const opponentName = tournament.players.find(p => p.id === opponentId)?.name?.split(' ')[0] ?? 'Opponent'
   const hasCustomRescheduleSlot = Boolean(reschedDay) && reschedStart < reschedEnd
+  const isScheduleLocked = Boolean(match.completed || match.scoreReportedBy || match.scoreConfirmedAt)
 
   function renderPanelHeader(statusLabel: string, tone: 'slate' | 'blue' | 'green' | 'amber' | 'red', title: string, copy: string) {
     return (
@@ -231,77 +232,166 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         : hasCustomRescheduleSlot
 
     return (
-      <div className="propose-form" onClick={e => e.stopPropagation()}>
-        <div className="propose-form-title">
-          {isCounter ? 'Suggest another time' : 'Change match time'}
+      <div className="propose-form schedule-workflow-card" onClick={e => e.stopPropagation()}>
+        <div className="workflow-module">
+          {renderPanelHeader(
+            isCounter ? 'Counter Offer' : rescheduleIntent === 'hard' ? 'Needs New Time' : 'Change Time',
+            isCounter ? 'blue' : rescheduleIntent === 'hard' ? 'red' : 'blue',
+            isCounter ? 'Suggest another time' : 'Change match time',
+            isCounter
+              ? 'Reply with a replacement slot that works better for you.'
+              : rescheduleIntent === 'hard'
+                ? 'Release the current slot and optionally include a replacement now.'
+                : 'Ask to move the match while the current confirmed time stays in place until a new one is accepted.'
+          )}
+
+          {!isCounter && (
+            <>
+              <div className="schedule-form-section">
+                <div className="schedule-form-label">Request type</div>
+                <div className="schedule-choice-grid">
+                  <button
+                    className={`schedule-choice-pill ${rescheduleIntent === 'soft' ? 'is-selected' : ''}`}
+                    onClick={() => setRescheduleIntent('soft')}
+                  >
+                    Ask to move it
+                  </button>
+                  <button
+                    className={`schedule-choice-pill ${rescheduleIntent === 'hard' ? 'is-selected' : ''}`}
+                    onClick={() => setRescheduleIntent('hard')}
+                  >
+                    I can&apos;t make this time
+                  </button>
+                </div>
+              </div>
+
+              <div className="schedule-form-section">
+                <div className="schedule-form-label">Reason</div>
+                <div className="schedule-choice-grid schedule-choice-grid--reasons">
+                  {RESCHEDULE_REASON_OPTIONS.map(option => (
+                    <button
+                      key={option.value}
+                      className={`schedule-choice-pill ${rescheduleReason === option.value ? 'is-selected' : ''}`}
+                      onClick={() => setRescheduleReason(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="schedule-form-note">
+            {isCounter
+              ? 'Send another option that works better for you.'
+              : rescheduleIntent === 'hard'
+                ? 'If you leave the replacement blank, the match moves into a needs-new-time state.'
+                : 'The current confirmed time stays on the books until a replacement is accepted.'}
+          </div>
+
+          <div className="schedule-time-grid">
+            <label className="schedule-form-field">
+              <span className="schedule-form-label">Day</span>
+              <select
+                className="schedule-form-select"
+                value={reschedDay}
+                onChange={e => setReschedDay(e.target.value as DayOfWeek | '')}
+              >
+                <option value="">{isCounter || rescheduleIntent === 'soft' ? 'New day...' : 'Optional day...'}</option>
+                {DAYS.map(d => <option key={d.key} value={d.key}>{dayLabelShort(d.key)}</option>)}
+              </select>
+            </label>
+
+            <label className="schedule-form-field">
+              <span className="schedule-form-label">Start</span>
+              <select
+                className="schedule-form-select"
+                value={reschedStart}
+                onChange={e => setReschedStart(Number(e.target.value))}
+              >
+                {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                  <option key={h} value={h}>{formatHourCompact(h)}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="schedule-form-field">
+              <span className="schedule-form-label">End</span>
+              <select
+                className="schedule-form-select"
+                value={reschedEnd}
+                onChange={e => setReschedEnd(Number(e.target.value))}
+              >
+                {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
+                  <option key={h} value={h}>{formatHourCompact(h)}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="schedule-form-field">
+            <span className="schedule-form-label">Note</span>
+            <textarea
+              className="profile-bio-input schedule-note-field"
+              rows={3}
+              value={rescheduleNote}
+              onChange={e => setRescheduleNote(e.target.value)}
+              placeholder="Optional note"
+            />
+          </label>
+
+          <div className="workflow-actions">
+            <button className="btn" onClick={(e) => { e.stopPropagation(); resetRescheduleForm() }}>
+              Back
+            </button>
+            <button className="btn btn-primary" onClick={handleReschedule} disabled={!canSubmit}>
+              {isCounter ? 'Send New Option' : rescheduleIntent === 'hard' ? 'Request New Time' : 'Send Request'}
+            </button>
+          </div>
         </div>
-        {!isCounter && (
-          <>
-            <div className="cancel-reasons">
-              <button
-                className={`cancel-reason-btn ${rescheduleIntent === 'soft' ? 'selected' : ''}`}
-                onClick={() => setRescheduleIntent('soft')}
-              >
-                Ask to move it
-              </button>
-              <button
-                className={`cancel-reason-btn ${rescheduleIntent === 'hard' ? 'selected' : ''}`}
-                onClick={() => setRescheduleIntent('hard')}
-              >
-                I can&apos;t make this time
-              </button>
-            </div>
-            <div className="cancel-reasons">
-              {RESCHEDULE_REASON_OPTIONS.map(option => (
+      </div>
+    )
+  }
+
+  function renderCancelForm() {
+    return (
+      <div className="propose-form schedule-workflow-card schedule-workflow-card--danger" onClick={e => e.stopPropagation()}>
+        <div className="workflow-module">
+          {renderPanelHeader(
+            'Cancel Match',
+            'red',
+            'Withdraw from this match',
+            'Use this only if the match will not happen. Your opponent will receive a walkover win.'
+          )}
+
+          <div className="schedule-form-section">
+            <div className="schedule-form-label">Reason</div>
+            <div className="schedule-choice-grid schedule-choice-grid--reasons">
+              {CANCEL_REASONS.map(reason => (
                 <button
-                  key={option.value}
-                  className={`cancel-reason-btn ${rescheduleReason === option.value ? 'selected' : ''}`}
-                  onClick={() => setRescheduleReason(option.value)}
+                  key={reason}
+                  className={`schedule-choice-pill schedule-choice-pill--danger ${cancelReason === reason ? 'is-selected' : ''}`}
+                  onClick={() => setCancelReason(reason)}
                 >
-                  {option.label}
+                  {reason}
                 </button>
               ))}
             </div>
-          </>
-        )}
-        <div className="proposal-from">
-          {isCounter
-            ? 'Send another option that works better for you.'
-            : rescheduleIntent === 'hard'
-              ? 'This cancels the current confirmed time. You can still send a replacement now, or leave it blank and ask for a new time.'
-              : 'The current confirmed time stays on until a new one is accepted.'}
-        </div>
-        <div className="propose-row">
-          <select value={reschedDay} onChange={e => setReschedDay(e.target.value as DayOfWeek | '')}>
-            <option value="">{isCounter || rescheduleIntent === 'soft' ? 'New day...' : 'Optional day...'}</option>
-            {DAYS.map(d => <option key={d.key} value={d.key}>{dayLabelShort(d.key)}</option>)}
-          </select>
-          <select value={reschedStart} onChange={e => setReschedStart(Number(e.target.value))}>
-            {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-              <option key={h} value={h}>{formatHourCompact(h)}</option>
-            ))}
-          </select>
-          <span>{'\u2013'}</span>
-          <select value={reschedEnd} onChange={e => setReschedEnd(Number(e.target.value))}>
-            {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-              <option key={h} value={h}>{formatHourCompact(h)}</option>
-            ))}
-          </select>
-        </div>
-        <textarea
-          className="profile-bio-input"
-          rows={2}
-          value={rescheduleNote}
-          onChange={e => setRescheduleNote(e.target.value)}
-          placeholder="Optional note"
-        />
-        <div className="propose-actions">
-          <button className="btn btn-primary btn-small" onClick={handleReschedule} disabled={!canSubmit}>
-            {isCounter ? 'Send New Option' : rescheduleIntent === 'hard' ? 'Send Needs-New-Time' : 'Send Request'}
-          </button>
-          <button className="btn btn-small" onClick={(e) => { e.stopPropagation(); resetRescheduleForm() }}>
-            Back
-          </button>
+          </div>
+
+          <div className="workflow-actions">
+            <button className="btn" onClick={(e) => { e.stopPropagation(); setShowCancel(false); setCancelReason('') }}>
+              Back
+            </button>
+            <button
+              className="btn btn-danger"
+              onClick={handleCancelMatch}
+              disabled={!cancelReason}
+            >
+              Confirm Cancellation
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -317,14 +407,22 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     return (
       <div className="schedule-panel schedule-confirmed">
         {renderPanelHeader(
-          rescheduleUiState === 'soft_request_sent'
+          isScheduleLocked
+            ? match.completed ? 'Completed' : 'Score Reported'
+            : rescheduleUiState === 'soft_request_sent'
             ? 'Reschedule Requested'
             : rescheduleUiState === 'soft_request_received'
               ? 'Change Requested'
               : 'Confirmed',
-          rescheduleUiState === 'soft_request_sent' || rescheduleUiState === 'soft_request_received' ? 'blue' : 'green',
+          isScheduleLocked
+            ? 'green'
+            : rescheduleUiState === 'soft_request_sent' || rescheduleUiState === 'soft_request_received' ? 'blue' : 'green',
           'Current confirmed time',
-          rescheduleUiState === 'soft_request_sent'
+          isScheduleLocked
+            ? match.completed
+              ? 'This match has already been completed. The confirmed time is now read-only.'
+              : 'A score has been reported for this match, so the schedule is now locked.'
+            : rescheduleUiState === 'soft_request_sent'
             ? `Your current match time still holds unless ${opponentName} accepts a new one.`
             : rescheduleUiState === 'soft_request_received'
               ? `${opponentName} asked to move this match. Review the new options below.`
@@ -392,45 +490,21 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <div className="proposal-from">
             This match time is view-only because you are not one of the two players.
           </div>
-        ) : showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? (
-          <div className="propose-form cancel-form" onClick={e => e.stopPropagation()}>
-            <div className="propose-form-title">Cancel match</div>
-            <p className="cancel-warning">Your opponent will be awarded a walkover win.</p>
-            <div className="cancel-reasons">
-              {CANCEL_REASONS.map(reason => (
-                <button
-                  key={reason}
-                  className={`cancel-reason-btn ${cancelReason === reason ? 'selected' : ''}`}
-                  onClick={() => setCancelReason(reason)}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-            <div className="propose-actions">
-              <button
-                className="btn btn-danger btn-small"
-                onClick={handleCancelMatch}
-                disabled={!cancelReason}
-              >
-                Confirm Cancellation
-              </button>
-              <button className="btn btn-small" onClick={(e) => { e.stopPropagation(); setShowCancel(false); setCancelReason('') }}>
-                Back
-              </button>
-            </div>
+        ) : isScheduleLocked ? (
+          <div className="schedule-locked-note">
+            {match.completed
+              ? 'This match is complete. The confirmed time is now read-only.'
+              : 'A score has been reported, so the confirmed time can no longer be changed or canceled.'}
           </div>
-        ) : (
+        ) : showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? renderCancelForm() : (
           <div className="confirmed-actions">
             {rescheduleUiState === 'soft_request_sent' && (
-              <>
-                <button
-                  className="btn btn-small"
-                  onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
-                >
-                  Withdraw Request
-                </button>
-              </>
+              <button
+                className="btn btn-small"
+                onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
+              >
+                Withdraw Request
+              </button>
             )}
             {rescheduleUiState === 'soft_request_received' && (
               <>
@@ -515,35 +589,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <div className="proposal-from">
             This match time is view-only because you are not one of the two players.
           </div>
-        ) : showReschedule ? renderRescheduleForm('counter') : showCancel ? (
-          <div className="propose-form cancel-form" onClick={e => e.stopPropagation()}>
-            <div className="propose-form-title">Cancel match</div>
-            <p className="cancel-warning">Your opponent will be awarded a walkover win.</p>
-            <div className="cancel-reasons">
-              {CANCEL_REASONS.map(reason => (
-                <button
-                  key={reason}
-                  className={`cancel-reason-btn ${cancelReason === reason ? 'selected' : ''}`}
-                  onClick={() => setCancelReason(reason)}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-            <div className="propose-actions">
-              <button
-                className="btn btn-danger btn-small"
-                onClick={handleCancelMatch}
-                disabled={!cancelReason}
-              >
-                Confirm Cancellation
-              </button>
-              <button className="btn btn-small" onClick={(e) => { e.stopPropagation(); setShowCancel(false); setCancelReason('') }}>
-                Back
-              </button>
-            </div>
-          </div>
-        ) : (
+        ) : showReschedule ? renderRescheduleForm('counter') : showCancel ? renderCancelForm() : (
           <div className="confirmed-actions">
             <button
               className="btn btn-primary btn-small"
