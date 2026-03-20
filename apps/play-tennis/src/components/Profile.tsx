@@ -265,9 +265,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
   const [h2hOpponent, setH2hOpponent] = useState<string | null>(null)
   const visibleMatches = showAllMatches ? matchHistory : matchHistory.slice(0, 5)
 
-  function handleLogout() {
-    if (confirm('Sign out? You can sign back in with the same name.')) {
-      logout()
+  async function handleLogout() {
+    if (confirm('Sign out? You can sign back in with your email.')) {
+      await logout()
       onLogout()
       window.location.hash = '#home'
     }
@@ -420,6 +420,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             <div className="profile-photo-hint text-muted" style={{ marginTop: 4 }}>Tap to change photo</div>
           </div>
           <h2 className="profile-name">{profile.name}</h2>
+          {profile.email && (
+            <p className="profile-email" style={{ fontSize: 'var(--font-body-sm)', color: 'var(--color-text-muted)', margin: '2px 0 0' }}>{profile.email}</p>
+          )}
           <p className="profile-county">{profile.county}</p>
           {profile.skillLevel && (
             <div className="profile-details">

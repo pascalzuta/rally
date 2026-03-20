@@ -4,7 +4,6 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://gxiflulfgqahl
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
 
 let client: SupabaseClient | null = null
-let authReady = false
 
 export function initSupabase(): SupabaseClient | null {
   if (client) return client
@@ -18,38 +17,68 @@ export function getClient(): SupabaseClient | null {
 }
 
 /**
- * Ensure the user has an anonymous auth session.
- * Called once on app mount. If the user already has a session (from a
- * previous visit), this is a no-op. Otherwise creates an anonymous user.
- * This is required for RLS policies to work (they check auth.uid()).
+ * Send an OTP code to the given email address.
+ * Works for both new and returning users.
  */
-export async function ensureAuth(): Promise<string | null> {
+export async function sendOtp(email: string): Promise<{ ok: boolean; error?: string }> {
+  if (!client) return { ok: false, error: 'supabase_not_initialized' }
+
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true },
+  })
+
+  if (error) {
+    console.warn('[Rally] OTP send failed:', error.message)
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
+}
+
+/**
+ * Verify the OTP code the user received via email.
+ * On success, establishes a Supabase auth session.
+ */
+export async function verifyOtp(
+  email: string,
+  token: string,
+): Promise<{ ok: boolean; userId?: string; error?: string }> {
+  if (!client) return { ok: false, error: 'supabase_not_initialized' }
+
+  const { data, error } = await client.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  })
+
+  if (error) {
+    console.warn('[Rally] OTP verify failed:', error.message)
+    return { ok: false, error: error.message }
+  }
+
+  return { ok: true, userId: data.user?.id }
+}
+
+/**
+ * Check for an existing authenticated session.
+ * Returns the user ID and email if a session exists, null otherwise.
+ */
+export async function getSession(): Promise<{ userId: string; email: string } | null> {
   if (!client) return null
-  if (authReady) {
-    const { data } = await client.auth.getSession()
-    return data.session?.user?.id ?? null
+  const { data } = await client.auth.getSession()
+  if (!data.session?.user) return null
+  return {
+    userId: data.session.user.id,
+    email: data.session.user.email ?? '',
   }
+}
 
-  // Check for existing session first
-  const { data: existing } = await client.auth.getSession()
-  if (existing.session) {
-    authReady = true
-    return existing.session.user.id
-  }
-
-  // No session — sign in anonymously
-  try {
-    const { data, error } = await client.auth.signInAnonymously()
-    if (error) {
-      console.warn('[Rally] Anonymous auth failed:', error.message)
-      return null
-    }
-    authReady = true
-    return data.session?.user?.id ?? null
-  } catch (err) {
-    console.warn('[Rally] Anonymous auth error:', err)
-    return null
-  }
+/**
+ * Sign out and clear the Supabase session.
+ */
+export async function signOut(): Promise<void> {
+  if (!client) return
+  await client.auth.signOut()
 }
 
 /**

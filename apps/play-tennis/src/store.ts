@@ -43,13 +43,19 @@ export function getProfile(): PlayerProfile | null {
   }
 }
 
-export function createProfile(name: string, county: string, options?: { skillLevel?: SkillLevel; gender?: Gender }): PlayerProfile {
+export function createProfile(
+  name: string,
+  county: string,
+  options?: { skillLevel?: SkillLevel; gender?: Gender; email?: string; authId?: string },
+): PlayerProfile {
   // Duplicate guard: return existing profile if one exists
   const existing = getProfile()
   if (existing) return existing
 
   const profile: PlayerProfile = {
-    id: generateId(),
+    id: options?.authId ?? generateId(),
+    authId: options?.authId,
+    email: options?.email,
     name: name.trim(),
     county: county.trim(),
     skillLevel: options?.skillLevel,
@@ -60,7 +66,11 @@ export function createProfile(name: string, county: string, options?: { skillLev
   return profile
 }
 
-export function logout(): void {
+export async function logout(): Promise<void> {
+  // Sign out of Supabase
+  const { signOut } = await import('./supabase')
+  await signOut()
+
   localStorage.removeItem(PROFILE_KEY)
   // Remove all play-tennis-* keys from localStorage
   const keysToRemove: string[] = []
