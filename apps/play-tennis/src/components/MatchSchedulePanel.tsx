@@ -432,7 +432,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             {rescheduleUiState === 'soft_request_sent' && (
               <>
                 <button
-                  className="btn-link propose-link"
+                  className="btn btn-small"
                   onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
                 >
                   Withdraw Request
@@ -442,13 +442,13 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             {rescheduleUiState === 'soft_request_received' && (
               <>
                 <button
-                  className="btn-link propose-link"
+                  className="btn btn-small"
                   onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
                 >
                   Suggest Another
                 </button>
                 <button
-                  className="btn-link propose-link"
+                  className="btn btn-primary btn-small"
                   onClick={(e) => { e.stopPropagation(); handleDeclineSoftRequest() }}
                 >
                   Keep Current Time
@@ -457,14 +457,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             )}
             {rescheduleUiState === 'none' && canReschedule && (
               <button
-                className="btn-link propose-link"
+                className="btn btn-primary btn-small"
                 onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
               >
                 Change Time
               </button>
             )}
             <button
-              className="btn-link propose-link cancel-link"
+              className="btn btn-danger btn-small"
               onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
             >
               Cancel Match
@@ -553,13 +553,13 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         ) : (
           <div className="confirmed-actions">
             <button
-              className="btn-link propose-link"
+              className="btn btn-primary btn-small"
               onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
             >
               Suggest Another
             </button>
             <button
-              className="btn-link propose-link cancel-link"
+              className="btn btn-danger btn-small"
               onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
             >
               Cancel Match

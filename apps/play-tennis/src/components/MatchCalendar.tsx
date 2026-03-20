@@ -222,32 +222,32 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       </button>
                     )}
                   </div>
+                  {isMessaging && opponentId && (
+                    <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
+                      <MessagePanel
+                        currentPlayerId={currentPlayerId}
+                        currentPlayerName={currentPlayerName}
+                        otherPlayerId={opponentId}
+                        otherPlayerName={opponentName}
+                        onClose={() => setMessagingMatchId(null)}
+                      />
+                    </div>
+                  )}
+                  {expandedMatchId === match.id && (
+                    <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
+                      <UpcomingMatchPanel
+                        tournament={tournament}
+                        match={match}
+                        currentPlayerId={currentPlayerId}
+                        mode="schedule"
+                        onUpdated={() => {
+                          setExpandedMatchId(null)
+                          onTournamentUpdated()
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
-                {isMessaging && opponentId && (
-                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
-                    <MessagePanel
-                      currentPlayerId={currentPlayerId}
-                      currentPlayerName={currentPlayerName}
-                      otherPlayerId={opponentId}
-                      otherPlayerName={opponentName}
-                      onClose={() => setMessagingMatchId(null)}
-                    />
-                  </div>
-                )}
-                {expandedMatchId === match.id && (
-                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
-                    <UpcomingMatchPanel
-                      tournament={tournament}
-                      match={match}
-                      currentPlayerId={currentPlayerId}
-                      mode="schedule"
-                      onUpdated={() => {
-                        setExpandedMatchId(null)
-                        onTournamentUpdated()
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             )
           })}
