@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatHourCompact } from '../dateUtils'
 import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, claimBroadcast, cancelBroadcast, getUpcomingAvailability, UpcomingSlot } from '../store'
 import { Tournament, MatchBroadcast } from '../types'
 
@@ -45,14 +46,8 @@ function formatDateShort(dateStr: string): string {
   return date.toLocaleDateString('en-US', { weekday: 'short' })
 }
 
-function formatHour(h: number): string {
-  if (h === 0 || h === 24) return '12 AM'
-  if (h === 12) return '12 PM'
-  return h < 12 ? `${h} AM` : `${h - 12} PM`
-}
-
 function formatHourRange(start: number, end: number): string {
-  return `${formatHour(start)} – ${formatHour(end)}`
+  return `${formatHourCompact(start)} – ${formatHourCompact(end)}`
 }
 
 // Group upcoming slots by date

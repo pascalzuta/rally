@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
+import { formatHourCompact } from '../dateUtils'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -40,20 +41,11 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
   ]},
 ]
 
-function formatHour(h: number): string {
-  const whole = Math.floor(h)
-  const half = h % 1 >= 0.5
-  const suffix = half ? ':30' : ''
-  if (whole === 0 || whole === 24) return `12${suffix}am`
-  if (whole === 12) return `12${suffix}pm`
-  return whole < 12 ? `${whole}${suffix}am` : `${whole - 12}${suffix}pm`
-}
-
 /** Generate time options in 30-min increments */
 function timeOptions(startVal: number, endVal: number): { value: number; label: string }[] {
   const opts: { value: number; label: string }[] = []
   for (let h = startVal; h <= endVal; h += 0.5) {
-    opts.push({ value: h, label: formatHour(h) })
+    opts.push({ value: h, label: formatHourCompact(h) })
   }
   return opts
 }
@@ -555,7 +547,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   </button>
                 ))}
               </div>
-              <p className="skill-reassurance" style={{ fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)', marginTop: '8px' }}>
+              <p className="skill-reassurance text-muted" style={{ marginTop: '8px' }}>
                 Your rating will adjust automatically after a few matches.
               </p>
             </div>
@@ -680,7 +672,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   <ul className="detailed-slot-list">
                     {detailedSlots.map((s, i) => (
                       <li key={i} className="detailed-slot-item">
-                        <span>{DAYS.find(d => d.key === s.day)?.label} {formatHour(s.startHour)}-{formatHour(s.endHour)}</span>
+                        <span>{DAYS.find(d => d.key === s.day)?.label} {formatHourCompact(s.startHour)}-{formatHourCompact(s.endHour)}</span>
                         <button className="btn-icon" onClick={() => removeDetailedSlot(i)}>{'\u2715'}</button>
                       </li>
                     ))}
@@ -694,7 +686,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                 <ul className="detailed-slot-list">
                   {detailedSlots.map((s, i) => (
                     <li key={i} className="detailed-slot-item">
-                      <span>{DAYS.find(d => d.key === s.day)?.label} {formatHour(s.startHour)}–{formatHour(s.endHour)}</span>
+                      <span>{DAYS.find(d => d.key === s.day)?.label} {formatHourCompact(s.startHour)}–{formatHourCompact(s.endHour)}</span>
                       <button className="btn-icon" onClick={() => removeDetailedSlot(i)}>✕</button>
                     </li>
                   ))}

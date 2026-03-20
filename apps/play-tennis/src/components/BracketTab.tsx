@@ -10,6 +10,7 @@ import MatchCalendar from './MatchCalendar'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import ReliabilityIndicator from './ReliabilityIndicator'
+import { formatDateCompact, formatTimeFull, formatHourCompact, formatSlotInline as formatSlotInlineUtil } from '../dateUtils'
 
 type MatchFilterMode = 'upcoming' | 'completed' | 'all'
 
@@ -27,27 +28,20 @@ const DAY_MAP: Record<string, number> = {
   thursday: 4, friday: 5, saturday: 6,
 }
 
-/** Resolve a { day, startHour } slot to a calendar date string + time.
- *  Returns { day: "Mon, Mar 16", time: "6pm" } for the time badge. */
-function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
-  const target = DAY_MAP[slot.day] ?? 1
+/** Convert a day-name slot to a calendar Date for the next occurrence. */
+function slotToDate(dayName: string): Date {
+  const target = DAY_MAP[dayName] ?? 1
   const today = new Date()
   const diff = (target - today.getDay() + 7) % 7
   const date = new Date(today)
   date.setDate(today.getDate() + diff)
-  const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  const period = slot.startHour >= 12 ? 'pm' : 'am'
-  const hour = slot.startHour % 12 || 12
-  return { day, time: `${hour}${period}` }
+  return date
 }
 
-/** Format a slot as a single inline string: "Mon, Mar 16, 6:00 PM" */
+/** Format a slot as a single inline string using shared dateUtils. */
 function formatSlotInline(slot: { day: string; startHour: number }): string {
-  const st = formatStartTime(slot)
-  const mins = '00'
-  const period = slot.startHour >= 12 ? 'PM' : 'AM'
-  const hour = slot.startHour % 12 || 12
-  return `${st.day}, ${hour}:${mins} ${period}`
+  const dayIndex = DAY_MAP[slot.day] ?? 1
+  return formatSlotInlineUtil({ day: dayIndex, startHour: slot.startHour })
 }
 
 /** Format an ISO date string as "Mon, Mar 16" */
@@ -288,7 +282,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string; type: string } | null {
     const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
     if (match.completed && match.splitDecision) return { label: 'Split Decision', type: 'muted' }
-    if (match.completed) return { label: 'Completed', type: 'completed' }
+    if (match.completed) return { label: 'COMPLETED', type: 'completed' }
     if (match.resolution) {
       if (match.resolution.type === 'walkover') return { label: 'Walkover', type: 'muted' }
       if (match.resolution.type === 'double-loss') return { label: 'Canceled', type: 'muted' }
@@ -303,19 +297,19 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     // Score reported — waiting for confirmation
     if (match.scoreReportedBy) {
       if (match.scoreReportedBy === currentPlayerId) return { label: 'Score Reported', type: 'score' }
-      return { label: 'Confirm Score', type: 'score' }
+      return { label: 'CONFIRM SCORE', type: 'score' }
     }
     if (match.schedule?.activeRescheduleRequest) {
       if (rescheduleUiState === 'soft_request_sent') return { label: 'Reschedule Requested', type: 'proposed' }
       if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested', type: 'proposed' }
       return { label: 'Needs New Time', type: 'unscheduled' }
     }
-    if (canScore) return { label: 'Report Score', type: 'score' }
+    if (canScore) return { label: 'REPORT SCORE', type: 'score' }
     if (!match.schedule) return { label: 'Pending', type: 'pending' }
-    if (match.schedule.status === 'confirmed') return { label: 'Confirmed', type: 'confirmed' }
-    if (match.schedule.status === 'escalated') return { label: 'Needs Resolution', type: 'escalated' }
-    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Match Ready', type: 'proposed' }
-    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Needs Scheduling', type: 'unscheduled' }
+    if (match.schedule.status === 'confirmed') return { label: 'CONFIRMED', type: 'confirmed' }
+    if (match.schedule.status === 'escalated') return { label: 'NEEDS RESOLUTION', type: 'escalated' }
+    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'MATCH READY', type: 'proposed' }
+    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'NEEDS SCHEDULING', type: 'unscheduled' }
     return { label: 'Pending', type: 'pending' }
   }
 
@@ -367,7 +361,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       if (isMyMatch && match.winnerId) {
         return { text: match.winnerId === currentPlayerId ? 'You won this match' : 'You lost this match' }
       }
-      if (match.schedule?.confirmedSlot) return { text: formatSlotInline(match.schedule.confirmedSlot) }
+      // Time already shown in the right-side time badge — don't duplicate here
       return null
     }
 
@@ -375,13 +369,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       return isMyMatch ? { text: 'No time set yet' } : { text: 'Awaiting matchup details' }
     }
 
+    // Confirmed/proposed time is shown in the right-side time badge — don't duplicate here
     if (match.schedule.status === 'confirmed' && match.schedule.confirmedSlot) {
-      return { text: formatSlotInline(match.schedule.confirmedSlot) }
+      return null
     }
 
     if (match.schedule.status === 'proposed') {
       const pending = match.schedule.proposals.find(p => p.status === 'pending')
-      if (pending) return { text: formatSlotInline(pending) }
+      if (pending) return null // time shown in right-side badge
       return { text: isMyMatch ? 'Waiting for a response' : 'Scheduling in progress' }
     }
 
@@ -529,11 +524,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             {(() => {
               // Confirmed matches: show confirmed slot
               if (!match.completed && isConfirmed && match.schedule?.confirmedSlot) {
-                const st = formatStartTime(match.schedule!.confirmedSlot!)
+                const d = slotToDate(match.schedule!.confirmedSlot!.day)
                 return (
                   <div className="match-time-slot">
-                    <span className="match-time-day">{st.day}</span>
-                    <span className="match-time-hour">{st.time}</span>
+                    <span className="match-time-day">{formatDateCompact(d)}</span>
+                    <span className="match-time-hour">{formatHourCompact(match.schedule!.confirmedSlot!.startHour)}</span>
                   </div>
                 )
               }
@@ -541,21 +536,21 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               if (!match.completed && match.schedule?.status === 'proposed') {
                 const pending = match.schedule.proposals.find(p => p.status === 'pending')
                 if (pending) {
-                  const st = formatStartTime(pending)
+                  const d = slotToDate(pending.day)
                   return (
                     <div className="match-time-slot match-time-slot--proposed">
-                      <span className="match-time-day">{st.day}</span>
-                      <span className="match-time-hour">{st.time}</span>
+                      <span className="match-time-day">{formatDateCompact(d)}</span>
+                      <span className="match-time-hour">{formatHourCompact(pending.startHour)}</span>
                     </div>
                   )
                 }
               }
               // Completed matches: show date from scoreReportedAt or confirmedSlot
               if (match.completed && match.schedule?.confirmedSlot) {
-                const st = formatStartTime(match.schedule!.confirmedSlot!)
+                const d = slotToDate(match.schedule!.confirmedSlot!.day)
                 return (
                   <div className="match-time-slot match-time-slot--completed">
-                    <span className="match-time-day">{st.day}</span>
+                    <span className="match-time-day">{formatDateCompact(d)}</span>
                   </div>
                 )
               }
@@ -749,7 +744,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* Calendar/Bracket toggle for round-robin */}
       {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0 var(--space-md) 0' }}>
+        <div className="bracket-view-row">
           <div className="bracket-view-toggle">
             <button
               className={`bracket-view-toggle-btn ${viewMode === 'calendar' ? 'selected' : ''}`}
@@ -761,7 +756,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             >Bracket</button>
           </div>
           {tournament.schedulingSummary && (
-            <button className="btn-link" onClick={() => setShowScheduleSummary(true)} style={{ fontSize: 'var(--font-body-sm, 13px)' }}>
+            <button className="btn-link" onClick={() => setShowScheduleSummary(true)}>
               View summary
             </button>
           )}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore, getRescheduleUiState } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
+import { formatSlotInline, formatHourCompact } from '../dateUtils'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
 import MessagePanel from './MessagePanel'
@@ -103,17 +104,9 @@ const HOME_DAY_MAP: Record<string, number> = {
   thursday: 4, friday: 5, saturday: 6,
 }
 
-/** Format a { day, startHour } slot as inline text: "Mon, Mar 16, 6:00 PM" */
-function formatSlotInline(slot: { day: string; startHour: number }): string {
-  const target = HOME_DAY_MAP[slot.day] ?? 1
-  const today = new Date()
-  const diff = (target - today.getDay() + 7) % 7
-  const date = new Date(today)
-  date.setDate(today.getDate() + diff)
-  const dayStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  const period = slot.startHour >= 12 ? 'PM' : 'AM'
-  const hour = slot.startHour % 12 || 12
-  return `${dayStr}, ${hour}:00 ${period}`
+/** Adapt a slot with a string day name to the numeric day expected by dateUtils */
+function formatSlotInlineFromName(slot: { day: string; startHour: number }): string {
+  return formatSlotInline({ day: HOME_DAY_MAP[slot.day] ?? 1, startHour: slot.startHour })
 }
 
 function buildActionCards(
@@ -138,7 +131,7 @@ function buildActionCards(
         const scoreStr = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
         cards.push({
           type: 'confirm-score',
-          label: 'Confirm Score',
+          label: 'CONFIRM SCORE',
           detail: `${opponentName} reported: ${scoreStr}`,
           opponentId: opponentId!,
           opponentName,
@@ -152,7 +145,7 @@ function buildActionCards(
       if (rescheduleUiState === 'soft_request_received') {
         cards.push({
           type: 'respond',
-          label: 'Respond',
+          label: 'MATCH READY',
           detail: `${opponentName} asked to move the match`,
           opponentId: opponentId!,
           opponentName,
@@ -166,7 +159,7 @@ function buildActionCards(
       if (rescheduleUiState === 'hard_request_received') {
         cards.push({
           type: 'schedule',
-          label: 'Needs New Time',
+          label: 'NEEDS SCHEDULING',
           detail: `${opponentName} can no longer make the original time`,
           opponentId: opponentId!,
           opponentName,
@@ -180,7 +173,7 @@ function buildActionCards(
       if (rescheduleUiState === 'hard_request_sent') {
         cards.push({
           type: 'schedule',
-          label: 'Needs New Time',
+          label: 'NEEDS SCHEDULING',
           detail: 'You canceled the original match time',
           opponentId: opponentId!,
           opponentName,
@@ -199,10 +192,10 @@ function buildActionCards(
       // Escalated matches
       if (schedule?.status === 'escalated') {
         const pendingProposal = schedule.proposals.find(p => p.status === 'pending')
-        const dateHint = pendingProposal ? ` · ${formatSlotInline(pendingProposal)}` : ''
+        const dateHint = pendingProposal ? ` · ${formatSlotInlineFromName(pendingProposal)}` : ''
         cards.push({
           type: 'escalated',
-          label: 'Needs Resolution',
+          label: 'NEEDS RESOLUTION',
           detail: `Escalation day ${schedule.escalationDay} — respond now${dateHint}`,
           opponentId: opponentId!,
           opponentName,
@@ -215,10 +208,10 @@ function buildActionCards(
 
       // Matches needing scoring: confirmed + not completed + is my match
       if (schedule?.status === 'confirmed' && schedule.confirmedSlot) {
-        const dateStr = formatSlotInline(schedule.confirmedSlot)
+        const dateStr = formatSlotInlineFromName(schedule.confirmedSlot)
         cards.push({
           type: 'score',
-          label: 'Report Score',
+          label: 'REPORT SCORE',
           detail: dateStr,
           opponentId: opponentId!,
           opponentName,
@@ -242,10 +235,10 @@ function buildActionCards(
 
         if (respondableCount > 0) {
           const firstPending = [...pendingSystem, ...pendingFromOpponent][0]
-          const dateStr = firstPending ? formatSlotInline(firstPending) : 'Rally found a time'
+          const dateStr = firstPending ? formatSlotInlineFromName(firstPending) : 'Rally found a time'
           cards.push({
             type: 'respond',
-            label: 'Match Ready',
+            label: 'MATCH READY',
             detail: dateStr,
             opponentId: opponentId!,
             opponentName,
@@ -266,7 +259,7 @@ function buildActionCards(
       ) {
         cards.push({
           type: 'schedule',
-          label: 'Needs Scheduling',
+          label: 'NEEDS SCHEDULING',
           detail: 'No time set yet',
           opponentId: opponentId!,
           opponentName,
@@ -293,7 +286,7 @@ function buildActionCards(
     if (existingOpponentIds.has(conv.otherPlayerId)) continue
     cards.push({
       type: 'message',
-      label: 'Message',
+      label: 'MESSAGE',
       detail: `${conv.unreadCount} unread message${conv.unreadCount !== 1 ? 's' : ''}`,
       opponentId: conv.otherPlayerId,
       opponentName: conv.otherPlayerName,
@@ -789,15 +782,15 @@ export default function Home({
           return `${dayStr}, ${hour}:00 ${period.toUpperCase()}`
         })()
         return (
-          <div className="card upnext-card" onClick={() => onViewMatch(upNext.tournament.id, upNext.match.id)}>
+          <div className="card" onClick={() => onViewMatch(upNext.tournament.id, upNext.match.id)}>
             <div className="card-status-row">
-              <div className="upnext-label">Confirmed</div>
+              <div className="card-status-label card-status-label--green">Confirmed</div>
             </div>
             <div className="card-summary-main">
-              <div className="upnext-opponent">
+              <div className="card-title">
                 vs {playerNameWithSeed(upNext.tournament, getOpponentId(upNext.match, profile.id))}
               </div>
-              <div className="upnext-time">{st}</div>
+              <div className="card-supporting">{st}</div>
             </div>
             <div className="match-card-actions-row">
               <button className="match-card-action-btn">View Match</button>

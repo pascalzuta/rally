@@ -3,6 +3,7 @@ import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelB
 import { Tournament, Match, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
 import { useToast } from './Toast'
+import { formatTimeFull, formatTimeRange, formatDateCompact, formatHourCompact } from '../dateUtils'
 
 interface Props {
   tournament: Tournament | null
@@ -11,18 +12,14 @@ interface Props {
   onMatchConfirmed: () => void
 }
 
-function formatTime(time: string): string {
+/** Parse "HH:MM" string to fractional hour number */
+function parseTimeToHour(time: string): number {
   const [h, m] = time.split(':').map(Number)
-  const ampm = h >= 12 ? 'PM' : 'AM'
-  const hour = h % 12 || 12
-  return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`
+  return h + m / 60
 }
 
-function formatTimeRange(start: string, end: string): string {
-  return `${formatTime(start)} – ${formatTime(end)}`
-}
-
-function formatDate(dateStr: string): string {
+/** Format a date string like "YYYY-MM-DD" for display, with Today/Tomorrow shortcuts */
+function formatDateStr(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -30,17 +27,12 @@ function formatDate(dateStr: string): string {
   tomorrow.setDate(tomorrow.getDate() + 1)
   if (date.getTime() === today.getTime()) return 'Today'
   if (date.getTime() === tomorrow.getTime()) return 'Tomorrow'
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  return formatDateCompact(date)
 }
 
-function formatHour(h: number): string {
-  if (h === 0 || h === 24) return '12 AM'
-  if (h === 12) return '12 PM'
-  return h < 12 ? `${h} AM` : `${h - 12} PM`
-}
-
-function formatHourRange(start: number, end: number): string {
-  return `${formatHour(start)} – ${formatHour(end)}`
+/** Format a time range from "HH:MM" strings using shared formatTimeFull */
+function formatTimeRangeStr(start: string, end: string): string {
+  return `${formatTimeFull(parseTimeToHour(start))} – ${formatTimeFull(parseTimeToHour(end))}`
 }
 
 function defaultEndTime(start: string): string {
@@ -99,8 +91,8 @@ function buildOpponentRows(slots: UpcomingSlot[], broadcasts: MatchBroadcast[]):
   const rows: OpponentRow[] = []
   const broadcastPlayerDates = new Set<string>()
   for (const b of broadcasts) {
-    const dateLabel = formatDate(b.date)
-    const timeLabel = formatTimeRange(b.startTime, b.endTime || defaultEndTime(b.startTime))
+    const dateLabel = formatDateStr(b.date)
+    const timeLabel = formatTimeRangeStr(b.startTime, b.endTime || defaultEndTime(b.startTime))
     broadcastPlayerDates.add(`${b.playerId}-${b.date}`)
     const [startH] = b.startTime.split(':').map(Number)
     const endTime = b.endTime || defaultEndTime(b.startTime)
@@ -113,7 +105,7 @@ function buildOpponentRows(slots: UpcomingSlot[], broadcasts: MatchBroadcast[]):
     if (broadcastPlayerDates.has(`${s.playerId}-${s.date}`)) continue
     const dateObj = new Date(s.date + 'T00:00:00')
     const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-    rows.push({ type: 'availability', playerId: s.playerId, playerName: s.playerName, date: s.date, dateLabel: s.dayLabel, timeLabel: formatHourRange(s.startHour, s.endHour), isNow: isAvailableNow(s.date, s.startHour, s.endHour), sortKey: `${s.date}-${s.startHour.toString().padStart(2, '0')}`, startHour: s.startHour, endHour: s.endHour, day: dayName })
+    rows.push({ type: 'availability', playerId: s.playerId, playerName: s.playerName, date: s.date, dateLabel: s.dayLabel, timeLabel: formatTimeRange(s.startHour, s.endHour), isNow: isAvailableNow(s.date, s.startHour, s.endHour), sortKey: `${s.date}-${s.startHour.toString().padStart(2, '0')}`, startHour: s.startHour, endHour: s.endHour, day: dayName })
   }
   rows.sort((a, b) => { if (a.isNow !== b.isNow) return a.isNow ? -1 : 1; return a.sortKey.localeCompare(b.sortKey) })
   return rows
@@ -156,7 +148,7 @@ function schedulingTierLabel(match: Match): { label: string; className: string; 
 function formatSlotTime(match: Match): string {
   const slot = match.schedule?.confirmedSlot
   if (!slot) return 'Time TBD'
-  return `${formatHour(slot.startHour)} – ${formatHour(slot.endHour)}`
+  return `${formatHourCompact(slot.startHour)} – ${formatHourCompact(slot.endHour)}`
 }
 
 export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerName, onMatchConfirmed }: Props) {
@@ -219,7 +211,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleAskToPlay(row: OpponentRow) {
-    const result = createMatchOffer({ id: currentPlayerId, name: currentPlayerName }, { id: row.playerId, name: row.playerName }, tournament!.id, row.date, `${formatHour(row.startHour)}`, row.day, row.startHour, row.endHour)
+    const result = createMatchOffer({ id: currentPlayerId, name: currentPlayerName }, { id: row.playerId, name: row.playerName }, tournament!.id, row.date, `${formatHourCompact(row.startHour)}`, row.day, row.startHour, row.endHour)
     if ('error' in result) { setFeedback(result.error) } else { setFeedback('Match offer sent') }
     setAskingRow(null); setTimeout(() => setFeedback(''), 2500); setTick(t => t + 1)
   }
@@ -277,12 +269,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
                 <div className="offer-card-status-row">
-                  <span className="offer-card-label">Awaiting Response</span>
+                  <span className="card-status-label card-status-label--blue">AWAITING RESPONSE</span>
                   <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
                   <div className="card-title">{offer.senderName}</div>
-                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDateStr(offer.proposedDate)}</div>
                 </div>
                 <div className="offer-card-actions">
                   <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
@@ -301,12 +293,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
                 <div className="offer-card-status-row">
-                  <span className="offer-card-label">Pending</span>
+                  <span className="card-status-label card-status-label--slate">PENDING</span>
                   <span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
                   <div className="card-title">to {offer.recipientName}</div>
-                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDateStr(offer.proposedDate)}</div>
                 </div>
                 <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
               </div>
@@ -329,8 +321,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <div className="card-supporting">Players in your tournament can request this time slot.</div>
           </div>
           <div className="broadcast-card-details">
-            <span className="broadcast-detail">{formatDate(myBroadcast.date)}</span>
-            <span className="broadcast-detail">{formatTimeRange(myBroadcast.startTime, myBroadcast.endTime || defaultEndTime(myBroadcast.startTime))}</span>
+            <span className="broadcast-detail">{formatDateStr(myBroadcast.date)}</span>
+            <span className="broadcast-detail">{formatTimeRangeStr(myBroadcast.startTime, myBroadcast.endTime || defaultEndTime(myBroadcast.startTime))}</span>
             <span className="broadcast-detail">{myBroadcast.location}</span>
           </div>
           <div className="pn-broadcast-expiry">Available for the next {timeRemaining(myBroadcast.expiresAt)}</div>

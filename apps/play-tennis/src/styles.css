@@ -105,6 +105,7 @@ body {
 .text-body-md { font-size: var(--font-body-md); font-weight: var(--weight-regular); line-height: 1.5; }
 .text-body-sm { font-size: var(--font-body-sm); font-weight: var(--weight-medium); line-height: 1.4; }
 .text-caption { font-size: var(--font-caption); font-weight: var(--weight-regular); line-height: 1.4; color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); font-size: var(--font-body-sm); }
 
 /* ================================================
    Spacing Utility Classes
@@ -311,7 +312,7 @@ body {
 }
 
 .btn:hover {
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
 }
 
 .btn:active {
@@ -534,19 +535,19 @@ body {
 }
 
 .status-badge-confirmed {
-  background: #E8F5E9;
+  background: var(--color-positive-bg);
   color: var(--color-positive-primary);
 }
 
 .status-badge-proposed,
 .status-badge-pending {
-  background: #FFF3E0;
-  color: #E65100;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
 }
 
 .status-badge-completed {
-  background: #F5F5F5;
-  color: #616161;
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-primary);
 }
 
 .status-badge-cancelled,
@@ -556,8 +557,8 @@ body {
 }
 
 .status-badge-in-progress {
-  background: #E3F2FD;
-  color: #1565C0;
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
 }
 
 /* ================================================
@@ -1307,17 +1308,17 @@ select:focus {
 
 /* Proposed time variant — less prominent */
 .match-time-slot--proposed .match-time-day {
-  color: var(--color-accent-primary, #4F46E5);
+  color: var(--color-accent-primary);
 }
 .match-time-slot--proposed .match-time-hour {
-  color: var(--color-accent-primary, #4F46E5);
+  color: var(--color-accent-primary);
 }
 
 /* Completed time variant — muted, no time */
 .match-time-slot--completed .match-time-day {
-  color: var(--color-text-muted, #9CA3AF);
+  color: var(--color-text-muted);
   text-transform: none;
-  font-size: var(--font-body-sm, 13px);
+  font-size: var(--font-body-sm);
 }
 
 .match-player {
@@ -1789,11 +1790,11 @@ select:focus {
 .standings td {
   padding: var(--space-md);
   font-size: var(--font-body-md);
-  border-bottom: 1px solid #F3F4F6;
+  border-bottom: 1px solid var(--color-neutral-bg);
 }
 
 .standings tr:nth-child(even) {
-  background: #FAFBFC;
+  background: var(--color-neutral-bg);
 }
 
 .rank,
@@ -7190,6 +7191,14 @@ select:focus {
   background: var(--color-surface, #fff);
   color: var(--color-text-primary);
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* View mode toggle row */
+.bracket-view-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 var(--space-md) 0;
 }
 
 /* --- Scheduling confidence (Lobby) --- */

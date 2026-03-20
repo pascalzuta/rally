@@ -143,7 +143,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
       <div className="score-toast score-toast--success">
         <span className="score-toast-check">✓</span>
         <strong>Score reported!</strong>
-        <div style={{ fontSize: '13px', marginTop: '4px', opacity: 0.8 }}>
+        <div className="text-muted" style={{ marginTop: '4px', opacity: 0.8 }}>
           Your opponent has 48 hours to confirm.
         </div>
       </div>
