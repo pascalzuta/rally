@@ -9,6 +9,7 @@ import {
 } from './sync'
 import { getClient } from './supabase'
 import { enqueue } from './offline-queue'
+import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
 import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
 
 const STORAGE_KEY = 'play-tennis-data'
@@ -122,9 +123,18 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   saveLobby(lobby)
 
   if (SUPABASE_PRIMARY) {
-    const result = await syncLobbyEntry(entry)
-    if (!result.success) {
-      enqueue('lobby_add', entry)
+    // Try backend API first (validates + writes with service role key)
+    if (isApiConfigured()) {
+      const apiOk = await apiJoinLobby(entry)
+      if (!apiOk) {
+        // API failed — fall back to direct Supabase write
+        const result = await syncLobbyEntry(entry)
+        if (!result.success) enqueue('lobby_add', entry)
+      }
+    } else {
+      // No API configured — direct Supabase write (legacy path)
+      const result = await syncLobbyEntry(entry)
+      if (!result.success) enqueue('lobby_add', entry)
     }
   }
   return getLobbyByCounty(profile.county)
@@ -137,9 +147,16 @@ export async function leaveLobby(playerId: string): Promise<void> {
   saveLobby(lobby)
 
   if (SUPABASE_PRIMARY) {
-    const result = await syncRemoveLobbyEntry(playerId)
-    if (!result.success) {
-      enqueue('lobby_remove', { playerId })
+    // Try backend API first
+    if (isApiConfigured()) {
+      const apiOk = await apiLeaveLobby(playerId)
+      if (!apiOk) {
+        const result = await syncRemoveLobbyEntry(playerId)
+        if (!result.success) enqueue('lobby_remove', { playerId })
+      }
+    } else {
+      const result = await syncRemoveLobbyEntry(playerId)
+      if (!result.success) enqueue('lobby_remove', { playerId })
     }
   }
 }

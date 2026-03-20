@@ -17,6 +17,7 @@ const configSchema = z.object({
   STRIPE_PRICE_YEARLY: z.string().optional().default(""),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  SUPABASE_JWT_SECRET: z.string().min(20).optional(),
   GATE_PASSWORD: z.string().min(1).default("qWf9HAPJYJsSv5kk"),
   GATE_RESET_KEY: z.string().min(1).default("rally-master-reset-2024")
 });
