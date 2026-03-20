@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
+import { sendOtp, verifyOtp, getSession, initSupabase } from '../supabase'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -101,21 +102,53 @@ const STATE_ABBREVS: Record<string, string> = {
   'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
 }
 
-type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
+type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'email' | 'verify' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
-  // R-12: Auto-skip onboarding for returning users who have a previous profile
+  // R-12: Auto-skip onboarding for returning users
   const [step, setStep] = useState<Step>(() => {
-    if (inviteCounty) return 'signup'
+    if (inviteCounty) return 'email'
     try {
       const saved = localStorage.getItem('play-tennis-profile')
       if (saved) {
         const prev = JSON.parse(saved)
-        if (prev.name && prev.county) return 'signup'
+        if (prev.name && prev.county) return 'email'
       }
     } catch { /* ignore */ }
     return 'onboard-1'
   })
+
+  // Auth state
+  const [email, setEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpSending, setOtpSending] = useState(false)
+  const [otpVerifying, setOtpVerifying] = useState(false)
+  const [otpError, setOtpError] = useState<string | null>(null)
+  const [resendCountdown, setResendCountdown] = useState(0)
+  const [authUserId, setAuthUserId] = useState<string | null>(null)
+
+  // Check for existing session on mount
+  useEffect(() => {
+    initSupabase()
+    getSession().then(session => {
+      if (session) {
+        setAuthUserId(session.userId)
+        setEmail(session.email)
+        // Already authenticated — skip to profile setup
+        if (step === 'email' || step === 'verify') {
+          setStep('signup')
+        }
+      }
+    })
+  }, [])
+
+  // Resend countdown timer
+  useEffect(() => {
+    if (resendCountdown <= 0) return
+    const timer = setTimeout(() => setResendCountdown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCountdown])
+
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [county, setCounty] = useState(inviteCounty ?? '')
@@ -266,6 +299,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     const p = createProfile(fullName, county, {
       skillLevel: skillLevel || undefined,
       gender: gender || undefined,
+      email: email || undefined,
+      authId: authUserId || undefined,
     })
     // Save weekly cap to profile
     p.weeklyCap = weeklyCap
@@ -314,7 +349,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
             Continue
           </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('signup')}>Skip intro</button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
@@ -360,7 +395,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
             Continue
           </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('signup')}>Skip intro</button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
@@ -400,14 +435,165 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('signup')}>
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('email')}>
             Join Rally
           </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('signup')}>Skip intro</button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // --- Email Screen ---
+  if (step === 'email') {
+    async function handleSendOtp(e: React.FormEvent) {
+      e.preventDefault()
+      if (!email.trim() || otpSending) return
+      setOtpError(null)
+      setOtpSending(true)
+      const result = await sendOtp(email.trim().toLowerCase())
+      setOtpSending(false)
+      if (result.ok) {
+        setResendCountdown(60)
+        setStep('verify')
+      } else {
+        setOtpError(result.error === 'For security purposes, you can only request this once every 60 seconds'
+          ? 'Please wait before requesting another code.'
+          : 'Could not send verification code. Please try again.')
+      }
+    }
+
+    return (
+      <div className="onboard-screen signup-screen">
+        <div className="signup-content">
+          <div className="signup-header">
+            <h1 className="signup-title">What's your email?</h1>
+            <p className="signup-desc">We'll send you a verification code to sign in.</p>
+          </div>
+
+          <form onSubmit={handleSendOtp} className="signup-form">
+            <label className="field">
+              <span className="field-label">Email address</span>
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setOtpError(null) }}
+                placeholder="you@example.com"
+                autoFocus
+                autoComplete="email"
+                inputMode="email"
+              />
+            </label>
+
+            {otpError && (
+              <p className="otp-error">{otpError}</p>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-large signup-cta"
+              disabled={!email.trim() || otpSending}
+            >
+              {otpSending ? 'Sending...' : 'Continue'}
+            </button>
+          </form>
+
+          <p className="signup-social-proof" style={{ marginTop: '24px' }}>
+            No password needed — just verify your email.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // --- OTP Verification Screen ---
+  if (step === 'verify') {
+    async function handleVerifyOtp(e: React.FormEvent) {
+      e.preventDefault()
+      if (otpCode.length !== 6 || otpVerifying) return
+      setOtpError(null)
+      setOtpVerifying(true)
+      const result = await verifyOtp(email.trim().toLowerCase(), otpCode)
+      setOtpVerifying(false)
+      if (result.ok && result.userId) {
+        setAuthUserId(result.userId)
+        setStep('signup')
+      } else {
+        setOtpError('Invalid or expired code. Please try again.')
+        setOtpCode('')
+      }
+    }
+
+    async function handleResend() {
+      if (resendCountdown > 0) return
+      setOtpError(null)
+      const result = await sendOtp(email.trim().toLowerCase())
+      if (result.ok) {
+        setResendCountdown(60)
+      } else {
+        setOtpError('Could not resend code. Please wait a moment.')
+      }
+    }
+
+    return (
+      <div className="onboard-screen signup-screen">
+        <div className="signup-content">
+          <div className="signup-header">
+            <h1 className="signup-title">Check your email</h1>
+            <p className="signup-desc">
+              Enter the 6-digit code sent to <strong>{email}</strong>
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyOtp} className="signup-form">
+            <label className="field">
+              <span className="field-label">Verification code</span>
+              <input
+                type="text"
+                value={otpCode}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setOtpCode(val)
+                  setOtpError(null)
+                }}
+                placeholder="000000"
+                autoFocus
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                style={{ letterSpacing: '0.3em', fontSize: '24px', textAlign: 'center', fontFamily: 'var(--font-mono, monospace)' }}
+              />
+            </label>
+
+            {otpError && (
+              <p className="otp-error">{otpError}</p>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-large signup-cta"
+              disabled={otpCode.length !== 6 || otpVerifying}
+            >
+              {otpVerifying ? 'Verifying...' : 'Verify'}
+            </button>
+          </form>
+
+          <div className="otp-actions">
+            <button
+              className="btn-link"
+              onClick={handleResend}
+              disabled={resendCountdown > 0}
+            >
+              {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
+            </button>
+            <button className="btn-link" onClick={() => { setStep('email'); setOtpCode(''); setOtpError(null) }}>
+              Use a different email
+            </button>
           </div>
         </div>
       </div>

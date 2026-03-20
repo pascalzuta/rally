@@ -8,6 +8,8 @@ export type Gender = 'male' | 'female' | 'other'
 
 export interface PlayerProfile {
   id: string
+  authId?: string    // Supabase auth user ID
+  email?: string     // verified email address
   name: string
   county: string
   skillLevel?: SkillLevel
