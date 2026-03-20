@@ -12,7 +12,6 @@ export function initSupabase(): SupabaseClient | null {
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       detectSessionInUrl: true,
-      flowType: 'pkce',
     },
   })
   return client
