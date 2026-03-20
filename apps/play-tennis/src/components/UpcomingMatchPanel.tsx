@@ -9,6 +9,7 @@ interface Props {
   currentPlayerId: string
   onUpdated: () => void
   onScoreSaved?: () => void
+  mode?: 'auto' | 'schedule' | 'score'
 }
 
 export default function UpcomingMatchPanel({
@@ -17,12 +18,15 @@ export default function UpcomingMatchPanel({
   currentPlayerId,
   onUpdated,
   onScoreSaved,
+  mode = 'auto',
 }: Props) {
   const showScoreEntry = canEnterScore(match, currentPlayerId)
+  const showScorePanel = showScoreEntry && mode !== 'schedule'
+  const showSchedulePanel = Boolean(match.schedule) && !showScorePanel
 
   return (
     <div className="upcoming-match-panel">
-      {match.schedule ? (
+      {showSchedulePanel && match.schedule ? (
         <MatchSchedulePanel
           tournament={tournament}
           match={match}
@@ -31,16 +35,13 @@ export default function UpcomingMatchPanel({
         />
       ) : null}
 
-      {showScoreEntry && (
-        <div className="match-panel-section">
-          <div className="match-panel-section-title">Report Score</div>
-          <InlineScoreEntry
-            tournament={tournament}
-            matchId={match.id}
-            currentPlayerId={currentPlayerId}
-            onSaved={onScoreSaved ?? onUpdated}
-          />
-        </div>
+      {showScorePanel && (
+        <InlineScoreEntry
+          tournament={tournament}
+          matchId={match.id}
+          currentPlayerId={currentPlayerId}
+          onSaved={onScoreSaved ?? onUpdated}
+        />
       )}
     </div>
   )

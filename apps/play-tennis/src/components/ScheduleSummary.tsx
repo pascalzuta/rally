@@ -85,9 +85,15 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
 
 function getPrimaryActionLabel(match: Match): string {
   const tier = match.schedule?.schedulingTier
-  if (tier === 'auto') return 'View Match'
+  if (tier === 'auto') return 'Change Time'
   if (tier === 'needs-accept') return 'Confirm Time'
   return 'Find a Time'
+}
+
+function getTierTone(tier: string | undefined): 'green' | 'blue' | 'amber' {
+  if (tier === 'auto') return 'green'
+  if (tier === 'needs-accept') return 'blue'
+  return 'amber'
 }
 
 export default function ScheduleSummary({ tournament, currentPlayerId, currentPlayerName, onViewBracket, onTournamentUpdated }: Props) {
@@ -224,7 +230,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
               }}
             >
               <div className="action-card-status-row">
-                <div className="action-card-type">Up Next</div>
+                <div className={`card-status-label card-status-label--${getTierTone(tier)}`}>Up Next</div>
                 {nextSlot && <div className="card-meta-chip">{formatMatchDate(nextSlot, weekGroups.get(1)?.weekStart)}</div>}
               </div>
               <div className="action-card-main">
@@ -251,7 +257,11 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                 {opponentId && (
                   <button
                     className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                    onClick={e => { e.stopPropagation(); setMessagingMatchId(isMessaging ? null : nextMatch.id) }}
+                    onClick={e => {
+                      e.stopPropagation()
+                      setExpandedMatchId(null)
+                      setMessagingMatchId(isMessaging ? null : nextMatch.id)
+                    }}
                     aria-label="Message opponent"
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -274,11 +284,12 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
               </div>
             )}
             {expandedMatchId === nextMatch.id && (
-              <div onClick={e => e.stopPropagation()}>
+              <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                 <UpcomingMatchPanel
                   tournament={tournament}
                   match={nextMatch}
                   currentPlayerId={currentPlayerId}
+                  mode="schedule"
                   onUpdated={() => {
                     setExpandedMatchId(null)
                     onTournamentUpdated?.()
@@ -319,7 +330,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                       }}
                     >
                       <div className="action-card-status-row">
-                        <div className="action-card-type">
+                        <div className={`card-status-label card-status-label--${getTierTone(tier)}`}>
                           {tier === 'auto' ? 'Confirmed' : tier === 'needs-accept' ? 'Needs Response' : 'Needs Scheduling'}
                         </div>
                         {slot && <div className="card-meta-chip">{formatMatchDate(slot, weekStart)}</div>}
@@ -348,7 +359,11 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                         {opponentId && (
                           <button
                             className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                            onClick={e => { e.stopPropagation(); setMessagingMatchId(isMessaging ? null : match.id) }}
+                            onClick={e => {
+                              e.stopPropagation()
+                              setExpandedMatchId(null)
+                              setMessagingMatchId(isMessaging ? null : match.id)
+                            }}
                             aria-label="Message opponent"
                           >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -371,11 +386,12 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                       </div>
                     )}
                     {expandedMatchId === match.id && (
-                      <div onClick={e => e.stopPropagation()}>
+                      <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                         <UpcomingMatchPanel
                           tournament={tournament}
                           match={match}
                           currentPlayerId={currentPlayerId}
+                          mode="schedule"
                           onUpdated={() => {
                             setExpandedMatchId(null)
                             onTournamentUpdated?.()

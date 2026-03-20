@@ -78,6 +78,24 @@ interface ActionCard {
   priority: number
 }
 
+function actionCardTone(type: ActionType): 'blue' | 'green' | 'amber' | 'red' | 'slate' {
+  switch (type) {
+    case 'respond':
+    case 'message':
+    case 'confirm-score':
+      return 'blue'
+    case 'confirmed':
+      return 'green'
+    case 'escalated':
+      return 'red'
+    case 'score':
+    case 'schedule':
+      return 'amber'
+    default:
+      return 'slate'
+  }
+}
+
 function isPlayerInTournament(tournament: Tournament, playerId: string): boolean {
   return tournament.players.some(p => p.id === playerId)
 }
@@ -661,18 +679,28 @@ export default function Home({
               <div
                 key={cardKey}
                 className={`action-card action-${card.type}`}
-                onClick={() => card.type === 'message'
-                  ? setMessagingCardKey(isMessaging ? null : cardKey)
-                  : setExpandedCardKey(isExpanded ? null : cardKey)
-                }
+                onClick={() => {
+                  if (card.type === 'message') {
+                    setExpandedCardKey(null)
+                    setMessagingCardKey(isMessaging ? null : cardKey)
+                    return
+                  }
+                  setMessagingCardKey(null)
+                  setExpandedCardKey(isExpanded ? null : cardKey)
+                }}
               >
-                <div className="action-card-type">{card.label}</div>
-                <div className="action-card-opponent">{card.type === 'message' ? 'from' : 'vs'} {card.opponentName}</div>
-                <div className="action-card-detail">{card.detail}</div>
+                <div className="action-card-status-row">
+                  <div className={`card-status-label card-status-label--${actionCardTone(card.type)}`}>{card.label}</div>
+                </div>
+                <div className="action-card-main">
+                  <div className="action-card-opponent">{card.type === 'message' ? 'From' : 'vs'} {card.opponentName}</div>
+                  <div className="action-card-supporting">{card.detail}</div>
+                </div>
                 <div className="action-card-buttons">
                   {card.type === 'message' ? (
                     <button className="action-card-btn" onClick={e => {
                       e.stopPropagation()
+                      setExpandedCardKey(null)
                       setMessagingCardKey(isMessaging ? null : cardKey)
                     }}>
                       Reply
@@ -690,6 +718,7 @@ export default function Home({
                   ) : !isExpanded ? (
                     <button className="action-card-btn" onClick={e => {
                       e.stopPropagation()
+                      setMessagingCardKey(null)
                       setExpandedCardKey(cardKey)
                     }}>
                       {card.type === 'score'
@@ -706,7 +735,11 @@ export default function Home({
                   {card.type !== 'message' && (
                     <button
                       className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                      onClick={e => { e.stopPropagation(); setMessagingCardKey(isMessaging ? null : cardKey) }}
+                      onClick={e => {
+                        e.stopPropagation()
+                        setExpandedCardKey(null)
+                        setMessagingCardKey(isMessaging ? null : cardKey)
+                      }}
                       aria-label="Message opponent"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -717,7 +750,7 @@ export default function Home({
                   )}
                 </div>
                 {isMessaging && card.opponentId && (
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                     <MessagePanel
                       currentPlayerId={profile.id}
                       currentPlayerName={profile.name}
@@ -728,12 +761,13 @@ export default function Home({
                   </div>
                 )}
                 {isExpanded && cardTournament && cardMatch && (
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                     {cardMatch.schedule ? (
                       <UpcomingMatchPanel
                         tournament={cardTournament}
                         match={cardMatch}
                         currentPlayerId={profile.id}
+                        mode="schedule"
                         onUpdated={() => {
                           setExpandedCardKey(null)
                           onDataChanged?.()

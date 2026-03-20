@@ -50,9 +50,16 @@ function getTier(match: Match): SchedulingTier | null {
 
 function getPrimaryActionLabel(match: Match): string {
   const tier = getTier(match)
-  if (tier === 'auto') return 'View Match'
+  if (tier === 'auto') return 'Change Time'
   if (tier === 'needs-accept') return 'Confirm Time'
   return 'Find a Time'
+}
+
+function getTierTone(tier: SchedulingTier | null, isCompleted: boolean): 'green' | 'blue' | 'amber' | 'slate' {
+  if (isCompleted) return 'slate'
+  if (tier === 'auto') return 'green'
+  if (tier === 'needs-accept') return 'blue'
+  return 'amber'
 }
 
 function sortMatchesForCalendar(matches: Match[], currentPlayerId: string): Match[] {
@@ -164,7 +171,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   }}
                 >
                   <div className="action-card-status-row">
-                    <div className="action-card-type">
+                    <div className={`card-status-label card-status-label--${getTierTone(tier, isCompleted)}`}>
                       {isCompleted ? 'Completed' :
                        tier === 'auto' ? 'Scheduled' :
                        tier === 'needs-accept' ? 'Needs Response' :
@@ -201,7 +208,11 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                     {isMyMatch && opponentId && (
                       <button
                         className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                        onClick={e => { e.stopPropagation(); setMessagingMatchId(isMessaging ? null : match.id) }}
+                        onClick={e => {
+                          e.stopPropagation()
+                          setExpandedMatchId(null)
+                          setMessagingMatchId(isMessaging ? null : match.id)
+                        }}
                         aria-label="Message opponent"
                       >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -224,11 +235,12 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   </div>
                 )}
                 {expandedMatchId === match.id && (
-                  <div onClick={e => e.stopPropagation()}>
+                  <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                     <UpcomingMatchPanel
                       tournament={tournament}
                       match={match}
                       currentPlayerId={currentPlayerId}
+                      mode="schedule"
                       onUpdated={() => {
                         setExpandedMatchId(null)
                         onTournamentUpdated()

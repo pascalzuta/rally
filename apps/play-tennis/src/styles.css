@@ -4419,6 +4419,9 @@ select:focus {
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
 .action-card::before {
@@ -4444,12 +4447,20 @@ select:focus {
 .action-card.action-confirm-score::before,
 .action-card.action-message::before { background: var(--color-accent-primary); }
 
+.action-card .action-card-status-row {
+  margin-bottom: 0;
+}
+
+.action-card .action-card-main {
+  gap: 6px;
+}
+
 .action-card-type {
   font-size: var(--font-body-sm);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 0;
   color: var(--color-text-secondary);
 }
 
@@ -4465,12 +4476,14 @@ select:focus {
 .action-card-opponent {
   font-size: var(--font-title-sm);
   font-weight: var(--weight-semibold);
-  margin-bottom: 2px;
+  color: var(--color-text-primary);
 }
 
-.action-card-detail {
+.action-card-detail,
+.action-card-supporting {
   font-size: var(--font-body-md);
   color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .action-card-btn {
@@ -6764,7 +6777,6 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .action-card-buttons .action-card-btn {
@@ -6774,21 +6786,6 @@ select:focus {
 .upcoming-match-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-}
-
-.match-panel-section {
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--color-divider);
-}
-
-.match-panel-section-title {
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-sm);
 }
 
 /* Message action card accent */
