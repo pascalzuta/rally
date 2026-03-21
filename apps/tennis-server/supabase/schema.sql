@@ -47,6 +47,21 @@ CREATE TABLE IF NOT EXISTS availability_slots (
 
 CREATE INDEX IF NOT EXISTS idx_availability_player ON availability_slots (player_id);
 
+-- ── Availability (JSONB — used by frontend sync & bulk scheduler) ─────────────
+
+CREATE TABLE IF NOT EXISTS availability (
+  player_id   TEXT PRIMARY KEY,
+  auth_id     UUID REFERENCES auth_users(id),
+  county      TEXT NOT NULL,
+  slots       JSONB NOT NULL DEFAULT '[]'::jsonb,
+  weekly_cap  INT NOT NULL DEFAULT 2,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_availability_county ON availability (LOWER(county));
+
+ALTER TABLE availability ENABLE ROW LEVEL SECURITY;
+
 -- ── Matches ─────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS matches (
@@ -120,3 +135,12 @@ ALTER TABLE pool_entries       ENABLE ROW LEVEL SECURITY;
 
 -- Allow service role full access (default behavior with service_role key)
 -- No restrictive policies = service role has full access
+
+-- ── Realtime ──────────────────────────────────────────────────────────────────
+-- Enable Realtime for tables the frontend subscribes to.
+-- These are idempotent: Supabase ignores duplicates.
+
+ALTER PUBLICATION supabase_realtime ADD TABLE lobby;
+ALTER PUBLICATION supabase_realtime ADD TABLE tournaments;
+ALTER PUBLICATION supabase_realtime ADD TABLE availability;
+ALTER PUBLICATION supabase_realtime ADD TABLE ratings;
