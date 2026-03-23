@@ -37,6 +37,16 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
   { label: 'Sunday afternoons', slots: [{ day: 'sunday', startHour: 13, endHour: 17 }]},
 ]
 
+function quickSlotSummary(slotGroup: AvailabilitySlot[]): string {
+  if (slotGroup.length === 0) return ''
+  const first = slotGroup[0]
+  const last = slotGroup[slotGroup.length - 1]
+  const firstDay = DAYS.find(d => d.key === first.day)?.short ?? first.day
+  const lastDay = DAYS.find(d => d.key === last.day)?.short ?? last.day
+  const dayLabel = slotGroup.length > 1 ? `${firstDay}–${lastDay}` : firstDay
+  return `${dayLabel} · ${formatHourCompact(first.startHour)}–${formatHourCompact(first.endHour)}`
+}
+
 
 // --- Rating Chart ---
 
@@ -720,13 +730,13 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           <span>Your Availability</span>
           {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
         </h3>
-        <p className="text-muted" style={{ marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
+        <p className="profile-availability-copy">The more times you add, the more matches Rally can auto-schedule.</p>
         {!editing ? (
           <div className="availability-current">
             {slots.length === 0 ? (
-              <div>
+              <div className="availability-empty-state">
                 <p className="subtle">No availability set</p>
-                <p style={{ color: 'var(--color-warning, #e6a200)', fontSize: '0.85rem', marginTop: 8 }}>Set your availability to get better match times</p>
+                <p className="availability-empty-note">Set your availability to get better match times.</p>
               </div>
             ) : (
               slots.map((slot, i) => {
@@ -741,7 +751,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             )}
           </div>
         ) : (
-          <>
+          <div className="profile-availability-editor workflow-module">
             <div className="avail-segmented-control">
               <button
                 className={`avail-segment-btn ${availMode === 'quick' ? 'active' : ''}`}
@@ -758,42 +768,50 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             </div>
 
             {availMode === 'quick' && (
-              <div className="quick-slots">
+              <div className="quick-slots-grid">
                 {QUICK_SLOTS.map(qs => (
                   <button
                     key={qs.label}
-                    className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
+                    className={`quick-slot-v2 ${isQuickSlotActive(qs) ? 'selected' : ''}`}
                     onClick={() => toggleQuickSlot(qs)}
                   >
-                    <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
-                    {qs.label}
+                    <span className="quick-slot-v2-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
+                    <span className="quick-slot-v2-copy">
+                      <span className="quick-slot-v2-label">{qs.label}</span>
+                      <span className="quick-slot-v2-time">{quickSlotSummary(qs.slots)}</span>
+                    </span>
                   </button>
                 ))}
               </div>
             )}
 
             {availMode === 'custom' && (
-              <div className="detailed-add-row">
-                <select value={detailDay} onChange={e => setDetailDay(e.target.value as DayOfWeek)}>
-                  {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
-                </select>
-                <select value={detailStart} onChange={e => setDetailStart(Number(e.target.value))}>
-                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-                    <option key={h} value={h}>{formatHourCompact(h)}</option>
-                  ))}
-                </select>
-                <span>–</span>
-                <select value={detailEnd} onChange={e => setDetailEnd(Number(e.target.value))}>
-                  {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-                    <option key={h} value={h}>{formatHourCompact(h)}</option>
-                  ))}
-                </select>
-                <button className="btn btn-small" onClick={addDetailedSlot}>Add</button>
+              <div className="availability-custom-card">
+                <div className="availability-custom-label">Add a custom time</div>
+                <div className="detailed-add-row">
+                  <select value={detailDay} onChange={e => setDetailDay(e.target.value as DayOfWeek)}>
+                    {DAYS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+                  </select>
+                  <select value={detailStart} onChange={e => setDetailStart(Number(e.target.value))}>
+                    {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                      <option key={h} value={h}>{formatHourCompact(h)}</option>
+                    ))}
+                  </select>
+                  <span className="availability-range-separator">–</span>
+                  <select value={detailEnd} onChange={e => setDetailEnd(Number(e.target.value))}>
+                    {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
+                      <option key={h} value={h}>{formatHourCompact(h)}</option>
+                    ))}
+                  </select>
+                </div>
+                <button className="btn btn-primary btn-small availability-custom-add-btn" onClick={addDetailedSlot}>Add Time</button>
               </div>
             )}
 
             {slots.length > 0 && (
-              <div className="availability-current">
+              <div className="availability-slots-card">
+                <div className="availability-slots-label">Current availability</div>
+                <div className="availability-current availability-current--editing">
                 {slots.map((slot, i) => {
                   const dayInfo = DAYS.find(d => d.key === slot.day)
                   return (
@@ -804,14 +822,15 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
                     </div>
                   )
                 })}
+                </div>
               </div>
             )}
 
-            <div className="btn-row">
+            <div className="availability-editor-actions">
               <button className="btn btn-primary" onClick={handleSaveAvailability}>Save</button>
               <button className="btn" onClick={handleCancelEdit}>Cancel</button>
             </div>
-          </>
+          </div>
         )}
       </div>
 

@@ -2624,6 +2624,13 @@ select:focus {
   font-weight: var(--weight-medium);
 }
 
+.quick-slot-v2-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .quick-slot-v2-time {
   font-size: 12px;
   color: var(--color-text-muted);
@@ -2757,10 +2764,10 @@ select:focus {
 }
 
 .detailed-add-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 6px;
   align-items: center;
-  margin-bottom: 10px;
 }
 
 .detailed-add-row select {
@@ -2771,6 +2778,46 @@ select:focus {
   font-size: var(--font-body-md);
   background: var(--color-bg-surface);
   font-family: inherit;
+}
+
+.availability-custom-card,
+.availability-slots-card {
+  padding: var(--space-md);
+  border-radius: 16px;
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  background: rgba(246, 247, 249, 0.72);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.availability-custom-label,
+.availability-slots-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.availability-range-separator {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-semibold);
+}
+
+.availability-custom-add-btn {
+  align-self: flex-start;
+}
+
+.availability-editor-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.availability-editor-actions .btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .availability-actions {
@@ -3178,6 +3225,22 @@ select:focus {
   margin-bottom: var(--space-md);
 }
 
+.profile-availability-copy {
+  margin-bottom: var(--space-md);
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+}
+
+.availability-empty-state {
+  padding: var(--space-sm) 0;
+}
+
+.availability-empty-note {
+  color: var(--color-warning-primary);
+  font-size: var(--font-body-sm);
+  margin-top: 8px;
+}
+
 .availability-slot-item {
   display: flex;
   justify-content: space-between;
@@ -3190,6 +3253,13 @@ select:focus {
 
 .availability-slot-day { font-weight: var(--weight-semibold); }
 .availability-slot-hours { color: var(--color-text-secondary); }
+.availability-current--editing {
+  margin-bottom: 0;
+}
+
+.profile-availability-editor {
+  gap: var(--space-md);
+}
 
 .tournament-history {
   display: flex;
@@ -9714,6 +9784,25 @@ select:focus {
 
 .avail-segment-btn:not(.active):hover {
   background: var(--color-neutral-bg);
+}
+
+@media (max-width: 640px) {
+  .quick-slots-grid,
+  .availability-editor-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .detailed-add-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .availability-range-separator {
+    display: none;
+  }
+
+  .availability-custom-add-btn {
+    width: 100%;
+  }
 }
 
 /* ================================================
