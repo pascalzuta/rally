@@ -492,9 +492,12 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         setResendCountdown(60)
         setStep('verify')
       } else {
-        setOtpError(result.error === 'For security purposes, you can only request this once every 60 seconds'
-          ? 'Please wait before requesting another code.'
-          : 'Could not send verification code. Please try again.')
+        const err = result.error ?? ''
+        setOtpError(
+          err.includes('rate limit') || err.includes('once every 60 seconds')
+            ? 'Too many attempts. Please wait a minute before trying again.'
+            : 'Could not send verification code. Please try again.'
+        )
       }
     }
 
