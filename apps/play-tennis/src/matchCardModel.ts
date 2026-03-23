@@ -39,6 +39,8 @@ export interface MatchCardView {
   supporting: string | null
   supportingTone?: 'default' | 'danger'
   metaLabel: string | null
+  infoTooltipLabel?: string
+  infoTooltipText?: string
   primaryActionLabel: string | null
   expansionKind: MatchCardExpansionKind
   priority: number
@@ -46,6 +48,16 @@ export interface MatchCardView {
   opponentId: string | null
   opponentName: string | null
   showOnHome: boolean
+}
+
+function hasAutoMatchedOverlap(match: Match): boolean {
+  return Boolean(
+    match.schedule?.status === 'confirmed' &&
+    match.schedule?.schedulingTier === 'auto' &&
+    match.schedule.proposals.some(
+      proposal => proposal.status === 'accepted' && proposal.proposedBy === 'system'
+    )
+  )
 }
 
 function isMyMatch(match: Match, currentPlayerId: string): boolean {
@@ -343,6 +355,10 @@ export function getMatchCardView(
       title,
       supporting: mine ? 'Confirmed and ready to play.' : 'Confirmed match time.',
       metaLabel: confirmedSlotMeta,
+      infoTooltipLabel: hasAutoMatchedOverlap(match) ? 'How Rally matched this' : undefined,
+      infoTooltipText: hasAutoMatchedOverlap(match)
+        ? 'Rally matched this time because you and your opponent both showed overlapping availability.'
+        : undefined,
       primaryActionLabel: mine ? 'View Match' : 'View Time',
       expansionKind: 'schedule',
       priority: 3,

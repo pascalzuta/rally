@@ -51,7 +51,26 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
         <div className={`card-status-label card-status-label--${view.tone === 'completed' ? 'slate' : view.tone === 'confirm-score' ? 'blue' : view.tone}`}>
           {view.statusLabel}
         </div>
-        {view.metaLabel && <div className="card-meta-chip">{view.metaLabel}</div>}
+        {(view.metaLabel || view.infoTooltipText) && (
+          <div className="action-card-status-meta">
+            {view.metaLabel && <div className="card-meta-chip">{view.metaLabel}</div>}
+            {view.infoTooltipText && (
+              <div className="card-info-tooltip">
+                <button
+                  type="button"
+                  className="card-info-tooltip-trigger"
+                  aria-label={view.infoTooltipLabel ?? 'More information'}
+                  onClick={event => event.stopPropagation()}
+                >
+                  i
+                </button>
+                <div className="card-info-tooltip-bubble" role="tooltip">
+                  {view.infoTooltipText}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="action-card-main">
