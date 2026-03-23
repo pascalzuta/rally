@@ -4637,9 +4637,9 @@ select:focus {
 }
 
 .action-confirmed .action-card-btn {
-  background: var(--color-positive-bg);
+  background: rgba(31, 157, 85, 0.14);
   color: var(--color-positive-primary);
-  border: 1px solid rgba(31, 157, 85, 0.16);
+  border: 1px solid rgba(31, 157, 85, 0.22);
 }
 
 .action-schedule .action-card-btn {
