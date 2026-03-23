@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, getSession, initSupabase } from '../supabase'
+import { sendOtp, verifyOtp, getSession, initSupabase, fetchExistingPlayer } from '../supabase'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -130,11 +130,21 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   // Check for existing session on mount
   useEffect(() => {
     initSupabase()
-    getSession().then(session => {
+    getSession().then(async session => {
       if (session) {
         setAuthUserId(session.userId)
         setEmail(session.email)
-        // Already authenticated — skip to profile setup
+        // Check if this user already completed registration
+        const existing = await fetchExistingPlayer(session.userId)
+        if (existing) {
+          const p = createProfile(existing.name, existing.county, {
+            email: session.email,
+            authId: session.userId,
+          })
+          onRegistered(p)
+          return
+        }
+        // Already authenticated but new user — skip to profile setup
         if (step === 'email' || step === 'verify') {
           setStep('signup')
         }
@@ -326,6 +336,13 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     return 80 + Math.abs(hash % 400)
   }
 
+  const loginLink = (
+    <p className="signup-login-link" style={{ textAlign: 'center', marginTop: '16px', fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)' }}>
+      Already have an account?{' '}
+      <button className="btn-link" onClick={() => setStep('email')} style={{ fontSize: 'inherit' }}>Log in</button>
+    </p>
+  )
+
   // --- Onboarding Screen 1: The Problem ---
   if (step === 'onboard-1') {
     return (
@@ -355,6 +372,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <span className="onboard-dot" />
             <span className="onboard-dot" />
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -401,6 +419,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -444,6 +463,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -522,6 +542,17 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       setOtpVerifying(false)
       if (result.ok && result.userId) {
         setAuthUserId(result.userId)
+        // Check if this user already has a profile in the lobby
+        const existing = await fetchExistingPlayer(result.userId)
+        if (existing) {
+          // Returning user — restore profile and go straight to home
+          const p = createProfile(existing.name, existing.county, {
+            email: email.trim().toLowerCase(),
+            authId: result.userId,
+          })
+          onRegistered(p)
+          return
+        }
         setStep('signup')
       } else {
         setOtpError('Invalid or expired code. Please try again.')
@@ -707,6 +738,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               {getPlayerCount(county)} players competing in {county.split(',')[0]}
             </p>
           )}
+          {loginLink}
         </div>
       </div>
     )
@@ -775,6 +807,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               Continue
             </button>
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -953,6 +986,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             Start Competing
           </button>
         </div>
+        {loginLink}
       </div>
     </div>
   )
