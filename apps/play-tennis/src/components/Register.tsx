@@ -346,15 +346,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
-            Continue
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
             <span className="onboard-dot" />
           </div>
+          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join for free
+          </button>
+          <button className="btn-link signup-login-link" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
@@ -392,15 +392,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
-            Continue
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
           </div>
+          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join for free
+          </button>
+          <button className="btn-link signup-login-link" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
@@ -435,15 +435,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('email')}>
-            Join Rally
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
           </div>
+          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join for free
+          </button>
+          <button className="btn-link signup-login-link" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
@@ -473,7 +473,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         <div className="signup-content">
           <div className="signup-header">
             <h1 className="signup-title">What's your email?</h1>
-            <p className="signup-desc">We'll send you a verification code to sign in.</p>
+            <p className="signup-desc">We'll send you a verification code — no password needed.</p>
           </div>
 
           <form onSubmit={handleSendOtp} className="signup-form">
@@ -502,10 +502,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               {otpSending ? 'Sending...' : 'Continue'}
             </button>
           </form>
-
-          <p className="signup-social-proof" style={{ marginTop: '24px' }}>
-            No password needed — just verify your email.
-          </p>
         </div>
       </div>
     )
@@ -675,23 +671,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               )}
             </div>
 
-            {!inviteCounty && !county && (
-              <div className="county-detected">
-                {suggestedCounty ? (
-                  <>
-                    <span className="county-detected-label">Detected location</span>
-                    <button type="button" className="county-detected-btn" onClick={useSuggestedCounty}>
-                      {suggestedCounty}
-                      <span className="county-detected-use">Use this</span>
-                    </button>
-                  </>
-                ) : (
-                  <button type="button" className="county-detect-btn" onClick={detectLocation} disabled={detectingLocation}>
-                    {detectingLocation ? 'Detecting...' : 'Use my location'}
-                  </button>
-                )}
-              </div>
-            )}
 
             <button
               type="submit"
