@@ -9062,9 +9062,48 @@ select:focus {
   margin-top: var(--space-sm);
 }
 
+.score-confirm-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--space-sm);
+}
+
+.score-confirm-summary-card {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 14px;
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  background: rgba(246, 247, 249, 0.72);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.score-confirm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-md);
+}
+
+.score-confirm-summary-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.score-confirm-summary-value {
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .score-confirm-deadline-card {
   padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-button);
+  border-radius: 14px;
   border: 1px solid rgba(42, 91, 215, 0.16);
   background: rgba(220, 231, 255, 0.42);
 }
@@ -9092,22 +9131,8 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 
-.confirm-reported-score {
-  font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-md);
-  font-family: var(--font-mono);
-}
-.confirm-winner-label {
-  color: var(--color-text-muted);
-}
-.confirm-options {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
 .confirm-option-btn {
-  flex: 1;
+  width: 100%;
   text-align: center;
 }
 .confirm-option--issue {
@@ -9116,36 +9141,34 @@ select:focus {
 }
 
 .score-confirm-primary-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-sm);
-  flex-wrap: wrap;
 }
 
 .score-confirm-primary-actions .btn {
   min-width: 0;
+  justify-content: center;
 }
 
 /* Correction entry */
-.correction-header {
-  margin-bottom: var(--space-md);
-}
-.correction-title {
-  font-size: var(--font-body-md);
-  font-weight: var(--weight-semibold);
-  margin-bottom: 4px;
-}
-.correction-reported {
-  font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-}
 .correction-actions {
   display: flex;
+  flex-direction: column;
   gap: var(--space-sm);
-  margin-top: var(--space-sm);
+  margin-top: 2px;
 }
-.correction-actions .btn {
-  flex: 1;
+
+.correction-secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.correction-secondary-actions .btn,
+.correction-submit-btn {
+  width: 100%;
+  justify-content: center;
 }
 
 /* Issue report */
@@ -9175,10 +9198,42 @@ select:focus {
   box-sizing: border-box;
 }
 .issue-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-sm);
-  justify-content: flex-end;
-  flex-wrap: wrap;
+}
+
+.issue-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .score-confirm-meta-grid,
+  .score-confirm-primary-actions,
+  .correction-secondary-actions,
+  .issue-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .score-confirm-summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .score-confirm-summary-value {
+    text-align: left;
+  }
+
+  .score-confirmation-panel .score-grid {
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+  }
+
+  .score-confirmation-panel .score-grid .score-input {
+    width: 56px;
+  }
 }
 
 /* Dispute review panel */

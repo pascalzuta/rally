@@ -64,6 +64,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   const p2Name = getPlayerName(tournament, match.player2Id)
   const reportedScore = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
   const reporterName = getPlayerName(tournament, match.scoreReportedBy ?? null)
+  const reportedWinnerName = getPlayerName(tournament, match.winnerId)
   const countdownDeadline = formatDeadline(match.scoreReportedAt)
   const remainingMs = match.scoreReportedAt
     ? Math.max(0, new Date(match.scoreReportedAt).getTime() + SCORE_CONFIRMATION_WINDOW_MS - now)
@@ -235,11 +236,18 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
       <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
         <div className="workflow-header">
           <div className="workflow-status workflow-status--red">Dispute Score</div>
-          <div className="schedule-panel-title">Enter the correct result</div>
-          <div className="schedule-panel-copy">Use this if the reported set scores are wrong. If the issue is broader than the scoreline, report an issue instead.</div>
+          <div className="schedule-panel-title">Correct the reported result</div>
+          <div className="schedule-panel-copy">Update the set scores below. If the problem is broader than the scoreline, report an issue instead.</div>
         </div>
-        <div className="correction-header">
-          <div className="correction-reported">Reported: {reportedScore}</div>
+        <div className="score-confirm-summary-card">
+          <div className="score-confirm-summary-row">
+            <span className="score-confirm-summary-label">Reported score</span>
+            <span className="score-confirm-summary-value">{reportedScore}</span>
+          </div>
+          <div className="score-confirm-summary-row">
+            <span className="score-confirm-summary-label">Reported winner</span>
+            <span className="score-confirm-summary-value">{reportedWinnerName}</span>
+          </div>
         </div>
 
         <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>
@@ -285,9 +293,11 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         })}
 
         <div className="correction-actions">
-          <button className="btn" onClick={() => setMode('options')}>Back</button>
-          <button className="btn" onClick={() => setMode('issue')}>Report Issue Instead</button>
-          <button className="btn btn-primary" onClick={handleSubmitCorrection} disabled={!canSubmitCorrection || saving}>
+          <div className="correction-secondary-actions">
+            <button className="btn" onClick={() => setMode('options')}>Back</button>
+            <button className="btn" onClick={() => setMode('issue')}>Report Issue Instead</button>
+          </div>
+          <button className="btn btn-primary correction-submit-btn" onClick={handleSubmitCorrection} disabled={!canSubmitCorrection || saving}>
             Submit Correction
           </button>
         </div>
@@ -303,6 +313,16 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
           <div className="workflow-status workflow-status--red">Dispute Score</div>
           <div className="schedule-panel-title">Report an issue</div>
           <div className="schedule-panel-copy">Use this when the reported score cannot be fixed with a simple correction.</div>
+        </div>
+        <div className="score-confirm-summary-card">
+          <div className="score-confirm-summary-row">
+            <span className="score-confirm-summary-label">Reported score</span>
+            <span className="score-confirm-summary-value">{reportedScore}</span>
+          </div>
+          <div className="score-confirm-summary-row">
+            <span className="score-confirm-summary-label">Reported winner</span>
+            <span className="score-confirm-summary-value">{reportedWinnerName}</span>
+          </div>
         </div>
         <textarea
           className="issue-text"
@@ -323,29 +343,37 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
 
   // Default: confirm or dispute
   return (
-    <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
-      <div className="workflow-header">
-        <div className="workflow-status workflow-status--blue">Confirm Score</div>
-        <div className="schedule-panel-title">Review the reported result</div>
-        <div className="schedule-panel-copy">{reporterName} reported this score. Confirm it if it is correct, or dispute it within 48 hours.</div>
-      </div>
-      <div className="score-confirm-deadline-card">
-        <div className="score-confirm-deadline-label">Auto-confirms in</div>
-        <div className="score-confirm-deadline-value">{formatCountdown(remainingMs)}</div>
-        {countdownDeadline && <div className="score-confirm-deadline-meta">Deadline {countdownDeadline}</div>}
-      </div>
-      <div className="confirm-reported-score">
-        Score: {reportedScore}
-        <span className="confirm-winner-label"> — Winner: {getPlayerName(tournament, match.winnerId)}</span>
-      </div>
-      <div className="workflow-actions score-confirm-primary-actions">
-        <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
-          Dispute Score
-        </button>
-        <button className="btn btn-primary confirm-option-btn" onClick={handleConfirm} disabled={saving}>
-          Confirm Score
-        </button>
-      </div>
+      <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
+        <div className="workflow-header">
+          <div className="workflow-status workflow-status--blue">Confirm Score</div>
+          <div className="schedule-panel-title">Review the reported result</div>
+          <div className="schedule-panel-copy">{reporterName} reported this score. Confirm it if it is correct, or dispute it within 48 hours.</div>
+        </div>
+        <div className="score-confirm-meta-grid">
+          <div className="score-confirm-summary-card">
+            <div className="score-confirm-summary-row">
+              <span className="score-confirm-summary-label">Reported score</span>
+              <span className="score-confirm-summary-value">{reportedScore}</span>
+            </div>
+            <div className="score-confirm-summary-row">
+              <span className="score-confirm-summary-label">Reported winner</span>
+              <span className="score-confirm-summary-value">{reportedWinnerName}</span>
+            </div>
+          </div>
+          <div className="score-confirm-deadline-card">
+            <div className="score-confirm-deadline-label">Auto-confirms in</div>
+            <div className="score-confirm-deadline-value">{formatCountdown(remainingMs)}</div>
+            {countdownDeadline && <div className="score-confirm-deadline-meta">Deadline {countdownDeadline}</div>}
+          </div>
+        </div>
+        <div className="workflow-actions score-confirm-primary-actions">
+          <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
+            Dispute Score
+          </button>
+          <button className="btn btn-primary confirm-option-btn" onClick={handleConfirm} disabled={saving}>
+            Confirm Score
+          </button>
+        </div>
     </div>
   )
 }
