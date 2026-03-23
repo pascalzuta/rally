@@ -10,12 +10,12 @@ interface Props {
   opponentName: string
 }
 
-const ISSUE_OPTIONS: { value: IssueCategory; label: string }[] = [
-  { value: 'showed_up_late', label: 'Showed up late (>10 min)' },
-  { value: 'left_early', label: 'Left early / didn\'t finish' },
-  { value: 'disputed_unfairly', label: 'Disputed the score unfairly' },
-  { value: 'unsportsmanlike', label: 'Unsportsmanlike behavior' },
-  { value: 'other', label: 'Other' },
+const ISSUE_OPTIONS: { value: IssueCategory; label: string; detail: string }[] = [
+  { value: 'showed_up_late', label: 'Showed up late', detail: 'Arrived more than 10 minutes after the scheduled time.' },
+  { value: 'left_early', label: 'Left early / didn\'t finish', detail: 'The match ended early or could not be completed.' },
+  { value: 'disputed_unfairly', label: 'Disputed the score unfairly', detail: 'The score report was challenged in a way that felt unreasonable.' },
+  { value: 'unsportsmanlike', label: 'Unsportsmanlike behavior', detail: 'Behavior during the match was disrespectful or inappropriate.' },
+  { value: 'other', label: 'Other', detail: 'Something else happened that does not fit the options above.' },
 ]
 
 export default function PostMatchFeedbackInline({ matchId, tournamentId, playerId, opponentId, opponentName }: Props) {
@@ -72,28 +72,39 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
         <div className="workflow-header">
           <div className="workflow-status workflow-status--red">Report Issue</div>
           <div className="schedule-panel-title">What happened?</div>
-          <div className="schedule-panel-copy">Choose the issue that best describes the match.</div>
+          <div className="schedule-panel-copy">Choose the issue that best describes the match. Your report stays private while Rally reviews the match feedback.</div>
+        </div>
+        <div className="feedback-issue-summary-card">
+          <div className="feedback-issue-summary-label">Choose all that apply</div>
+          <div className="feedback-issue-summary-copy">Use this only when the match had a meaningful problem. For normal matches, go back and leave regular feedback instead.</div>
         </div>
         <div className="feedback-issue-list">
           {ISSUE_OPTIONS.map(opt => (
-            <label key={opt.value} className="feedback-issue-option">
+            <label key={opt.value} className={`feedback-issue-option ${issueCategories.includes(opt.value) ? 'selected' : ''}`}>
               <input
                 type="checkbox"
                 checked={issueCategories.includes(opt.value)}
                 onChange={() => toggleCategory(opt.value)}
               />
-              <span>{opt.label}</span>
+              <span className="feedback-issue-checkmark" aria-hidden="true">{issueCategories.includes(opt.value) ? '✓' : ''}</span>
+              <span className="feedback-issue-copy">
+                <span className="feedback-issue-title">{opt.label}</span>
+                <span className="feedback-issue-detail">{opt.detail}</span>
+              </span>
             </label>
           ))}
         </div>
         {issueCategories.includes('other') && (
-          <textarea
-            className="feedback-issue-text"
-            placeholder="Tell us more (optional)"
-            value={issueText}
-            onChange={e => setIssueText(e.target.value)}
-            rows={2}
-          />
+          <div className="feedback-issue-note-card">
+            <div className="feedback-issue-note-label">More detail</div>
+            <textarea
+              className="feedback-issue-text"
+              placeholder="Tell us more (optional)"
+              value={issueText}
+              onChange={e => setIssueText(e.target.value)}
+              rows={3}
+            />
+          </div>
         )}
         <div className="feedback-issue-actions">
           <button className="btn" onClick={() => { setShowIssueForm(false); setSentiment(null) }}>Back</button>
