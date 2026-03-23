@@ -2034,14 +2034,43 @@ select:focus {
 /* ================================================
    Onboarding Screens
    ================================================ */
+/* ================================================
+   Onboarding Screens
+   ================================================ */
 .onboard-screen {
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 56px);
-  padding: var(--space-xl);
+  padding: 24px 24px 32px;
   justify-content: space-between;
+  background: #fff;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
+/* Rally logo lockup */
+.onboard-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.onboard-logo svg {
+  flex-shrink: 0;
+}
+
+.onboard-logo-text {
+  font-size: 32px;
+  font-weight: 700;
+  color: #16a34a;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+/* Content area */
 .onboard-content {
   flex: 1;
   display: flex;
@@ -2049,50 +2078,46 @@ select:focus {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: var(--space-lg);
+  gap: 20px;
 }
 
 .onboard-title {
-  font-size: var(--font-title-lg);
-  font-weight: var(--weight-bold);
-  line-height: 1.2;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
   color: var(--color-text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
+  max-width: 300px;
 }
 
 .onboard-subtitle {
-  font-size: var(--font-body-lg);
+  font-size: 16px;
   color: var(--color-text-secondary);
-  max-width: 320px;
+  max-width: 280px;
   line-height: 1.5;
-}
-
-.onboard-tagline {
-  font-size: var(--font-body-md);
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
+  font-weight: 400;
 }
 
 /* Onboarding visuals */
 .onboard-visual {
-  margin-bottom: var(--space-xl);
+  margin-bottom: 12px;
+  animation: onboardFadeIn 0.35s ease forwards;
 }
 
+/* Chat bubbles */
 .onboard-chat {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 260px;
-  opacity: 0;
-  animation: onboardFadeIn 0.5s ease forwards;
+  gap: 8px;
+  width: 280px;
 }
 
 .onboard-chat-bubble {
-  padding: var(--space-sm) 14px;
-  border-radius: var(--radius-card);
-  font-size: var(--font-caption);
-  line-height: 1.4;
-  max-width: 200px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.35;
+  max-width: 210px;
   opacity: 0;
   animation: onboardSlideUp 0.3s ease forwards;
 }
@@ -2104,46 +2129,44 @@ select:focus {
 
 .onboard-chat-out {
   align-self: flex-end;
-  background: var(--color-accent-primary);
+  background: #16a34a;
   color: white;
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 6px;
 }
 
 .onboard-chat-in {
   align-self: flex-start;
   background: var(--color-neutral-bg);
   color: var(--color-text-primary);
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 6px;
 }
 
 /* Chaotic stagger for friction emphasis */
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(1) {
-  transform: rotate(-1.5deg);
+  transform: rotate(-1deg);
 }
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(2) {
-  transform: rotate(2deg);
-  background: var(--color-divider);
+  transform: rotate(1.5deg);
 }
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(3) {
-  transform: rotate(-2.5deg);
+  transform: rotate(-2deg);
 }
 .onboard-chat-chaotic .onboard-chat-bubble:nth-child(4) {
-  transform: rotate(1.5deg);
-  background: var(--color-neutral-bg);
+  transform: rotate(1deg);
 }
 
 /* Match scheduling visual */
 .onboard-match-visual {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-divider);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
+  border-radius: 16px;
+  padding: 20px;
   width: 280px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 12px;
   opacity: 0;
-  animation: onboardFadeIn 0.5s ease 0.1s forwards;
+  animation: onboardFadeIn 0.4s ease 0.1s forwards;
 }
 
 .onboard-match-row {
@@ -2159,23 +2182,23 @@ select:focus {
 }
 
 .onboard-match-player {
-  font-weight: var(--weight-semibold);
-  font-size: var(--font-body-md);
+  font-weight: 600;
+  font-size: 15px;
 }
 
 .onboard-match-time {
-  font-size: var(--font-body-sm);
+  font-size: 14px;
   color: var(--color-text-secondary);
 }
 
 .onboard-match-confirmed {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  font-weight: var(--weight-semibold);
-  font-size: var(--font-body-md);
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
   color: var(--color-positive-primary);
-  padding-top: var(--space-sm);
+  padding-top: 4px;
   opacity: 0;
   animation: onboardFadeIn 0.4s ease 0.5s forwards;
 }
@@ -2185,29 +2208,24 @@ select:focus {
   filter: drop-shadow(0 0 4px rgba(31, 157, 85, 0.4));
 }
 
-.onboard-tennis-ball {
-  font-size: 16px;
-  margin-left: 2px;
-}
-
 /* Leaderboard visual */
 .onboard-leaderboard {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-divider);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
+  border-radius: 16px;
+  padding: 20px;
   width: 280px;
   opacity: 0;
-  animation: onboardFadeIn 0.5s ease 0.1s forwards;
+  animation: onboardFadeIn 0.4s ease 0.1s forwards;
 }
 
 .onboard-lb-header {
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
+  font-size: 12px;
+  font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: var(--space-md);
+  margin-bottom: 12px;
 }
 
 .onboard-lb-row {
@@ -2215,7 +2233,7 @@ select:focus {
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid var(--color-divider);
-  font-size: var(--font-body-md);
+  font-size: 15px;
 }
 
 .onboard-lb-row:last-child {
@@ -2223,19 +2241,19 @@ select:focus {
 }
 
 .onboard-lb-you {
-  background: rgba(42, 91, 215, 0.12);
-  margin: 0 calc(-1 * var(--space-lg));
-  padding-left: var(--space-lg);
-  padding-right: var(--space-lg);
-  border-radius: var(--radius-button);
-  font-weight: var(--weight-bold);
-  color: var(--color-accent-primary);
+  background: rgba(22, 163, 74, 0.08);
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #16a34a;
 }
 
 .onboard-lb-rank {
   width: 32px;
   color: var(--color-text-muted);
-  font-weight: var(--weight-semibold);
+  font-weight: 600;
 }
 
 .onboard-lb-name {
@@ -2244,7 +2262,7 @@ select:focus {
 
 .onboard-lb-rating {
   color: var(--color-text-secondary);
-  font-size: var(--font-body-sm);
+  font-size: 14px;
 }
 
 /* Onboarding actions & dots */
@@ -2252,8 +2270,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-lg);
-  padding-top: var(--space-xl);
+  gap: 16px;
+  padding-top: 24px;
 }
 
 .onboard-btn {
@@ -2274,8 +2292,25 @@ select:focus {
 }
 
 .onboard-dot.active {
-  background: var(--color-text-primary);
+  background: #16a34a;
   transform: scale(1.2);
+}
+
+/* Log in link — prominent, green, same weight as CTA */
+.onboard-login {
+  display: block;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: #16a34a;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.onboard-login:hover {
+  opacity: 0.8;
 }
 
 /* Onboard animations */
@@ -10001,10 +10036,4 @@ main {
   cursor: not-allowed;
 }
 
-.signup-login-link {
-  display: block;
-  text-align: center;
-  margin-top: var(--space-sm);
-  font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
-}
+
