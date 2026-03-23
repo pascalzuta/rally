@@ -358,33 +358,35 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                 const isAsking = askingRow?.playerId === row.playerId && askingRow?.date === row.date && askingRow?.timeLabel === row.timeLabel
                 return (
                 <div key={`${row.playerId}-${row.date}-${i}`}>
-                  <div className="pn-opponent-row pn-opponent-actionable" onClick={() => !isAsking && setAskingRow(row)}>
-                    <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
-                    <div className="pn-opponent-info">
-                      <div className="pn-opponent-name">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
-                      <div className="pn-opponent-meta">
-                        {row.isNow && <span className="pn-available-now">Available now</span>}
-                        <span>{row.dateLabel} · {row.timeLabel}</span>
-                        {row.location && <span> · {row.location}</span>}
+                  {isAsking ? (
+                    <div className="pn-opponent-row pn-confirm-expanded">
+                      <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
+                      <div className="pn-inline-confirm-text">
+                        <strong>{row.playerName}</strong>{playerSeedLabel(row.playerId) && <span className="seed-label">{playerSeedLabel(row.playerId)}</span>} · {row.dateLabel} {row.timeLabel}
                       </div>
-                      {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
+                      <div className="pn-inline-confirm-actions">
+                        <button className="btn btn-small" onClick={() => setAskingRow(null)}>Cancel</button>
+                        <button className="btn btn-primary btn-small" onClick={() => handleAskToPlay(row)}>Send Request</button>
+                      </div>
                     </div>
-                    {!isAsking && (
+                  ) : (
+                    <div className="pn-opponent-row pn-opponent-actionable" onClick={() => setAskingRow(row)}>
+                      <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
+                      <div className="pn-opponent-info">
+                        <div className="pn-opponent-name">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
+                        <div className="pn-opponent-meta">
+                          {row.isNow && <span className="pn-available-now">Available now</span>}
+                          <span>{row.dateLabel} · {row.timeLabel}</span>
+                          {row.location && <span> · {row.location}</span>}
+                        </div>
+                        {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
+                      </div>
                       <div className="pn-opponent-actions">
                         <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
                           {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
                         </button>
                         <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setMessagingPlayerId(null); setAskingRow(row) }}>Request Match</button>
-                      </div>
-                    )}
-                  </div>
-                  {isAsking && (
-                    <div className="pn-inline-confirm">
-                      <span className="pn-inline-confirm-text">Send request for {row.dateLabel} {row.timeLabel}?</span>
-                      <div className="pn-inline-confirm-actions">
-                        <button className="btn btn-small" onClick={() => setAskingRow(null)}>Cancel</button>
-                        <button className="btn btn-primary btn-small" onClick={() => handleAskToPlay(row)}>Send Request</button>
                       </div>
                     </div>
                   )}
