@@ -3,6 +3,7 @@ import { useState, useRef } from 'react'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability, switchProfile } from '../store'
 import type { RatingSnapshot, MatchHistoryEntry } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, Trophy, TrophyTier, Badge } from '../types'
+import SubscriptionManager from './SubscriptionManager'
 import { useToast } from './Toast'
 
 interface Props {
@@ -838,6 +839,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
             <p className="subtle">Your rating changes more in your first matches, then stabilises as you play more.</p>
           </div>
         )}
+      </div>
+
+      {/* Subscription */}
+      <div style={{ margin: '16px 0' }}>
+        <SubscriptionManager />
       </div>
 
       {/* Help & How Rally Works */}

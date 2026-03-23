@@ -3,6 +3,8 @@ import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelB
 import { Tournament, Match, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
 import { useToast } from './Toast'
+import PremiumGate from './PremiumGate'
+import { canAccessFeature } from '../subscriptionStore'
 
 interface Props {
   tournament: Tournament | null
@@ -345,6 +347,17 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       {/* === CASUAL PLAY SECTION === */}
       <div className="pn-section">
         <div className="section-header">Who's Free</div>
+        {!canAccessFeature('algorithmic_matching') && (
+          <div style={{ marginBottom: 12 }}>
+            <PremiumGate
+              feature="algorithmic_matching"
+              title="Algorithmically Matched Opponents"
+              description="Rally Pro finds players at your rating who are free at the same time as you — dramatically increasing your match rate."
+              preview={`${dateGroups.reduce((n, g) => n + g.entries.length, 0) || '—'} players near your rating available this week`}
+              onTrialStarted={() => {}}
+            />
+          </div>
+        )}
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
             <div className="pn-empty-title">No players available right now</div>

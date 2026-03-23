@@ -1,6 +1,6 @@
 import { formatSlotInline as formatSlotInlineNumeric, formatTimeFull } from '../dateUtils'
 import { useMemo, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, getRescheduleUiState } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, getRescheduleUiState, getMatchHistory } from '../store'
 import { getBuddies, sendBuddyRequest } from '../buddyStore'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
@@ -10,6 +10,8 @@ import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import CreateInviteLink from './CreateInviteLink'
 import BuddiesSection from './BuddiesSection'
+import PremiumGate from './PremiumGate'
+import { canAccessFeature } from '../subscriptionStore'
 
 interface Props {
   profile: PlayerProfile
@@ -983,6 +985,19 @@ export default function Home({
 
       {/* Tennis Buddies */}
       <BuddiesSection profile={profile} />
+
+      {/* Discover New Opponents — premium gate after first match */}
+      {getMatchHistory(profile.id).length >= 1 && !canAccessFeature('algorithmic_matching') && (
+        <div style={{ margin: '12px 0' }}>
+          <PremiumGate
+            feature="algorithmic_matching"
+            title="Discover New Opponents"
+            description="Rally Pro surfaces players at your exact rating level who share your availability — outside of tournament brackets."
+            preview="Find players beyond your current tournament"
+            onTrialStarted={() => {}}
+          />
+        </div>
+      )}
 
       {/* Post-match buddy suggestions */}
       <PostMatchBuddySuggestions tournaments={activeTournaments} profile={profile} />

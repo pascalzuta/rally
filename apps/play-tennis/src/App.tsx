@@ -18,7 +18,9 @@ import { ToastProvider } from './components/Toast'
 import PostSignupShare from './components/PostSignupShare'
 import { cleanupExpiredLobbies } from './inviteStore'
 import { getRefParamFromUrl, storePendingRef, getPendingRef, clearPendingRef, trackReferralSignup, createViralReferral } from './referralStore'
+import { initFreeSubscription } from './subscriptionStore'
 import ReferralLanding from './components/ReferralLanding'
+import TrialBanner from './components/TrialBanner'
 import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
@@ -180,6 +182,13 @@ export default function App() {
     }
   }, [])
 
+  // Initialize free subscription record when profile loads
+  useEffect(() => {
+    if (profile) {
+      initFreeSubscription(profile.id)
+    }
+  }, [profile?.id])
+
   // Initialize Supabase sync when profile is available
   useEffect(() => {
     if (!profile) return
@@ -241,6 +250,8 @@ export default function App() {
     }
     // Auto-generate viral referral link for new user
     createViralReferral(p.id).catch(() => {})
+    // Initialize free subscription
+    initFreeSubscription(p.id)
     setProfile(p)
     setActiveTab('home')
     setShowPostSignupShare(true)
@@ -401,6 +412,7 @@ export default function App() {
           </div>
         </nav>
 
+        <TrialBanner onUpgrade={() => setActiveTab("profile")} />
         <main className="content tab-content">
           {activeTab === 'home' && (
             <Home

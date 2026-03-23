@@ -416,3 +416,32 @@ export interface DoublesTeam {
   player2Id: string
   teamName: string
 }
+
+// --- Subscriptions (Freemium) ---
+
+export type SubscriptionPlan = 'free' | 'trial' | 'pro_monthly' | 'pro_annual'
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing'
+
+export type PremiumFeature =
+  | 'algorithmic_matching'
+  | 'priority_scheduling'
+  | 'county_leaderboard'
+  | 'advanced_stats'
+
+export interface Subscription {
+  id: string
+  playerId: string
+  plan: SubscriptionPlan
+  status: SubscriptionStatus
+  trialMatchesUsed: number
+  trialMatchesMax: number
+  trialStartedAt?: string
+  trialEndsAt?: string
+  currentPeriodStart?: string
+  currentPeriodEnd?: string
+  cancelAtPeriodEnd?: boolean
+  stripeCustomerId?: string
+  stripeSubscriptionId?: string
+  createdAt: string
+  updatedAt: string
+}
