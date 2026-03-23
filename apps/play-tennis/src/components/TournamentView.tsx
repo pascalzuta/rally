@@ -469,11 +469,11 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                 <div className={`round-progress-line ${groupComplete ? 'completed' : ''}`} />
               </div>
               <div className="round-progress-item">
-                <div className={`round-progress-dot ${groupComplete ? (knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
+                <div className={`round-progress-dot ${groupComplete ? (knockoutMatches.some(m => m.round === 2) && knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
                 <span className={`round-progress-label ${groupComplete ? 'active' : 'upcoming'}`}>
                   Semifinals
                 </span>
-                <div className={`round-progress-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
+                <div className={`round-progress-line ${knockoutMatches.some(m => m.round === 2 && m.completed) ? 'completed' : ''}`} />
               </div>
               <div className="round-progress-item">
                 <div className={`round-progress-dot ${tournament.status === 'completed' ? 'completed' : knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`} />

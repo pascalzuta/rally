@@ -142,12 +142,12 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
             </div>
             <div className={`schedule-phase-line ${groupComplete ? 'completed' : ''}`} />
             <div className="schedule-phase-step">
-              <div className={`schedule-phase-dot ${groupComplete ? (knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
+              <div className={`schedule-phase-dot ${groupComplete ? (knockoutMatches.some(m => m.round === 2) && knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : 'active') : 'upcoming'}`} />
               <span className={`schedule-phase-label ${groupComplete ? 'active' : 'upcoming'}`}>
                 Semi
               </span>
             </div>
-            <div className={`schedule-phase-line ${knockoutMatches.filter(m => m.round === 2).every(m => m.completed) ? 'completed' : ''}`} />
+            <div className={`schedule-phase-line ${knockoutMatches.some(m => m.round === 2 && m.completed) ? 'completed' : ''}`} />
             <div className="schedule-phase-step">
               <div className={`schedule-phase-dot ${knockoutMatches.some(m => m.round === 3 && m.completed) ? 'completed' : knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`} />
               <span className={`schedule-phase-label ${knockoutMatches.some(m => m.round === 3 && m.player1Id && m.player2Id) ? 'active' : 'upcoming'}`}>
