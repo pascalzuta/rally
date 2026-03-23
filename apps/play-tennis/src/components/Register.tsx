@@ -360,12 +360,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     return 80 + Math.abs(hash % 400)
   }
 
-  const loginLink = (
-    <p className="signup-login-link" style={{ textAlign: 'center', marginTop: '16px', fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)' }}>
-      Already have an account?{' '}
-      <button className="btn-link" onClick={() => setStep('email')} style={{ fontSize: 'inherit' }}>Log in</button>
-    </p>
-  )
 
   // --- Onboarding Screen 1: The Problem ---
   if (step === 'onboard-1') {
@@ -387,16 +381,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
-            Continue
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
             <span className="onboard-dot" />
           </div>
-          {loginLink}
+          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join for free
+          </button>
+          <button className="btn-link signup-login-link" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
@@ -434,16 +427,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
-            Continue
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
           </div>
-          {loginLink}
+          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join for free
+          </button>
+          <button className="btn-link signup-login-link" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
@@ -478,16 +470,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('email')}>
-            Join Rally
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
           </div>
-          {loginLink}
+          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join for free
+          </button>
+          <button className="btn-link signup-login-link" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
@@ -738,24 +729,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               )}
             </div>
 
-            {!inviteCounty && !county && (
-              <div className="county-detected">
-                {suggestedCounty ? (
-                  <>
-                    <span className="county-detected-label">Detected location</span>
-                    <button type="button" className="county-detected-btn" onClick={useSuggestedCounty}>
-                      {suggestedCounty}
-                      <span className="county-detected-use">Use this</span>
-                    </button>
-                  </>
-                ) : (
-                  <button type="button" className="county-detect-btn" onClick={detectLocation} disabled={detectingLocation}>
-                    {detectingLocation ? 'Detecting...' : 'Use my location'}
-                  </button>
-                )}
-              </div>
-            )}
-
             <button
               type="submit"
               className="btn btn-primary btn-large signup-cta"
@@ -770,7 +743,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               {getPlayerCount(county)} players competing in {county.split(',')[0]}
             </p>
           )}
-          {loginLink}
         </div>
       </div>
     )
@@ -839,7 +811,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               Continue
             </button>
           </div>
-          {loginLink}
         </div>
       </div>
     )
@@ -1018,7 +989,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             Start Competing
           </button>
         </div>
-        {loginLink}
       </div>
     </div>
   )
