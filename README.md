@@ -1,45 +1,19 @@
-# The Painful Dollar
+# Rally — Play Tennis
 
-Chat-first accountability app with server-enforced 10-minute response windows and fee ledger logic.
+Tennis tournament app for local communities. Players join by county, form lobbies, and auto-create tournaments when 6+ players join.
+
+**Live:** [play-rally.com](https://play-rally.com)
 
 ## Structure
 
-- `apps/web`: React + TypeScript web app (Vite)
-- `apps/server`: Express + TypeScript backend skeleton (auth, signed windows, ledger)
-- `packages/core`: Shared business logic (validation, scoring, prompts)
+- `apps/play-tennis/` — React + TypeScript web app (Vite)
+- `apps/tennis-server/` — Express + TypeScript backend
+- `packages/tennis-core/` — Shared tennis logic (scheduling, standings)
 
-## Run (after Node.js 20+ is installed)
+## Run (Node.js 20+)
 
 ```bash
 npm install
-npm run dev:web
-npm run dev:server
+npm run dev:play-tennis     # Frontend on port 5180
+npm run dev:tennis-server   # Backend on port 8788
 ```
-
-## Gen-AI coach setup (natural chat replies)
-
-Create `/Users/pascal/Desktop/experimentation/apps/server/.env` with:
-
-```bash
-NODE_ENV=development
-PORT=8787
-AUTH_TOKEN_SECRET=replace-with-32-char-min-secret
-WINDOW_TOKEN_SECRET=replace-with-32-char-min-secret
-CORS_ORIGIN=http://localhost:5173
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4.1-mini
-COACH_API_TIMEOUT_MS=4500
-GRACE_MISSES_PER_MONTH=2
-MONTHLY_CHARGE_CAP_CENTS=1500
-```
-
-Then run web + server together so chat can use `/v1/coach/respond`.
-
-## Current Scope
-
-- Morning check-in flow
-- Priority quality validation
-- Accountability score and streak tracking
-- Signed check-in window backend skeleton
-- Ledger and late-fee decision engine
-- CI quality gates and threat-modeling docs
