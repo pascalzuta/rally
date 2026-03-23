@@ -510,36 +510,39 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <p className="signup-desc">We'll send you a verification code to sign in.</p>
           </div>
 
-          <form onSubmit={handleSendOtp} className="signup-form">
-            <label className="field">
-              <span className="field-label">Email address</span>
-              <input
-                type="email"
-                value={email}
-                onChange={e => { setEmail(e.target.value); setOtpError(null) }}
-                placeholder="you@example.com"
-                autoFocus
-                autoComplete="email"
-                inputMode="email"
-              />
-            </label>
+          <div className="auth-card">
+            <form onSubmit={handleSendOtp} className="signup-form">
+              <label className="field auth-field">
+                <span className="field-label">Email address</span>
+                <input
+                  className="auth-input"
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setOtpError(null) }}
+                  placeholder="you@example.com"
+                  autoFocus
+                  autoComplete="email"
+                  inputMode="email"
+                />
+              </label>
 
-            {otpError && (
-              <p className="otp-error">{otpError}</p>
-            )}
+              {otpError && (
+                <p className="otp-error">{otpError}</p>
+              )}
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-large signup-cta"
-              disabled={!email.trim() || otpSending}
-            >
-              {otpSending ? 'Sending...' : 'Continue'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="btn btn-primary btn-large signup-cta auth-cta"
+                disabled={!email.trim() || otpSending}
+              >
+                {otpSending ? 'Sending...' : 'Continue'}
+              </button>
+            </form>
 
-          <p className="signup-social-proof" style={{ marginTop: '24px' }}>
-            No password needed — just verify your email.
-          </p>
+            <p className="signup-social-proof auth-helper-copy">
+              No password needed. We’ll just verify your email.
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -594,50 +597,52 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             </p>
           </div>
 
-          <form onSubmit={handleVerifyOtp} className="signup-form">
-            <label className="field">
-              <span className="field-label">Verification code</span>
-              <input
-                type="text"
-                value={otpCode}
-                onChange={e => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 6)
-                  setOtpCode(val)
-                  setOtpError(null)
-                }}
-                placeholder="000000"
-                autoFocus
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                style={{ letterSpacing: '0.3em', fontSize: '24px', textAlign: 'center', fontFamily: 'var(--font-mono, monospace)' }}
-              />
-            </label>
+          <div className="auth-card">
+            <form onSubmit={handleVerifyOtp} className="signup-form">
+              <label className="field auth-field">
+                <span className="field-label">Verification code</span>
+                <input
+                  className="auth-input auth-input--otp"
+                  type="text"
+                  value={otpCode}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setOtpCode(val)
+                    setOtpError(null)
+                  }}
+                  placeholder="000000"
+                  autoFocus
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                />
+              </label>
 
-            {otpError && (
-              <p className="otp-error">{otpError}</p>
-            )}
+              {otpError && (
+                <p className="otp-error">{otpError}</p>
+              )}
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-large signup-cta"
-              disabled={otpCode.length !== 6 || otpVerifying}
-            >
-              {otpVerifying ? 'Verifying...' : 'Verify'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="btn btn-primary btn-large signup-cta auth-cta"
+                disabled={otpCode.length !== 6 || otpVerifying}
+              >
+                {otpVerifying ? 'Verifying...' : 'Verify'}
+              </button>
+            </form>
 
-          <div className="otp-actions">
-            <button
-              className="btn-link"
-              onClick={handleResend}
-              disabled={resendCountdown > 0}
-            >
-              {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
-            </button>
-            <button className="btn-link" onClick={() => { setStep('email'); setOtpCode(''); setOtpError(null) }}>
-              Use a different email
-            </button>
+            <div className="otp-actions">
+              <button
+                className="btn-link"
+                onClick={handleResend}
+                disabled={resendCountdown > 0}
+              >
+                {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
+              </button>
+              <button className="btn-link" onClick={() => { setStep('email'); setOtpCode(''); setOtpError(null) }}>
+                Use a different email
+              </button>
+            </div>
           </div>
         </div>
       </div>

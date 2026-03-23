@@ -897,6 +897,7 @@ body {
 }
 
 input[type="text"],
+input[type="email"],
 input[type="date"],
 input[type="time"] {
   height: 44px;
@@ -2345,14 +2346,51 @@ select:focus {
   gap: var(--space-lg);
 }
 
+.auth-card {
+  padding: var(--space-lg);
+  border-radius: 20px;
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 247, 249, 0.92) 100%);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.auth-field {
+  gap: var(--space-sm);
+}
+
+.auth-input {
+  height: 52px;
+  border-radius: 14px;
+  border-color: rgba(17, 17, 17, 0.1);
+  background: rgba(255, 255, 255, 0.98);
+  font-size: var(--font-body-lg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.auth-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.auth-input--otp {
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-size: 24px;
+  font-family: var(--font-mono, monospace);
+}
+
 .signup-cta {
   margin-top: var(--space-sm);
+}
+
+.auth-cta {
+  width: 100%;
+  justify-content: center;
 }
 
 .otp-error {
   color: var(--color-negative-primary, #e53e3e);
   font-size: var(--font-body-sm);
-  text-align: center;
+  text-align: left;
   margin: 0;
 }
 
@@ -2374,6 +2412,10 @@ select:focus {
   color: var(--color-text-muted);
   margin-top: var(--space-lg);
   font-weight: var(--weight-medium);
+}
+
+.auth-helper-copy {
+  margin-top: var(--space-md);
 }
 
 /* County autocomplete */
