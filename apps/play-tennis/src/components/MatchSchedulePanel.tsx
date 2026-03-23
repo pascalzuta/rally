@@ -1,5 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState } from 'react'
+import { canEnterScore } from '../matchCapabilities'
 import {
   acceptProposal,
   proposeNewSlots,
@@ -13,12 +14,14 @@ import {
   getRescheduleUiState,
 } from '../store'
 import { Match, Tournament, DayOfWeek, MatchProposal, MatchSlot, RescheduleIntent, RescheduleReason } from '../types'
+import InlineScoreEntry from './InlineScoreEntry'
 
 interface Props {
   tournament: Tournament
   match: Match
   currentPlayerId: string
   onUpdated: () => void
+  onScoreSaved?: () => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -95,7 +98,7 @@ function getVenueSuggestion(
   return null
 }
 
-export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated }: Props) {
+export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated, onScoreSaved }: Props) {
   const [showPropose, setShowPropose] = useState(false)
   const [propDay, setPropDay] = useState<DayOfWeek | ''>('')
   const [propStart, setPropStart] = useState(18)
@@ -113,6 +116,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   // Cancel state
   const [showCancel, setShowCancel] = useState(false)
   const [cancelReason, setCancelReason] = useState<string>('')
+  const [showScoreEntry, setShowScoreEntry] = useState(false)
 
   const schedule = match.schedule
   if (!schedule) return null
@@ -130,6 +134,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const opponentName = tournament.players.find(p => p.id === opponentId)?.name?.split(' ')[0] ?? 'Opponent'
   const hasCustomRescheduleSlot = Boolean(reschedDay) && reschedStart < reschedEnd
   const isScheduleLocked = Boolean(match.completed || match.scoreReportedBy || match.scoreConfirmedAt)
+  const isScoreable = canEnterScore(match, currentPlayerId)
 
   function renderPanelHeader(statusLabel: string, tone: 'slate' | 'blue' | 'green' | 'amber' | 'red', title: string, copy: string) {
     return (
@@ -493,6 +498,26 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <div className="proposal-from">
             This match time is view-only because you are not one of the two players.
           </div>
+        ) : showScoreEntry && isScoreable ? (
+          <div className="schedule-score-entry">
+            <InlineScoreEntry
+              tournament={tournament}
+              matchId={match.id}
+              currentPlayerId={currentPlayerId}
+              onSaved={onScoreSaved ?? onUpdated}
+            />
+            <div className="workflow-actions">
+              <button
+                className="btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowScoreEntry(false)
+                }}
+              >
+                Back to Match
+              </button>
+            </div>
+          </div>
         ) : isScheduleLocked ? (
           <div className="schedule-locked-note">
             {match.completed
@@ -531,6 +556,19 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
               >
                 Change Time
+              </button>
+            )}
+            {rescheduleUiState === 'none' && isScoreable && (
+              <button
+                className="btn btn-small"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowCancel(false)
+                  setShowReschedule(false)
+                  setShowScoreEntry(true)
+                }}
+              >
+                Report Score
               </button>
             )}
             <button

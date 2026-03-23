@@ -32,6 +32,7 @@ export default function UpcomingMatchPanel({
           match={match}
           currentPlayerId={currentPlayerId}
           onUpdated={onUpdated}
+          onScoreSaved={onScoreSaved ?? onUpdated}
         />
       ) : null}
 
