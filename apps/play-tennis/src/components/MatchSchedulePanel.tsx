@@ -421,7 +421,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 : 'Change Requested',
             isScheduleLocked
               ? 'green'
-              : 'blue',
+              : 'amber',
             'Current confirmed time',
             isScheduleLocked
               ? match.completed
@@ -789,7 +789,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           : myPendingProposals.length > 0
             ? 'Awaiting Response'
             : 'Needs Scheduling',
-        acceptableProposals.length > 0 || myPendingProposals.length > 0 ? 'blue' : 'amber',
+        'amber',
         acceptableProposals.length > 0
           ? 'Review Rally\'s time options'
           : myPendingProposals.length > 0

@@ -40,20 +40,29 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
   const canToggleExpanded = Boolean(view.primaryActionLabel && view.expansionKind)
   const hasUnread = view.opponentId ? hasUnreadFrom(currentPlayerId, view.opponentId) : false
   const classes = ['action-card', `action-${view.tone}`, className].filter(Boolean).join(' ')
+  const toneClass = view.tone === 'completed'
+    ? 'slate'
+    : view.tone === 'confirm-score'
+      ? 'blue'
+      : view.tone === 'confirmed'
+        ? 'green'
+        : view.tone === 'escalated'
+          ? 'red'
+          : 'amber'
 
   return (
     <div
       ref={ref}
       className={classes}
       onClick={canToggleExpanded ? onToggleExpanded : undefined}
-    >
+      >
       <div className="action-card-status-row">
-        <div className={`card-status-label card-status-label--${view.tone === 'completed' ? 'slate' : view.tone === 'confirm-score' ? 'blue' : view.tone}`}>
+        <div className={`card-status-label card-status-label--${toneClass}`}>
           {view.statusLabel}
         </div>
         {(view.metaLabel || view.infoTooltipText) && (
           <div className="action-card-status-meta">
-            {view.metaLabel && <div className="card-meta-chip">{view.metaLabel}</div>}
+            {view.metaLabel && <div className={`card-meta-chip card-meta-chip--${toneClass}`}>{view.metaLabel}</div>}
             {view.infoTooltipText && (
               <div className="card-info-tooltip">
                 <button

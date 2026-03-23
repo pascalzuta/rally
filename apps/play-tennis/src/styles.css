@@ -4879,7 +4879,7 @@ select:focus {
 }
 
 .action-card.action-score::before { background: var(--color-warning-primary); }
-.action-card.action-respond::before { background: var(--color-accent-primary); }
+.action-card.action-respond::before { background: var(--color-warning-primary); }
 .action-card.action-confirmed::before { background: var(--color-positive-primary); }
 .action-card.action-schedule::before { background: var(--color-warning-primary); }
 .action-card.action-escalated::before { background: var(--color-negative-primary); }
@@ -4905,7 +4905,7 @@ select:focus {
 }
 
 .action-score .action-card-type { color: var(--color-warning-primary); }
-.action-respond .action-card-type { color: var(--color-accent-primary); }
+.action-respond .action-card-type { color: var(--color-warning-primary); }
 .action-confirmed .action-card-type { color: var(--color-positive-primary); }
 .action-schedule .action-card-type { color: var(--color-warning-primary); }
 .action-escalated .action-card-type { color: var(--color-negative-primary); }
@@ -4951,8 +4951,8 @@ select:focus {
 }
 
 .action-respond .action-card-btn {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-primary);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
 }
 
 .action-confirmed .action-card-btn {
