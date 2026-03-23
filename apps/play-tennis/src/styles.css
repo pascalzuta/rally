@@ -1807,7 +1807,11 @@ select:focus {
   grid-template-columns: 1fr repeat(2, 60px);
   gap: var(--space-sm);
   align-items: center;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  border-radius: 14px;
+  background: rgba(246, 247, 249, 0.72);
 }
 
 .score-header {
@@ -1815,6 +1819,8 @@ select:focus {
   color: var(--color-text-secondary);
   text-align: center;
   font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .score-player-name {
@@ -1829,7 +1835,7 @@ select:focus {
   width: 60px;
   height: 44px;
   text-align: center;
-  border: 1px solid var(--color-divider);
+  border: 1px solid rgba(17, 17, 17, 0.08);
   border-radius: var(--radius-button);
   font-size: var(--font-title-sm);
   font-weight: var(--weight-semibold);
@@ -1837,6 +1843,8 @@ select:focus {
   font-family: inherit;
   color: var(--color-text-primary);
   -moz-appearance: textfield;
+  background: var(--color-bg-surface);
+  font-variant-numeric: tabular-nums;
 }
 
 .score-input::-webkit-outer-spin-button,
@@ -3383,9 +3391,9 @@ select:focus {
 .schedule-panel {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
-  background: var(--color-neutral-bg);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-button);
+  background: linear-gradient(180deg, rgba(246, 247, 249, 0.92) 0%, rgba(241, 243, 245, 0.7) 100%);
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  border-radius: 18px;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -3394,12 +3402,20 @@ select:focus {
 .inline-score-entry {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
-  background: var(--color-neutral-bg);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-button);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+}
+
+.inline-score-entry--embedded {
+  margin-top: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 .schedule-panel.schedule-confirmed { }
@@ -3421,7 +3437,7 @@ select:focus {
 }
 
 .schedule-panel-title {
-  font-size: var(--font-body-md);
+  font-size: var(--font-body-lg);
   font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
 }
@@ -3436,6 +3452,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-bottom: var(--space-xs);
 }
 
 .schedule-panel-actions {
@@ -3493,9 +3510,12 @@ select:focus {
 
 .confirmed-slot {
   display: flex;
-  gap: var(--space-sm);
-  align-items: center;
-  font-size: var(--font-body-md);
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+  padding: var(--space-sm) 0;
+  font-size: var(--font-body-lg);
+  line-height: 1.4;
 }
 
 .confirmed-day {
@@ -3504,6 +3524,7 @@ select:focus {
 
 .confirmed-time {
   color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .proposal-list {
@@ -3684,6 +3705,12 @@ select:focus {
   flex: 1;
 }
 
+.confirmed-actions-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
 .confirmed-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
@@ -3695,8 +3722,41 @@ select:focus {
   margin-top: 0;
 }
 
+.confirmed-actions-danger {
+  display: flex;
+}
+
+.confirmed-actions-danger .btn {
+  width: 100%;
+}
+
+.confirmed-score-btn {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
+  border-color: rgba(217, 119, 6, 0.18);
+}
+
+.schedule-score-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.confirmed-actions-footer {
+  display: flex;
+  justify-content: flex-start;
+}
+
 @media (max-width: 520px) {
   .schedule-time-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmed-actions {
     grid-template-columns: 1fr;
   }
 }
@@ -8471,26 +8531,26 @@ select:focus {
 /* R-07/R-16: Score confirmation dialog */
 .score-confirm-overlay {
   padding: var(--space-md);
-  background: var(--color-surface);
-  border-radius: var(--radius-card);
-  border: 1px solid var(--color-divider);
-  margin-top: var(--space-sm);
+  background: rgba(246, 247, 249, 0.72);
+  border-radius: 14px;
+  border: 1px solid rgba(17, 17, 17, 0.06);
 }
 .score-confirm-summary {
   font-size: var(--font-body-md);
   font-weight: var(--weight-semibold);
   margin-bottom: var(--space-sm);
-  text-align: center;
+  text-align: left;
 }
 .score-confirm-winner {
   font-size: var(--font-body-sm);
   color: var(--color-positive-primary);
-  text-align: center;
+  text-align: left;
   margin-bottom: var(--space-md);
 }
 .score-confirm-actions {
   display: flex;
   gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 .score-confirm-actions .btn {
   flex: 1;

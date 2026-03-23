@@ -500,13 +500,21 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           </div>
         ) : showScoreEntry && isScoreable ? (
           <div className="schedule-score-entry">
+            {renderPanelHeader(
+              'Report Score',
+              'amber',
+              'Enter the final result',
+              'Save it for your opponent to confirm.'
+            )}
+            <div className="workflow-divider" />
             <InlineScoreEntry
               tournament={tournament}
               matchId={match.id}
               currentPlayerId={currentPlayerId}
               onSaved={onScoreSaved ?? onUpdated}
+              embedded
             />
-            <div className="workflow-actions">
+            <div className="confirmed-actions-footer">
               <button
                 className="btn"
                 onClick={(e) => {
@@ -525,58 +533,62 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               : 'A score has been reported, so the confirmed time can no longer be changed or canceled.'}
           </div>
         ) : showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? renderCancelForm() : (
-          <div className="confirmed-actions">
-            {rescheduleUiState === 'soft_request_sent' && (
-              <button
-                className="btn btn-small"
-                onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
-              >
-                Withdraw Request
-              </button>
-            )}
-            {rescheduleUiState === 'soft_request_received' && (
-              <>
+          <div className="confirmed-actions-shell">
+            <div className="confirmed-actions">
+              {rescheduleUiState === 'soft_request_sent' && (
+                <button
+                  className="btn btn-small"
+                  onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
+                >
+                  Withdraw Request
+                </button>
+              )}
+              {rescheduleUiState === 'soft_request_received' && (
+                <>
+                  <button
+                    className="btn btn-small"
+                    onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
+                  >
+                    Suggest Another
+                  </button>
+                  <button
+                    className="btn btn-primary btn-small"
+                    onClick={(e) => { e.stopPropagation(); handleDeclineSoftRequest() }}
+                  >
+                    Keep Current Time
+                  </button>
+                </>
+              )}
+              {rescheduleUiState === 'none' && isScoreable && (
+                <button
+                  className="btn btn-primary btn-small confirmed-score-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowCancel(false)
+                    setShowReschedule(false)
+                    setShowScoreEntry(true)
+                  }}
+                >
+                  Report Score
+                </button>
+              )}
+              {rescheduleUiState === 'none' && canReschedule && (
                 <button
                   className="btn btn-small"
                   onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
                 >
-                  Suggest Another
+                  Change Time
                 </button>
-                <button
-                  className="btn btn-primary btn-small"
-                  onClick={(e) => { e.stopPropagation(); handleDeclineSoftRequest() }}
-                >
-                  Keep Current Time
-                </button>
-              </>
-            )}
-            {rescheduleUiState === 'none' && canReschedule && (
+              )}
+            </div>
+            <div className="confirmed-actions-danger">
               <button
-                className="btn btn-primary btn-small"
-                onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
+                className="btn btn-danger btn-small"
+                onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
               >
-                Change Time
+                Cancel Match
               </button>
-            )}
-            {rescheduleUiState === 'none' && isScoreable && (
-              <button
-                className="btn btn-small"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowCancel(false)
-                  setShowReschedule(false)
-                  setShowScoreEntry(true)
-                }}
-              >
-                Report Score
-              </button>
-            )}
-            <button
-              className="btn btn-danger btn-small"
-              onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
-            >
-              Cancel Match
-            </button>
+            </div>
           </div>
         )}
       </div>

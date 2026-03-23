@@ -18,9 +18,10 @@ interface Props {
   matchId: string
   currentPlayerId?: string
   onSaved: () => void
+  embedded?: boolean
 }
 
-export default function InlineScoreEntry({ tournament, matchId, currentPlayerId, onSaved }: Props) {
+export default function InlineScoreEntry({ tournament, matchId, currentPlayerId, onSaved, embedded = false }: Props) {
   const { showSuccess, showError } = useToast()
   const match = tournament.matches.find(m => m.id === matchId)!
   const p1Name = getPlayerName(tournament, match.player1Id)
@@ -140,7 +141,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
 
   if (saveState === 'success') {
     return (
-      <div className="inline-score-entry workflow-module">
+      <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
         <div className="workflow-header">
           <div className="workflow-status workflow-status--green">Score Reported</div>
           <div className="schedule-panel-title">Waiting for opponent confirmation</div>
@@ -156,7 +157,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
 
   if (saveState === 'error') {
     return (
-      <div className="inline-score-entry workflow-module">
+      <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
         <div className="workflow-header">
           <div className="workflow-status workflow-status--red">Save Failed</div>
           <div className="schedule-panel-title">Could not report the score</div>
@@ -175,7 +176,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   if (saveState === 'confirming' && scores && winnerId) {
     const scoreSummary = scores.score1.map((s, i) => `${s}-${scores.score2[i]}`).join(', ')
     return (
-      <div className="inline-score-entry workflow-module">
+      <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
         <div className="workflow-header">
           <div className="workflow-status workflow-status--amber">Report Score</div>
           <div className="schedule-panel-title">Confirm the final result</div>
@@ -196,7 +197,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   }
 
   return (
-    <div className="inline-score-entry workflow-module">
+    <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
       <div className="workflow-header">
         <div className="workflow-status workflow-status--amber">Report Score</div>
         <div className="schedule-panel-title">Enter the final result</div>
