@@ -1,6 +1,7 @@
 import { formatSlotInline as formatSlotInlineNumeric, formatTimeFull } from '../dateUtils'
 import { useMemo, useState } from 'react'
 import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, getRescheduleUiState } from '../store'
+import { getBuddies, sendBuddyRequest } from '../buddyStore'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MessagePanel from './MessagePanel'
@@ -8,6 +9,7 @@ import InlineScoreEntry from './InlineScoreEntry'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import CreateInviteLink from './CreateInviteLink'
+import BuddiesSection from './BuddiesSection'
 
 interface Props {
   profile: PlayerProfile
@@ -389,6 +391,89 @@ function getUpNextMatch(
 
 
 
+/** Shows "Add X as a Tennis Buddy?" card after playing 2+ matches with someone */
+function PostMatchBuddySuggestions({
+  tournaments,
+  profile,
+}: {
+  tournaments: Tournament[]
+  profile: PlayerProfile
+}) {
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [added, setAdded] = useState<Set<string>>(new Set())
+
+  const suggestions = useMemo(() => {
+    const existingBuddyIds = new Set(
+      getBuddies(profile.id).map(b =>
+        b.requesterId === profile.id ? b.recipientId : b.requesterId
+      )
+    )
+    const counts = new Map<string, { name: string; count: number }>()
+    for (const t of tournaments) {
+      for (const m of t.matches) {
+        if (!m.completed) continue
+        if (!isMyMatch(m, profile.id)) continue
+        const opponentId = getOpponentId(m, profile.id)
+        if (!opponentId) continue
+        if (existingBuddyIds.has(opponentId)) continue
+        const opponentName = getPlayerName(t, opponentId)
+        const prev = counts.get(opponentId)
+        counts.set(opponentId, { name: opponentName, count: (prev?.count ?? 0) + 1 })
+      }
+    }
+    return Array.from(counts.entries())
+      .filter(([id, { count }]) => count >= 2 && !dismissed.has(id) && !added.has(id))
+      .map(([id, { name, count }]) => ({ id, name, count }))
+  }, [tournaments, profile.id, dismissed, added])
+
+  if (suggestions.length === 0) return null
+
+  return (
+    <>
+      {suggestions.map(s => (
+        <div key={s.id} className="card" style={{ cursor: 'default' }}>
+          <div className="card-status-row">
+            <div className="card-status-label card-status-label--green">Tennis Buddies</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">Add {s.name} as a Tennis Buddy?</div>
+            <div className="card-supporting">
+              You've played {s.count} matches together. Buddies let you ping each other for a hit anytime.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button
+              className="btn-primary"
+              style={{ flex: 1, fontSize: 13 }}
+              onClick={async () => {
+                await sendBuddyRequest(profile.id, profile.name, s.id, s.name)
+                setAdded(prev => new Set(prev).add(s.id))
+              }}
+            >
+              Send Request
+            </button>
+            <button
+              style={{
+                flex: 1,
+                background: 'none',
+                border: '1px solid var(--color-divider)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--color-text-secondary)',
+                fontSize: 13,
+                padding: '8px',
+                cursor: 'pointer',
+              }}
+              onClick={() => setDismissed(prev => new Set(prev).add(s.id))}
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      ))}
+    </>
+  )
+}
+
 export default function Home({
   profile,
   tournaments,
@@ -532,6 +617,8 @@ export default function Home({
 
         {availabilityReminder}
 
+        <BuddiesSection profile={profile} />
+
         {/* How Rally Works card */}
         {!hiwDismissed && (
           <div className="how-rally-works">
@@ -594,6 +681,8 @@ export default function Home({
 
         {/* Leaderboard Block */}
         {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each result, even while the bracket is forming.')}
+
+        <BuddiesSection profile={profile} />
       </div>
     )
   }
@@ -891,6 +980,12 @@ export default function Home({
 
       {/* Leaderboard Teaser */}
       {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each match.')}
+
+      {/* Tennis Buddies */}
+      <BuddiesSection profile={profile} />
+
+      {/* Post-match buddy suggestions */}
+      <PostMatchBuddySuggestions tournaments={activeTournaments} profile={profile} />
 
       {/* View All */}
       <div className="home-view-all">
