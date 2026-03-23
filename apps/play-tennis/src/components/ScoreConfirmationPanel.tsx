@@ -235,7 +235,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     return (
       <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
         <div className="workflow-header">
-          <div className="workflow-status workflow-status--red">Dispute Score</div>
+          <div className="workflow-status workflow-status--slate">Dispute score</div>
           <div className="schedule-panel-title">Correct the reported result</div>
           <div className="schedule-panel-copy">Update the set scores below. If the problem is broader than the scoreline, report an issue instead.</div>
         </div>
@@ -310,7 +310,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     return (
       <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
         <div className="workflow-header">
-          <div className="workflow-status workflow-status--red">Dispute Score</div>
+          <div className="workflow-status workflow-status--slate">Report issue</div>
           <div className="schedule-panel-title">Report an issue</div>
           <div className="schedule-panel-copy">Use this when the reported score cannot be fixed with a simple correction.</div>
         </div>
@@ -345,7 +345,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   return (
       <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
         <div className="workflow-header">
-          <div className="workflow-status workflow-status--blue">Confirm Score</div>
+          <div className="workflow-status workflow-status--slate">Score review</div>
           <div className="schedule-panel-title">Review the reported result</div>
           <div className="schedule-panel-copy">{reporterName} reported this score. Confirm it if it is correct, or dispute it within 48 hours.</div>
         </div>

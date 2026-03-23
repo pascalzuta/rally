@@ -710,8 +710,8 @@ body {
 }
 
 .card-meta-chip--blue {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-primary);
+  background: rgba(37, 99, 235, 0.08);
+  color: rgba(37, 99, 235, 0.82);
 }
 
 .card-meta-chip--green {
@@ -9256,24 +9256,30 @@ select:focus {
   margin-top: 0;
 }
 
+.score-confirmation-panel .workflow-status {
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+}
+
 .score-confirm-meta {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding-top: 2px;
 }
 
 .score-confirm-summary-label {
   font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: var(--weight-medium);
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--color-text-secondary);
 }
 
 .score-confirm-summary-value {
   font-size: var(--font-body-md);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -9284,7 +9290,7 @@ select:focus {
   justify-content: space-between;
   align-items: baseline;
   gap: var(--space-md);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(17, 17, 17, 0.06);
 }
 
@@ -9295,7 +9301,7 @@ select:focus {
 
 .score-confirm-deadline-value {
   font-size: var(--font-body-lg);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
 }
