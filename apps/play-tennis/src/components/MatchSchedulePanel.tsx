@@ -500,13 +500,6 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           </div>
         ) : showScoreEntry && isScoreable ? (
           <div className="schedule-score-entry">
-            {renderPanelHeader(
-              'Report Score',
-              'amber',
-              'Enter the final result',
-              'Save it for your opponent to confirm.'
-            )}
-            <div className="workflow-divider" />
             <InlineScoreEntry
               tournament={tournament}
               matchId={match.id}
