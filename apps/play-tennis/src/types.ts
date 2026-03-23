@@ -352,6 +352,32 @@ export interface MatchReaction {
   createdAt: string
 }
 
+// --- Viral Invite Links ---
+
+export type InviteLinkStatus = 'open' | 'full' | 'expired' | 'closed'
+
+export interface InviteLink {
+  id: string
+  shortcode: string
+  creatorId: string
+  lobbyName: string
+  county: string
+  maxPlayers: number
+  status: InviteLinkStatus
+  tournamentId?: string | null
+  createdAt: string
+  expiresAt: string
+}
+
+export interface LobbyMember {
+  id: string
+  inviteLinkId: string
+  playerId: string
+  displayName: string
+  email: string
+  joinedAt: string
+}
+
 // --- Doubles ---
 
 export interface DoublesTeam {

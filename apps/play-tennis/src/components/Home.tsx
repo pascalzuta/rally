@@ -7,6 +7,7 @@ import MessagePanel from './MessagePanel'
 import InlineScoreEntry from './InlineScoreEntry'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
+import CreateInviteLink from './CreateInviteLink'
 
 interface Props {
   profile: PlayerProfile
@@ -527,6 +528,8 @@ export default function Home({
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
+        <CreateInviteLink profile={profile} />
+
         {availabilityReminder}
 
         {/* How Rally Works card */}
@@ -581,6 +584,8 @@ export default function Home({
     return (
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
+
+        <CreateInviteLink profile={profile} />
 
         {availabilityReminder}
 

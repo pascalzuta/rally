@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join Tournament — Rally Tennis</title>
+
+  <!-- Open Graph for WhatsApp / iMessage previews -->
+  <meta property="og:title" content="Join me on Rally Tennis" />
+  <meta property="og:description" content="Local tournament. Auto-scheduled matches. Join the lobby and we'll handle the rest." />
+  <meta property="og:image" content="https://play-rally.com/og-image.png" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --green: #22c55e;
+      --green-dim: #16a34a;
+      --blue: #3b82f6;
+      --radius: 12px;
+      --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    .logo {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 16px;
+    }
+
+    .status-chip {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+
+    .status-chip.full {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .lobby-name {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .lobby-county {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .count-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .count-number {
+      font-size: 32px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
+      color: var(--green);
+    }
+
+    .count-label {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+      min-height: 28px;
+    }
+
+    .player-chip {
+      background: var(--surface2);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .form-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .form-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 16px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus {
+      border-color: var(--blue);
+    }
+
+    input::placeholder {
+      color: #555;
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn:hover { background: var(--green-dim); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .success-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      display: none;
+    }
+
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .success-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .success-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .loading {
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+      padding: 48px 0;
+    }
+
+    .not-found {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .not-found h2 { color: var(--text); margin-bottom: 8px; }
+
+    .footer {
+      margin-top: 32px;
+      font-size: 12px;
+      color: #444;
+      text-align: center;
+    }
+
+    .footer a { color: #555; text-decoration: none; }
+    .footer a:hover { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <div class="logo">Rally Tennis</div>
+
+  <div id="loading" class="loading">Loading tournament...</div>
+  <div id="not-found" class="not-found" style="display:none">
+    <h2>Link not found</h2>
+    <p>This invite link may have expired or been removed.</p>
+  </div>
+
+  <div id="main" style="display:none; width:100%; max-width:420px;">
+    <!-- Lobby status card -->
+    <div class="card">
+      <div id="status-chip" class="status-chip">Open</div>
+      <div class="lobby-name" id="lobby-name">Loading...</div>
+      <div class="lobby-county" id="lobby-county"></div>
+
+      <div class="count-row">
+        <span class="count-number" id="player-count">0</span>
+        <span class="count-label" id="player-count-label">of 16 players joined</span>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+
+      <div class="player-list" id="player-list"></div>
+    </div>
+
+    <!-- Join form -->
+    <div class="form-card" id="join-form-card">
+      <div class="form-title">Join this tournament</div>
+      <div class="field">
+        <label for="name-input">Your name</label>
+        <input id="name-input" type="text" placeholder="First Last" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label for="email-input">Email</label>
+        <input id="email-input" type="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <button class="btn" id="join-btn">Join Tournament</button>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <!-- Success state (shown after joining) -->
+    <div class="success-card" id="success-card">
+      <div class="success-icon">🎾</div>
+      <div class="success-title">You're in!</div>
+      <div class="success-sub" id="success-sub">We'll email you when the tournament kicks off and your matches are scheduled.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://play-rally.com">Play Rally Tennis</a>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gxiflulfgqahlvdirecz.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
+
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    // --- Parse shortcode ---
+    const params = new URLSearchParams(window.location.search)
+    // Support /join?code=abc123 or /join/abc123 (path segment)
+    const pathParts = window.location.pathname.replace(/\/$/, '').split('/')
+    const shortcode = params.get('code') || pathParts[pathParts.length - 1] || ''
+
+    let inviteLink = null
+    let members = []
+
+    // --- UI helpers ---
+    function show(id) { document.getElementById(id).style.display = '' }
+    function hide(id) { document.getElementById(id).style.display = 'none' }
+    function el(id) { return document.getElementById(id) }
+
+    function updateLobbyUI() {
+      if (!inviteLink) return
+      const count = members.length
+      const max = inviteLink.max_players
+      const pct = Math.min(100, Math.round((count / max) * 100))
+      const isFull = count >= max
+
+      el('lobby-name').textContent = inviteLink.lobby_name
+      el('lobby-county').textContent = inviteLink.county
+      el('player-count').textContent = count
+      el('player-count-label').textContent = `of ${max} players joined`
+      el('progress-fill').style.width = pct + '%'
+
+      const chip = el('status-chip')
+      if (isFull) {
+        chip.textContent = 'Full'
+        chip.className = 'status-chip full'
+      } else {
+        chip.textContent = 'Open'
+        chip.className = 'status-chip'
+      }
+
+      // Player name chips — show first names only
+      const list = el('player-list')
+      list.innerHTML = ''
+      members.forEach(m => {
+        const firstName = (m.display_name || '').split(' ')[0] || m.display_name
+        const chip = document.createElement('div')
+        chip.className = 'player-chip'
+        chip.textContent = firstName
+        list.appendChild(chip)
+      })
+
+      // Hide join form if full
+      if (isFull) {
+        hide('join-form-card')
+      }
+    }
+
+    function showError(msg) {
+      const errEl = el('error-msg')
+      errEl.textContent = msg
+      errEl.style.display = 'block'
+    }
+
+    function hideError() {
+      el('error-msg').style.display = 'none'
+    }
+
+    // --- Load invite link ---
+    async function loadInviteLink() {
+      if (!shortcode || shortcode === 'join') {
+        hide('loading')
+        show('not-found')
+        return
+      }
+
+      try {
+        const { data, error } = await db
+          .from('invite_links')
+          .select('*')
+          .eq('shortcode', shortcode)
+          .maybeSingle()
+
+        if (error || !data) {
+          hide('loading')
+          show('not-found')
+          return
+        }
+
+        inviteLink = data
+
+        // Update OG title dynamically for share previews
+        document.title = `Join ${data.lobby_name} — Rally Tennis`
+
+        // Load members
+        const { data: memberData } = await db
+          .from('lobby_members')
+          .select('*')
+          .eq('invite_link_id', data.id)
+          .order('joined_at', { ascending: true })
+
+        members = memberData || []
+
+        hide('loading')
+        show('main')
+        updateLobbyUI()
+
+        // Subscribe to realtime
+        subscribeToLobby(data.id)
+      } catch (err) {
+        hide('loading')
+        show('not-found')
+        console.error(err)
+      }
+    }
+
+    // --- Realtime subscription ---
+    function subscribeToLobby(inviteLinkId) {
+      db.channel('lobby-members-' + inviteLinkId)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'lobby_members',
+          filter: 'invite_link_id=eq.' + inviteLinkId,
+        }, async () => {
+          const { data } = await db
+            .from('lobby_members')
+            .select('*')
+            .eq('invite_link_id', inviteLinkId)
+            .order('joined_at', { ascending: true })
+          members = data || []
+          updateLobbyUI()
+        })
+        .subscribe()
+    }
+
+    // --- Join form submit ---
+    el('join-btn').addEventListener('click', async () => {
+      hideError()
+      const name = el('name-input').value.trim()
+      const email = el('email-input').value.trim().toLowerCase()
+
+      if (!name) { showError('Please enter your name.'); return }
+      if (!email || !email.includes('@')) { showError('Please enter a valid email.'); return }
+
+      const btn = el('join-btn')
+      btn.disabled = true
+      btn.textContent = 'Joining...'
+
+      try {
+        // Check for duplicate email
+        const existing = members.find(m => m.email === email)
+        if (existing) {
+          showError("You're already in this lobby!")
+          btn.disabled = false
+          btn.textContent = 'Join Tournament'
+          return
+        }
+
+        const { error } = await db.from('lobby_members').insert({
+          invite_link_id: inviteLink.id,
+          player_id: crypto.randomUUID(),
+          display_name: name,
+          email: email,
+          joined_at: new Date().toISOString(),
+        })
+
+        if (error) {
+          showError('Something went wrong. Please try again.')
+          console.error(error)
+          btn.disabled = false
+          btn.textContent = 'Join Tournament'
+          return
+        }
+
+        // Show success
+        hide('join-form-card')
+        el('success-sub').textContent = `Thanks, ${name.split(' ')[0]}! We'll email you when the tournament kicks off and your matches are scheduled.`
+        show('success-card')
+      } catch (err) {
+        showError('Something went wrong. Please try again.')
+        console.error(err)
+        btn.disabled = false
+        btn.textContent = 'Join Tournament'
+      }
+    })
+
+    // Allow submitting with Enter key
+    el('email-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') el('join-btn').click()
+    })
+    el('name-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') el('email-input').focus()
+    })
+
+    // --- Init ---
+    loadInviteLink()
+  </script>
+</body>
+</html>

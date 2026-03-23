@@ -15,6 +15,7 @@ import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
 import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
+import PostSignupShare from './components/PostSignupShare'
 import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
@@ -48,6 +49,7 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showInbox, setShowInbox] = useState(false)
+  const [showPostSignupShare, setShowPostSignupShare] = useState(false)
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -207,6 +209,7 @@ export default function App() {
     }
     setProfile(p)
     setActiveTab('home')
+    setShowPostSignupShare(true)
   }
 
   if (!profile) {
@@ -484,6 +487,12 @@ export default function App() {
           tier={victoryAnim.tier}
           tournamentName={victoryAnim.name}
           onDismiss={() => setVictoryAnim(null)}
+        />
+      )}
+      {showPostSignupShare && profile && (
+        <PostSignupShare
+          profile={profile}
+          onDismiss={() => setShowPostSignupShare(false)}
         />
       )}
     </div>
