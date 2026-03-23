@@ -443,6 +443,27 @@ export async function forceStartTournament(tournamentId: string): Promise<Tourna
   return await generateBracket(tournamentId)
 }
 
+/**
+ * Create and immediately start a tournament from invite lobby members.
+ * Used by the viral invite link pipeline when a lobby hits 6+ players.
+ */
+export async function createTournamentForInviteLobby(
+  county: string,
+  members: { playerId: string; playerName: string }[],
+): Promise<Tournament | null> {
+  if (members.length < MIN_PLAYERS) return null
+  const all = load()
+  const tournament = createTournament(county, members.map(m => ({
+    playerId: m.playerId,
+    playerName: m.playerName,
+    county: county.toLowerCase(),
+    joinedAt: new Date().toISOString(),
+  })), [])
+  all.unshift(tournament)
+  await saveAndSync(all, tournament)
+  return await generateBracket(tournament.id) ?? tournament
+}
+
 // --- Availability ---
 
 function loadAllAvailability(): Record<string, AvailabilitySlot[]> {

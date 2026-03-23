@@ -1,5 +1,6 @@
 import { InviteLink, LobbyMember } from './types'
 import { getClient } from './supabase'
+import { createTournamentForInviteLobby } from './store'
 
 const INVITE_LINKS_KEY = 'rally-invite-links'
 const INVITE_MEMBERS_KEY = 'rally-invite-members'
@@ -138,6 +139,7 @@ export async function getInviteLink(shortcode: string): Promise<InviteLink | nul
 
 /**
  * Join a lobby via invite shortcode — requires name + email.
+ * Automatically triggers tournament creation when lobby hits 6+ members.
  */
 export async function joinLobbyViaLink(
   shortcode: string,
@@ -178,7 +180,89 @@ export async function joinLobbyViaLink(
     }
   }
 
+  // Check if we should auto-trigger a tournament
+  await checkAndTriggerTournament(link.id).catch(err =>
+    console.warn('[Rally] Tournament trigger check failed:', err)
+  )
+
   return member
+}
+
+const MIN_LOBBY_FOR_TOURNAMENT = 6
+
+/**
+ * Check if a lobby has enough members to auto-create a tournament.
+ * If yes, creates the tournament and marks the invite link as 'tournament_created'.
+ * Returns the tournament ID if one was created, null otherwise.
+ */
+export async function checkAndTriggerTournament(inviteLinkId: string): Promise<string | null> {
+  const links = loadInviteLinks()
+  const link = links.find(l => l.id === inviteLinkId)
+  if (!link || link.status !== 'open') return null
+
+  // Get latest member count
+  const members = await getLobbyMembers(link.shortcode)
+  if (members.length < MIN_LOBBY_FOR_TOURNAMENT) return null
+
+  // Create the tournament
+  const tournament = await createTournamentForInviteLobby(
+    link.county,
+    members.map(m => ({ playerId: m.playerId, playerName: m.displayName })),
+  )
+  if (!tournament) return null
+
+  // Update invite link status locally
+  const idx = links.findIndex(l => l.id === inviteLinkId)
+  if (idx >= 0) {
+    links[idx] = { ...links[idx], status: 'tournament_created', tournamentId: tournament.id }
+    saveInviteLinks(links)
+  }
+
+  // Update in Supabase
+  const client = getClient()
+  if (client) {
+    const { error } = await client
+      .from('invite_links')
+      .update({ status: 'tournament_created', tournament_id: tournament.id })
+      .eq('id', inviteLinkId)
+    if (error) {
+      console.warn('[Rally] Failed to update invite link status in Supabase:', error.message)
+    }
+  }
+
+  return tournament.id
+}
+
+/**
+ * Mark any invite links whose expiry has passed as 'expired'.
+ * Call this on app load.
+ */
+export async function cleanupExpiredLobbies(): Promise<void> {
+  const now = new Date()
+  const links = loadInviteLinks()
+  const expiredIds: string[] = []
+
+  for (const link of links) {
+    if (link.status === 'open' && new Date(link.expiresAt) <= now) {
+      link.status = 'expired'
+      expiredIds.push(link.id)
+    }
+  }
+
+  if (expiredIds.length === 0) return
+
+  saveInviteLinks(links)
+
+  const client = getClient()
+  if (client && expiredIds.length > 0) {
+    const { error } = await client
+      .from('invite_links')
+      .update({ status: 'expired' })
+      .in('id', expiredIds)
+    if (error) {
+      console.warn('[Rally] Failed to expire invite links in Supabase:', error.message)
+    }
+  }
 }
 
 /**

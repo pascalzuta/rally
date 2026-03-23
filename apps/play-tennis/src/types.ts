@@ -354,7 +354,7 @@ export interface MatchReaction {
 
 // --- Viral Invite Links ---
 
-export type InviteLinkStatus = 'open' | 'full' | 'expired' | 'closed'
+export type InviteLinkStatus = 'open' | 'full' | 'expired' | 'closed' | 'tournament_created'
 
 export interface InviteLink {
   id: string
@@ -376,6 +376,36 @@ export interface LobbyMember {
   displayName: string
   email: string
   joinedAt: string
+}
+
+// --- Tennis Buddies ---
+
+export type BuddyStatus = 'pending' | 'accepted' | 'declined'
+
+export interface Buddy {
+  id: string
+  requesterId: string
+  requesterName: string
+  recipientId: string
+  recipientName: string
+  status: BuddyStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export type BuddyPingResponse = 'accepted' | 'declined'
+
+export interface BuddyPing {
+  id: string
+  senderId: string
+  senderName: string
+  recipientId: string
+  recipientName: string
+  proposedDate: string   // ISO date e.g. "2026-03-25"
+  proposedTime: string   // e.g. "10:00 AM"
+  location?: string
+  response?: BuddyPingResponse
+  createdAt: string
 }
 
 // --- Doubles ---

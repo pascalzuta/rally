@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react'
-import { LobbyMember } from '../types'
+import { LobbyMember, InviteLinkStatus } from '../types'
 import { getLobbyMembers, subscribeLobbyUpdates } from '../inviteStore'
 
 interface Props {
   shortcode: string
   inviteLinkId: string
   maxPlayers?: number
+  linkStatus?: InviteLinkStatus
+  tournamentId?: string | null
+  onViewTournament?: (id: string) => void
   /** If true, renders a compact inline version */
   compact?: boolean
 }
 
-export default function LobbyStatus({ shortcode, inviteLinkId, maxPlayers = 16, compact = false }: Props) {
+export default function LobbyStatus({
+  shortcode,
+  inviteLinkId,
+  maxPlayers = 16,
+  linkStatus,
+  tournamentId,
+  onViewTournament,
+  compact = false,
+}: Props) {
   const [members, setMembers] = useState<LobbyMember[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -37,9 +48,53 @@ export default function LobbyStatus({ shortcode, inviteLinkId, maxPlayers = 16, 
   const count = members.length
   const pct = Math.min(100, Math.round((count / maxPlayers) * 100))
   const isFull = count >= maxPlayers
+  const isTournamentCreated = linkStatus === 'tournament_created'
+  const isExpired = linkStatus === 'expired'
 
   if (loading) {
     return <div className="lobby-status-loading" style={{ color: 'var(--color-text-secondary)', fontSize: 13 }}>Loading...</div>
+  }
+
+  // Tournament created banner
+  if (isTournamentCreated) {
+    return (
+      <div className="lobby-status lobby-status--tournament-created">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: 22,
+            fontWeight: 800,
+            color: 'var(--color-positive-primary)',
+          }}>
+            {count}/{maxPlayers}
+          </span>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.07em',
+            textTransform: 'uppercase',
+            padding: '3px 8px',
+            borderRadius: 4,
+            background: 'rgba(34,197,94,0.15)',
+            color: 'var(--color-positive-primary)',
+          }}>
+            Tournament Created!
+          </span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 12 }}>
+          The lobby hit {count} players. Your tournament has been created and is ready to play.
+        </div>
+        {tournamentId && onViewTournament && (
+          <button
+            className="btn-primary"
+            style={{ width: '100%' }}
+            onClick={() => onViewTournament(tournamentId)}
+          >
+            View Tournament
+          </button>
+        )}
+      </div>
+    )
   }
 
   if (compact) {
@@ -49,7 +104,7 @@ export default function LobbyStatus({ shortcode, inviteLinkId, maxPlayers = 16, 
           {count}/{maxPlayers}
         </span>
         <span style={{ color: 'var(--color-text-secondary)', fontSize: 13, marginLeft: 6 }}>
-          {isFull ? 'Lobby full' : 'players joined'}
+          {isExpired ? 'Lobby expired' : isFull ? 'Lobby full' : 'players joined'}
         </span>
       </div>
     )
@@ -84,6 +139,19 @@ export default function LobbyStatus({ shortcode, inviteLinkId, maxPlayers = 16, 
             marginLeft: 4,
           }}>Full</span>
         )}
+        {isExpired && (
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            padding: '2px 7px',
+            borderRadius: 4,
+            background: 'rgba(156,163,175,0.15)',
+            color: 'var(--color-text-secondary)',
+            marginLeft: 4,
+          }}>Expired</span>
+        )}
       </div>
 
       {/* Progress bar */}
@@ -97,7 +165,7 @@ export default function LobbyStatus({ shortcode, inviteLinkId, maxPlayers = 16, 
         <div style={{
           height: '100%',
           width: `${pct}%`,
-          background: isFull ? 'var(--color-text-secondary)' : 'var(--color-positive-primary)',
+          background: isFull || isExpired ? 'var(--color-text-secondary)' : 'var(--color-positive-primary)',
           borderRadius: 3,
           transition: 'width 0.4s ease',
         }} />

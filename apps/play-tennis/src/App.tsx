@@ -16,6 +16,7 @@ import Help from './components/Help'
 import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import PostSignupShare from './components/PostSignupShare'
+import { cleanupExpiredLobbies } from './inviteStore'
 import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
@@ -152,6 +153,11 @@ export default function App() {
   // Award trophies for any previously completed tournaments
   useEffect(() => {
     retroactivelyAwardTrophies()
+  }, [])
+
+  // Cleanup expired invite lobbies on app load
+  useEffect(() => {
+    cleanupExpiredLobbies()
   }, [])
 
   // Initialize Supabase sync when profile is available
