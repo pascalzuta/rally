@@ -198,7 +198,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const seeds = getSeeds(tournament)
   const incomingOffers = getIncomingOffers(currentPlayerId)
   const outgoingOffers = getOutgoingOffers(currentPlayerId)
-  const opponentRows = buildOpponentRows(upcomingSlots, availableBroadcasts)
+  const pendingRecipientIds = new Set(outgoingOffers.map(o => o.recipientId))
+  const opponentRows = buildOpponentRows(upcomingSlots, availableBroadcasts).filter(r => !pendingRecipientIds.has(r.playerId))
   const dateGroups = groupRowsByDate(opponentRows)
 
   function playerSeedLabel(playerId: string): string {
@@ -270,41 +271,6 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* Tournament matches removed — they belong on the Tournament tab */}
 
-      {incomingOffers.length > 0 && (
-        <div className="pn-section">
-          <div className="section-header">Incoming Requests</div>
-          <div className="offer-list">
-            {incomingOffers.map(offer => (
-              <div key={offer.offerId} className="card offer-card offer-card-incoming">
-                <div className="offer-card-header"><span className="offer-card-label">Respond</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
-                <div className="card-title">{offer.senderName}</div>
-                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
-                <div className="offer-card-actions">
-                  <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
-                  <button className="btn offer-decline-btn" onClick={() => handleDeclineOffer(offer)}>Decline</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {outgoingOffers.length > 0 && (
-        <div className="pn-section">
-          <div className="section-header">Sent Requests</div>
-          <div className="offer-list">
-            {outgoingOffers.map(offer => (
-              <div key={offer.offerId} className="card offer-card offer-card-outgoing">
-                <div className="offer-card-header"><span className="offer-card-label">Pending</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
-                <div className="card-title">to {offer.recipientName}</div>
-                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
-                <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {myBroadcast ? (
         <div className="card pn-my-broadcast pn-my-broadcast-active">
           <div className="broadcast-card-header">
@@ -338,6 +304,41 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="field"><label className="field-label">Location</label><input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Marin Tennis Club" /></div>
           <div className="field"><label className="field-label">Message (optional)</label><input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Anyone free?" /></div>
           <div className="broadcast-form-actions"><button className="btn" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-primary" onClick={handleCreate}>Broadcast</button></div>
+        </div>
+      )}
+
+      {incomingOffers.length > 0 && (
+        <div className="pn-section">
+          <div className="section-header">Incoming Requests</div>
+          <div className="offer-list">
+            {incomingOffers.map(offer => (
+              <div key={offer.offerId} className="card offer-card offer-card-incoming">
+                <div className="offer-card-header"><span className="offer-card-label">Respond</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
+                <div className="card-title">{offer.senderName}</div>
+                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                <div className="offer-card-actions">
+                  <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
+                  <button className="btn offer-decline-btn" onClick={() => handleDeclineOffer(offer)}>Decline</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {outgoingOffers.length > 0 && (
+        <div className="pn-section">
+          <div className="section-header">Sent Requests</div>
+          <div className="offer-list">
+            {outgoingOffers.map(offer => (
+              <div key={offer.offerId} className="card offer-card offer-card-outgoing">
+                <div className="offer-card-header"><span className="offer-card-label">Pending</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
+                <div className="card-title">to {offer.recipientName}</div>
+                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
