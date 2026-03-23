@@ -111,3 +111,14 @@ export function onAuthStateChange(
   })
   return () => subscription.unsubscribe()
 }
+
+/**
+ * Check if a player already exists in the lobby table by their auth user ID.
+ * Returns their name and county if found, null otherwise.
+ */
+export async function fetchExistingPlayer(userId: string): Promise<{ name: string; county: string } | null> {
+  if (!client) return null
+  const { data, error } = await client.from('lobby').select('player_name, county').eq('player_id', userId).maybeSingle()
+  if (error || !data) return null
+  return { name: data.player_name, county: data.county }
+}

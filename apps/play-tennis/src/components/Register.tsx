@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, getSession, onAuthStateChange } from '../supabase'
+import { sendOtp, verifyOtp, getSession, onAuthStateChange, fetchExistingPlayer } from '../supabase'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -123,19 +123,39 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   // Check for existing session on mount + listen for magic link auth
   useEffect(() => {
     // Check if already authenticated (e.g. page refresh with valid session)
-    getSession().then(session => {
+    getSession().then(async session => {
       if (session) {
         setAuthUserId(session.userId)
         setEmail(session.email)
+        // If user already completed registration, skip straight to home
+        const existing = await fetchExistingPlayer(session.userId)
+        if (existing) {
+          const p = createProfile(existing.name, existing.county, {
+            email: session.email,
+            authId: session.userId,
+          })
+          onRegistered(p)
+          return
+        }
         setStep('signup')
       }
     })
 
     // Listen for magic link redirect (tokens arrive via URL hash)
-    const unsub = onAuthStateChange((event, userId, userEmail) => {
+    const unsub = onAuthStateChange(async (event, userId, userEmail) => {
       if (event === 'SIGNED_IN' && userId) {
         setAuthUserId(userId)
         if (userEmail) setEmail(userEmail)
+        // If user already completed registration, skip straight to home
+        const existing = await fetchExistingPlayer(userId)
+        if (existing) {
+          const p = createProfile(existing.name, existing.county, {
+            email: userEmail ?? undefined,
+            authId: userId,
+          })
+          onRegistered(p)
+          return
+        }
         setStep('signup')
       }
     })
@@ -326,6 +346,13 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     return 80 + Math.abs(hash % 400)
   }
 
+  const loginLink = (
+    <p className="signup-login-link" style={{ textAlign: 'center', marginTop: '16px', fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)' }}>
+      Already have an account?{' '}
+      <button className="btn-link" onClick={() => setStep('email')} style={{ fontSize: 'inherit' }}>Log in</button>
+    </p>
+  )
+
   // --- Onboarding Screen 1: The Problem ---
   if (step === 'onboard-1') {
     return (
@@ -355,6 +382,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <span className="onboard-dot" />
             <span className="onboard-dot" />
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -401,6 +429,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -444,6 +473,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -522,6 +552,16 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       setOtpVerifying(false)
       if (result.ok && result.userId) {
         setAuthUserId(result.userId)
+        // Check if this user already has a profile in the lobby
+        const existing = await fetchExistingPlayer(result.userId)
+        if (existing) {
+          const p = createProfile(existing.name, existing.county, {
+            email: email.trim().toLowerCase(),
+            authId: result.userId,
+          })
+          onRegistered(p)
+          return
+        }
         setStep('signup')
       } else {
         setOtpError('Invalid or expired code. Please try again.')
@@ -707,6 +747,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               {getPlayerCount(county)} players competing in {county.split(',')[0]}
             </p>
           )}
+          {loginLink}
         </div>
       </div>
     )
@@ -775,6 +816,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               Continue
             </button>
           </div>
+          {loginLink}
         </div>
       </div>
     )
@@ -953,6 +995,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             Start Competing
           </button>
         </div>
+        {loginLink}
       </div>
     </div>
   )
