@@ -9249,34 +9249,18 @@ select:focus {
 
 /* Score confirmation panel */
 .score-confirmation-panel {
-  padding: var(--space-md);
-  background: var(--color-surface);
-  border-radius: var(--radius-card);
-  border: 1px solid var(--color-divider);
-  margin-top: var(--space-sm);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-top: 0;
 }
 
-.score-confirm-meta-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  gap: var(--space-sm);
-}
-
-.score-confirm-summary-card {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: 14px;
-  border: 1px solid rgba(17, 17, 17, 0.06);
-  background: rgba(246, 247, 249, 0.72);
+.score-confirm-meta {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.score-confirm-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-md);
+  padding-top: 2px;
 }
 
 .score-confirm-summary-label {
@@ -9295,31 +9279,28 @@ select:focus {
   text-align: right;
 }
 
-.score-confirm-deadline-card {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: 14px;
-  border: 1px solid rgba(42, 91, 215, 0.16);
-  background: rgba(220, 231, 255, 0.42);
+.score-confirm-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-md);
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
 }
 
-.score-confirm-deadline-label {
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-accent-primary);
+.score-confirm-stat-row--deadline {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .score-confirm-deadline-value {
-  margin-top: 2px;
-  font-size: var(--font-title-sm);
+  font-size: var(--font-body-lg);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .score-confirm-deadline-meta {
-  margin-top: 2px;
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
@@ -9403,14 +9384,13 @@ select:focus {
 }
 
 @media (max-width: 480px) {
-  .score-confirm-meta-grid,
   .score-confirm-primary-actions,
   .correction-secondary-actions,
   .issue-actions {
     grid-template-columns: 1fr;
   }
 
-  .score-confirm-summary-row {
+  .score-confirm-stat-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;

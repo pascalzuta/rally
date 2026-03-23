@@ -349,22 +349,20 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
           <div className="schedule-panel-title">Review the reported result</div>
           <div className="schedule-panel-copy">{reporterName} reported this score. Confirm it if it is correct, or dispute it within 48 hours.</div>
         </div>
-        <div className="score-confirm-meta-grid">
-          <div className="score-confirm-summary-card">
-            <div className="score-confirm-summary-row">
-              <span className="score-confirm-summary-label">Reported score</span>
-              <span className="score-confirm-summary-value">{reportedScore}</span>
-            </div>
-            <div className="score-confirm-summary-row">
-              <span className="score-confirm-summary-label">Reported winner</span>
-              <span className="score-confirm-summary-value">{reportedWinnerName}</span>
-            </div>
+        <div className="score-confirm-meta">
+          <div className="score-confirm-stat-row">
+            <span className="score-confirm-summary-label">Reported score</span>
+            <span className="score-confirm-summary-value">{reportedScore}</span>
           </div>
-          <div className="score-confirm-deadline-card">
-            <div className="score-confirm-deadline-label">Auto-confirms in</div>
-            <div className="score-confirm-deadline-value">{formatCountdown(remainingMs)}</div>
-            {countdownDeadline && <div className="score-confirm-deadline-meta">Deadline {countdownDeadline}</div>}
+          <div className="score-confirm-stat-row">
+            <span className="score-confirm-summary-label">Reported winner</span>
+            <span className="score-confirm-summary-value">{reportedWinnerName}</span>
           </div>
+          <div className="score-confirm-stat-row score-confirm-stat-row--deadline">
+            <span className="score-confirm-summary-label">Auto-confirms in</span>
+            <span className="score-confirm-deadline-value">{formatCountdown(remainingMs)}</span>
+          </div>
+          {countdownDeadline && <div className="score-confirm-deadline-meta">Deadline {countdownDeadline}</div>}
         </div>
         <div className="workflow-actions score-confirm-primary-actions">
           <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
