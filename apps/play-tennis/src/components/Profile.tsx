@@ -35,6 +35,20 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
   { label: 'Saturday afternoons', slots: [{ day: 'saturday', startHour: 13, endHour: 17 }]},
   { label: 'Sunday mornings', slots: [{ day: 'sunday', startHour: 8, endHour: 12 }]},
   { label: 'Sunday afternoons', slots: [{ day: 'sunday', startHour: 13, endHour: 17 }]},
+  { label: 'Weekday mornings', slots: [
+    { day: 'monday', startHour: 8, endHour: 12 },
+    { day: 'tuesday', startHour: 8, endHour: 12 },
+    { day: 'wednesday', startHour: 8, endHour: 12 },
+    { day: 'thursday', startHour: 8, endHour: 12 },
+    { day: 'friday', startHour: 8, endHour: 12 },
+  ]},
+  { label: 'Weekday afternoons', slots: [
+    { day: 'monday', startHour: 13, endHour: 17 },
+    { day: 'tuesday', startHour: 13, endHour: 17 },
+    { day: 'wednesday', startHour: 13, endHour: 17 },
+    { day: 'thursday', startHour: 13, endHour: 17 },
+    { day: 'friday', startHour: 13, endHour: 17 },
+  ]},
 ]
 
 function quickSlotSummary(slotGroup: AvailabilitySlot[]): string {
