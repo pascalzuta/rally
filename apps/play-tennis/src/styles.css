@@ -4611,6 +4611,10 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 
+.action-card-supporting--danger {
+  color: var(--color-negative-primary);
+}
+
 .action-card-btn {
   display: inline-flex;
   align-items: center;

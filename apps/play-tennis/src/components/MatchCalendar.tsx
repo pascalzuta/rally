@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
-import { getPlayerName, hasUnreadFrom } from '../store'
-import MessagePanel from './MessagePanel'
-import UpcomingMatchPanel from './UpcomingMatchPanel'
-import { canExpandMatch } from '../matchCapabilities'
+import { getPlayerName } from '../store'
+import MatchActionCard from './MatchActionCard'
 
 interface Props {
   tournament: Tournament
@@ -46,13 +44,6 @@ function formatScoreDisplay(match: Match): string {
 
 function getTier(match: Match): SchedulingTier | null {
   return match.schedule?.schedulingTier ?? null
-}
-
-function getPrimaryActionLabel(match: Match): string {
-  const tier = getTier(match)
-  if (tier === 'auto') return 'View Match'
-  if (tier === 'needs-accept') return 'Confirm Time'
-  return 'Find a Time'
 }
 
 function getTierTone(tier: SchedulingTier | null, isCompleted: boolean): 'green' | 'blue' | 'amber' | 'slate' {
@@ -158,96 +149,43 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
             const isCompleted = match.completed
             const score = formatScoreDisplay(match)
             const isMessaging = messagingMatchId === match.id
-            const msgUnread = isMyMatch && opponentId ? hasUnreadFrom(currentPlayerId, opponentId) : false
 
             return (
               <div key={match.id}>
-                <div
-                  className={`card action-card ${isCompleted ? 'action-completed' : tier === 'auto' ? 'action-confirmed' : tier === 'needs-accept' ? 'action-respond' : 'action-schedule'} ${isMyMatch ? 'calendar-match--mine' : ''}`}
-                  onClick={() => {
-                    if (!canExpandMatch(match, currentPlayerId)) return
-                    setMessagingMatchId(null)
-                    setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
-                  }}
-                >
-                  <div className="action-card-status-row">
-                    <div className={`card-status-label card-status-label--${getTierTone(tier, isCompleted)}`}>
-                      {isCompleted ? 'Completed' :
-                       tier === 'auto' ? 'Confirmed' :
-                       tier === 'needs-accept' ? 'Needs Response' :
-                       'Needs Scheduling'}
+                {isCompleted ? (
+                  <div className="card action-card action-completed">
+                    <div className="action-card-status-row">
+                      <div className={`card-status-label card-status-label--${getTierTone(tier, true)}`}>Completed</div>
+                      {slot && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
                     </div>
-                    {slot && !isCompleted && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
-                  </div>
-                  <div className="action-card-main">
-                    <div className="action-card-opponent">vs {opponentName}</div>
-                    <div className="action-card-supporting">
-                      {isCompleted
-                        ? (score || 'Final score recorded.')
-                        : tier === 'auto'
-                          ? 'Confirmed and ready to play.'
-                          : tier === 'needs-accept'
-                            ? 'Review the proposed time and confirm if it works.'
-                            : 'Set a time with your opponent.'}
+                    <div className="action-card-main">
+                      <div className="action-card-opponent">vs {opponentName}</div>
+                      <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
                     </div>
                   </div>
-                  <div className="action-card-buttons">
-                    {!isCompleted && (
-                      <button
-                        className="action-card-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (!canExpandMatch(match, currentPlayerId)) return
-                          setMessagingMatchId(null)
-                          setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
-                        }}
-                      >
-                        {getPrimaryActionLabel(match)}
-                      </button>
-                    )}
-                    {isMyMatch && opponentId && (
-                      <button
-                        className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
-                        onClick={e => {
-                          e.stopPropagation()
-                          setExpandedMatchId(null)
-                          setMessagingMatchId(isMessaging ? null : match.id)
-                        }}
-                        aria-label="Message opponent"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                        </svg>
-                        {msgUnread && <span className="msg-unread-dot" />}
-                      </button>
-                    )}
-                  </div>
-                  {isMessaging && opponentId && (
-                    <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
-                      <MessagePanel
-                        currentPlayerId={currentPlayerId}
-                        currentPlayerName={currentPlayerName}
-                        otherPlayerId={opponentId}
-                        otherPlayerName={opponentName}
-                        onClose={() => setMessagingMatchId(null)}
-                      />
-                    </div>
-                  )}
-                  {expandedMatchId === match.id && (
-                    <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
-                      <UpcomingMatchPanel
-                        tournament={tournament}
-                        match={match}
-                        currentPlayerId={currentPlayerId}
-                        mode="schedule"
-                        onUpdated={() => {
-                          setExpandedMatchId(null)
-                          onTournamentUpdated()
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <MatchActionCard
+                    className={`card ${isMyMatch ? 'calendar-match--mine' : ''}`}
+                    tournament={tournament}
+                    match={match}
+                    currentPlayerId={currentPlayerId}
+                    currentPlayerName={currentPlayerName}
+                    isExpanded={expandedMatchId === match.id}
+                    isMessaging={isMessaging}
+                    onToggleExpanded={() => {
+                      setMessagingMatchId(null)
+                      setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                    }}
+                    onToggleMessaging={() => {
+                      setExpandedMatchId(null)
+                      setMessagingMatchId(isMessaging ? null : match.id)
+                    }}
+                    onUpdated={() => {
+                      setExpandedMatchId(null)
+                      onTournamentUpdated()
+                    }}
+                  />
+                )}
               </div>
             )
           })}

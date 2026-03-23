@@ -1,0 +1,137 @@
+import { forwardRef } from 'react'
+import { Tournament, Match } from '../types'
+import { hasUnreadFrom } from '../store'
+import { getMatchCardView } from '../matchCardModel'
+import MessagePanel from './MessagePanel'
+import UpcomingMatchPanel from './UpcomingMatchPanel'
+import ScoreConfirmationPanel from './ScoreConfirmationPanel'
+
+interface Props {
+  tournament: Tournament
+  match: Match
+  currentPlayerId: string
+  currentPlayerName: string
+  isExpanded: boolean
+  isMessaging: boolean
+  className?: string
+  onToggleExpanded: () => void
+  onToggleMessaging: () => void
+  onUpdated: () => void
+  onScoreSaved?: () => void
+}
+
+const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCard(
+  {
+    tournament,
+    match,
+    currentPlayerId,
+    currentPlayerName,
+    isExpanded,
+    isMessaging,
+    className,
+    onToggleExpanded,
+    onToggleMessaging,
+    onUpdated,
+    onScoreSaved,
+  },
+  ref
+) {
+  const view = getMatchCardView(tournament, match, currentPlayerId)
+  const canToggleExpanded = Boolean(view.primaryActionLabel && view.expansionKind)
+  const hasUnread = view.opponentId ? hasUnreadFrom(currentPlayerId, view.opponentId) : false
+  const classes = ['action-card', `action-${view.tone}`, className].filter(Boolean).join(' ')
+
+  return (
+    <div
+      ref={ref}
+      className={classes}
+      onClick={canToggleExpanded ? onToggleExpanded : undefined}
+    >
+      <div className="action-card-status-row">
+        <div className={`card-status-label card-status-label--${view.tone === 'completed' ? 'slate' : view.tone === 'confirm-score' ? 'blue' : view.tone}`}>
+          {view.statusLabel}
+        </div>
+        {view.metaLabel && <div className="card-meta-chip">{view.metaLabel}</div>}
+      </div>
+
+      <div className="action-card-main">
+        <div className="action-card-opponent">{view.title}</div>
+        {view.supporting && (
+          <div className={`action-card-supporting ${view.supportingTone === 'danger' ? 'action-card-supporting--danger' : ''}`}>
+            {view.supporting}
+          </div>
+        )}
+      </div>
+
+      {(view.primaryActionLabel || (view.isMyMatch && view.opponentId)) && (
+        <div className="action-card-buttons">
+          {view.primaryActionLabel && (
+            <button
+              className="action-card-btn"
+              onClick={event => {
+                event.stopPropagation()
+                onToggleExpanded()
+              }}
+            >
+              {view.primaryActionLabel}
+            </button>
+          )}
+
+          {view.isMyMatch && view.opponentId && (
+            <button
+              className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
+              onClick={event => {
+                event.stopPropagation()
+                onToggleMessaging()
+              }}
+              aria-label="Message opponent"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+              </svg>
+              {hasUnread && <span className="msg-unread-dot" />}
+            </button>
+          )}
+        </div>
+      )}
+
+      {isMessaging && view.opponentId && view.opponentName && (
+        <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
+          <MessagePanel
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            otherPlayerId={view.opponentId}
+            otherPlayerName={view.opponentName}
+            onClose={onToggleMessaging}
+          />
+        </div>
+      )}
+
+      {isExpanded && view.expansionKind === 'score-confirmation' && (
+        <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
+          <ScoreConfirmationPanel
+            tournament={tournament}
+            match={match}
+            currentPlayerId={currentPlayerId}
+            onUpdated={onUpdated}
+          />
+        </div>
+      )}
+
+      {isExpanded && view.expansionKind === 'schedule' && match.schedule && (
+        <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
+          <UpcomingMatchPanel
+            tournament={tournament}
+            match={match}
+            currentPlayerId={currentPlayerId}
+            mode="schedule"
+            onUpdated={onUpdated}
+            onScoreSaved={onScoreSaved}
+          />
+        </div>
+      )}
+    </div>
+  )
+})
+
+export default MatchActionCard

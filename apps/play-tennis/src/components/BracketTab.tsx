@@ -1,8 +1,9 @@
-import { formatSlotInline as formatSlotInlineNumeric } from '../dateUtils'
 import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, checkAutoAcceptScores, getRescheduleUiState } from '../store'
+import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, checkAutoAcceptScores } from '../store'
+import { getMatchCardView } from '../matchCardModel'
 import MessagePanel from './MessagePanel'
+import MatchActionCard from './MatchActionCard'
 import Standings from './Standings'
 import ScheduleSummary from './ScheduleSummary'
 import MatchCalendar from './MatchCalendar'
@@ -21,53 +22,6 @@ interface Props {
   onTournamentUpdated: () => void
   focusMatchId?: string | null
   onFocusConsumed?: () => void
-}
-
-const DAY_MAP: Record<string, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-  thursday: 4, friday: 5, saturday: 6,
-}
-
-const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
-
-/** Resolve a { day, startHour } slot to a calendar date string + time.
- *  Returns { day: "Mon, Mar 16", time: "6pm" } for the time badge. */
-function formatStartTime(slot: { day: string; startHour: number }): { day: string; time: string } {
-  const target = DAY_MAP[slot.day] ?? 1
-  const today = new Date()
-  const diff = (target - today.getDay() + 7) % 7
-  const date = new Date(today)
-  date.setDate(today.getDate() + diff)
-  const day = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  const period = slot.startHour >= 12 ? 'pm' : 'am'
-  const hour = slot.startHour % 12 || 12
-  return { day, time: `${hour}${period}` }
-}
-
-/** Format a slot as a single inline string using shared dateUtils */
-function formatSlotInline(slot: { day: string; startHour: number }): string {
-  const dayNum = DAY_MAP[slot.day] ?? 1
-  return formatSlotInlineNumeric({ day: dayNum, startHour: slot.startHour })
-}
-
-/** Format an ISO date string as "Mon, Mar 16" */
-function formatISODate(isoStr: string): string {
-  const d = new Date(isoStr)
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-}
-
-function formatScoreConfirmationTimeLeft(isoStr: string): string {
-  const remainingMs = Math.max(0, new Date(isoStr).getTime() + SCORE_CONFIRMATION_WINDOW_MS - Date.now())
-  const totalMinutes = Math.ceil(remainingMs / 60000)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24)
-    const remHours = hours % 24
-    return `${days}d ${remHours}h left`
-  }
-  if (hours > 0) return `${hours}h ${minutes}m left`
-  return `${Math.max(0, totalMinutes)}m left`
 }
 
 function formatScoreSummary(match: Match): string | null {
@@ -110,12 +64,12 @@ function eyebrowTone(type: string): 'slate' | 'blue' | 'green' | 'amber' | 'red'
   switch (type) {
     case 'confirmed':
       return 'green'
-    case 'proposed':
+    case 'respond':
+    case 'confirm-score':
       return 'blue'
     case 'escalated':
       return 'red'
-    case 'unscheduled':
-    case 'score':
+    case 'schedule':
       return 'amber'
     default:
       return 'slate'
@@ -328,99 +282,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     })
   }
 
-  function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean): { label: string; type: string } | null {
-    const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
-    if (match.completed && match.splitDecision) return { label: 'SPLIT DECISION', type: 'muted' }
-    if (match.completed) return null
-    if (match.resolution) {
-      if (match.resolution.type === 'walkover') return { label: 'WALKOVER', type: 'muted' }
-      if (match.resolution.type === 'double-loss') return { label: 'CANCELED', type: 'muted' }
-      return { label: 'RESOLVED', type: 'muted' }
-    }
-    // Score dispute states
-    if (match.scoreDispute?.status === 'pending') {
-      if (match.scoreReportedBy === currentPlayerId) return { label: 'REVIEW DISPUTE', type: 'score' }
-      return { label: 'CORRECTION SUBMITTED', type: 'score' }
-    }
-    if (match.scoreDispute?.status === 'admin-review') return { label: 'UNDER REVIEW', type: 'muted' }
-    // Score reported — waiting for confirmation
-    if (match.scoreReportedBy) {
-      if (match.scoreReportedBy === currentPlayerId) return { label: 'SCORE REPORTED', type: 'score' }
-      return { label: 'CONFIRM SCORE', type: 'score' }
-    }
-    if (match.schedule?.activeRescheduleRequest) {
-      if (rescheduleUiState === 'soft_request_sent') return { label: 'RESCHEDULE REQUESTED', type: 'proposed' }
-      if (rescheduleUiState === 'soft_request_received') return { label: 'NEEDS RESPONSE', type: 'proposed' }
-      return { label: 'NEEDS NEW TIME', type: 'unscheduled' }
-    }
-    if (canScore) return { label: 'CONFIRMED', type: 'confirmed' }
-    if (!match.schedule) return { label: 'PENDING', type: 'pending' }
-    if (match.schedule.status === 'confirmed') return { label: 'CONFIRMED', type: 'confirmed' }
-    if (match.schedule.status === 'escalated') return { label: 'RESPOND NOW', type: 'escalated' }
-    if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'NEEDS RESPONSE', type: 'proposed' }
-    if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'NEEDS SCHEDULING', type: 'unscheduled' }
-    return { label: 'PENDING', type: 'pending' }
-  }
-
-  function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean): string | null {
-    if (match.completed) return null
-    // Score dispute states
-    if (match.scoreDispute?.status === 'pending') {
-      if (match.scoreReportedBy === currentPlayerId) return 'Review Dispute'
-      return null // disputer is waiting
-    }
-    if (match.scoreDispute?.status === 'admin-review') return null
-    // Score reported — show confirm or waiting
-    if (match.scoreReportedBy) {
-      if (match.scoreReportedBy === currentPlayerId) return null // waiting for opponent
-      return 'Confirm Score'
-    }
-    if (canScore) return 'View Match'
-    if (!match.schedule) return null
-    const request = match.schedule.activeRescheduleRequest
-    if (request) {
-      if (!isMyMatch) return 'View Time'
-      if (request.intent === 'soft') {
-        return request.requestedBy === currentPlayerId ? null : 'Respond'
-      }
-      return 'Find a Time'
-    }
-    if (match.schedule.status === 'confirmed') return isMyMatch ? 'View Match' : 'View Time'
-    if (!isMyMatch) return null
-    if (match.schedule.status === 'proposed') return 'Confirm Time'
-    if (match.schedule.status === 'escalated') return 'Respond Now'
-    if (match.schedule.status === 'unscheduled') return 'Find a Time'
-    return null
-  }
-
-  function getMatchMetaLabel(match: Match): string | null {
-    if (!match.completed && match.scoreReportedBy && match.scoreReportedAt) {
-      return formatScoreConfirmationTimeLeft(match.scoreReportedAt)
-    }
-
-    if (!match.completed && match.schedule?.confirmedSlot) {
-      const st = formatStartTime(match.schedule.confirmedSlot)
-      return `${st.day} ${st.time}`
-    }
-
-    if (!match.completed && match.schedule?.status === 'proposed') {
-      const pending = match.schedule.proposals.find(p => p.status === 'pending')
-      if (!pending) return null
-      const st = formatStartTime(pending)
-      return `${st.day} ${st.time}`
-    }
-
-    if (match.completed && match.schedule?.confirmedSlot) {
-      return formatStartTime(match.schedule.confirmedSlot).day
-    }
-
-    if (match.completed && match.scoreReportedAt) {
-      return formatISODate(match.scoreReportedAt)
-    }
-
-    return null
-  }
-
   // R-17: Filter matches based on matchFilter mode
   function filterMatch(m: Match): boolean {
     if (matchFilter === 'upcoming') return !m.completed
@@ -445,18 +306,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
     const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-    const hasSchedule = match.schedule && match.player1Id && match.player2Id
-    const isConfirmed = match.schedule?.status === 'confirmed'
     const canScore = canEnterScore(match, currentPlayerId)
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
+    const cardView = getMatchCardView(tournament!, match, currentPlayerId)
 
     const scored = hasScores(match)
     const scoreSummary = formatScoreSummary(match)
-    const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore)
-    const actionLabel = getMatchActionLabel(match, isMyMatch, !!canScore)
-    const metaLabel = getMatchMetaLabel(match)
     const opponentName = isMyMatch
       ? match.player1Id === currentPlayerId ? p2 : p1
       : null
@@ -475,25 +332,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     })()
 
     const supporting = (() => {
-      if (match.resolution) {
-        if (match.resolution.type === 'walkover') return 'Recorded as a walkover.'
-        if (match.resolution.type === 'double-loss') return 'Recorded as canceled.'
-        return 'Result was resolved by Rally.'
-      }
-      if (match.scoreDispute?.status === 'pending') {
-        return match.scoreReportedBy === currentPlayerId
-          ? 'Your opponent requested a correction.'
-          : 'Review the reported result and respond.'
-      }
-      if (match.scoreDispute?.status === 'admin-review') {
-        return 'Rally is reviewing the reported result.'
-      }
-      if (match.scoreReportedBy && !match.completed) {
-        if (!scoreSummary) return match.scoreReportedBy === currentPlayerId ? 'Waiting for opponent confirmation.' : 'Review the reported result.'
-        return match.scoreReportedBy === currentPlayerId
-          ? `Reported ${scoreSummary}. Waiting for opponent confirmation.`
-          : `Reported ${scoreSummary}. Review and confirm.`
-      }
       if (match.completed) {
         if (scoreSummary) return scoreSummary
         if (match.winnerId) {
@@ -502,19 +340,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         }
         return 'Match completed.'
       }
-      if (match.schedule?.activeRescheduleRequest) {
-        const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
-        if (rescheduleUiState === 'soft_request_sent') return 'You asked to move the current time.'
-        if (rescheduleUiState === 'soft_request_received') return 'Your opponent asked to move the current time.'
-        return 'This match needs a new confirmed time.'
-      }
-      if (canScore) return 'Enter the final result after the match.'
-      if (!match.schedule) return isMyMatch ? 'Rally is still creating a match time.' : 'Waiting for a match time.'
-      if (match.schedule.status === 'confirmed') return isMyMatch ? 'Confirmed and ready to play.' : 'Confirmed match time.'
-      if (match.schedule.status === 'proposed') return isMyMatch ? 'Review the proposed time and confirm if it works.' : 'Suggested time awaiting a response.'
-      if (match.schedule.status === 'escalated') return isMyMatch ? 'Scheduling needs your response.' : 'Scheduling needs organizer help.'
-      if (match.schedule.status === 'unscheduled') return isMyMatch ? 'Set a time with your opponent.' : 'Players still need to choose a time.'
-      return null
+      return cardView.supporting
     })()
 
     if (isBye) {
@@ -529,6 +355,35 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       )
     }
 
+    if (isMyMatch && !match.completed && match.player1Id && match.player2Id) {
+      return (
+        <MatchActionCard
+          key={match.id}
+          ref={el => { if (el) matchRefs.current.set(match.id, el); else matchRefs.current.delete(match.id) }}
+          className={`${isFinal ? 'match-card-final' : ''} ${highlightedMatchId === match.id ? 'match-card-highlighted' : ''}`}
+          tournament={tournament!}
+          match={match}
+          currentPlayerId={currentPlayerId}
+          currentPlayerName={currentPlayerName}
+          isExpanded={isExpanded}
+          isMessaging={messagingMatchId === match.id}
+          onToggleExpanded={() => {
+            setMessagingMatchId(null)
+            setExpandedMatchId(isExpanded ? null : match.id)
+          }}
+          onToggleMessaging={() => {
+            setExpandedMatchId(null)
+            setMessagingMatchId(messagingMatchId === match.id ? null : match.id)
+          }}
+          onUpdated={() => {
+            setExpandedMatchId(null)
+            refresh()
+          }}
+          onScoreSaved={handleScoreSaved}
+        />
+      )
+    }
+
     return (
       <div
         key={match.id}
@@ -538,8 +393,12 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       >
         <>
           <div className="match-card-eyebrow-row">
-            {eyebrow && <div className={`match-card-eyebrow card-status-label card-status-label--${eyebrowTone(eyebrow.type)}`}>{eyebrow.label}</div>}
-            {metaLabel && <span className="card-meta-chip match-card-meta-chip">{metaLabel}</span>}
+            {!match.completed && (
+              <div className={`match-card-eyebrow card-status-label card-status-label--${eyebrowTone(cardView.tone)}`}>
+                {cardView.statusLabel}
+              </div>
+            )}
+            {cardView.metaLabel && <span className="card-meta-chip match-card-meta-chip">{cardView.metaLabel}</span>}
           </div>
 
           <div className="match-card-summary">
@@ -556,7 +415,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               )}
             </div>
             {supporting && (
-              <div className={`match-card-supporting ${match.scoreDispute?.status === 'pending' ? 'match-card-supporting--danger' : ''}`}>
+              <div className={`match-card-supporting ${cardView.supportingTone === 'danger' ? 'match-card-supporting--danger' : ''}`}>
                 {supporting}
               </div>
             )}
@@ -597,13 +456,13 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
           {/* Action row: action button + message button */}
           <div className="match-card-actions-row">
-            {(actionLabel === 'Confirm Score' || actionLabel === 'Review Dispute') ? (
+            {(cardView.primaryActionLabel === 'Confirm Score' || cardView.primaryActionLabel === 'Review Dispute') ? (
               <button className="match-card-action-btn" onClick={e => {
                 e.stopPropagation()
                 setMessagingMatchId(null)
                 setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
-              }}>{actionLabel}</button>
-            ) : actionLabel ? (
+              }}>{cardView.primaryActionLabel}</button>
+            ) : cardView.primaryActionLabel ? (
               <button
                 className="match-card-action-btn"
                 onClick={e => {
@@ -612,7 +471,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
                 }}
               >
-                {actionLabel}
+                {cardView.primaryActionLabel}
               </button>
             ) : null}
             {isMyMatch && match.player1Id && match.player2Id && (() => {
