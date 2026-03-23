@@ -3866,6 +3866,43 @@ select:focus {
   flex: 1;
 }
 
+.broadcast-create-card {
+  margin-bottom: var(--space-lg);
+}
+
+.broadcast-create-card .action-card-expansion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.broadcast-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.broadcast-create-card input[type="text"],
+.broadcast-create-card input[type="date"],
+.broadcast-create-card input[type="time"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 16px;
+}
+
+.broadcast-create-card .field,
+.broadcast-create-card .field-half {
+  min-width: 0;
+}
+
+.broadcast-create-card .broadcast-time-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  width: 100%;
+}
+
 /* Timeline view */
 .broadcast-timeline {
   margin-bottom: var(--space-xl);
@@ -4126,8 +4163,56 @@ select:focus {
 .quickplay-request-summary {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  gap: var(--space-sm);
+}
+
+.quickplay-request-header {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
+}
+
+.quickplay-request-copy {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+}
+
+.quickplay-request-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-md);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-bg, #f8fafc);
+}
+
+.quickplay-request-detail-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.quickplay-request-detail-value {
+  font-size: var(--font-body-md);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.quickplay-request-panel .workflow-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+@media (max-width: 480px) {
+  .broadcast-create-card .broadcast-time-row,
+  .quickplay-request-panel .workflow-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 .offer-confirm-note {

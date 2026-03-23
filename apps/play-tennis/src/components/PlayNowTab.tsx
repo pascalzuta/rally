@@ -367,22 +367,69 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           </span>
         </button>
       ) : (
-        <div className="card broadcast-form">
-          <div className="card-status-row">
+        <div className="card action-card action-respond broadcast-create-card">
+          <div className="action-card-status-row">
             <div className="card-status-label card-status-label--blue">Create Broadcast</div>
           </div>
-          <div className="card-summary-main">
-            <div className="card-title">I want to play</div>
-            <div className="card-supporting">Share a time and place so nearby players can send a match request.</div>
+          <div className="action-card-main">
+            <div className="action-card-opponent">I want to play</div>
+            <div className="action-card-supporting">Share one time and place so nearby players can send a match request.</div>
           </div>
-          <div className="field"><label className="field-label">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} /></div>
-          <div className="broadcast-time-row">
-            <div className="field field-half"><label className="field-label">From</label><input type="time" value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="select-input" /></div>
-            <div className="field field-half"><label className="field-label">To</label><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="select-input" /></div>
+          <div className="action-card-expansion">
+            <div className="broadcast-form-fields">
+              <div className="field">
+                <label className="field-label">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="broadcast-time-row">
+                <div className="field field-half">
+                  <label className="field-label">From</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={e => handleStartTimeChange(e.target.value)}
+                    className="select-input"
+                  />
+                </div>
+                <div className="field field-half">
+                  <label className="field-label">To</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={e => setEndTime(e.target.value)}
+                    className="select-input"
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label className="field-label">Location</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  placeholder="e.g. Marin Tennis Club"
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Message (optional)</label>
+                <input
+                  type="text"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  placeholder="Anyone free?"
+                />
+              </div>
+            </div>
+            <div className="broadcast-form-actions">
+              <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreate}>Broadcast</button>
+            </div>
           </div>
-          <div className="field"><label className="field-label">Location</label><input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Marin Tennis Club" /></div>
-          <div className="field"><label className="field-label">Message (optional)</label><input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Anyone free?" /></div>
-          <div className="broadcast-form-actions"><button className="btn" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-primary" onClick={handleCreate}>Broadcast</button></div>
         </div>
       )}
 
@@ -454,20 +501,25 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                     {isAsking && (
                       <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                         <div className="workflow-module quickplay-request-panel">
-                          <div className="workflow-header">
+                          <div className="quickplay-request-header">
                             <div className="workflow-status workflow-status--blue">{hasPendingRequest ? 'Request Sent' : 'Match Request'}</div>
-                            <div className="schedule-panel-title">{hasPendingRequest ? `Waiting on ${row.playerName}` : `Review match request vs ${row.playerName}`}</div>
-                            <div className="schedule-panel-copy">
+                            <div className="quickplay-request-copy">
                               {hasPendingRequest && matchingOutgoingOffer
                                 ? `${row.playerName} has ${timeRemaining(matchingOutgoingOffer.expiresAt)} left to accept or decline.`
                                 : 'Confirm the proposed time below before sending your request.'}
                             </div>
                           </div>
-                          <div className="workflow-divider" />
                           <div className="quickplay-request-summary">
-                            <div className="offer-confirm-time">{row.timeLabel}</div>
-                            <div className="offer-confirm-date">{row.dateLabel}</div>
-                            {row.location && <div className="broadcast-claim-detail">{row.location}</div>}
+                            <div className="quickplay-request-detail">
+                              <div className="quickplay-request-detail-label">Time</div>
+                              <div className="quickplay-request-detail-value">{row.dateLabel} · {row.timeLabel}</div>
+                            </div>
+                            {row.location && (
+                              <div className="quickplay-request-detail">
+                                <div className="quickplay-request-detail-label">Location</div>
+                                <div className="quickplay-request-detail-value">{row.location}</div>
+                              </div>
+                            )}
                           </div>
                           <div className="workflow-actions">
                             <button className="btn" onClick={() => setAskingRow(null)}>Close</button>
