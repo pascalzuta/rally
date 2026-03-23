@@ -28,7 +28,7 @@ export function getClient(): SupabaseClient | null {
  * Send an OTP code to the given email address.
  * Works for both new and returning users.
  */
-export async function sendOtp(email: string): Promise<{ ok: boolean; error?: string }> {
+export async function sendOtp(email: string): Promise<{ ok: boolean; error?: string; status?: number }> {
   if (!client) return { ok: false, error: 'supabase_not_initialized' }
 
   const { error } = await client.auth.signInWithOtp({
@@ -37,8 +37,8 @@ export async function sendOtp(email: string): Promise<{ ok: boolean; error?: str
   })
 
   if (error) {
-    console.warn('[Rally] OTP send failed:', error.message)
-    return { ok: false, error: error.message }
+    console.warn('[Rally] OTP send failed:', error.status, error.message)
+    return { ok: false, error: error.message, status: error.status }
   }
   return { ok: true }
 }
