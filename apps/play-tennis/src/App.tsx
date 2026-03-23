@@ -17,6 +17,8 @@ import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import PostSignupShare from './components/PostSignupShare'
 import { cleanupExpiredLobbies } from './inviteStore'
+import { getRefParamFromUrl, storePendingRef, getPendingRef, clearPendingRef, trackReferralSignup, createViralReferral } from './referralStore'
+import ReferralLanding from './components/ReferralLanding'
 import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
@@ -39,6 +41,15 @@ function clearInviteParam() {
   window.history.replaceState({}, '', url.pathname)
 }
 
+function getReferralSlugFromUrl(): string | null {
+  // /r/[slug] pattern
+  const path = window.location.pathname
+  const match = path.match(/\/r\/([a-z0-9]+)/)
+  if (match) return match[1]
+  // ?ref=slug param
+  return new URLSearchParams(window.location.search).get('ref')
+}
+
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
@@ -51,6 +62,7 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showInbox, setShowInbox] = useState(false)
   const [showPostSignupShare, setShowPostSignupShare] = useState(false)
+  const [referralSlug] = useState<string | null>(getReferralSlugFromUrl)
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -160,6 +172,14 @@ export default function App() {
     cleanupExpiredLobbies()
   }, [])
 
+  // Store referral param from URL for later use after registration
+  useEffect(() => {
+    const refFromUrl = getRefParamFromUrl()
+    if (refFromUrl) {
+      storePendingRef(refFromUrl)
+    }
+  }, [])
+
   // Initialize Supabase sync when profile is available
   useEffect(() => {
     if (!profile) return
@@ -213,6 +233,14 @@ export default function App() {
       await joinLobby({ ...p, county: inviteCounty })
       clearInviteParam()
     }
+    // Track referral signup if user came via a referral link
+    const pendingRef = getPendingRef()
+    if (pendingRef) {
+      await trackReferralSignup(pendingRef, p.id).catch(() => {})
+      clearPendingRef()
+    }
+    // Auto-generate viral referral link for new user
+    createViralReferral(p.id).catch(() => {})
     setProfile(p)
     setActiveTab('home')
     setShowPostSignupShare(true)
@@ -233,7 +261,11 @@ export default function App() {
               </svg>
             </div>
         </nav>
-        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
+        {referralSlug ? (
+          <ReferralLanding slug={referralSlug} onRegistered={handleRegistered} />
+        ) : (
+          <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
+        )}
         <DevTools
           onProfileSwitch={p => setProfile(p)}
           activeTournamentId={null}
