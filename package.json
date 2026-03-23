@@ -1,0 +1,25 @@
+{
+  "name": "rally",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:play-tennis": "npm run dev -w @play-tennis/web",
+    "build:play-tennis": "npm run build -w @play-tennis/web",
+    "dev:tennis-server": "npm run dev -w @rally/server",
+    "build:tennis-server": "npm run build -w @rally/server",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.20.1",
+    "typescript": "^5.7.3"
+  }
+}

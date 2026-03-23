@@ -1,0 +1,4256 @@
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry } from './types'
+import {
+  SUPABASE_PRIMARY,
+  syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
+  syncTournaments, syncLobbyForCounty, syncRatings,
+  syncAvailabilityToRemote, fetchAvailabilityForPlayers,
+  getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
+  SyncResult,
+} from './sync'
+import { getClient } from './supabase'
+import { enqueue } from './offline-queue'
+import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
+import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
+
+const STORAGE_KEY = 'play-tennis-data'
+const RATINGS_KEY = 'play-tennis-ratings'
+const PROFILE_KEY = 'play-tennis-profile'
+const LOBBY_KEY = 'play-tennis-lobby'
+const AVAILABILITY_KEY = 'play-tennis-availability'
+const BROADCAST_KEY = 'play-tennis-broadcasts'
+const RATING_HISTORY_KEY = 'play-tennis-rating-history'
+const TROPHIES_KEY = 'play-tennis-trophies'
+const BADGES_KEY = 'play-tennis-badges'
+const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
+const OFFERS_KEY = 'rally-match-offers'
+const NOTIFICATIONS_KEY = 'rally-notifications'
+const MESSAGES_KEY = 'rally-direct-messages'
+const FEEDBACK_KEY = 'play-tennis-feedback'
+const RELIABILITY_KEY = 'play-tennis-reliability'
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
+}
+
+// --- Profile ---
+
+export function getProfile(): PlayerProfile | null {
+  try {
+    const data = localStorage.getItem(PROFILE_KEY)
+    return data ? JSON.parse(data) : null
+  } catch {
+    return null
+  }
+}
+
+export function createProfile(
+  name: string,
+  county: string,
+  options?: { skillLevel?: SkillLevel; gender?: Gender; email?: string; authId?: string },
+): PlayerProfile {
+  // Duplicate guard: return existing profile if one exists
+  const existing = getProfile()
+  if (existing) return existing
+
+  const profile: PlayerProfile = {
+    id: options?.authId ?? generateId(),
+    authId: options?.authId,
+    email: options?.email,
+    name: name.trim(),
+    county: county.trim(),
+    skillLevel: options?.skillLevel,
+    gender: options?.gender,
+    createdAt: new Date().toISOString(),
+  }
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  return profile
+}
+
+export async function logout(): Promise<void> {
+  // Sign out of Supabase
+  const { signOut } = await import('./supabase')
+  await signOut()
+
+  localStorage.removeItem(PROFILE_KEY)
+  // Remove all play-tennis-* keys from localStorage
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('play-tennis-')) {
+      keysToRemove.push(key)
+    }
+  }
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key)
+  }
+}
+
+// --- Lobby ---
+
+function loadLobby(): LobbyEntry[] {
+  try {
+    const data = localStorage.getItem(LOBBY_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveLobby(lobby: LobbyEntry[]): void {
+  localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
+  if (!SUPABASE_PRIMARY) {
+    const byCounty = new Map<string, LobbyEntry[]>()
+    for (const e of lobby) {
+      const key = e.county.toLowerCase()
+      if (!byCounty.has(key)) byCounty.set(key, [])
+      byCounty.get(key)!.push(e)
+    }
+    for (const [county, entries] of byCounty) {
+      syncLobbyForCounty(county, entries)
+    }
+  }
+}
+
+export function getLobbyByCounty(county: string): LobbyEntry[] {
+  return loadLobby().filter(e => e.county.toLowerCase() === county.toLowerCase())
+}
+
+export function isInLobby(playerId: string): boolean {
+  return loadLobby().some(e => e.playerId === playerId)
+}
+
+export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
+  const lobby = loadLobby()
+  if (lobby.some(e => e.playerId === profile.id)) return getLobbyByCounty(profile.county)
+  const entry: LobbyEntry = {
+    playerId: profile.id,
+    playerName: profile.name,
+    county: profile.county.toLowerCase(),
+    joinedAt: new Date().toISOString(),
+  }
+  lobby.push(entry)
+
+  // Save to localStorage FIRST so UI updates immediately and realtime refresh
+  // cannot overwrite before we persist (fixes race condition)
+  saveLobby(lobby)
+
+  if (SUPABASE_PRIMARY) {
+    // Try backend API first (validates + writes with service role key)
+    if (isApiConfigured()) {
+      const apiOk = await apiJoinLobby(entry)
+      if (!apiOk) {
+        // API failed — fall back to direct Supabase write
+        const result = await syncLobbyEntry(entry)
+        if (!result.success) enqueue('lobby_add', entry)
+      }
+    } else {
+      // No API configured — direct Supabase write (legacy path)
+      const result = await syncLobbyEntry(entry)
+      if (!result.success) enqueue('lobby_add', entry)
+    }
+  }
+  return getLobbyByCounty(profile.county)
+}
+
+export async function leaveLobby(playerId: string): Promise<void> {
+  const lobby = loadLobby().filter(e => e.playerId !== playerId)
+
+  // Save to localStorage FIRST for immediate UI update
+  saveLobby(lobby)
+
+  if (SUPABASE_PRIMARY) {
+    // Try backend API first
+    if (isApiConfigured()) {
+      const apiOk = await apiLeaveLobby(playerId)
+      if (!apiOk) {
+        const result = await syncRemoveLobbyEntry(playerId)
+        if (!result.success) enqueue('lobby_remove', { playerId })
+      }
+    } else {
+      const result = await syncRemoveLobbyEntry(playerId)
+      if (!result.success) enqueue('lobby_remove', { playerId })
+    }
+  }
+}
+
+const COUNTDOWN_MS = 48 * 60 * 60 * 1000 // 48 hours
+const MIN_PLAYERS = 6
+const MAX_PLAYERS = 8
+
+export function getCountdownRemaining(tournament: Tournament): number | null {
+  if (!tournament.countdownStartedAt || tournament.status !== 'setup') return null
+  const elapsed = Date.now() - new Date(tournament.countdownStartedAt).getTime()
+  return Math.max(0, COUNTDOWN_MS - elapsed)
+}
+
+export function getSetupTournamentForCounty(county: string): Tournament | undefined {
+  return load().find(
+    t => t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup'
+  )
+}
+
+function getNextTournamentNumber(county: string, extraTournaments: Tournament[] = []): number {
+  const persisted = load()
+  const all = [...persisted, ...extraTournaments]
+  const countyTournaments = all.filter(
+    t => t.county.toLowerCase() === county.toLowerCase()
+  )
+  let maxNum = 0
+  for (const t of countyTournaments) {
+    const match = t.name.match(/#(\d+)$/)
+    if (match) {
+      maxNum = Math.max(maxNum, parseInt(match[1], 10))
+    }
+  }
+  return maxNum + 1
+}
+
+function createTournament(county: string, players: LobbyEntry[], extraTournaments: Tournament[] = []): Tournament {
+  const num = getNextTournamentNumber(county, extraTournaments)
+  return {
+    id: generateId(),
+    name: `${county} Open #${num}`,
+    date: new Date().toISOString().split('T')[0],
+    county,
+    format: 'round-robin',
+    players: players.map(e => ({ id: e.playerId, name: e.playerName })),
+    matches: [],
+    status: 'setup',
+    createdAt: new Date().toISOString(),
+    countdownStartedAt: new Date().toISOString(),
+  }
+}
+
+// --- Doubles Tournament ---
+
+function generateDoublesRoundRobinMatches(teams: DoublesTeam[]): Match[] {
+  const n = teams.length
+  if (n < 2) return []
+  const matches: Match[] = []
+  let matchPos = 0
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      matches.push({
+        id: generateId(),
+        round: 1,
+        position: matchPos++,
+        player1Id: teams[i].id,
+        player2Id: teams[j].id,
+        score1: [],
+        score2: [],
+        winnerId: null,
+        completed: false,
+      })
+    }
+  }
+  return matches
+}
+
+export async function createDoublesTournament(
+  county: string,
+  teams: { player1: LobbyEntry; player2: LobbyEntry }[]
+): Promise<Tournament | null> {
+  if (teams.length < 3) return null
+
+  const num = getNextTournamentNumber(county)
+  const doublesTeams: DoublesTeam[] = teams.map(t => ({
+    id: generateId(),
+    player1Id: t.player1.playerId,
+    player2Id: t.player2.playerId,
+    teamName: `${t.player1.playerName.split(' ')[0]} & ${t.player2.playerName.split(' ')[0]}`,
+  }))
+
+  const allPlayers: Player[] = teams.flatMap(t => [
+    { id: t.player1.playerId, name: t.player1.playerName, partnerId: t.player2.playerId },
+    { id: t.player2.playerId, name: t.player2.playerName, partnerId: t.player1.playerId },
+  ])
+
+  const matches = generateDoublesRoundRobinMatches(doublesTeams)
+
+  const tournament: Tournament = {
+    id: generateId(),
+    name: `${county} Doubles #${num}`,
+    date: new Date().toISOString().split('T')[0],
+    county,
+    format: 'round-robin',
+    mode: 'doubles',
+    players: allPlayers,
+    teams: doublesTeams,
+    matches,
+    status: 'in-progress',
+    createdAt: new Date().toISOString(),
+  }
+
+  const all = load()
+  all.unshift(tournament)
+  save(all)
+
+  await syncTournament(tournament).catch(() => {
+    enqueue('tournament', tournament)
+  })
+
+  return tournament
+}
+
+export function getTeamName(tournament: Tournament, teamId: string | null): string {
+  if (!teamId || !tournament.teams) return 'TBD'
+  const team = tournament.teams.find(t => t.id === teamId)
+  return team?.teamName ?? 'TBD'
+}
+
+export async function startTournamentFromLobby(county: string): Promise<Tournament | null> {
+  const lobby = loadLobby()
+  const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
+
+  // Check if there's already a setup tournament for this county
+  const existing = getSetupTournamentForCounty(county)
+
+  if (existing) {
+    // Add new lobby players to existing setup tournament
+    const existingIds = new Set(existing.players.map(p => p.id))
+    const newPlayers = allCounty.filter(e => !existingIds.has(e.playerId))
+
+    if (newPlayers.length > 0) {
+      const all = load()
+      const t = all.find(x => x.id === existing.id)!
+      const overflow: LobbyEntry[] = []
+      for (const e of newPlayers) {
+        if (t.players.length >= MAX_PLAYERS) {
+          overflow.push(e)
+        } else {
+          t.players.push({ id: e.playerId, name: e.playerName })
+        }
+      }
+
+      // If we hit max, start immediately
+      if (t.players.length >= MAX_PLAYERS) {
+        await saveAndSync(all, t)
+        await generateBracket(t.id)
+      } else {
+        await saveAndSync(all, t)
+      }
+
+      // Create overflow tournaments for remaining players
+      const takenIds = new Set(t.players.map(p => p.id))
+      if (overflow.length >= MIN_PLAYERS) {
+        const currentAll = load()
+        const newlyCreated: Tournament[] = []
+        while (overflow.length >= MIN_PLAYERS) {
+          const batch = overflow.splice(0, MAX_PLAYERS)
+          const newTournament = createTournament(county, batch, newlyCreated)
+          currentAll.unshift(newTournament)
+          newlyCreated.push(newTournament)
+          for (const e of batch) takenIds.add(e.playerId)
+          if (batch.length >= MAX_PLAYERS) {
+            await saveAndSync(currentAll, newTournament)
+            await generateBracket(newTournament.id)
+          }
+        }
+        save(currentAll)
+      }
+
+      // Remove all assigned players from lobby
+      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
+      saveLobby(remainingLobby)
+
+      return getTournament(t.id) ?? t
+    }
+    return existing
+  }
+
+  // Need at least MIN_PLAYERS to create a tournament
+  if (allCounty.length < MIN_PLAYERS) return null
+
+  // Cluster players by availability overlap, then create tournaments per group
+  const all = load()
+  let firstTournament: Tournament | null = null
+  const takenIds = new Set<string>()
+  const newlyCreated: Tournament[] = []
+
+  // Fetch fresh availability from Supabase before clustering
+  if (getClient()) {
+    const remoteAvail = await fetchAvailabilityForPlayers(allCounty.map(e => e.playerId))
+    for (const [pid, slots] of Object.entries(remoteAvail)) {
+      const avail = loadAllAvailability()
+      avail[pid] = slots
+      saveAllAvailability(avail)
+    }
+  }
+
+  const playerAvailabilities: PlayerAvailability[] = allCounty.map(e => ({
+    playerId: e.playerId,
+    playerName: e.playerName,
+    slots: getAvailability(e.playerId),
+  }))
+
+  const clusterResult = clusterPlayersByAvailability(playerAvailabilities)
+
+  for (const group of clusterResult.groups) {
+    if (group.players.length < MIN_PLAYERS) continue
+    const batch: LobbyEntry[] = group.players.map(p => {
+      const entry = allCounty.find(e => e.playerId === p.playerId)!
+      return entry
+    })
+    const tournament = createTournament(county, batch, newlyCreated)
+    all.unshift(tournament)
+    newlyCreated.push(tournament)
+    for (const e of batch) takenIds.add(e.playerId)
+    if (!firstTournament) firstTournament = tournament
+  }
+
+  // Batch sync all new tournaments to Supabase (single HTTP request)
+  await saveAndSyncBatch(all, newlyCreated)
+
+  // Remove players who entered tournaments from lobby
+  const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
+  saveLobby(remainingLobby)
+  if (SUPABASE_PRIMARY) {
+    await Promise.all(
+      [...takenIds].map(id =>
+        syncRemoveLobbyEntry(id).catch(() => enqueue('lobby_remove', { playerId: id }))
+      )
+    )
+  }
+
+  // Start any tournaments that are already at max capacity
+  for (const t of load()) {
+    if (t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup' && t.players.length >= MAX_PLAYERS) {
+      await generateBracket(t.id)
+    }
+  }
+
+  return firstTournament ? (getTournament(firstTournament.id) ?? firstTournament) : null
+}
+
+// Check countdown and start tournament if expired
+export async function checkCountdownExpired(tournamentId: string): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t || t.status !== 'setup' || !t.countdownStartedAt) return undefined
+
+  const remaining = getCountdownRemaining(t)
+  if (remaining !== null && remaining <= 0 && t.players.length >= MIN_PLAYERS) {
+    save(all)
+    return await generateBracket(t.id)
+  }
+  return undefined
+}
+
+// Force-start a setup tournament (dev tool)
+export async function forceStartTournament(tournamentId: string): Promise<Tournament | undefined> {
+  const t = getTournament(tournamentId)
+  if (!t || t.status !== 'setup') return undefined
+  return await generateBracket(tournamentId)
+}
+
+// --- Availability ---
+
+function loadAllAvailability(): Record<string, AvailabilitySlot[]> {
+  try {
+    const data = localStorage.getItem(AVAILABILITY_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveAllAvailability(avail: Record<string, AvailabilitySlot[]>): void {
+  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(avail))
+}
+
+export async function saveAvailability(playerId: string, slots: AvailabilitySlot[], county?: string, weeklyCap?: number): Promise<void> {
+  const all = loadAllAvailability()
+  all[playerId] = slots
+  // Write to localStorage FIRST (local-first pattern)
+  saveAllAvailability(all)
+
+  // Sync to Supabase
+  if (SUPABASE_PRIMARY && county) {
+    const result = await syncAvailabilityToRemote(playerId, county, slots, weeklyCap ?? 2)
+    if (!result.success) {
+      enqueue('availability', { playerId, county, slots, weeklyCap: weeklyCap ?? 2 })
+    }
+  }
+}
+
+export function getAvailability(playerId: string): AvailabilitySlot[] {
+  return loadAllAvailability()[playerId] ?? []
+}
+
+// --- Upcoming Availability (next 3 days) ---
+
+export interface UpcomingSlot {
+  date: string       // ISO date e.g. "2026-03-10"
+  dayLabel: string   // e.g. "Today", "Tomorrow", "Wednesday"
+  playerId: string
+  playerName: string
+  startHour: number
+  endHour: number
+}
+
+export function getUpcomingAvailability(tournament: Tournament, excludePlayerId?: string): UpcomingSlot[] {
+  const DAY_NAMES: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  const allAvail = loadAllAvailability()
+  const slots: UpcomingSlot[] = []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  for (let d = 0; d < 3; d++) {
+    const date = new Date(today)
+    date.setDate(date.getDate() + d)
+    const dayOfWeek = DAY_NAMES[date.getDay()]
+    const dateStr = date.toISOString().split('T')[0]
+    const dayLabel = d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'long' })
+
+    for (const player of tournament.players) {
+      if (player.id === excludePlayerId) continue
+      const playerSlots = allAvail[player.id] ?? []
+      for (const slot of playerSlots) {
+        if (slot.day === dayOfWeek) {
+          // If today, skip slots that have already passed
+          if (d === 0) {
+            const nowHour = new Date().getHours()
+            if (slot.endHour <= nowHour) continue
+          }
+          slots.push({
+            date: dateStr,
+            dayLabel,
+            playerId: player.id,
+            playerName: player.name,
+            startHour: d === 0 ? Math.max(slot.startHour, new Date().getHours()) : slot.startHour,
+            endHour: slot.endHour,
+          })
+        }
+      }
+    }
+  }
+
+  // Sort by date, then start hour
+  slots.sort((a, b) => a.date.localeCompare(b.date) || a.startHour - b.startHour)
+  return slots
+}
+
+// --- Scheduling Engine ---
+
+function computeOverlap(slotsA: AvailabilitySlot[], slotsB: AvailabilitySlot[]): AvailabilitySlot[] {
+  const overlaps: AvailabilitySlot[] = []
+  for (const a of slotsA) {
+    for (const b of slotsB) {
+      if (a.day !== b.day) continue
+      const start = Math.max(a.startHour, b.startHour)
+      const end = Math.min(a.endHour, b.endHour)
+      if (end - start >= 2) { // at least 2 hours (one match length) overlap
+        overlaps.push({ day: a.day, startHour: start, endHour: end })
+      }
+    }
+  }
+  return overlaps
+}
+
+const DAY_ORDER: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+/** Split overlaps into 2-hour match windows */
+function splitIntoMatchWindows(slots: AvailabilitySlot[]): AvailabilitySlot[] {
+  const windows: AvailabilitySlot[] = []
+  for (const slot of slots) {
+    for (let h = slot.startHour; h + 2 <= slot.endHour; h += 2) {
+      windows.push({ day: slot.day, startHour: h, endHour: h + 2 })
+    }
+  }
+  return windows
+}
+
+function rankSlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
+  return [...slots].sort((a, b) => {
+    // Prefer weekends
+    const weekendA = (a.day === 'saturday' || a.day === 'sunday') ? 0 : 1
+    const weekendB = (b.day === 'saturday' || b.day === 'sunday') ? 0 : 1
+    if (weekendA !== weekendB) return weekendA - weekendB
+    // Then by day order
+    return DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) || a.startHour - b.startHour
+  })
+}
+
+export function generateMatchSchedule(
+  player1Id: string,
+  player2Id: string
+): MatchSchedule {
+  const slots1 = getAvailability(player1Id)
+  const slots2 = getAvailability(player2Id)
+
+  const overlaps = computeOverlap(slots1, slots2)
+  const windows = splitIntoMatchWindows(overlaps)
+  const ranked = rankSlots(windows)
+
+  // Generate up to 3 system proposals from 2-hour match windows
+  const proposals: MatchProposal[] = ranked.slice(0, 3).map(slot => ({
+    id: generateId(),
+    proposedBy: 'system',
+    day: slot.day,
+    startHour: slot.startHour,
+    endHour: slot.endHour,
+    status: 'pending',
+  }))
+
+  // If no overlap, use one player's slots as suggestions
+  if (proposals.length === 0) {
+    const fallback = rankSlots(splitIntoMatchWindows([...slots1, ...slots2]))
+    for (const slot of fallback.slice(0, 3)) {
+      proposals.push({
+        id: generateId(),
+        proposedBy: 'system',
+        day: slot.day,
+        startHour: slot.startHour,
+        endHour: slot.endHour,
+        status: 'pending',
+      })
+    }
+  }
+
+  return {
+    status: proposals.length > 0 ? 'proposed' : 'unscheduled',
+    proposals,
+    confirmedSlot: null,
+    createdAt: new Date().toISOString(),
+    escalationDay: 0,
+    lastEscalation: new Date().toISOString(),
+  }
+}
+
+function createProposalObjects(
+  proposedBy: 'system' | string,
+  slots: MatchSlot[]
+): MatchProposal[] {
+  return slots.map(slot => ({
+    id: generateId(),
+    proposedBy,
+    day: slot.day,
+    startHour: slot.startHour,
+    endHour: slot.endHour,
+    status: 'pending',
+  }))
+}
+
+function createScheduleHistoryEntry(
+  type: ScheduleHistoryEntry['type'],
+  changedBy: string,
+  fromSlot?: MatchSlot,
+  toSlot?: MatchSlot
+): ScheduleHistoryEntry {
+  return {
+    id: generateId(),
+    type,
+    changedBy,
+    changedAt: new Date().toISOString(),
+    fromSlot,
+    toSlot,
+  }
+}
+
+function clearActiveRescheduleRequest(schedule: MatchSchedule): void {
+  delete schedule.activeRescheduleRequest
+}
+
+function getOpponentIdForPlayer(match: Match, playerId: string): string | null {
+  if (match.player1Id === playerId) return match.player2Id
+  if (match.player2Id === playerId) return match.player1Id
+  return null
+}
+
+function canStartReschedule(match: Match): match is Match & { schedule: MatchSchedule } {
+  return Boolean(
+    match.schedule &&
+    match.schedule.status === 'confirmed' &&
+    match.schedule.confirmedSlot &&
+    !match.completed &&
+    !match.scoreReportedBy &&
+    !match.schedule.activeRescheduleRequest
+  )
+}
+
+export type RescheduleUiState =
+  | 'none'
+  | 'soft_request_sent'
+  | 'soft_request_received'
+  | 'hard_request_sent'
+  | 'hard_request_received'
+
+export function getRescheduleUiState(match: Match, currentPlayerId: string): RescheduleUiState {
+  const request = match.schedule?.activeRescheduleRequest
+  if (!request || request.status !== 'pending') return 'none'
+  const isRequester = request.requestedBy === currentPlayerId
+  if (request.intent === 'soft') {
+    return isRequester ? 'soft_request_sent' : 'soft_request_received'
+  }
+  return isRequester ? 'hard_request_sent' : 'hard_request_received'
+}
+
+export async function acceptProposal(
+  tournamentId: string,
+  matchId: string,
+  proposalId: string,
+  acceptedBy: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule) return undefined
+
+  const proposal = match.schedule.proposals.find(p => p.id === proposalId)
+  if (!proposal || proposal.status !== 'pending') return undefined
+
+  // Mark this proposal as accepted, others as rejected
+  for (const p of match.schedule.proposals) {
+    p.status = p.id === proposalId ? 'accepted' : 'rejected'
+  }
+
+  match.schedule.status = 'confirmed'
+  match.schedule.schedulingTier = 'auto'
+  const nextSlot: MatchSlot = {
+    day: proposal.day,
+    startHour: proposal.startHour,
+    endHour: proposal.endHour,
+  }
+  match.schedule.confirmedSlot = nextSlot
+
+  // Track participation: +4 for accepting
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[acceptedBy] = (match.schedule.participationScores[acceptedBy] ?? 0) + 4
+
+  if (match.schedule.activeRescheduleRequest?.status === 'pending') {
+    const request = match.schedule.activeRescheduleRequest
+    request.status = 'accepted'
+    request.respondedBy = acceptedBy
+    request.respondedAt = new Date().toISOString()
+    request.selectedProposalId = proposalId
+    if (request.countsTowardLimit) {
+      match.schedule.rescheduleCount = (match.schedule.rescheduleCount ?? 0) + 1
+    }
+    if (!match.schedule.scheduleHistory) match.schedule.scheduleHistory = []
+    match.schedule.scheduleHistory.push(
+      createScheduleHistoryEntry('rescheduled', acceptedBy, request.originalSlot, nextSlot)
+    )
+    clearActiveRescheduleRequest(match.schedule)
+  }
+
+  // Invalidate cached summary so it recomputes from match data
+  delete t.schedulingSummary
+
+  await saveAndSync(all, t)
+  return t
+}
+
+async function requestRescheduleInternal(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string,
+  intent: RescheduleIntent,
+  reason: RescheduleReason,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !canStartReschedule(match)) return undefined
+
+  const currentCount = match.schedule.rescheduleCount ?? 0
+  if (currentCount >= 2) return undefined
+
+  const currentSlot = match.schedule.confirmedSlot
+  if (!currentSlot) return undefined
+
+  match.schedule.activeRescheduleRequest = {
+    id: generateId(),
+    intent,
+    requestedBy: requesterId,
+    requestedAt: new Date().toISOString(),
+    reason,
+    note: note?.trim() || undefined,
+    originalSlot: currentSlot,
+    status: 'pending',
+    countsTowardLimit: true,
+    originalSlotReleasedAt: intent === 'hard' ? new Date().toISOString() : undefined,
+  }
+
+  match.schedule.proposals = createProposalObjects(requesterId, slots)
+
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[requesterId] = (match.schedule.participationScores[requesterId] ?? 0) + 3
+
+  if (intent === 'hard') {
+    if (!match.schedule.scheduleHistory) match.schedule.scheduleHistory = []
+    match.schedule.scheduleHistory.push(
+      createScheduleHistoryEntry('original-slot-released', requesterId, currentSlot)
+    )
+    match.schedule.confirmedSlot = null
+    match.schedule.status = match.schedule.proposals.length > 0 ? 'proposed' : 'unscheduled'
+  } else {
+    match.schedule.status = 'confirmed'
+  }
+
+  const requesterName = t.players.find(p => p.id === requesterId)?.name ?? 'Your opponent'
+  const opponentId = getOpponentIdForPlayer(match, requesterId)
+  if (opponentId) {
+    addNotification({
+      type: 'match_reminder',
+      recipientId: opponentId,
+      senderId: requesterId,
+      senderName: requesterName,
+      message: intent === 'hard'
+        ? `${requesterName} can't make the current match time. This match needs a new time.`
+        : `${requesterName} asked to move the current match time.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function requestSoftReschedule(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string,
+  reason: RescheduleReason,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  if (slots.length === 0) return undefined
+  return requestRescheduleInternal(tournamentId, matchId, requesterId, 'soft', reason, slots, note)
+}
+
+export async function requestHardReschedule(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string,
+  reason: RescheduleReason,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  return requestRescheduleInternal(tournamentId, matchId, requesterId, 'hard', reason, slots, note)
+}
+
+export async function declineSoftReschedule(
+  tournamentId: string,
+  matchId: string,
+  responderId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule?.activeRescheduleRequest) return undefined
+
+  const request = match.schedule.activeRescheduleRequest
+  if (request.intent !== 'soft' || request.requestedBy === responderId) return undefined
+
+  request.status = 'declined'
+  request.respondedBy = responderId
+  request.respondedAt = new Date().toISOString()
+  match.schedule.proposals = []
+  clearActiveRescheduleRequest(match.schedule)
+
+  const responderName = t.players.find(p => p.id === responderId)?.name ?? 'Your opponent'
+  addNotification({
+    type: 'match_reminder',
+    recipientId: request.requestedBy,
+    senderId: responderId,
+    senderName: responderName,
+    message: `${responderName} kept the current match time.`,
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function counterReschedule(
+  tournamentId: string,
+  matchId: string,
+  responderId: string,
+  slots: MatchSlot[],
+  note?: string
+): Promise<Tournament | undefined> {
+  if (slots.length === 0) return undefined
+
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule?.activeRescheduleRequest) return undefined
+
+  const request = match.schedule.activeRescheduleRequest
+  if (request.requestedBy === responderId) return undefined
+
+  match.schedule.proposals = createProposalObjects(responderId, slots)
+  if (note?.trim()) {
+    request.note = note.trim()
+  }
+
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[responderId] = (match.schedule.participationScores[responderId] ?? 0) + 3
+
+  const responderName = t.players.find(p => p.id === responderId)?.name ?? 'Your opponent'
+  addNotification({
+    type: 'match_reminder',
+    recipientId: request.requestedBy,
+    senderId: responderId,
+    senderName: responderName,
+    message: `${responderName} suggested another match time.`,
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function withdrawSoftReschedule(
+  tournamentId: string,
+  matchId: string,
+  requesterId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule?.activeRescheduleRequest) return undefined
+
+  const request = match.schedule.activeRescheduleRequest
+  if (request.intent !== 'soft' || request.requestedBy !== requesterId) return undefined
+
+  request.status = 'withdrawn'
+  clearActiveRescheduleRequest(match.schedule)
+  match.schedule.proposals = []
+
+  const requesterName = t.players.find(p => p.id === requesterId)?.name ?? 'Your opponent'
+  const opponentId = getOpponentIdForPlayer(match, requesterId)
+  if (opponentId) {
+    addNotification({
+      type: 'match_reminder',
+      recipientId: opponentId,
+      senderId: requesterId,
+      senderName: requesterName,
+      message: `${requesterName} withdrew the reschedule request. The original match time still stands.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function proposeNewSlots(
+  tournamentId: string,
+  matchId: string,
+  proposedBy: string,
+  slots: { day: DayOfWeek; startHour: number; endHour: number }[]
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule) return undefined
+
+  for (const slot of slots) {
+    match.schedule.proposals.push({
+      id: generateId(),
+      proposedBy,
+      day: slot.day,
+      startHour: slot.startHour,
+      endHour: slot.endHour,
+      status: 'pending',
+    })
+  }
+
+  if (match.schedule.status === 'unscheduled') {
+    match.schedule.status = 'proposed'
+  }
+
+  // Track participation: +3 for proposing
+  if (!match.schedule.participationScores) match.schedule.participationScores = {}
+  match.schedule.participationScores[proposedBy] = (match.schedule.participationScores[proposedBy] ?? 0) + 3
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function escalateMatch(
+  tournamentId: string,
+  matchId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.schedule || match.schedule.status === 'confirmed' || match.schedule.status === 'resolved') return undefined
+
+  match.schedule.escalationDay += 1
+  match.schedule.lastEscalation = new Date().toISOString()
+
+  // Day 3: system assigns provisional slot from best available
+  if (match.schedule.escalationDay === 3 && match.schedule.status !== 'escalated') {
+    const pending = match.schedule.proposals.filter(p => p.status === 'pending')
+    if (pending.length > 0) {
+      const best = pending[0]
+      for (const p of match.schedule.proposals) {
+        p.status = p.id === best.id ? 'accepted' : 'rejected'
+      }
+      match.schedule.status = 'confirmed'
+      match.schedule.confirmedSlot = { day: best.day, startHour: best.startHour, endHour: best.endHour }
+    } else {
+      match.schedule.status = 'escalated'
+    }
+  }
+
+  // Day 4+: trigger resolution based on participation scores
+  if (match.schedule.escalationDay >= 4 && match.schedule.status === 'escalated') {
+    await resolveMatchByParticipation(t, match)
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+const PARTICIPATION_THRESHOLD = 3
+
+export function getParticipationScore(schedule: MatchSchedule, playerId: string): number {
+  return schedule.participationScores?.[playerId] ?? 0
+}
+
+export function getParticipationLabel(score: number): string {
+  if (score >= 6) return 'Very Active'
+  if (score >= PARTICIPATION_THRESHOLD) return 'Participated'
+  if (score >= 1) return 'Minimal'
+  return 'Inactive'
+}
+
+async function resolveMatchByParticipation(tournament: Tournament, match: Match): Promise<void> {
+  if (!match.schedule || !match.player1Id || !match.player2Id) return
+
+  const scores = match.schedule.participationScores ?? {}
+  const score1 = scores[match.player1Id] ?? 0
+  const score2 = scores[match.player2Id] ?? 0
+
+  const p1Above = score1 >= PARTICIPATION_THRESHOLD
+  const p2Above = score2 >= PARTICIPATION_THRESHOLD
+
+  let resolution: MatchResolution
+
+  if (p1Above && !p2Above) {
+    // Case 1: Player 1 wins walkover
+    resolution = {
+      type: 'walkover',
+      winnerId: match.player1Id,
+      reason: 'Opponent did not participate in scheduling',
+      resolvedAt: new Date().toISOString(),
+    }
+    match.winnerId = match.player1Id
+    match.completed = true
+    match.score1 = []
+    match.score2 = []
+
+    // Update Elo
+    const p1 = tournament.players.find(p => p.id === match.player1Id)
+    const p2 = tournament.players.find(p => p.id === match.player2Id)
+    if (p1 && p2) await updateRatings(p1, p2, p1.id)
+
+    // Advance winner
+    advanceWinner(tournament, match, match.player1Id)
+  } else if (!p1Above && p2Above) {
+    // Case 2: Player 2 wins walkover
+    resolution = {
+      type: 'walkover',
+      winnerId: match.player2Id,
+      reason: 'Opponent did not participate in scheduling',
+      resolvedAt: new Date().toISOString(),
+    }
+    match.winnerId = match.player2Id
+    match.completed = true
+    match.score1 = []
+    match.score2 = []
+
+    const p1 = tournament.players.find(p => p.id === match.player1Id)
+    const p2 = tournament.players.find(p => p.id === match.player2Id)
+    if (p1 && p2) await updateRatings(p1, p2, p2.id)
+
+    advanceWinner(tournament, match, match.player2Id)
+  } else if (p1Above && p2Above) {
+    // Case 3: Both participated — forced match assignment
+    resolution = {
+      type: 'forced-match',
+      winnerId: null,
+      reason: 'Both players participated but could not agree on a time',
+      resolvedAt: new Date().toISOString(),
+      forcedSlot: { day: 'sunday', startHour: 10, endHour: 11 },
+    }
+    match.schedule.status = 'confirmed'
+    match.schedule.confirmedSlot = { day: 'sunday', startHour: 10, endHour: 11 }
+  } else {
+    // Case 4: Neither participated — double loss
+    resolution = {
+      type: 'double-loss',
+      winnerId: null,
+      reason: 'Neither player participated in scheduling',
+      resolvedAt: new Date().toISOString(),
+    }
+    match.completed = true
+    match.score1 = []
+    match.score2 = []
+  }
+
+  match.schedule.resolution = resolution
+  match.resolution = resolution
+  match.schedule.status = 'resolved'
+
+  // Check if tournament is complete
+  const allDone = tournament.matches.every(m => m.completed)
+  if (allDone) {
+    tournament.status = 'completed'
+    awardTournamentTrophies(tournament.id, tournament)
+    for (const p of tournament.players) {
+      checkAndAwardBadges(p.id, tournament.id, tournament)
+    }
+  }
+}
+
+function advanceWinner(tournament: Tournament, match: Match, winnerId: string): void {
+  if (tournament.format === 'single-elimination') {
+    const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1)
+    const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+    if (nextMatch) {
+      if (match.position % 2 === 0) {
+        nextMatch.player1Id = winnerId
+      } else {
+        nextMatch.player2Id = winnerId
+      }
+      if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+        nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+      }
+    }
+  } else if (tournament.format === 'group-knockout' || tournament.format === 'round-robin') {
+    if (match.phase === 'group') {
+      // Check if all group matches are done → generate knockout
+      const groupMatches = tournament.matches.filter(m => m.phase === 'group')
+      const allGroupDone = groupMatches.every(m => m.completed)
+      if (allGroupDone && !tournament.groupPhaseComplete) {
+        generateKnockoutPhase(tournament)
+      }
+    } else if (match.phase === 'knockout') {
+      const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1 && m.phase === 'knockout')
+      const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+      if (nextMatch) {
+        if (match.position % 2 === 0) {
+          nextMatch.player1Id = winnerId
+        } else {
+          nextMatch.player2Id = winnerId
+        }
+        if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+          nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+        }
+      }
+    }
+  }
+}
+
+// --- Tournaments ---
+
+function load(): Tournament[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function save(tournaments: Tournament[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tournaments))
+  if (!SUPABASE_PRIMARY) {
+    syncTournaments(tournaments)
+  }
+}
+
+/** Supabase-first save: syncs a specific tournament, then updates localStorage */
+async function saveAndSync(all: Tournament[], changedTournament: Tournament): Promise<SyncResult> {
+  if (SUPABASE_PRIMARY) {
+    const result = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
+    if (!result.success) {
+      if (result.conflict) {
+        // Conflict: refresh from remote and retry once with fresh timestamp
+        const fresh = await refreshTournamentById(changedTournament.id)
+        if (fresh) {
+          // Re-apply our changes on top of the fresh remote state
+          const mergedAll = all.map(t => t.id === changedTournament.id ? changedTournament : t)
+          const retry = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
+          if (retry.success) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedAll))
+            return { success: true }
+          }
+        }
+        return result
+      }
+      // Network error: save locally + queue
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+      enqueue('tournament', changedTournament)
+      return { success: true }
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  return { success: true }
+}
+
+/** Batch sync: upserts multiple tournaments in a single request */
+async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): Promise<void> {
+  if (SUPABASE_PRIMARY && tournaments.length > 0) {
+    const client = getClient()
+    if (client) {
+      const rows = tournaments.map(t => ({
+        id: t.id,
+        county: t.county.toLowerCase(),
+        data: t,
+      }))
+      const { error } = await client.from('tournaments').upsert(rows, { onConflict: 'id' })
+      if (error) {
+        // Fall back to queuing individual tournaments
+        for (const t of tournaments) {
+          enqueue('tournament', t)
+        }
+      }
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+}
+
+export function getTournaments(): Tournament[] {
+  return load()
+}
+
+export function getTournamentsByCounty(county: string): Tournament[] {
+  return load().filter(t => t.county && t.county.toLowerCase() === county.toLowerCase())
+}
+
+export function getPlayerTournaments(playerId: string): Tournament[] {
+  return load().filter(t => t.players.some(p => p.id === playerId))
+}
+
+export function getTournament(id: string): Tournament | undefined {
+  return load().find(t => t.id === id)
+}
+
+export async function deleteTournament(tournamentId: string): Promise<void> {
+  const all = load().filter(t => t.id !== tournamentId)
+  save(all)
+  // Also delete from Supabase
+  if (SUPABASE_PRIMARY) {
+    const { getClient } = await import('./supabase')
+    const client = getClient()
+    if (client) {
+      await client.from('tournaments').delete().eq('id', tournamentId)
+    }
+  }
+}
+
+export async function leaveTournament(tournamentId: string, playerId: string): Promise<boolean> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return false
+
+  // Can't leave if not a participant
+  if (!t.players.some(p => p.id === playerId)) return false
+
+  // Setup: just remove from player list
+  if (t.status === 'setup') {
+    t.players = t.players.filter(p => p.id !== playerId)
+    if (t.players.length === 0) {
+      // Remove empty tournament
+      save(all.filter(x => x.id !== tournamentId))
+      if (SUPABASE_PRIMARY) {
+        const { getClient } = await import('./supabase')
+        const client = getClient()
+        if (client) {
+          await client.from('tournaments').delete().eq('id', tournamentId)
+        }
+      }
+    } else {
+      await saveAndSync(all, t)
+    }
+    return true
+  }
+
+  // In-progress: forfeit all incomplete matches involving this player
+  for (const match of t.matches) {
+    if (match.completed) continue
+
+    const isPlayer1 = match.player1Id === playerId
+    const isPlayer2 = match.player2Id === playerId
+    if (!isPlayer1 && !isPlayer2) continue
+
+    const opponentId = isPlayer1 ? match.player2Id : match.player1Id
+    if (opponentId) {
+      // Opponent wins by walkover
+      match.winnerId = opponentId
+      match.completed = true
+      match.score1 = []
+      match.score2 = []
+      match.resolution = {
+        type: 'walkover',
+        winnerId: opponentId,
+        reason: 'Opponent left the tournament',
+        resolvedAt: new Date().toISOString(),
+      }
+      if (match.schedule) {
+        match.schedule.status = 'resolved'
+        match.schedule.resolution = match.resolution
+      }
+
+      // Advance opponent
+      advanceWinner(t, match, opponentId)
+    } else {
+      // No opponent yet — just mark completed
+      match.completed = true
+    }
+  }
+
+  // Remove player from the tournament roster
+  t.players = t.players.filter(p => p.id !== playerId)
+
+  // Check if tournament is now complete
+  const allDone = t.matches.every(m => m.completed)
+  if (allDone) {
+    t.status = 'completed'
+    awardTournamentTrophies(t.id, t)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id, t)
+    }
+  }
+
+  await saveAndSync(all, t)
+  return true
+}
+
+// Generate seed positions so top seeds are placed apart in bracket
+function getSeedPositions(size: number): number[] {
+  if (size === 1) return [0]
+  const positions = [0, 1]
+  while (positions.length < size) {
+    const next: number[] = []
+    const len = positions.length
+    for (let i = 0; i < len; i++) {
+      next.push(positions[i] * 2)
+      next.push(len * 2 - 1 - positions[i] * 2)
+    }
+    positions.length = 0
+    positions.push(...next)
+  }
+  return positions
+}
+
+export async function generateBracket(tournamentId: string): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t || t.players.length < 2) return undefined
+
+  // Fetch remote availability so we have all players' slots (not just local user's)
+  if (getClient()) {
+    const remoteAvail = await fetchAvailabilityForPlayers(t.players.map(p => p.id))
+    for (const [pid, slots] of Object.entries(remoteAvail)) {
+      const avail = loadAllAvailability()
+      avail[pid] = slots
+      saveAllAvailability(avail)
+    }
+  }
+
+  if (t.format === 'single-elimination') {
+    const seeded = [...t.players].sort((a, b) => {
+      const rA = getPlayerRating(a.id, a.name).rating
+      const rB = getPlayerRating(b.id, b.name).rating
+      return rB - rA
+    })
+    const size = Math.pow(2, Math.ceil(Math.log2(seeded.length)))
+    const slots = new Array<Player | null>(size).fill(null)
+    const seedOrder = getSeedPositions(size)
+    for (let i = 0; i < seeded.length; i++) {
+      slots[seedOrder[i]] = seeded[i]
+    }
+    const padded: (Player | null)[] = slots
+
+    const totalRounds = Math.log2(size)
+    const matches: Match[] = []
+
+    for (let i = 0; i < size / 2; i++) {
+      const p1 = padded[i * 2]
+      const p2 = padded[i * 2 + 1]
+      const isBye = !p1 || !p2
+      matches.push({
+        id: generateId(),
+        round: 1,
+        position: i,
+        player1Id: p1?.id ?? null,
+        player2Id: p2?.id ?? null,
+        score1: [],
+        score2: [],
+        winnerId: isBye ? (p1?.id ?? p2?.id ?? null) : null,
+        completed: isBye,
+      })
+    }
+
+    for (let round = 2; round <= totalRounds; round++) {
+      const matchesInRound = size / Math.pow(2, round)
+      for (let i = 0; i < matchesInRound; i++) {
+        matches.push({
+          id: generateId(),
+          round,
+          position: i,
+          player1Id: null,
+          player2Id: null,
+          score1: [],
+          score2: [],
+          winnerId: null,
+          completed: false,
+        })
+      }
+    }
+
+    advanceByes(matches)
+    t.matches = matches
+  } else if (t.format === 'group-knockout') {
+    // Group phase: full round robin (every player plays every other player)
+    const matches: Match[] = []
+    for (let i = 0; i < t.players.length; i++) {
+      for (let j = i + 1; j < t.players.length; j++) {
+        matches.push({
+          id: generateId(),
+          round: 1,
+          position: matches.length,
+          player1Id: t.players[i].id,
+          player2Id: t.players[j].id,
+          score1: [],
+          score2: [],
+          winnerId: null,
+          completed: false,
+          phase: 'group',
+        })
+      }
+    }
+    // Knockout matches (semis + final) are generated when group phase completes
+    t.groupPhaseComplete = false
+    t.matches = matches
+  } else {
+    // Round-robin: all players play each other (group phase), then top 4 play semifinals + final
+    const matches: Match[] = []
+    for (let i = 0; i < t.players.length; i++) {
+      for (let j = i + 1; j < t.players.length; j++) {
+        matches.push({
+          id: generateId(),
+          round: 1,
+          position: matches.length,
+          player1Id: t.players[i].id,
+          player2Id: t.players[j].id,
+          score1: [],
+          score2: [],
+          winnerId: null,
+          completed: false,
+          phase: 'group',
+        })
+      }
+    }
+    t.groupPhaseComplete = false
+    t.matches = matches
+  }
+
+  // Bulk-schedule all matches with both players assigned
+  const matchesToSchedule: MatchToSchedule[] = t.matches
+    .filter(m => m.player1Id && m.player2Id && !m.completed)
+    .map(m => ({ matchId: m.id, player1Id: m.player1Id!, player2Id: m.player2Id! }))
+
+  const allAvailability: Record<string, SimpleAvailabilitySlot[]> = {}
+  for (const p of t.players) {
+    allAvailability[p.id] = getAvailability(p.id)
+  }
+
+  const scheduleResult = bulkScheduleMatches(matchesToSchedule, allAvailability)
+
+  // Apply confirmed matches
+  for (const { matchId, slot } of scheduleResult.confirmed) {
+    const m = t.matches.find(x => x.id === matchId)
+    if (m) {
+      m.schedule = {
+        status: 'confirmed',
+        proposals: [{
+          id: generateId(),
+          proposedBy: 'system',
+          day: slot.day as DayOfWeek,
+          startHour: slot.startHour,
+          endHour: slot.endHour,
+          status: 'accepted',
+        }],
+        confirmedSlot: { day: slot.day as DayOfWeek, startHour: slot.startHour, endHour: slot.endHour },
+        createdAt: new Date().toISOString(),
+        escalationDay: 0,
+        lastEscalation: new Date().toISOString(),
+        participationScores: {},
+        schedulingTier: 'auto',
+      }
+    }
+  }
+
+  // Apply needs-accept matches (suggest best slot)
+  for (const { matchId, slot } of scheduleResult.needsAccept) {
+    const m = t.matches.find(x => x.id === matchId)
+    if (m) {
+      m.schedule = {
+        status: 'proposed',
+        proposals: [{
+          id: generateId(),
+          proposedBy: 'system',
+          day: slot.day as DayOfWeek,
+          startHour: slot.startHour,
+          endHour: slot.endHour,
+          status: 'pending',
+        }],
+        confirmedSlot: null,
+        createdAt: new Date().toISOString(),
+        escalationDay: 0,
+        lastEscalation: new Date().toISOString(),
+        participationScores: {},
+        schedulingTier: 'needs-accept',
+      }
+    }
+  }
+
+  // Apply needs-negotiation matches (fall back to per-match scheduling)
+  for (const { matchId } of scheduleResult.needsNegotiation) {
+    const m = t.matches.find(x => x.id === matchId)
+    if (m && m.player1Id && m.player2Id) {
+      m.schedule = generateMatchSchedule(m.player1Id, m.player2Id)
+      if (m.schedule) {
+        m.schedule.schedulingTier = 'needs-negotiation'
+      }
+    }
+  }
+
+  // Set scheduling summary
+  t.schedulingSummary = {
+    confirmed: scheduleResult.confirmed.length,
+    needsAccept: scheduleResult.needsAccept.length,
+    needsNegotiation: scheduleResult.needsNegotiation.length,
+    scheduledAt: new Date().toISOString(),
+  }
+
+  t.status = 'in-progress'
+  await saveAndSync(all, t)
+  return t
+}
+
+/** Get scheduling summary for a tournament */
+export function getSchedulingSummary(tournament: Tournament): SchedulingSummary | null {
+  if (tournament.schedulingSummary) return tournament.schedulingSummary
+  // Compute from match data if not cached
+  if (tournament.status === 'setup' || tournament.status === 'scheduling') return null
+  let confirmed = 0, needsAccept = 0, needsNegotiation = 0
+  for (const m of tournament.matches) {
+    if (!m.schedule) continue
+    switch (m.schedule.schedulingTier) {
+      case 'auto': confirmed++; break
+      case 'needs-accept': needsAccept++; break
+      case 'needs-negotiation': needsNegotiation++; break
+    }
+  }
+  return { confirmed, needsAccept, needsNegotiation, scheduledAt: tournament.createdAt }
+}
+
+/** Compute scheduling confidence for a set of players in a county lobby */
+export function getSchedulingConfidence(county: string): { score: number; label: 'high' | 'medium' | 'low'; playersWithAvailability: number } {
+  const lobby = getLobbyByCounty(county)
+  const allAvail = loadAllAvailability()
+
+  let withAvailability = 0
+  const playerSlots: Array<{ playerId: string; slots: AvailabilitySlot[] }> = []
+
+  for (const entry of lobby) {
+    const slots = allAvail[entry.playerId] ?? []
+    if (slots.length > 0) {
+      withAvailability++
+      playerSlots.push({ playerId: entry.playerId, slots })
+    }
+  }
+
+  if (playerSlots.length < 2) {
+    return { score: 0, label: 'low', playersWithAvailability: withAvailability }
+  }
+
+  // Compute average pairwise overlap
+  let totalOverlap = 0
+  let pairs = 0
+  for (let i = 0; i < playerSlots.length; i++) {
+    for (let j = i + 1; j < playerSlots.length; j++) {
+      const overlap = computeOverlap(playerSlots[i].slots, playerSlots[j].slots)
+      const windows = splitIntoMatchWindows(overlap)
+      totalOverlap += windows.length
+      pairs++
+    }
+  }
+
+  const avgOverlap = pairs > 0 ? totalOverlap / pairs : 0
+  // Map to 0-100 score: 3+ windows = high (70+), 1-3 = medium, 0 = low
+  const score = Math.min(100, Math.round((avgOverlap / 5) * 100))
+  const label = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low'
+
+  return { score, label, playersWithAvailability: withAvailability }
+}
+
+// Compute group standings for group-knockout format
+export function getGroupStandings(tournament: Tournament): { id: string; name: string; wins: number; losses: number; setsWon: number; setsLost: number; gamesWon: number; gamesLost: number }[] {
+  const stats = tournament.players.map(p => ({
+    id: p.id,
+    name: p.name,
+    wins: 0,
+    losses: 0,
+    setsWon: 0,
+    setsLost: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+  }))
+
+  // For both group-knockout and round-robin, count only group phase matches
+  // Skip split-decision matches (disputed, don't count for standings)
+  const groupMatches = tournament.matches.filter(m => m.phase === 'group')
+  for (const match of groupMatches) {
+    if (!match.completed || match.splitDecision) continue
+    const s1 = stats.find(s => s.id === match.player1Id)
+    const s2 = stats.find(s => s.id === match.player2Id)
+    if (!s1 || !s2) continue
+
+    if (match.winnerId === match.player1Id) {
+      s1.wins++
+      s2.losses++
+    } else {
+      s2.wins++
+      s1.losses++
+    }
+
+    for (let i = 0; i < match.score1.length; i++) {
+      s1.gamesWon += match.score1[i]
+      s1.gamesLost += match.score2[i]
+      s2.gamesWon += match.score2[i]
+      s2.gamesLost += match.score1[i]
+      if (match.score1[i] > match.score2[i]) {
+        s1.setsWon++
+        s2.setsLost++
+      } else {
+        s2.setsWon++
+        s1.setsLost++
+      }
+    }
+  }
+
+  stats.sort((a, b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins
+    const aSetDiff = a.setsWon - a.setsLost
+    const bSetDiff = b.setsWon - b.setsLost
+    if (bSetDiff !== aSetDiff) return bSetDiff - aSetDiff
+    return (b.gamesWon - b.gamesLost) - (a.gamesWon - a.gamesLost)
+  })
+
+  return stats
+}
+
+// Generate knockout phase matches for group-knockout format
+function generateKnockoutPhase(tournament: Tournament): void {
+  const standings = getGroupStandings(tournament)
+  const top4 = standings.slice(0, 4)
+
+  // Semi 1: #1 vs #4
+  const semi1: Match = {
+    id: generateId(),
+    round: 2,
+    position: 0,
+    player1Id: top4[0]?.id ?? null,
+    player2Id: top4[3]?.id ?? null,
+    score1: [],
+    score2: [],
+    winnerId: null,
+    completed: false,
+    phase: 'knockout',
+  }
+
+  // Semi 2: #2 vs #3
+  const semi2: Match = {
+    id: generateId(),
+    round: 2,
+    position: 1,
+    player1Id: top4[1]?.id ?? null,
+    player2Id: top4[2]?.id ?? null,
+    score1: [],
+    score2: [],
+    winnerId: null,
+    completed: false,
+    phase: 'knockout',
+  }
+
+  // Final: TBD vs TBD
+  const final: Match = {
+    id: generateId(),
+    round: 3,
+    position: 0,
+    player1Id: null,
+    player2Id: null,
+    score1: [],
+    score2: [],
+    winnerId: null,
+    completed: false,
+    phase: 'knockout',
+  }
+
+  tournament.matches.push(semi1, semi2, final)
+  tournament.groupPhaseComplete = true
+
+  // Generate schedules for semis
+  if (semi1.player1Id && semi1.player2Id) {
+    semi1.schedule = generateMatchSchedule(semi1.player1Id, semi1.player2Id)
+  }
+  if (semi2.player1Id && semi2.player2Id) {
+    semi2.schedule = generateMatchSchedule(semi2.player1Id, semi2.player2Id)
+  }
+}
+
+function advanceByes(matches: Match[]): void {
+  const round1 = matches.filter(m => m.round === 1)
+  const round2 = matches.filter(m => m.round === 2)
+
+  for (let i = 0; i < round1.length; i++) {
+    const m = round1[i]
+    if (m.completed && m.winnerId) {
+      const nextMatch = round2[Math.floor(i / 2)]
+      if (nextMatch) {
+        if (i % 2 === 0) {
+          nextMatch.player1Id = m.winnerId
+        } else {
+          nextMatch.player2Id = m.winnerId
+        }
+      }
+    }
+  }
+}
+
+export async function saveMatchScore(
+  tournamentId: string,
+  matchId: string,
+  score1: number[],
+  score2: number[],
+  winnerId: string,
+  reportedBy?: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match) return undefined
+
+  // Update ELO ratings (tries RPC internally)
+  const p1 = t.players.find(p => p.id === match.player1Id)
+  const p2 = t.players.find(p => p.id === match.player2Id)
+  const winner = t.players.find(p => p.id === winnerId)
+  if (p1 && p2 && winner) {
+    await updateRatings(p1, p2, winner.id)
+  }
+
+  // Try RPC for atomic score submission + bracket advancement
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        const { data, error } = await client.rpc('rpc_submit_score', {
+          p_tournament_id: tournamentId,
+          p_match_id: matchId,
+          p_score1: score1,
+          p_score2: score2,
+          p_winner_id: winnerId,
+        })
+        if (!error && data?.success) {
+          // Server handled score + advancement atomically
+          const serverTournament = data.tournament as Tournament
+          if (data.updated_at) {
+            setTournamentTimestamp(tournamentId, data.updated_at)
+          }
+
+          // Handle phase transition: group → knockout (for group-knockout and round-robin)
+          if (serverTournament.format === 'group-knockout' || serverTournament.format === 'round-robin') {
+            const serverMatch = serverTournament.matches.find((m: Match) => m.id === matchId)
+            if (serverMatch?.phase === 'group') {
+              const groupMatches = serverTournament.matches.filter((m: Match) => m.phase === 'group')
+              const allGroupDone = groupMatches.every((m: Match) => m.completed)
+              if (allGroupDone && !serverTournament.groupPhaseComplete) {
+                generateKnockoutPhase(serverTournament)
+                // Re-sync the updated tournament with knockout phase
+                await syncTournament(serverTournament, data.updated_at)
+              }
+            }
+          }
+
+          // Award trophies/badges locally
+          const allDone = serverTournament.matches.every((m: Match) => m.completed)
+          if (allDone && serverTournament.status === 'completed') {
+            awardTournamentTrophies(serverTournament.id, serverTournament)
+            for (const p of serverTournament.players) {
+              checkAndAwardBadges(p.id, serverTournament.id, serverTournament)
+            }
+          }
+
+          // Update local cache
+          const idx = all.findIndex(x => x.id === tournamentId)
+          if (idx >= 0) all[idx] = serverTournament
+          else all.unshift(serverTournament)
+          save(all)
+          return serverTournament
+        }
+      } catch {
+        // RPC failed, fall through to local logic
+      }
+    }
+  }
+
+  // Phase 1 fallback: local score — mark as reported, not completed
+  match.score1 = score1
+  match.score2 = score2
+  match.winnerId = winnerId
+  match.scoreReportedBy = reportedBy ?? winnerId // Reporter is the current player
+  match.scoreReportedAt = new Date().toISOString()
+  // Don't set completed=true — wait for opponent confirmation
+
+  // Send notification to opponent
+  const reporterName = t.players.find(p => p.id === match.scoreReportedBy)?.name ?? 'Your opponent'
+  const opponentId = match.player1Id === match.scoreReportedBy ? match.player2Id : match.player1Id
+  if (opponentId) {
+    const scoreStr = score1.map((s, i) => `${s}-${score2[i]}`).join(', ')
+    addNotification({
+      type: 'score_reported',
+      recipientId: opponentId,
+      senderId: match.scoreReportedBy,
+      senderName: reporterName,
+      message: `${reporterName} reported a score: ${scoreStr}. Please confirm.`,
+      detail: scoreStr,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function confirmMatchScore(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreReportedBy || match.completed) return undefined
+
+  // Only the non-reporting player can confirm
+  const isReporter = match.scoreReportedBy === currentPlayerId
+  if (isReporter) return undefined
+
+  const winnerId = match.winnerId
+  match.completed = true
+  match.scoreConfirmedBy = currentPlayerId
+  match.scoreConfirmedAt = new Date().toISOString()
+
+  // Update ELO ratings
+  const p1 = t.players.find(p => p.id === match.player1Id)
+  const p2 = t.players.find(p => p.id === match.player2Id)
+  if (p1 && p2 && winnerId) {
+    await updateRatings(p1, p2, winnerId)
+  }
+
+  // Advance winner in single-elimination
+  if (t.format === 'single-elimination' && winnerId) {
+    const nextRoundMatches = t.matches.filter(m => m.round === match.round + 1)
+    const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+    if (nextMatch) {
+      if (match.position % 2 === 0) {
+        nextMatch.player1Id = winnerId
+      } else {
+        nextMatch.player2Id = winnerId
+      }
+      if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+        nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+      }
+    }
+  }
+
+  // Group-knockout and round-robin: check if group phase is done, generate knockout
+  if (t.format === 'group-knockout' || t.format === 'round-robin') {
+    if (match.phase === 'group') {
+      const groupMatches = t.matches.filter(m => m.phase === 'group')
+      const allGroupDone = groupMatches.every(m => m.completed)
+      if (allGroupDone && !t.groupPhaseComplete) {
+        generateKnockoutPhase(t)
+      }
+    } else if (match.phase === 'knockout' && winnerId) {
+      const nextRoundMatches = t.matches.filter(m => m.round === match.round + 1 && m.phase === 'knockout')
+      const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+      if (nextMatch) {
+        if (match.position % 2 === 0) {
+          nextMatch.player1Id = winnerId
+        } else {
+          nextMatch.player2Id = winnerId
+        }
+        if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+          nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+        }
+      }
+    }
+  }
+
+  // Notify reporter that score was confirmed
+  if (match.scoreReportedBy) {
+    const confirmerName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+    addNotification({
+      type: 'score_reported',
+      recipientId: match.scoreReportedBy,
+      senderId: currentPlayerId,
+      senderName: confirmerName,
+      message: `${confirmerName} confirmed the score.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  const allDone = t.matches.every(m => m.completed)
+  if (allDone) {
+    t.status = 'completed'
+    awardTournamentTrophies(t.id, t)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id, t)
+    }
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function editMatchScore(
+  tournamentId: string,
+  matchId: string,
+  score1: number[],
+  score2: number[],
+  winnerId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.completed) return undefined
+
+  // Check if the match was completed less than 48 hours ago
+  // Use the schedule's resolution timestamp or fall back to allowing the edit
+  const now = Date.now()
+  const completedAt = match.schedule?.resolution?.resolvedAt
+    ? new Date(match.schedule.resolution.resolvedAt).getTime()
+    : match.schedule?.createdAt
+      ? new Date(match.schedule.createdAt).getTime()
+      : 0
+  if (completedAt > 0 && now - completedAt > 48 * 60 * 60 * 1000) {
+    return undefined // Cannot edit after 48 hours
+  }
+
+  // Update scores and recalculate winner
+  match.score1 = score1
+  match.score2 = score2
+  match.winnerId = winnerId
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function rescheduleMatch(
+  tournamentId: string,
+  matchId: string,
+  newDay: DayOfWeek,
+  newStartHour: number,
+  newEndHour: number
+): Promise<Tournament | undefined> {
+  const profile = getProfile()
+  if (!profile) return undefined
+  return requestHardReschedule(
+    tournamentId,
+    matchId,
+    profile.id,
+    'conflict',
+    [{ day: newDay, startHour: newStartHour, endHour: newEndHour }]
+  )
+}
+
+export async function cancelMatch(
+  tournamentId: string,
+  matchId: string,
+  reason: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match) return undefined
+
+  match.resolution = {
+    type: 'walkover',
+    winnerId: null,
+    reason,
+    resolvedAt: new Date().toISOString(),
+  }
+  match.completed = true
+
+  await saveAndSync(all, t)
+  return t
+}
+
+// --- Match Reactions ---
+
+const REACTIONS_KEY = 'play-tennis-reactions'
+
+function loadReactions(): MatchReaction[] {
+  try {
+    const data = localStorage.getItem(REACTIONS_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveReactionsToStorage(reactions: MatchReaction[]): void {
+  localStorage.setItem(REACTIONS_KEY, JSON.stringify(reactions))
+}
+
+export function saveMatchReaction(reaction: MatchReaction): void {
+  const reactions = loadReactions()
+  // Replace existing reaction from same player for same match
+  const idx = reactions.findIndex(r => r.matchId === reaction.matchId && r.playerId === reaction.playerId)
+  if (idx >= 0) {
+    reactions[idx] = reaction
+  } else {
+    reactions.push(reaction)
+  }
+  saveReactionsToStorage(reactions)
+}
+
+export function getMatchReactions(matchId: string): MatchReaction[] {
+  return loadReactions().filter(r => r.matchId === matchId)
+}
+
+export function getPlayerName(tournament: Tournament, playerId: string | null): string {
+  if (!playerId) return 'TBD'
+  return tournament.players.find(p => p.id === playerId)?.name ?? 'Unknown'
+}
+
+export function getSeeds(tournament: Tournament): Map<string, number> {
+  const seeds = new Map<string, number>()
+  if (tournament.format === 'single-elimination' || tournament.format === 'group-knockout') {
+    const sorted = [...tournament.players].sort((a, b) => {
+      return getPlayerRating(b.id, b.name).rating - getPlayerRating(a.id, a.name).rating
+    })
+    sorted.forEach((p, i) => seeds.set(p.id, i + 1))
+  }
+  return seeds
+}
+
+export function getPlayerSeed(tournament: Tournament, playerId: string | null): number | null {
+  if (!playerId) return null
+  const seeds = getSeeds(tournament)
+  return seeds.get(playerId) ?? null
+}
+
+// --- Player Ratings (Global Elo) ---
+
+function loadRatings(): Record<string, PlayerRating> {
+  try {
+    const data = localStorage.getItem(RATINGS_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveRatings(ratings: Record<string, PlayerRating>): void {
+  localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
+  if (!SUPABASE_PRIMARY) {
+    syncRatings(ratings)
+  }
+}
+
+/** Sync specific player ratings to Supabase */
+async function saveRatingsAndSync(ratings: Record<string, PlayerRating>, ...playerIds: string[]): Promise<void> {
+  saveRatings(ratings)
+  if (SUPABASE_PRIMARY) {
+    for (const id of playerIds) {
+      const rating = ratings[id]
+      if (rating) {
+        const result = await syncRatingsForPlayer(id, rating)
+        if (!result.success) {
+          enqueue('rating', { playerId: id, rating })
+        }
+      }
+    }
+  }
+}
+
+// Legacy: look up by normalized name (for backwards compat with old data)
+function findRatingByName(ratings: Record<string, PlayerRating>, name: string): PlayerRating | null {
+  const normalized = name.trim().toLowerCase()
+  for (const entry of Object.values(ratings)) {
+    if (entry.name.trim().toLowerCase() === normalized) return entry
+  }
+  return null
+}
+
+export function getPlayerRating(playerId: string, playerName?: string): PlayerRating {
+  const ratings = loadRatings()
+  // Try by ID first
+  if (ratings[playerId]) return ratings[playerId]
+  // Fallback: try legacy name-based key
+  const displayName = playerName ?? playerId
+  const legacyKey = displayName.trim().toLowerCase()
+  if (ratings[legacyKey]) return ratings[legacyKey]
+  return { name: displayName, rating: 1500, matchesPlayed: 0 }
+}
+
+// Lookup by name for leaderboard (searches all entries)
+export function getPlayerRatingByName(playerName: string): PlayerRating {
+  const ratings = loadRatings()
+  const found = findRatingByName(ratings, playerName)
+  return found ?? { name: playerName, rating: 1500, matchesPlayed: 0 }
+}
+
+export function getAllRatings(): PlayerRating[] {
+  return Object.values(loadRatings()).sort((a, b) => b.rating - a.rating)
+}
+
+function kFactor(matchesPlayed: number): number {
+  return 250 / Math.pow(matchesPlayed + 5, 0.4)
+}
+
+export function winProbability(ratingA: number, ratingB: number): number {
+  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
+}
+
+export async function updateRatings(
+  playerA: { id: string; name: string },
+  playerB: { id: string; name: string },
+  winnerId: string
+): Promise<void> {
+  // Try RPC first for atomic server-side calculation
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        const { data, error } = await client.rpc('rpc_update_ratings', {
+          p_player_a_id: playerA.id,
+          p_player_a_name: playerA.name,
+          p_player_b_id: playerB.id,
+          p_player_b_name: playerB.name,
+          p_winner_id: winnerId,
+        })
+        if (!error && data?.success) {
+          // Update local ratings from server response
+          const ratings = loadRatings()
+          ratings[playerA.id] = {
+            name: playerA.name,
+            rating: data.playerA.rating,
+            matchesPlayed: data.playerA.matchesPlayed,
+          }
+          ratings[playerB.id] = {
+            name: playerB.name,
+            rating: data.playerB.rating,
+            matchesPlayed: data.playerB.matchesPlayed,
+          }
+          await saveRatingsAndSync(ratings, playerA.id, playerB.id)
+          recordRatingSnapshot(playerA.id, data.playerA.rating)
+          recordRatingSnapshot(playerB.id, data.playerB.rating)
+          return
+        }
+      } catch {
+        // RPC failed, fall through to local calculation
+      }
+    }
+  }
+
+  // Phase 1 fallback: local ELO calculation
+  const ratings = loadRatings()
+
+  const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1500, matchesPlayed: 0 }
+  const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1500, matchesPlayed: 0 }
+  // Keep display name current
+  a.name = playerA.name
+  b.name = playerB.name
+
+  const pA = winProbability(a.rating, b.rating)
+
+  const kA = kFactor(a.matchesPlayed)
+  const kB = kFactor(b.matchesPlayed)
+
+  const sA = winnerId === playerA.id ? 1 : 0
+  const sB = 1 - sA
+
+  a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
+  b.rating = Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10
+  a.matchesPlayed += 1
+  b.matchesPlayed += 1
+
+  ratings[playerA.id] = a
+  ratings[playerB.id] = b
+  await saveRatingsAndSync(ratings, playerA.id, playerB.id)
+  recordRatingSnapshot(playerA.id, a.rating)
+  recordRatingSnapshot(playerB.id, b.rating)
+}
+
+// --- Rating History ---
+
+export interface RatingSnapshot {
+  rating: number
+  timestamp: string
+}
+
+function loadRatingHistory(): Record<string, RatingSnapshot[]> {
+  try {
+    const data = localStorage.getItem(RATING_HISTORY_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
+  localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(history))
+}
+
+function recordRatingSnapshot(playerId: string, rating: number): void {
+  const history = loadRatingHistory()
+  if (!history[playerId]) history[playerId] = []
+  history[playerId].push({ rating, timestamp: new Date().toISOString() })
+  saveRatingHistory(history)
+}
+
+export function getRatingHistory(playerId: string): RatingSnapshot[] {
+  return loadRatingHistory()[playerId] ?? []
+}
+
+export function getRatingTrend(playerId: string): number {
+  const history = getRatingHistory(playerId)
+  if (history.length < 2) return 0
+  const weekAgo = new Date()
+  weekAgo.setDate(weekAgo.getDate() - 7)
+  const weekAgoStr = weekAgo.toISOString()
+  // Find earliest snapshot within the last week, or use the one just before
+  let baseRating = history[0].rating
+  for (const snap of history) {
+    if (snap.timestamp < weekAgoStr) {
+      baseRating = snap.rating
+    } else {
+      break
+    }
+  }
+  const currentRating = history[history.length - 1].rating
+  return Math.round(currentRating - baseRating)
+}
+
+export function getRatingLabel(rating: number, matchesPlayed?: number): string {
+  // Placement period: first 5 matches
+  if (matchesPlayed !== undefined && matchesPlayed < 5) {
+    return `Placement (${matchesPlayed}/5)`
+  }
+  if (rating >= 1800) return 'Diamond'
+  if (rating >= 1600) return 'Platinum'
+  if (rating >= 1400) return 'Gold'
+  if (rating >= 1200) return 'Silver'
+  return 'Bronze'
+}
+
+// --- Match History ---
+
+export interface MatchHistoryEntry {
+  matchId: string
+  tournamentId: string
+  tournamentName: string
+  opponentId: string
+  opponentName: string
+  score: string        // e.g. "6-3 6-4" or "4-6 6-3 7-5"
+  won: boolean
+  date: string         // tournament date
+  round: number
+  format: Tournament['format']
+  phase?: MatchPhase
+}
+
+export function getMatchHistory(playerId: string): MatchHistoryEntry[] {
+  const tournaments = load()
+  const entries: MatchHistoryEntry[] = []
+
+  for (const tournament of tournaments) {
+    for (const match of tournament.matches) {
+      if (!match.completed || !match.winnerId) continue
+      if (match.player1Id !== playerId && match.player2Id !== playerId) continue
+      if (!match.player1Id || !match.player2Id) continue
+
+      const isPlayer1 = match.player1Id === playerId
+      const opponentId = isPlayer1 ? match.player2Id : match.player1Id
+      const opponentName = getPlayerName(tournament, opponentId)
+      const won = match.winnerId === playerId
+
+      // Format score from player's perspective
+      const sets: string[] = []
+      for (let i = 0; i < match.score1.length; i++) {
+        const myScore = isPlayer1 ? match.score1[i] : match.score2[i]
+        const theirScore = isPlayer1 ? match.score2[i] : match.score1[i]
+        sets.push(`${myScore}-${theirScore}`)
+      }
+
+      entries.push({
+        matchId: match.id,
+        tournamentId: tournament.id,
+        tournamentName: tournament.name,
+        opponentId,
+        opponentName,
+        score: sets.join(' '),
+        won,
+        date: tournament.date,
+        round: match.round,
+        format: tournament.format,
+        phase: match.phase,
+      })
+    }
+  }
+
+  // Most recent first
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return entries
+}
+
+export function getHeadToHead(playerId: string, opponentId: string): { wins: number; losses: number; matches: MatchHistoryEntry[] } {
+  const history = getMatchHistory(playerId)
+  const h2h = history.filter(m => m.opponentId === opponentId)
+  return {
+    wins: h2h.filter(m => m.won).length,
+    losses: h2h.filter(m => !m.won).length,
+    matches: h2h,
+  }
+}
+
+export interface RecentResult {
+  matchId: string
+  tournamentId: string
+  tournamentName: string
+  winnerId: string
+  winnerName: string
+  loserId: string
+  loserName: string
+  score: string
+  round: number
+  date: string
+}
+
+export function getRecentResults(county: string, limit: number = 10): RecentResult[] {
+  const tournaments = load().filter(t => t.county === county)
+  const results: RecentResult[] = []
+
+  for (const tournament of tournaments) {
+    for (const match of tournament.matches) {
+      if (!match.completed || !match.winnerId || !match.player1Id || !match.player2Id) continue
+
+      const loserId = match.winnerId === match.player1Id ? match.player2Id : match.player1Id
+      const winnerName = getPlayerName(tournament, match.winnerId)
+      const loserName = getPlayerName(tournament, loserId)
+
+      const sets: string[] = []
+      for (let i = 0; i < match.score1.length; i++) {
+        const ws = match.winnerId === match.player1Id ? match.score1[i] : match.score2[i]
+        const ls = match.winnerId === match.player1Id ? match.score2[i] : match.score1[i]
+        sets.push(`${ws}-${ls}`)
+      }
+
+      results.push({
+        matchId: match.id,
+        tournamentId: tournament.id,
+        tournamentName: tournament.name,
+        winnerId: match.winnerId,
+        winnerName,
+        loserId,
+        loserName,
+        score: sets.join(' '),
+        round: match.round,
+        date: tournament.date,
+      })
+    }
+  }
+
+  results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return results.slice(0, limit)
+}
+
+// --- Leaderboard ---
+
+export interface LeaderboardEntry {
+  name: string
+  rating: number
+  matchesPlayed: number
+  rank: number
+  wins: number
+  losses: number
+}
+
+export function getCountyLeaderboard(county: string): LeaderboardEntry[] {
+  const tournaments = load()
+  // Map player ID -> { name, wins, losses }
+  const playerMap = new Map<string, { name: string; wins: number; losses: number }>()
+
+  // Collect all players from tournaments in this county
+  for (const t of tournaments) {
+    if (t.county.toLowerCase() !== county.toLowerCase()) continue
+    for (const p of t.players) {
+      if (!playerMap.has(p.id)) playerMap.set(p.id, { name: p.name, wins: 0, losses: 0 })
+    }
+    for (const m of t.matches) {
+      if (!m.completed || !m.winnerId) continue
+      const p1 = t.players.find(p => p.id === m.player1Id)
+      const p2 = t.players.find(p => p.id === m.player2Id)
+      if (p1) {
+        const s = playerMap.get(p1.id) ?? { name: p1.name, wins: 0, losses: 0 }
+        if (m.winnerId === p1.id) s.wins++; else s.losses++
+        playerMap.set(p1.id, s)
+      }
+      if (p2) {
+        const s = playerMap.get(p2.id) ?? { name: p2.name, wins: 0, losses: 0 }
+        if (m.winnerId === p2.id) s.wins++; else s.losses++
+        playerMap.set(p2.id, s)
+      }
+    }
+  }
+
+  // Also include lobby entries
+  const lobby = loadLobby()
+  for (const e of lobby) {
+    if (e.county.toLowerCase() === county.toLowerCase()) {
+      if (!playerMap.has(e.playerId)) playerMap.set(e.playerId, { name: e.playerName, wins: 0, losses: 0 })
+    }
+  }
+
+  const entries: LeaderboardEntry[] = []
+  for (const [playerId, stats] of playerMap) {
+    const r = getPlayerRating(playerId, stats.name)
+    entries.push({ name: stats.name, rating: r.rating, matchesPlayed: r.matchesPlayed, rank: 0, wins: stats.wins, losses: stats.losses })
+  }
+
+  entries.sort((a, b) => b.rating - a.rating)
+  entries.forEach((e, i) => e.rank = i + 1)
+
+  return entries
+}
+
+export function getPlayerRank(playerName: string, county: string): { rank: number; total: number; percentile: number } {
+  const leaderboard = getCountyLeaderboard(county)
+  const total = leaderboard.length
+  const entry = leaderboard.find(e => e.name.toLowerCase() === playerName.toLowerCase())
+  const rank = entry?.rank ?? total
+  const percentile = total > 0 ? Math.round(((total - rank) / total) * 100) : 0
+  return { rank, total, percentile }
+}
+
+// --- Trophies ---
+
+function loadTrophies(): Trophy[] {
+  try {
+    const data = localStorage.getItem(TROPHIES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveTrophies(trophies: Trophy[]): void {
+  localStorage.setItem(TROPHIES_KEY, JSON.stringify(trophies))
+}
+
+export function getPlayerTrophies(playerId: string): Trophy[] {
+  return loadTrophies().filter(t => t.playerId === playerId)
+    .sort((a, b) => {
+      const tierOrder: Record<TrophyTier, number> = { champion: 0, finalist: 1, semifinalist: 2 }
+      return tierOrder[a.tier] - tierOrder[b.tier] || b.awardedAt.localeCompare(a.awardedAt)
+    })
+}
+
+export function getAllTrophies(): Trophy[] {
+  return loadTrophies()
+}
+
+function formatMatchScore(score1: number[], score2: number[]): string {
+  return score1.map((s, i) => `${s}-${score2[i]}`).join(' ')
+}
+
+export function awardTournamentTrophies(tournamentId: string, tournamentObj?: Tournament): Trophy[] {
+  const t = tournamentObj ?? load().find(t => t.id === tournamentId)
+  if (!t || t.status !== 'completed') return []
+
+  const trophies = loadTrophies()
+  // Don't re-award if already done
+  if (trophies.some(tr => tr.tournamentId === tournamentId)) return []
+
+  const newTrophies: Trophy[] = []
+  const now = new Date().toISOString()
+
+  if (t.format === 'single-elimination') {
+    // Find the final match (highest round)
+    const maxRound = Math.max(...t.matches.map(m => m.round))
+    const finalMatch = t.matches.find(m => m.round === maxRound && m.completed)
+    if (!finalMatch || !finalMatch.winnerId) return []
+
+    const champion = t.players.find(p => p.id === finalMatch.winnerId)
+    const finalist = t.players.find(p => p.id === (finalMatch.player1Id === finalMatch.winnerId ? finalMatch.player2Id : finalMatch.player1Id))
+    const scoreStr = formatMatchScore(
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score1 : finalMatch.score2,
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score2 : finalMatch.score1
+    )
+
+    if (champion) {
+      newTrophies.push({
+        id: generateId(), playerId: champion.id, playerName: champion.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'champion', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: finalist?.name ?? 'Unknown', score: scoreStr, won: true }
+      })
+    }
+    if (finalist) {
+      newTrophies.push({
+        id: generateId(), playerId: finalist.id, playerName: finalist.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'finalist', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: champion?.name ?? 'Unknown', score: scoreStr, won: false }
+      })
+    }
+
+    // Semifinalists: lost in the round before the final
+    const semiRound = maxRound - 1
+    if (semiRound >= 1) {
+      const semiMatches = t.matches.filter(m => m.round === semiRound && m.completed)
+      for (const sm of semiMatches) {
+        if (!sm.winnerId) continue
+        const loserId = sm.player1Id === sm.winnerId ? sm.player2Id : sm.player1Id
+        if (!loserId) continue
+        const loser = t.players.find(p => p.id === loserId)
+        if (loser) {
+          newTrophies.push({
+            id: generateId(), playerId: loser.id, playerName: loser.name,
+            tournamentId: t.id, tournamentName: t.name, county: t.county,
+            tier: 'semifinalist', date: t.date, awardedAt: now,
+          })
+        }
+      }
+    }
+  } else if (t.format === 'group-knockout') {
+    // Knockout phase matches
+    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+    const maxRound = Math.max(...knockoutMatches.map(m => m.round))
+    const finalMatch = knockoutMatches.find(m => m.round === maxRound && m.completed)
+
+    if (!finalMatch || !finalMatch.winnerId) return []
+
+    const champion = t.players.find(p => p.id === finalMatch.winnerId)
+    const finalist = t.players.find(p => p.id === (finalMatch.player1Id === finalMatch.winnerId ? finalMatch.player2Id : finalMatch.player1Id))
+    const scoreStr = formatMatchScore(
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score1 : finalMatch.score2,
+      finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score2 : finalMatch.score1
+    )
+
+    if (champion) {
+      newTrophies.push({
+        id: generateId(), playerId: champion.id, playerName: champion.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'champion', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: finalist?.name ?? 'Unknown', score: scoreStr, won: true }
+      })
+    }
+    if (finalist) {
+      newTrophies.push({
+        id: generateId(), playerId: finalist.id, playerName: finalist.name,
+        tournamentId: t.id, tournamentName: t.name, county: t.county,
+        tier: 'finalist', date: t.date, awardedAt: now,
+        finalMatch: { opponentName: champion?.name ?? 'Unknown', score: scoreStr, won: false }
+      })
+    }
+
+    // Semifinalists
+    const semiRound = maxRound - 1
+    const semiMatches = knockoutMatches.filter(m => m.round === semiRound && m.completed)
+    for (const sm of semiMatches) {
+      if (!sm.winnerId) continue
+      const loserId = sm.player1Id === sm.winnerId ? sm.player2Id : sm.player1Id
+      if (!loserId) continue
+      const loser = t.players.find(p => p.id === loserId)
+      if (loser) {
+        newTrophies.push({
+          id: generateId(), playerId: loser.id, playerName: loser.name,
+          tournamentId: t.id, tournamentName: t.name, county: t.county,
+          tier: 'semifinalist', date: t.date, awardedAt: now,
+        })
+      }
+    }
+  } else if (t.format === 'round-robin') {
+    // Round-robin with playoff phase: semis + final determine trophies
+    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+    if (knockoutMatches.length > 0) {
+      const maxRound = Math.max(...knockoutMatches.map(m => m.round))
+      const finalMatch = knockoutMatches.find(m => m.round === maxRound && m.completed)
+      if (finalMatch && finalMatch.winnerId) {
+        const champion = t.players.find(p => p.id === finalMatch.winnerId)
+        const finalist = t.players.find(p => p.id === (finalMatch.player1Id === finalMatch.winnerId ? finalMatch.player2Id : finalMatch.player1Id))
+        const scoreStr = formatMatchScore(
+          finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score1 : finalMatch.score2,
+          finalMatch.winnerId === finalMatch.player1Id ? finalMatch.score2 : finalMatch.score1
+        )
+        if (champion) {
+          newTrophies.push({
+            id: generateId(), playerId: champion.id, playerName: champion.name,
+            tournamentId: t.id, tournamentName: t.name, county: t.county,
+            tier: 'champion', date: t.date, awardedAt: now,
+            finalMatch: { opponentName: finalist?.name ?? 'Unknown', score: scoreStr, won: true }
+          })
+        }
+        if (finalist) {
+          newTrophies.push({
+            id: generateId(), playerId: finalist.id, playerName: finalist.name,
+            tournamentId: t.id, tournamentName: t.name, county: t.county,
+            tier: 'finalist', date: t.date, awardedAt: now,
+            finalMatch: { opponentName: champion?.name ?? 'Unknown', score: scoreStr, won: false }
+          })
+        }
+        // Semifinalists
+        const semiRound = maxRound - 1
+        const semiMatches = knockoutMatches.filter(m => m.round === semiRound && m.completed)
+        for (const sm of semiMatches) {
+          if (!sm.winnerId) continue
+          const loserId = sm.player1Id === sm.winnerId ? sm.player2Id : sm.player1Id
+          if (!loserId) continue
+          const loser = t.players.find(p => p.id === loserId)
+          if (loser) {
+            newTrophies.push({
+              id: generateId(), playerId: loser.id, playerName: loser.name,
+              tournamentId: t.id, tournamentName: t.name, county: t.county,
+              tier: 'semifinalist', date: t.date, awardedAt: now,
+            })
+          }
+        }
+      }
+    }
+  }
+
+  trophies.push(...newTrophies)
+  saveTrophies(trophies)
+
+  // Set pending victory for each player so UI can show animation
+  for (const trophy of newTrophies) {
+    setPendingVictory(trophy)
+  }
+
+  return newTrophies
+}
+
+export function isDefendingChampion(playerName: string, county: string): boolean {
+  const trophies = loadTrophies()
+  return trophies.some(t =>
+    t.playerName.toLowerCase() === playerName.toLowerCase() &&
+    t.county.toLowerCase() === county.toLowerCase() &&
+    t.tier === 'champion'
+  )
+}
+
+export function getLatestChampionTrophy(county: string): Trophy | null {
+  const trophies = loadTrophies()
+  const countyChampions = trophies
+    .filter(t => t.county.toLowerCase() === county.toLowerCase() && t.tier === 'champion')
+    .sort((a, b) => b.awardedAt.localeCompare(a.awardedAt))
+  return countyChampions[0] ?? null
+}
+
+// --- Badges ---
+
+function loadBadges(): Badge[] {
+  try {
+    const data = localStorage.getItem(BADGES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveBadges(badges: Badge[]): void {
+  localStorage.setItem(BADGES_KEY, JSON.stringify(badges))
+}
+
+export function getPlayerBadges(playerId: string): Badge[] {
+  return loadBadges().filter(b => b.playerId === playerId)
+    .sort((a, b) => b.awardedAt.localeCompare(a.awardedAt))
+}
+
+const BADGE_DEFS: Record<BadgeType, { label: string; description: string }> = {
+  'first-tournament': { label: 'First Tournament', description: 'Completed your first tournament' },
+  'undefeated-champion': { label: 'Undefeated', description: 'Won a tournament without losing a match' },
+  'comeback-win': { label: 'Comeback', description: 'Won a match after losing the first set' },
+  'five-tournaments': { label: 'Veteran', description: 'Completed 5 tournaments' },
+  'ten-matches': { label: 'Seasoned', description: 'Played 10 rated matches' },
+  'reliable-player': { label: 'Reliable', description: 'Consistently shows up and confirms promptly' },
+  'good-sport': { label: 'Good Sport', description: 'Highly rated for fairness by opponents' },
+  'community-regular': { label: 'Regular', description: 'Played 15+ matches across 3+ tournaments' },
+}
+
+function awardBadge(playerId: string, type: BadgeType, tournamentId?: string): void {
+  const badges = loadBadges()
+  if (badges.some(b => b.playerId === playerId && b.type === type)) return
+  const def = BADGE_DEFS[type]
+  badges.push({
+    id: generateId(),
+    playerId,
+    type,
+    label: def.label,
+    description: def.description,
+    awardedAt: new Date().toISOString(),
+    tournamentId,
+  })
+  saveBadges(badges)
+}
+
+export function checkAndAwardBadges(playerId: string, tournamentId: string, tournamentObj?: Tournament): Badge[] {
+  const before = getPlayerBadges(playerId)
+  const savedTournaments = load()
+  // Merge in the unsaved tournament object so we see it as completed
+  const tournaments = tournamentObj
+    ? savedTournaments.map(st => st.id === tournamentObj.id ? tournamentObj : st)
+    : savedTournaments
+  // If the tournament isn't in saved list yet, add it
+  if (tournamentObj && !tournaments.some(t => t.id === tournamentObj.id)) {
+    tournaments.push(tournamentObj)
+  }
+
+  const completed = tournaments.filter(t =>
+    t.status === 'completed' && t.players.some(p => p.id === playerId)
+  )
+
+  // First tournament
+  if (completed.length >= 1) awardBadge(playerId, 'first-tournament', tournamentId)
+  // Five tournaments
+  if (completed.length >= 5) awardBadge(playerId, 'five-tournaments', tournamentId)
+
+  // Ten matches
+  const playerName = tournaments.flatMap(t => t.players).find(p => p.id === playerId)?.name ?? ''
+  if (playerName) {
+    const rating = getPlayerRating(playerId, playerName)
+    if (rating.matchesPlayed >= 10) awardBadge(playerId, 'ten-matches')
+  }
+
+  // Undefeated champion
+  const t = tournaments.find(t => t.id === tournamentId)
+  if (t) {
+    const trophies = loadTrophies()
+    const isChamp = trophies.some(tr => tr.playerId === playerId && tr.tournamentId === tournamentId && tr.tier === 'champion')
+    if (isChamp) {
+      const playerMatches = t.matches.filter(m =>
+        m.completed && m.winnerId &&
+        (m.player1Id === playerId || m.player2Id === playerId)
+      )
+      const allWon = playerMatches.every(m => m.winnerId === playerId)
+      if (allWon && playerMatches.length > 0) {
+        awardBadge(playerId, 'undefeated-champion', tournamentId)
+      }
+    }
+  }
+
+  // Comeback win: won match after losing first set
+  if (t) {
+    for (const m of t.matches) {
+      if (!m.completed || m.winnerId !== playerId) continue
+      if ((m.player1Id !== playerId && m.player2Id !== playerId)) continue
+      const isP1 = m.player1Id === playerId
+      const firstSetWon = isP1 ? m.score1[0] > m.score2[0] : m.score2[0] > m.score1[0]
+      if (!firstSetWon && m.winnerId === playerId) {
+        awardBadge(playerId, 'comeback-win', tournamentId)
+        break
+      }
+    }
+  }
+
+  const after = getPlayerBadges(playerId)
+  return after.filter(b => !before.some(bb => bb.id === b.id))
+}
+
+// --- Pending Victory (for animation trigger) ---
+
+export interface PendingVictory {
+  tier: TrophyTier
+  tournamentName: string
+  playerId: string
+}
+
+export function getPendingVictory(playerId: string): PendingVictory | null {
+  try {
+    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const all: PendingVictory[] = data ? JSON.parse(data) : []
+    return all.find(v => v.playerId === playerId) ?? null
+  } catch {
+    return null
+  }
+}
+
+export function clearPendingVictory(playerId: string): void {
+  try {
+    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const all: PendingVictory[] = data ? JSON.parse(data) : []
+    const filtered = all.filter(v => v.playerId !== playerId)
+    if (filtered.length > 0) {
+      localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(filtered))
+    } else {
+      localStorage.removeItem(PENDING_VICTORY_KEY)
+    }
+  } catch {
+    localStorage.removeItem(PENDING_VICTORY_KEY)
+  }
+}
+
+function setPendingVictory(trophy: Trophy): void {
+  try {
+    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const all: PendingVictory[] = data ? JSON.parse(data) : []
+    // Don't duplicate
+    if (all.some(v => v.playerId === trophy.playerId && v.tournamentName === trophy.tournamentName)) return
+    all.push({
+      tier: trophy.tier,
+      tournamentName: trophy.tournamentName,
+      playerId: trophy.playerId,
+    })
+    localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(all))
+  } catch {
+    // ignore
+  }
+}
+
+export function retroactivelyAwardTrophies(): void {
+  const tournaments = load()
+  for (const t of tournaments) {
+    if (t.status === 'completed') {
+      awardTournamentTrophies(t.id, t)
+      for (const p of t.players) {
+        checkAndAwardBadges(p.id, t.id, t)
+      }
+    }
+  }
+}
+
+// --- Dev Tools ---
+
+const TEST_PLAYERS = [
+  'Alex Rivera', 'Jordan Chen', 'Sam Patel', 'Taylor Kim',
+  'Casey Brooks', 'Morgan Lee', 'Riley Davis', 'Quinn Adams',
+]
+
+const TEST_RATINGS: Record<string, number> = {
+  'alex rivera': 1650, 'jordan chen': 1580, 'sam patel': 1520, 'taylor kim': 1490,
+  'casey brooks': 1440, 'morgan lee': 1400, 'riley davis': 1550, 'quinn adams': 1470,
+}
+
+const TEST_AVAILABILITY: AvailabilitySlot[][] = [
+  [{ day: 'tuesday', startHour: 18, endHour: 21 }, { day: 'saturday', startHour: 9, endHour: 13 }],
+  [{ day: 'monday', startHour: 18, endHour: 21 }, { day: 'wednesday', startHour: 18, endHour: 21 }, { day: 'saturday', startHour: 10, endHour: 14 }],
+  [{ day: 'saturday', startHour: 8, endHour: 12 }, { day: 'sunday', startHour: 8, endHour: 12 }],
+  [{ day: 'thursday', startHour: 17, endHour: 20 }, { day: 'friday', startHour: 17, endHour: 20 }, { day: 'sunday', startHour: 13, endHour: 17 }],
+  [{ day: 'tuesday', startHour: 19, endHour: 21 }, { day: 'thursday', startHour: 19, endHour: 21 }, { day: 'saturday', startHour: 9, endHour: 12 }],
+  [{ day: 'wednesday', startHour: 17, endHour: 20 }, { day: 'saturday', startHour: 13, endHour: 17 }, { day: 'sunday', startHour: 9, endHour: 13 }],
+  [{ day: 'monday', startHour: 17, endHour: 20 }, { day: 'friday', startHour: 17, endHour: 20 }, { day: 'saturday', startHour: 8, endHour: 11 }],
+  [{ day: 'tuesday', startHour: 18, endHour: 21 }, { day: 'sunday', startHour: 10, endHour: 14 }],
+]
+
+export async function seedLobby(county: string, count: number = 3): Promise<LobbyEntry[]> {
+  const normalizedCounty = county.toLowerCase()
+  const lobby = loadLobby()
+  const existing = lobby.filter(e => e.county.toLowerCase() === normalizedCounty)
+  const existingNames = new Set(existing.map(e => e.playerName.toLowerCase()))
+
+  const available = TEST_PLAYERS.filter(n => !existingNames.has(n.toLowerCase()))
+  const toAdd = available.slice(0, count)
+
+  for (const name of toAdd) {
+    const id = generateId()
+    const playerIdx = TEST_PLAYERS.indexOf(name)
+    const entry: LobbyEntry = { playerId: id, playerName: name, county: normalizedCounty, joinedAt: new Date().toISOString() }
+    lobby.push(entry)
+
+    // Set up their rating (keyed by player ID)
+    const ratings = loadRatings()
+    const normalizedName = name.trim().toLowerCase()
+    const rating: PlayerRating = { name, rating: TEST_RATINGS[normalizedName] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
+    if (!ratings[id]) {
+      ratings[id] = rating
+      await saveRatingsAndSync(ratings, id)
+    }
+
+    // Set up their availability
+    if (playerIdx >= 0 && TEST_AVAILABILITY[playerIdx]) {
+      saveAvailability(id, TEST_AVAILABILITY[playerIdx])
+    }
+
+    // Sync to Supabase (check results, queue on failure)
+    const lobbyResult = await syncLobbyEntry(entry)
+    if (!lobbyResult.success) {
+      enqueue('lobby_add', entry)
+    }
+    const ratingResult = await syncRatingsForPlayer(id, rating)
+    if (!ratingResult.success) {
+      enqueue('rating', { playerId: id, rating })
+    }
+  }
+
+  saveLobby(lobby)
+  return getLobbyByCounty(normalizedCounty)
+}
+
+export function getTestProfiles(county: string): PlayerProfile[] {
+  // Look up real IDs from lobby and tournaments so switching profiles works correctly
+  const lobby = loadLobby()
+  const tournaments = load()
+  const allPlayers = new Map<string, string>() // name -> id
+
+  for (const entry of lobby) {
+    allPlayers.set(entry.playerName.toLowerCase(), entry.playerId)
+  }
+  for (const t of tournaments) {
+    for (const p of t.players) {
+      allPlayers.set(p.name.toLowerCase(), p.id)
+    }
+  }
+
+  return TEST_PLAYERS.map((name, i) => ({
+    id: allPlayers.get(name.toLowerCase()) ?? `test-${i}`,
+    name,
+    county,
+    createdAt: new Date().toISOString(),
+  }))
+}
+
+export function switchProfile(profile: PlayerProfile): void {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+}
+
+// Auto-confirm all pending schedules (dev tool)
+export async function autoConfirmAllSchedules(tournamentId: string): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+
+  for (const match of t.matches) {
+    if (match.schedule && match.schedule.status !== 'confirmed' && !match.completed) {
+      const pending = match.schedule.proposals.filter(p => p.status === 'pending')
+      if (pending.length > 0) {
+        const best = pending[0]
+        for (const p of match.schedule.proposals) {
+          p.status = p.id === best.id ? 'accepted' : 'rejected'
+        }
+        match.schedule.status = 'confirmed'
+        match.schedule.confirmedSlot = { day: best.day, startHour: best.startHour, endHour: best.endHour }
+      }
+    }
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+// Simulate random scores for the current round of a tournament
+export async function simulateRoundScores(tournamentId: string): Promise<Tournament | undefined> {
+  const t = getTournament(tournamentId)
+  if (!t || t.status !== 'in-progress') return undefined
+
+  // Find the earliest incomplete round with scoreable matches
+  const incompleteMatches = t.matches.filter(
+    m => !m.completed && m.player1Id && m.player2Id
+  )
+  if (incompleteMatches.length === 0) return t
+
+  const minRound = Math.min(...incompleteMatches.map(m => m.round))
+  const roundMatches = incompleteMatches.filter(m => m.round === minRound)
+
+  const SCORES = [
+    { s1: [6, 6], s2: [3, 4], w: 1 },
+    { s1: [6, 6], s2: [2, 1], w: 1 },
+    { s1: [6, 6], s2: [4, 3], w: 1 },
+    { s1: [7, 6], s2: [5, 4], w: 1 },
+    { s1: [3, 4], s2: [6, 6], w: 2 },
+    { s1: [2, 6, 4], s2: [6, 3, 6], w: 2 },
+    { s1: [6, 4, 6], s2: [3, 6, 2], w: 1 },
+    { s1: [4, 2], s2: [6, 6], w: 2 },
+  ]
+
+  let updated = t
+  for (const match of roundMatches) {
+    const pick = SCORES[Math.floor(Math.random() * SCORES.length)]
+    const winnerId = pick.w === 1 ? match.player1Id! : match.player2Id!
+    const result = await saveMatchScore(tournamentId, match.id, pick.s1, pick.s2, winnerId)
+    if (result) updated = result
+  }
+
+  return updated
+}
+
+// Simulate a tournament all the way to the final, with the given player as a finalist
+export async function simulateToFinal(playerId: string, county: string): Promise<{ tournamentId: string } | null> {
+  const profile = getProfile()
+  if (!profile) return null
+
+  // Step 1: Ensure player is in lobby, seed to 6+, and create tournament
+  if (!isInLobby(playerId)) {
+    await joinLobby(profile)
+  }
+  await seedLobby(county, 5)
+  const lobby = getLobbyByCounty(county)
+  if (lobby.length < 6) return null
+
+  // Create tournament from lobby if one doesn't exist yet
+  await startTournamentFromLobby(county)
+  const setupT = getSetupTournamentForCounty(county)
+  if (!setupT) {
+    // Need to create tournament via lobby - join lobby first if not in it
+    const inLobby = lobby.find(e => e.playerId === playerId)
+    if (!inLobby) {
+      await joinLobby(profile)
+    }
+    // Still need 6 in lobby for tournament creation
+    const updatedLobby = getLobbyByCounty(county)
+    if (updatedLobby.length < 6) {
+      await seedLobby(county, 6 - updatedLobby.length)
+    }
+    // Create the tournament from lobby entries
+    await startTournamentFromLobby(county)
+    const st = getSetupTournamentForCounty(county)
+    if (!st) return null
+    const started = await forceStartTournament(st.id)
+    if (!started) return null
+    return await simulateToFinalInner(started.id, playerId)
+  }
+
+  const started = await forceStartTournament(setupT.id)
+  if (!started) return null
+  return await simulateToFinalInner(started.id, playerId)
+}
+
+async function simulateToFinalInner(tournamentId: string, playerId: string): Promise<{ tournamentId: string } | null> {
+  let t = getTournament(tournamentId)
+  if (!t) return null
+
+  // For group-knockout: score all group matches, ensuring player wins enough
+  if (t.format === 'group-knockout') {
+    const groupMatches = t.matches.filter(m => m.phase === 'group')
+    for (const match of groupMatches) {
+      if (match.completed || !match.player1Id || !match.player2Id) continue
+      const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+      const s1 = [6, 6]
+      const s2 = [3, 4]
+      let winnerId: string
+      if (isMyMatch) {
+        winnerId = playerId
+      } else {
+        winnerId = match.player1Id!
+      }
+      // Set scores so the winner wins
+      if (winnerId === match.player1Id) {
+        await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+      } else {
+        await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+      }
+    }
+
+    // Reload tournament (knockout phase should now exist)
+    t = getTournament(tournamentId)
+    if (!t) return null
+
+    // Score semifinals, ensuring our player wins
+    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+    const semis = knockoutMatches.filter(m => m.round === 2)
+    for (const semi of semis) {
+      if (semi.completed || !semi.player1Id || !semi.player2Id) continue
+      const isMyMatch = semi.player1Id === playerId || semi.player2Id === playerId
+      const s1 = [6, 6]
+      const s2 = [3, 4]
+      let winnerId: string
+      if (isMyMatch) {
+        winnerId = playerId
+      } else {
+        winnerId = semi.player1Id!
+      }
+      if (winnerId === semi.player1Id) {
+        await saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
+      } else {
+        await saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
+      }
+    }
+
+    return { tournamentId }
+  }
+
+  // For single-elimination: score all rounds except the last
+  if (t.format === 'single-elimination') {
+    const maxRound = Math.max(...t.matches.map(m => m.round))
+    for (let round = 1; round < maxRound; round++) {
+      t = getTournament(tournamentId)
+      if (!t) return null
+      const roundMatches = t.matches.filter(m => m.round === round && !m.completed && m.player1Id && m.player2Id)
+      for (const match of roundMatches) {
+        const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+        const s1 = [6, 6]
+        const s2 = [3, 4]
+        let winnerId: string
+        if (isMyMatch) {
+          winnerId = playerId
+        } else {
+          winnerId = match.player1Id!
+        }
+        if (winnerId === match.player1Id) {
+          await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+        } else {
+          await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+        }
+      }
+    }
+    return { tournamentId }
+  }
+
+  // Round-robin with playoffs: score all group matches, then semis, leave final
+  const groupMatches = t.matches.filter(m => m.phase === 'group')
+  for (const match of groupMatches) {
+    if (match.completed || !match.player1Id || !match.player2Id) continue
+    const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+    const s1 = [6, 6]
+    const s2 = [3, 4]
+    let winnerId: string
+    if (isMyMatch) {
+      winnerId = playerId
+    } else {
+      winnerId = match.player1Id!
+    }
+    if (winnerId === match.player1Id) {
+      await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
+    } else {
+      await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
+    }
+  }
+
+  // Reload tournament (knockout phase should now exist)
+  t = getTournament(tournamentId)
+  if (!t) return null
+
+  // Score semifinals, ensuring our player wins
+  const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
+  const semis = knockoutMatches.filter(m => m.round === 2)
+  for (const semi of semis) {
+    if (semi.completed || !semi.player1Id || !semi.player2Id) continue
+    const isMyMatch = semi.player1Id === playerId || semi.player2Id === playerId
+    const s1 = [6, 6]
+    const s2 = [3, 4]
+    let winnerId: string
+    if (isMyMatch) {
+      winnerId = playerId
+    } else {
+      winnerId = semi.player1Id!
+    }
+    if (winnerId === semi.player1Id) {
+      await saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
+    } else {
+      await saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
+    }
+  }
+
+  return { tournamentId }
+}
+
+// --- Match Broadcasts ---
+
+function loadBroadcasts(): MatchBroadcast[] {
+  try {
+    const data = localStorage.getItem(BROADCAST_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveBroadcasts(broadcasts: MatchBroadcast[]): void {
+  localStorage.setItem(BROADCAST_KEY, JSON.stringify(broadcasts))
+}
+
+function cleanExpiredBroadcasts(): void {
+  const broadcasts = loadBroadcasts()
+  const now = Date.now()
+  let changed = false
+  for (const b of broadcasts) {
+    if (b.status === 'active' && new Date(b.expiresAt).getTime() <= now) {
+      b.status = 'expired'
+      changed = true
+    }
+  }
+  if (changed) saveBroadcasts(broadcasts)
+}
+
+export function createBroadcast(
+  playerId: string,
+  playerName: string,
+  tournamentId: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  location: string,
+  message?: string
+): MatchBroadcast | null {
+  cleanExpiredBroadcasts()
+  const broadcasts = loadBroadcasts()
+
+  // One active broadcast per player
+  const existing = broadcasts.find(b => b.playerId === playerId && b.status === 'active')
+  if (existing) return null
+
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString()
+
+  const broadcast: MatchBroadcast = {
+    id: generateId(),
+    playerId,
+    playerName,
+    tournamentId,
+    date,
+    startTime,
+    endTime,
+    location,
+    message,
+    status: 'active',
+    createdAt: now.toISOString(),
+    expiresAt,
+  }
+
+  broadcasts.push(broadcast)
+  saveBroadcasts(broadcasts)
+  return broadcast
+}
+
+export function getActiveBroadcasts(tournamentId: string, forPlayerId?: string): MatchBroadcast[] {
+  cleanExpiredBroadcasts()
+  const broadcasts = loadBroadcasts()
+  const tournament = getTournament(tournamentId)
+  if (!tournament) return []
+
+  return broadcasts.filter(b => {
+    if (b.tournamentId !== tournamentId || b.status !== 'active') return false
+    if (!forPlayerId) return true
+    // Don't show own broadcasts
+    if (b.playerId === forPlayerId) return false
+    // Only show if the viewer hasn't already played/scheduled with the broadcaster
+    const hasPlayed = tournament.matches.some(
+      m => m.completed &&
+        ((m.player1Id === b.playerId && m.player2Id === forPlayerId) ||
+         (m.player2Id === b.playerId && m.player1Id === forPlayerId))
+    )
+    if (hasPlayed) return false
+    const hasScheduled = tournament.matches.some(
+      m => !m.completed && m.schedule?.status === 'confirmed' &&
+        ((m.player1Id === b.playerId && m.player2Id === forPlayerId) ||
+         (m.player2Id === b.playerId && m.player1Id === forPlayerId))
+    )
+    return !hasScheduled
+  })
+}
+
+export function getPlayerActiveBroadcast(playerId: string): MatchBroadcast | undefined {
+  cleanExpiredBroadcasts()
+  return loadBroadcasts().find(b => b.playerId === playerId && b.status === 'active')
+}
+
+export async function claimBroadcast(
+  broadcastId: string,
+  claimingPlayerId: string
+): Promise<{ broadcast: MatchBroadcast; tournament: Tournament } | null> {
+  cleanExpiredBroadcasts()
+  const broadcasts = loadBroadcasts()
+  const broadcast = broadcasts.find(b => b.id === broadcastId)
+  if (!broadcast || broadcast.status !== 'active') return null
+
+  const tournament = getTournament(broadcast.tournamentId)
+  if (!tournament) return null
+
+  // Find unplayed match between these two players
+  const match = tournament.matches.find(
+    m => !m.completed &&
+      ((m.player1Id === broadcast.playerId && m.player2Id === claimingPlayerId) ||
+       (m.player2Id === broadcast.playerId && m.player1Id === claimingPlayerId))
+  )
+
+  if (!match) return null
+
+  // Claim the broadcast
+  broadcast.status = 'claimed'
+  broadcast.claimedBy = claimingPlayerId
+  broadcast.matchId = match.id
+  saveBroadcasts(broadcasts)
+
+  // Confirm the match schedule
+  const all = load()
+  const t = all.find(x => x.id === broadcast.tournamentId)
+  if (!t) return null
+
+  const m = t.matches.find(x => x.id === match.id)
+  if (m) {
+    // Parse the broadcast date/time into a day of week and hour
+    const broadcastDate = new Date(broadcast.date + 'T' + broadcast.startTime)
+    const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const day = days[broadcastDate.getDay()]
+    const hour = broadcastDate.getHours()
+
+    if (!m.schedule) {
+      m.schedule = {
+        status: 'confirmed',
+        proposals: [],
+        confirmedSlot: { day, startHour: hour, endHour: hour + 1 },
+        createdAt: new Date().toISOString(),
+        escalationDay: 0,
+        lastEscalation: new Date().toISOString(),
+      }
+    } else {
+      m.schedule.status = 'confirmed'
+      m.schedule.confirmedSlot = { day, startHour: hour, endHour: hour + 1 }
+    }
+    await saveAndSync(all, t)
+  }
+
+  return { broadcast, tournament: t }
+}
+
+export function cancelBroadcast(broadcastId: string, playerId: string): boolean {
+  const broadcasts = loadBroadcasts()
+  const broadcast = broadcasts.find(b => b.id === broadcastId && b.playerId === playerId)
+  if (!broadcast || broadcast.status !== 'active') return false
+  broadcast.status = 'expired'
+  saveBroadcasts(broadcasts)
+  return true
+}
+
+// =====================================================================
+// Match Offer System
+// =====================================================================
+
+function loadOffers(): MatchOffer[] {
+  const raw = localStorage.getItem(OFFERS_KEY)
+  return raw ? JSON.parse(raw) : []
+}
+
+function saveOffers(offers: MatchOffer[]): void {
+  localStorage.setItem(OFFERS_KEY, JSON.stringify(offers))
+}
+
+function loadNotifications(): RallyNotification[] {
+  const raw = localStorage.getItem(NOTIFICATIONS_KEY)
+  return raw ? JSON.parse(raw) : []
+}
+
+function saveNotifications(notifications: RallyNotification[]): void {
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+}
+
+function addNotification(notif: Omit<RallyNotification, 'id' | 'createdAt' | 'read'>): RallyNotification {
+  const notifications = loadNotifications()
+  const entry: RallyNotification = {
+    ...notif,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    read: false,
+  }
+  notifications.unshift(entry)
+  // Keep last 50 notifications
+  if (notifications.length > 50) notifications.length = 50
+  saveNotifications(notifications)
+  return entry
+}
+
+/** Clean expired offers and update their status */
+export function cleanExpiredOffers(): void {
+  const offers = loadOffers()
+  const now = Date.now()
+  let changed = false
+  for (const offer of offers) {
+    if (offer.status === 'proposed' && new Date(offer.expiresAt).getTime() <= now) {
+      offer.status = 'expired'
+      changed = true
+      addNotification({
+        type: 'offer_expired',
+        recipientId: offer.senderId,
+        message: 'Match offer expired',
+        detail: `${offer.proposedTime} offer to ${offer.recipientName}`,
+        relatedOfferId: offer.offerId,
+      })
+    }
+  }
+  if (changed) saveOffers(offers)
+}
+
+/** Create a match offer */
+export function createMatchOffer(
+  sender: { id: string; name: string },
+  recipient: { id: string; name: string },
+  tournamentId: string,
+  proposedDate: string,
+  proposedTime: string,
+  proposedDay: string,
+  proposedStartHour: number,
+  proposedEndHour: number,
+): MatchOffer | { error: string } {
+  cleanExpiredOffers()
+  const offers = loadOffers()
+
+  // Check: 1 active offer per opponent
+  const existingToRecipient = offers.find(
+    o => o.senderId === sender.id && o.recipientId === recipient.id && o.status === 'proposed'
+  )
+  if (existingToRecipient) {
+    return { error: 'You already have a pending offer to this player.' }
+  }
+
+  // Check: max 5 outgoing active offers
+  const activeOutgoing = offers.filter(o => o.senderId === sender.id && o.status === 'proposed')
+  if (activeOutgoing.length >= 5) {
+    return { error: 'You have too many active match offers. Wait for responses or cancel one.' }
+  }
+
+  const now = new Date()
+  const offer: MatchOffer = {
+    offerId: generateId(),
+    senderId: sender.id,
+    senderName: sender.name,
+    recipientId: recipient.id,
+    recipientName: recipient.name,
+    tournamentId,
+    proposedDate,
+    proposedTime,
+    proposedDay,
+    proposedStartHour,
+    proposedEndHour,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+    status: 'proposed',
+  }
+
+  offers.push(offer)
+  saveOffers(offers)
+
+  // Notify recipient
+  addNotification({
+    type: 'match_offer',
+    recipientId: recipient.id,
+    senderId: sender.id,
+    senderName: sender.name,
+    message: `${sender.name} proposed a match`,
+    detail: `${proposedTime} on ${proposedDate}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  return offer
+}
+
+/** Get active incoming offers for a player */
+export function getIncomingOffers(playerId: string): MatchOffer[] {
+  cleanExpiredOffers()
+  return loadOffers().filter(
+    o => o.recipientId === playerId && o.status === 'proposed'
+  )
+}
+
+/** Get active outgoing offers for a player */
+export function getOutgoingOffers(playerId: string): MatchOffer[] {
+  cleanExpiredOffers()
+  return loadOffers().filter(
+    o => o.senderId === playerId && o.status === 'proposed'
+  )
+}
+
+/** Accept a match offer */
+export async function acceptMatchOffer(offerId: string, acceptorId: string): Promise<{ offer: MatchOffer; matchConfirmed: boolean } | { error: string }> {
+  cleanExpiredOffers()
+  const offers = loadOffers()
+  const offer = offers.find(o => o.offerId === offerId)
+
+  if (!offer) return { error: 'Offer not found.' }
+  if (offer.recipientId !== acceptorId) return { error: 'Not your offer to accept.' }
+  if (offer.status !== 'proposed') return { error: `Offer is already ${offer.status}.` }
+
+  offer.status = 'accepted'
+
+  // Find the match between these two players and confirm the schedule
+  const all = load()
+  const tournament = all.find(t => t.id === offer.tournamentId)
+  let matchConfirmed = false
+
+  if (tournament) {
+    const match = tournament.matches.find(m =>
+      !m.completed &&
+      ((m.player1Id === offer.senderId && m.player2Id === offer.recipientId) ||
+       (m.player1Id === offer.recipientId && m.player2Id === offer.senderId))
+    )
+    if (match) {
+      offer.matchId = match.id
+      if (!match.schedule) {
+        match.schedule = {
+          status: 'confirmed',
+          proposals: [],
+          confirmedSlot: {
+            day: offer.proposedDay as DayOfWeek,
+            startHour: offer.proposedStartHour,
+            endHour: offer.proposedEndHour,
+          },
+          escalationDay: 0,
+          participationScores: {},
+          createdAt: new Date().toISOString(),
+          lastEscalation: new Date().toISOString(),
+        }
+      } else {
+        match.schedule.status = 'confirmed'
+        match.schedule.confirmedSlot = {
+          day: offer.proposedDay as DayOfWeek,
+          startHour: offer.proposedStartHour,
+          endHour: offer.proposedEndHour,
+        }
+      }
+      matchConfirmed = true
+      await saveAndSync(all, tournament!)
+    }
+  }
+
+  // Close conflicting offers for the same time slot
+  for (const other of offers) {
+    if (other.offerId === offerId) continue
+    if (other.status !== 'proposed') continue
+    if (
+      (other.senderId === offer.senderId || other.senderId === offer.recipientId ||
+       other.recipientId === offer.senderId || other.recipientId === offer.recipientId) &&
+      other.proposedDate === offer.proposedDate &&
+      other.proposedStartHour === offer.proposedStartHour
+    ) {
+      other.status = 'expired'
+      addNotification({
+        type: 'offer_expired',
+        recipientId: other.senderId,
+        message: 'This time is no longer available',
+        detail: `${other.proposedTime} — ${other.recipientName} is now booked`,
+        relatedOfferId: other.offerId,
+      })
+    }
+  }
+
+  saveOffers(offers)
+
+  // Notify sender
+  addNotification({
+    type: 'offer_accepted',
+    recipientId: offer.senderId,
+    senderId: offer.recipientId,
+    senderName: offer.recipientName,
+    message: `${offer.recipientName} accepted your match`,
+    detail: `${offer.proposedTime} on ${offer.proposedDate}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  // Notify acceptor too
+  addNotification({
+    type: 'offer_accepted',
+    recipientId: offer.recipientId,
+    senderId: offer.senderId,
+    senderName: offer.senderName,
+    message: 'Match confirmed',
+    detail: `${offer.proposedTime} vs ${offer.senderName}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  return { offer, matchConfirmed }
+}
+
+/** Decline a match offer */
+export function declineMatchOffer(offerId: string, declinerId: string): MatchOffer | { error: string } {
+  const offers = loadOffers()
+  const offer = offers.find(o => o.offerId === offerId)
+
+  if (!offer) return { error: 'Offer not found.' }
+  if (offer.recipientId !== declinerId) return { error: 'Not your offer to decline.' }
+  if (offer.status !== 'proposed') return { error: `Offer is already ${offer.status}.` }
+
+  offer.status = 'declined'
+  saveOffers(offers)
+
+  // Notify sender
+  addNotification({
+    type: 'offer_declined',
+    recipientId: offer.senderId,
+    senderId: offer.recipientId,
+    senderName: offer.recipientName,
+    message: `${offer.recipientName} declined your match`,
+    detail: `${offer.proposedTime} on ${offer.proposedDate}`,
+    relatedOfferId: offer.offerId,
+  })
+
+  return offer
+}
+
+/** Cancel an outgoing offer */
+export function cancelMatchOffer(offerId: string, senderId: string): boolean {
+  const offers = loadOffers()
+  const offer = offers.find(o => o.offerId === offerId && o.senderId === senderId)
+  if (!offer || offer.status !== 'proposed') return false
+  offer.status = 'expired'
+  saveOffers(offers)
+  return true
+}
+
+/** Get notifications for a player */
+export function getNotifications(playerId: string): RallyNotification[] {
+  return loadNotifications().filter(n => n.recipientId === playerId)
+}
+
+/** Get unread notification count */
+export function getUnreadNotificationCount(playerId: string): number {
+  return loadNotifications().filter(n => n.recipientId === playerId && !n.read).length
+}
+
+/** Mark notifications as read */
+export function markNotificationsRead(playerId: string): void {
+  const notifications = loadNotifications()
+  let changed = false
+  for (const n of notifications) {
+    if (n.recipientId === playerId && !n.read) {
+      n.read = true
+      changed = true
+    }
+  }
+  if (changed) saveNotifications(notifications)
+}
+
+/** Get an offer by ID */
+export function getMatchOffer(offerId: string): MatchOffer | null {
+  return loadOffers().find(o => o.offerId === offerId) ?? null
+}
+
+// --- Direct Messages ---
+
+function loadMessages(): DirectMessage[] {
+  try {
+    return JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]')
+  } catch { return [] }
+}
+
+function saveMessages(msgs: DirectMessage[]): void {
+  localStorage.setItem(MESSAGES_KEY, JSON.stringify(msgs))
+}
+
+export function sendMessage(senderId: string, senderName: string, recipientId: string, recipientName: string, text: string): DirectMessage {
+  const msgs = loadMessages()
+  const msg: DirectMessage = {
+    id: generateId(),
+    senderId,
+    senderName,
+    recipientId,
+    recipientName,
+    text: text.trim(),
+    createdAt: new Date().toISOString(),
+    read: false,
+  }
+  msgs.push(msg)
+  saveMessages(msgs)
+  return msg
+}
+
+export function getConversation(playerId: string, otherPlayerId: string): DirectMessage[] {
+  return loadMessages().filter(m =>
+    (m.senderId === playerId && m.recipientId === otherPlayerId) ||
+    (m.senderId === otherPlayerId && m.recipientId === playerId)
+  ).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+}
+
+export function getConversationList(playerId: string): { otherPlayerId: string; otherPlayerName: string; lastMessage: DirectMessage; unreadCount: number }[] {
+  const msgs = loadMessages().filter(m => m.senderId === playerId || m.recipientId === playerId)
+  const byPeer: Record<string, DirectMessage[]> = {}
+  for (const m of msgs) {
+    const peerId = m.senderId === playerId ? m.recipientId : m.senderId
+    if (!byPeer[peerId]) byPeer[peerId] = []
+    byPeer[peerId].push(m)
+  }
+  return Object.entries(byPeer).map(([peerId, peerMsgs]) => {
+    peerMsgs.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const last = peerMsgs[peerMsgs.length - 1]
+    const unread = peerMsgs.filter(m => m.recipientId === playerId && !m.read).length
+    return {
+      otherPlayerId: peerId,
+      otherPlayerName: last.senderId === peerId ? last.senderName : last.recipientName,
+      lastMessage: last,
+      unreadCount: unread,
+    }
+  }).sort((a, b) => b.lastMessage.createdAt.localeCompare(a.lastMessage.createdAt))
+}
+
+export function getUnreadMessageCount(playerId: string): number {
+  return loadMessages().filter(m => m.recipientId === playerId && !m.read).length
+}
+
+export function markConversationRead(playerId: string, otherPlayerId: string): void {
+  const msgs = loadMessages()
+  let changed = false
+  for (const m of msgs) {
+    if (m.recipientId === playerId && m.senderId === otherPlayerId && !m.read) {
+      m.read = true
+      changed = true
+    }
+  }
+  if (changed) saveMessages(msgs)
+}
+
+export function hasUnreadFrom(playerId: string, otherPlayerId: string): boolean {
+  return loadMessages().some(m => m.recipientId === playerId && m.senderId === otherPlayerId && !m.read)
+}
+
+// --- Score Disputes ---
+
+export async function proposeScoreCorrection(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string,
+  proposedScore1: number[],
+  proposedScore2: number[],
+  proposedWinnerId: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreReportedBy || match.completed) return undefined
+
+  // Only the non-reporter can propose a correction
+  if (match.scoreReportedBy === currentPlayerId) return undefined
+
+  match.scoreDispute = {
+    id: generateId(),
+    type: 'correction',
+    proposedScore1,
+    proposedScore2,
+    proposedWinnerId,
+    disputedBy: currentPlayerId,
+    disputedAt: new Date().toISOString(),
+    status: 'pending',
+  }
+
+  const disputerName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+  const scoreStr = proposedScore1.map((s, i) => `${s}-${proposedScore2[i]}`).join(', ')
+  addNotification({
+    type: 'score_correction_proposed',
+    recipientId: match.scoreReportedBy,
+    senderId: currentPlayerId,
+    senderName: disputerName,
+    message: `${disputerName} suggests the score was ${scoreStr}.`,
+    detail: scoreStr,
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function resolveScoreDispute(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string,
+  action: 'accept' | 'reject'
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreDispute || match.scoreDispute.status !== 'pending') return undefined
+
+  // Only the original reporter can resolve
+  if (match.scoreReportedBy !== currentPlayerId) return undefined
+
+  const dispute = match.scoreDispute
+
+  if (action === 'accept') {
+    // Apply the proposed score
+    if (dispute.proposedScore1) match.score1 = dispute.proposedScore1
+    if (dispute.proposedScore2) match.score2 = dispute.proposedScore2
+    if (dispute.proposedWinnerId) match.winnerId = dispute.proposedWinnerId
+    dispute.status = 'accepted'
+    dispute.resolvedAt = new Date().toISOString()
+    dispute.resolvedBy = currentPlayerId
+
+    // Now complete the match (same logic as confirmMatchScore)
+    match.completed = true
+    match.scoreConfirmedBy = dispute.disputedBy
+    match.scoreConfirmedAt = new Date().toISOString()
+
+    const winnerId = match.winnerId
+    const p1 = t.players.find(p => p.id === match.player1Id)
+    const p2 = t.players.find(p => p.id === match.player2Id)
+    if (p1 && p2 && winnerId) {
+      await updateRatings(p1, p2, winnerId)
+    }
+
+    // Bracket advancement
+    if (match.winnerId) advanceWinner(t, match, match.winnerId)
+
+    const resolverName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+    addNotification({
+      type: 'score_correction_resolved',
+      recipientId: dispute.disputedBy,
+      senderId: currentPlayerId,
+      senderName: resolverName,
+      message: `${resolverName} accepted your score correction.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  } else {
+    // Reject → split decision
+    dispute.status = 'rejected'
+    dispute.resolvedAt = new Date().toISOString()
+    dispute.resolvedBy = currentPlayerId
+    match.completed = true
+    match.splitDecision = true
+    // No ELO update, no bracket advancement for split decisions
+
+    const resolverName = t.players.find(p => p.id === currentPlayerId)?.name ?? 'Your opponent'
+    addNotification({
+      type: 'score_correction_resolved',
+      recipientId: dispute.disputedBy,
+      senderId: currentPlayerId,
+      senderName: resolverName,
+      message: `Score dispute resulted in a split decision. The match won't count toward standings.`,
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+
+  // Check tournament completion
+  const allDone = t.matches.every(m => m.completed)
+  if (allDone) {
+    t.status = 'completed'
+    awardTournamentTrophies(t.id, t)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id, t)
+    }
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+export async function reportMatchIssue(
+  tournamentId: string,
+  matchId: string,
+  currentPlayerId: string,
+  issueText: string
+): Promise<Tournament | undefined> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return undefined
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match || !match.scoreReportedBy || match.completed) return undefined
+
+  match.scoreDispute = {
+    id: generateId(),
+    type: 'issue',
+    issueText,
+    disputedBy: currentPlayerId,
+    disputedAt: new Date().toISOString(),
+    status: 'admin-review',
+  }
+
+  await saveAndSync(all, t)
+  return t
+}
+
+// --- Match Feedback (Reliability Rating) ---
+
+function loadFeedback(): MatchFeedback[] {
+  try {
+    const data = localStorage.getItem(FEEDBACK_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function saveFeedbackToStorage(feedback: MatchFeedback[]): void {
+  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback))
+}
+
+export async function saveMatchFeedback(
+  feedback: Omit<MatchFeedback, 'id' | 'createdAt' | 'revealedAt'>
+): Promise<void> {
+  const all = loadFeedback()
+  const existing = all.findIndex(f => f.matchId === feedback.matchId && f.fromPlayerId === feedback.fromPlayerId)
+
+  const entry: MatchFeedback = {
+    ...feedback,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+  }
+
+  if (existing >= 0) {
+    all[existing] = entry
+  } else {
+    all.push(entry)
+  }
+
+  // Double-blind: check if both players have submitted
+  const matchFeedbacks = all.filter(f => f.matchId === feedback.matchId)
+  if (matchFeedbacks.length >= 2) {
+    const now = new Date().toISOString()
+    for (const f of matchFeedbacks) {
+      if (!f.revealedAt) f.revealedAt = now
+    }
+  }
+
+  saveFeedbackToStorage(all)
+
+  // Sync to Supabase
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        await client.from('match_feedback').upsert({
+          id: entry.id,
+          match_id: entry.matchId,
+          tournament_id: entry.tournamentId,
+          from_player_id: entry.fromPlayerId,
+          to_player_id: entry.toPlayerId,
+          sentiment: entry.sentiment,
+          issue_categories: entry.issueCategories ?? [],
+          issue_text: entry.issueText ?? null,
+          created_at: entry.createdAt,
+          revealed_at: entry.revealedAt ?? null,
+        })
+      } catch {
+        enqueue('feedback', entry)
+      }
+    }
+  }
+
+  // Recalculate reliability for the rated player
+  recalculateReliability(feedback.toPlayerId)
+}
+
+export function getMatchFeedback(matchId: string): MatchFeedback[] {
+  return loadFeedback().filter(f => f.matchId === matchId)
+}
+
+export function getPlayerFeedbackForMatch(matchId: string, playerId: string): MatchFeedback | null {
+  return loadFeedback().find(f => f.matchId === matchId && f.fromPlayerId === playerId) ?? null
+}
+
+export function hasBothFeedback(matchId: string): boolean {
+  return loadFeedback().filter(f => f.matchId === matchId).length >= 2
+}
+
+// --- Reliability Score ---
+
+function loadReliability(): Record<string, ReliabilityScore> {
+  try {
+    const data = localStorage.getItem(RELIABILITY_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveReliabilityToStorage(scores: Record<string, ReliabilityScore>): void {
+  localStorage.setItem(RELIABILITY_KEY, JSON.stringify(scores))
+}
+
+export function recalculateReliability(playerId: string): ReliabilityScore {
+  const tournaments = load()
+  const feedback = loadFeedback()
+  const now = Date.now()
+
+  // Gather last 20 completed matches for this player
+  const playerMatches: { match: Match; tournament: Tournament }[] = []
+  for (const t of tournaments) {
+    for (const m of t.matches) {
+      if (!m.completed) continue
+      if (m.player1Id !== playerId && m.player2Id !== playerId) continue
+      playerMatches.push({ match: m, tournament: t })
+    }
+  }
+
+  // Sort by completion time (most recent first), take last 20
+  playerMatches.sort((a, b) => {
+    const aTime = a.match.scoreConfirmedAt ?? a.match.scoreReportedAt ?? ''
+    const bTime = b.match.scoreConfirmedAt ?? b.match.scoreReportedAt ?? ''
+    return bTime.localeCompare(aTime)
+  })
+  const recent = playerMatches.slice(0, 20)
+
+  if (recent.length === 0) {
+    const score: ReliabilityScore = {
+      playerId,
+      overallScore: 100,
+      showUpRate: 1,
+      fairnessRating: 1,
+      noDisputesAgainst: 1,
+      confirmationSpeed: 1,
+      matchesConsidered: 0,
+      lastUpdated: new Date().toISOString(),
+    }
+    const scores = loadReliability()
+    scores[playerId] = score
+    saveReliabilityToStorage(scores)
+    return score
+  }
+
+  // Phase 2: Apply decay (6-month half-life)
+  function decayWeight(matchTimeStr: string | undefined): number {
+    if (!matchTimeStr) return 1
+    const ageMs = now - new Date(matchTimeStr).getTime()
+    const ageMonths = ageMs / (30 * 24 * 60 * 60 * 1000)
+    return Math.pow(0.5, ageMonths / 6)
+  }
+
+  // 1. Show-up rate (40%) — fraction of matches that weren't walkovers against this player
+  let showUpWeightedSum = 0
+  let showUpWeightTotal = 0
+  for (const { match } of recent) {
+    const weight = decayWeight(match.scoreConfirmedAt ?? match.scoreReportedAt ?? undefined)
+    const isWalkoverAgainst = match.resolution?.type === 'walkover' && match.resolution.winnerId !== playerId
+    showUpWeightedSum += weight * (isWalkoverAgainst ? 0 : 1)
+    showUpWeightTotal += weight
+  }
+  const showUpRate = showUpWeightTotal > 0 ? showUpWeightedSum / showUpWeightTotal : 1
+
+  // 2. Fairness rating (25%) — weighted average of opponent feedback sentiment
+  const feedbackReceived = feedback.filter(f => f.toPlayerId === playerId)
+  let fairnessWeightedSum = 0
+  let fairnessWeightTotal = 0
+  for (const f of feedbackReceived) {
+    const weight = decayWeight(f.createdAt)
+    const sentimentScore = f.sentiment === 'positive' ? 1 : f.sentiment === 'neutral' ? 0.5 : 0
+    fairnessWeightedSum += weight * sentimentScore
+    fairnessWeightTotal += weight
+  }
+  const fairnessRating = fairnessWeightTotal > 0 ? fairnessWeightedSum / fairnessWeightTotal : 1
+
+  // 3. No disputes against (20%) — fraction of matches with no dispute filed against this player
+  let disputeWeightedSum = 0
+  let disputeWeightTotal = 0
+  for (const { match } of recent) {
+    const weight = decayWeight(match.scoreConfirmedAt ?? match.scoreReportedAt ?? undefined)
+    const hasDisputeAgainst = match.scoreDispute && match.scoreReportedBy === playerId && match.scoreDispute.type === 'correction'
+    disputeWeightedSum += weight * (hasDisputeAgainst ? 0 : 1)
+    disputeWeightTotal += weight
+  }
+  const noDisputesAgainst = disputeWeightTotal > 0 ? disputeWeightedSum / disputeWeightTotal : 1
+
+  // 4. Confirmation speed (15%) — normalized average time to confirm (faster = higher)
+  let speedWeightedSum = 0
+  let speedWeightTotal = 0
+  for (const { match } of recent) {
+    if (match.scoreReportedBy === playerId) continue // only count when this player was the confirmer
+    if (!match.scoreReportedAt || !match.scoreConfirmedAt) continue
+    const weight = decayWeight(match.scoreConfirmedAt)
+    const hoursToConfirm = (new Date(match.scoreConfirmedAt).getTime() - new Date(match.scoreReportedAt).getTime()) / (1000 * 60 * 60)
+    // Normalize: 0-1h = 1.0, 48h+ = 0.0, linear between
+    const speedScore = Math.max(0, Math.min(1, 1 - hoursToConfirm / 48))
+    speedWeightedSum += weight * speedScore
+    speedWeightTotal += weight
+  }
+  const confirmationSpeed = speedWeightTotal > 0 ? speedWeightedSum / speedWeightTotal : 1
+
+  // Weighted composite
+  const overallScore = Math.round(
+    (0.40 * showUpRate + 0.25 * fairnessRating + 0.20 * noDisputesAgainst + 0.15 * confirmationSpeed) * 100
+  )
+
+  const score: ReliabilityScore = {
+    playerId,
+    overallScore,
+    showUpRate,
+    fairnessRating,
+    noDisputesAgainst,
+    confirmationSpeed,
+    matchesConsidered: recent.length,
+    lastUpdated: new Date().toISOString(),
+  }
+
+  const scores = loadReliability()
+  scores[playerId] = score
+  saveReliabilityToStorage(scores)
+
+  // Phase 2: Nudge notifications
+  checkReliabilityNudge(playerId, score)
+
+  // Phase 2: Award reliability badges
+  checkReliabilityBadges(playerId, score, feedbackReceived.length, recent.length, tournaments)
+
+  return score
+}
+
+export function getReliabilityScore(playerId: string): ReliabilityScore | null {
+  const scores = loadReliability()
+  return scores[playerId] ?? null
+}
+
+export type ReliabilityLevel = 'green' | 'yellow' | 'red' | null
+
+export function getReliabilityLevel(playerId: string): ReliabilityLevel {
+  const score = getReliabilityScore(playerId)
+  if (!score || score.matchesConsidered < 5) return null // not enough data
+  if (score.overallScore >= 75) return 'green'
+  if (score.overallScore >= 50) return 'yellow'
+  return 'red'
+}
+
+// Phase 2: Nudge notifications for declining reliability
+const NUDGE_COOLDOWN_KEY = 'play-tennis-reliability-nudge'
+
+function checkReliabilityNudge(playerId: string, score: ReliabilityScore): void {
+  if (score.matchesConsidered < 5) return
+
+  // Check cooldown (max once per week)
+  try {
+    const data = localStorage.getItem(NUDGE_COOLDOWN_KEY)
+    const nudges: Record<string, string> = data ? JSON.parse(data) : {}
+    const lastNudge = nudges[playerId]
+    if (lastNudge) {
+      const weekMs = 7 * 24 * 60 * 60 * 1000
+      if (Date.now() - new Date(lastNudge).getTime() < weekMs) return
+    }
+
+    let message = ''
+    if (score.overallScore < 30) {
+      message = 'Your reliability is critically low. Organizers may deprioritize your match scheduling.'
+    } else if (score.overallScore < 50) {
+      message = 'Some of your recent opponents flagged issues. Showing up on time and confirming scores promptly helps everyone have a better experience.'
+    } else {
+      return // no nudge needed
+    }
+
+    addNotification({
+      type: 'reliability_nudge',
+      recipientId: playerId,
+      message,
+    })
+
+    nudges[playerId] = new Date().toISOString()
+    localStorage.setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(nudges))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+// Phase 2: Check and award reliability-based badges
+function checkReliabilityBadges(
+  playerId: string,
+  score: ReliabilityScore,
+  feedbackCount: number,
+  matchCount: number,
+  tournaments: Tournament[]
+): void {
+  // Reliable Player: overallScore >= 85 and 10+ matches considered
+  if (score.overallScore >= 85 && score.matchesConsidered >= 10) {
+    awardBadge(playerId, 'reliable-player')
+  }
+
+  // Good Sport: fairnessRating >= 0.9 and 10+ feedback records
+  if (score.fairnessRating >= 0.9 && feedbackCount >= 10) {
+    awardBadge(playerId, 'good-sport')
+  }
+
+  // Community Regular: 15+ matches across 3+ tournaments
+  if (matchCount >= 15) {
+    const tournamentsPlayed = new Set<string>()
+    for (const t of tournaments) {
+      for (const m of t.matches) {
+        if (m.completed && (m.player1Id === playerId || m.player2Id === playerId)) {
+          tournamentsPlayed.add(t.id)
+        }
+      }
+    }
+    if (tournamentsPlayed.size >= 3) {
+      awardBadge(playerId, 'community-regular')
+    }
+  }
+}
+
+// --- Auto-accept timeout (48h) ---
+
+export function checkAutoAcceptScores(): void {
+  const all = load()
+  let changed = false
+  const now = Date.now()
+  const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000
+
+  for (const t of all) {
+    for (const match of t.matches) {
+      if (!match.scoreReportedBy || !match.scoreReportedAt || match.completed) continue
+      // Skip matches with pending disputes
+      if (match.scoreDispute?.status === 'pending') continue
+
+      const reportedTime = new Date(match.scoreReportedAt).getTime()
+      if (now - reportedTime >= FORTY_EIGHT_HOURS) {
+        match.completed = true
+        match.scoreConfirmedBy = 'auto'
+        match.scoreConfirmedAt = new Date().toISOString()
+        changed = true
+
+        // Notify the reporter
+        if (match.scoreReportedBy) {
+          addNotification({
+            type: 'score_reported',
+            recipientId: match.scoreReportedBy,
+            message: 'Score auto-confirmed after 48 hours.',
+            relatedMatchId: match.id,
+            relatedTournamentId: t.id,
+          })
+        }
+
+        // Bracket advancement
+        if (match.winnerId) advanceWinner(t, match, match.winnerId)
+
+        // Check tournament completion
+        const allDone = t.matches.every(m => m.completed)
+        if (allDone) {
+          t.status = 'completed'
+          awardTournamentTrophies(t.id, t)
+          for (const p of t.players) {
+            checkAndAwardBadges(p.id, t.id, t)
+          }
+        }
+      }
+    }
+  }
+
+  if (changed) {
+    save(all)
+    // Sync changed tournaments
+    for (const t of all) {
+      syncTournament(t)
+    }
+  }
+}
