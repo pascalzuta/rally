@@ -3374,6 +3374,12 @@ select:focus {
   line-height: 1.5;
 }
 
+.schedule-panel-compact-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .schedule-panel-actions {
   display: flex;
   align-items: center;
@@ -3621,9 +3627,9 @@ select:focus {
 }
 
 .confirmed-actions {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: var(--space-md);
 }
 
 .confirmed-actions .btn,
@@ -4633,6 +4639,7 @@ select:focus {
 .action-confirmed .action-card-btn {
   background: var(--color-positive-bg);
   color: var(--color-positive-primary);
+  border: 1px solid rgba(31, 157, 85, 0.16);
 }
 
 .action-schedule .action-card-btn {

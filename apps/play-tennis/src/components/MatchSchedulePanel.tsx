@@ -404,29 +404,32 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     const lastRescheduled = latestHistory?.type === 'rescheduled' && latestHistory.fromSlot
       ? `${dayLabel(latestHistory.fromSlot.day)} ${formatHourCompact(latestHistory.fromSlot.startHour)}${'\u2013'}${formatHourCompact(latestHistory.fromSlot.endHour)}`
       : null
+    const showConfirmedContextHeader = isScheduleLocked || rescheduleUiState !== 'none'
     return (
       <div className="schedule-panel schedule-confirmed">
-        {renderPanelHeader(
-          isScheduleLocked
-            ? match.completed ? 'Completed' : 'Score Reported'
-            : rescheduleUiState === 'soft_request_sent'
-            ? 'Reschedule Requested'
-            : rescheduleUiState === 'soft_request_received'
-              ? 'Change Requested'
-              : 'Confirmed',
-          isScheduleLocked
-            ? 'green'
-            : rescheduleUiState === 'soft_request_sent' || rescheduleUiState === 'soft_request_received' ? 'blue' : 'green',
-          'Current confirmed time',
-          isScheduleLocked
-            ? match.completed
-              ? 'This match has already been completed. The confirmed time is now read-only.'
-              : 'A score has been reported for this match, so the schedule is now locked.'
-            : rescheduleUiState === 'soft_request_sent'
-            ? `Your current match time still holds unless ${opponentName} accepts a new one.`
-            : rescheduleUiState === 'soft_request_received'
-              ? `${opponentName} asked to move this match. Review the new options below.`
-              : 'This is the locked-in match time for your match.'
+        {showConfirmedContextHeader ? (
+          renderPanelHeader(
+            isScheduleLocked
+              ? match.completed ? 'Completed' : 'Score Reported'
+              : rescheduleUiState === 'soft_request_sent'
+                ? 'Reschedule Requested'
+                : 'Change Requested',
+            isScheduleLocked
+              ? 'green'
+              : 'blue',
+            'Current confirmed time',
+            isScheduleLocked
+              ? match.completed
+                ? 'This match has already been completed. The confirmed time is now read-only.'
+                : 'A score has been reported for this match, so the schedule is now locked.'
+              : rescheduleUiState === 'soft_request_sent'
+                ? `Your current match time still holds unless ${opponentName} accepts a new one.`
+                : `${opponentName} asked to move this match. Review the new options below.`
+          )
+        ) : (
+          <div className="schedule-panel-compact-header">
+            <div className="schedule-panel-title">Match time</div>
+          </div>
         )}
         <div className="confirmed-slot">
           <span className="confirmed-day">{dayLabel(s.day)}</span>
