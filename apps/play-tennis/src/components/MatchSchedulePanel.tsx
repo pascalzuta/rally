@@ -136,7 +136,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const isScheduleLocked = Boolean(match.completed || match.scoreReportedBy || match.scoreConfirmedAt)
   const isScoreable = canEnterScore(match, currentPlayerId)
 
-  function renderPanelHeader(statusLabel: string, tone: 'slate' | 'blue' | 'green' | 'amber' | 'red', title: string, copy: string) {
+  function renderPanelHeader(statusLabel: string, tone: 'slate' | 'blue' | 'green' | 'purple' | 'red', title: string, copy: string) {
     return (
       <div className="workflow-header">
         <div className={`workflow-status workflow-status--${tone}`}>{statusLabel}</div>
@@ -421,7 +421,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 : 'Change Requested',
             isScheduleLocked
               ? 'green'
-              : 'amber',
+              : 'purple',
             'Current confirmed time',
             isScheduleLocked
               ? match.completed
@@ -665,7 +665,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         <div className="schedule-panel">
           {renderPanelHeader(
             'Match Awarded',
-            'amber',
+            'purple',
             'Walkover result applied',
             isWinner
               ? 'Your opponent did not participate in scheduling. The match was awarded to you.'
@@ -789,7 +789,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           : myPendingProposals.length > 0
             ? 'Awaiting Response'
             : 'Needs Scheduling',
-        'amber',
+        'purple',
         acceptableProposals.length > 0
           ? 'Review Rally\'s time options'
           : myPendingProposals.length > 0

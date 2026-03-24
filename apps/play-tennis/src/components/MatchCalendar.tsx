@@ -46,11 +46,11 @@ function getTier(match: Match): SchedulingTier | null {
   return match.schedule?.schedulingTier ?? null
 }
 
-function getTierTone(tier: SchedulingTier | null, isCompleted: boolean): 'green' | 'blue' | 'amber' | 'slate' {
+function getTierTone(tier: SchedulingTier | null, isCompleted: boolean): 'green' | 'blue' | 'purple' | 'slate' {
   if (isCompleted) return 'slate'
   if (tier === 'auto') return 'green'
   if (tier === 'needs-accept') return 'blue'
-  return 'amber'
+  return 'purple'
 }
 
 function sortMatchesForCalendar(matches: Match[], currentPlayerId: string): Match[] {

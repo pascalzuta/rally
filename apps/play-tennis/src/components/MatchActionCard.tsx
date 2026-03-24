@@ -48,7 +48,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
         ? 'green'
         : view.tone === 'escalated'
           ? 'red'
-          : 'amber'
+          : 'purple'
 
   return (
     <div

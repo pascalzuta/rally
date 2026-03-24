@@ -819,6 +819,7 @@ body {
 .workflow-status--blue { color: var(--color-accent-primary); }
 .workflow-status--green { color: var(--color-positive-primary); }
 .workflow-status--amber { color: var(--color-warning-primary); }
+.workflow-status--purple { color: var(--color-purple-primary); }
 .workflow-status--red { color: var(--color-negative-primary); }
 
 .workflow-divider {
@@ -4927,10 +4928,10 @@ select:focus {
   transform: scale(0.98);
 }
 
-.action-card.action-score::before { background: var(--color-warning-primary); }
-.action-card.action-respond::before { background: var(--color-warning-primary); }
+.action-card.action-score::before { background: var(--color-purple-primary); }
+.action-card.action-respond::before { background: var(--color-purple-primary); }
 .action-card.action-confirmed::before { background: var(--color-positive-primary); }
-.action-card.action-schedule::before { background: var(--color-warning-primary); }
+.action-card.action-schedule::before { background: var(--color-purple-primary); }
 .action-card.action-escalated::before { background: var(--color-negative-primary); }
 .action-card.action-completed::before { background: var(--color-text-muted); }
 .action-card.action-confirm-score::before,
@@ -4953,10 +4954,10 @@ select:focus {
   color: var(--color-text-secondary);
 }
 
-.action-score .action-card-type { color: var(--color-warning-primary); }
-.action-respond .action-card-type { color: var(--color-warning-primary); }
+.action-score .action-card-type { color: var(--color-purple-primary); }
+.action-respond .action-card-type { color: var(--color-purple-primary); }
 .action-confirmed .action-card-type { color: var(--color-positive-primary); }
-.action-schedule .action-card-type { color: var(--color-warning-primary); }
+.action-schedule .action-card-type { color: var(--color-purple-primary); }
 .action-escalated .action-card-type { color: var(--color-negative-primary); }
 .action-completed .action-card-type { color: var(--color-text-muted); }
 .action-confirm-score .action-card-type,
@@ -4995,13 +4996,13 @@ select:focus {
 }
 
 .action-score .action-card-btn {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
+  background: var(--color-purple-bg);
+  color: var(--color-purple-primary);
 }
 
 .action-respond .action-card-btn {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
+  background: var(--color-purple-bg);
+  color: var(--color-purple-primary);
 }
 
 .action-confirmed .action-card-btn {
@@ -5011,13 +5012,13 @@ select:focus {
 }
 
 .action-schedule .action-card-btn {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
+  background: var(--color-purple-bg);
+  color: var(--color-purple-primary);
 }
 
 .action-confirm-score .action-card-btn {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
+  background: var(--color-purple-bg);
+  color: var(--color-purple-primary);
 }
 
 .action-escalated .action-card-btn {
