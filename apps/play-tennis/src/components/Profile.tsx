@@ -217,78 +217,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
         </div>
       </div>
 
-      {/* Bio & Playing Style */}
-      <div className="card profile-section">
-        <h3 className="profile-section-title"><span>Your Tennis Profile</span></h3>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4, color: 'var(--color-text-secondary)' }}>Bio</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Introduce yourself to opponents..."
-            value={bio}
-            maxLength={150}
-            onChange={e => handleBioChange(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box' }}
-          />
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textAlign: 'right', marginTop: 2 }}>{150 - bio.length} characters remaining</div>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Playing Style</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {STYLE_OPTIONS.map(style => (
-              <button
-                key={style}
-                className={`btn btn-small ${playingStyle.includes(style) ? 'btn-primary' : ''}`}
-                onClick={() => togglePlayingStyle(style)}
-                style={{ borderRadius: 20 }}
-              >
-                {style}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Home Courts (max 3)</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: preferredCourts.length > 0 ? 8 : 0 }}>
-            {preferredCourts.map(court => (
-              <span key={court} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '4px 10px', borderRadius: 16,
-                background: 'var(--color-surface-alt, #f0f0f0)',
-                fontSize: '0.85rem',
-              }}>
-                {court}
-                <button
-                  className="btn-icon"
-                  onClick={() => removeCourt(court)}
-                  style={{ fontSize: '0.75rem', padding: 0, lineHeight: 1 }}
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
-          </div>
-          {preferredCourts.length < 3 && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Where do you usually play?"
-                value={newCourt}
-                onChange={e => setNewCourt(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addCourt() }}
-                style={{ flex: 1 }}
-              />
-              <button className="btn btn-small" onClick={addCourt}>Add</button>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Availability Section */}
       <div className="card profile-section">
         <h3 className="profile-section-title">
@@ -399,6 +327,78 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             </div>
           </>
         )}
+      </div>
+
+      {/* Bio & Playing Style */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title"><span>Your Tennis Profile</span></h3>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4, color: 'var(--color-text-secondary)' }}>Bio</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Introduce yourself to opponents..."
+            value={bio}
+            maxLength={150}
+            onChange={e => handleBioChange(e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textAlign: 'right', marginTop: 2 }}>{150 - bio.length} characters remaining</div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Playing Style</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {STYLE_OPTIONS.map(style => (
+              <button
+                key={style}
+                className={`btn btn-small ${playingStyle.includes(style) ? 'btn-primary' : ''}`}
+                onClick={() => togglePlayingStyle(style)}
+                style={{ borderRadius: 20 }}
+              >
+                {style}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Home Courts (max 3)</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: preferredCourts.length > 0 ? 8 : 0 }}>
+            {preferredCourts.map(court => (
+              <span key={court} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 10px', borderRadius: 16,
+                background: 'var(--color-surface-alt, #f0f0f0)',
+                fontSize: '0.85rem',
+              }}>
+                {court}
+                <button
+                  className="btn-icon"
+                  onClick={() => removeCourt(court)}
+                  style={{ fontSize: '0.75rem', padding: 0, lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+          {preferredCourts.length < 3 && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Where do you usually play?"
+                value={newCourt}
+                onChange={e => setNewCourt(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') addCourt() }}
+                style={{ flex: 1 }}
+              />
+              <button className="btn btn-small" onClick={addCourt}>Add</button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Help & How Rally Works */}
