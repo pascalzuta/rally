@@ -5554,14 +5554,18 @@ select:focus {
 }
 
 .welcome-hiw-content {
-  max-height: 0;
-  overflow: hidden;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
-  transition: max-height 200ms ease-out, opacity 200ms ease-out;
+  transition: grid-template-rows 250ms ease-out, opacity 250ms ease-out;
+}
+
+.welcome-hiw-content > * {
+  overflow: hidden;
 }
 
 .welcome-hiw-content.expanded {
-  max-height: 400px;
+  grid-template-rows: 1fr;
   opacity: 1;
   margin-top: var(--space-md);
 }
