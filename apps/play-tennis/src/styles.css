@@ -10251,6 +10251,61 @@ main {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* --- Rating Panel (trophy icon overlay) --- */
+
+.rating-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.rating-panel {
+  background: var(--color-bg, #f8f8f8);
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rating-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-surface, #fff);
+}
+
+.rating-panel-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.rating-panel-close {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+  padding: 4px 8px;
+}
+
+.rating-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

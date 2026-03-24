@@ -10,6 +10,7 @@ import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
 import Profile from './components/Profile'
+import RatingPanel from './components/RatingPanel'
 import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
@@ -48,6 +49,7 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showInbox, setShowInbox] = useState(false)
+  const [showRatingPanel, setShowRatingPanel] = useState(false)
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -254,7 +256,18 @@ export default function App() {
               </svg>
             </div>
           <div className="top-nav-actions">
-            <button className="top-nav-icon inbox-icon-btn" aria-label="Messages" onClick={() => { setShowInbox(!showInbox); setShowNotifications(false) }}>
+            <button className="top-nav-icon" aria-label="Rating & Trophies" onClick={() => { setShowRatingPanel(!showRatingPanel); setShowInbox(false); setShowNotifications(false) }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9H3V4h3"/>
+                <path d="M18 9h3V4h-3"/>
+                <path d="M6 4h12v6c0 3.31-2.69 6-6 6s-6-2.69-6-6V4z"/>
+                <path d="M12 16v2"/>
+                <path d="M8 22h8"/>
+                <path d="M8 22v-4"/>
+                <path d="M16 22v-4"/>
+              </svg>
+            </button>
+            <button className="top-nav-icon inbox-icon-btn" aria-label="Messages" onClick={() => { setShowInbox(!showInbox); setShowNotifications(false); setShowRatingPanel(false) }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M22 7l-10 7L2 7" />
@@ -262,7 +275,7 @@ export default function App() {
               {unreadMsgCount > 0 && <span className="inbox-unread-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
             <div className="notif-wrapper" ref={notifWrapperRef}>
-              <button className="top-nav-icon" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false) }}>
+              <button className="top-nav-icon" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); setShowRatingPanel(false) }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -420,7 +433,6 @@ export default function App() {
                 if (tab === 'home') setAutoJoinLobby(true)
                 setActiveTab(tab)
               }}
-              onViewLeaderboard={() => setActiveTab('leaderboard')}
               onViewHelp={() => setActiveTab('help')}
             />
           )}
@@ -453,10 +465,12 @@ export default function App() {
           </button>
           <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            <span className="tab-text">Profile</span>
+            <span className="tab-text">Availability</span>
           </button>
         </nav>
       </div>
@@ -469,6 +483,13 @@ export default function App() {
           onClose={() => setShowInbox(false)}
         />
         </div>
+      )}
+      {showRatingPanel && (
+        <RatingPanel
+          profile={profile}
+          onClose={() => setShowRatingPanel(false)}
+          onViewLeaderboard={() => { setShowRatingPanel(false); setActiveTab('leaderboard') }}
+        />
       )}
       <DevTools
         onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}
