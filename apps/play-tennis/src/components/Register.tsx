@@ -461,10 +461,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="onboard-logo">
-          <span className="onboard-logo-text">Rally</span>
-        </div>
-
         <div className="onboard-content">
           <div className="onboard-visual" key={step}>
             {visuals[onboardIdx]}
