@@ -5693,74 +5693,108 @@ select:focus {
   font-size: var(--font-body-sm);
 }
 
+/* Rating explainer toggle */
 .rating-explainer-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0;
-  background: none;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-accent-bg);
   border: none;
+  border-left: 4px solid var(--color-accent-primary);
+  border-radius: var(--radius-button);
   cursor: pointer;
-  font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
-  font-weight: 500;
+  transition: background 0.15s ease;
+}
+.rating-explainer-toggle:active {
+  background: #c8d8ff;
 }
 .rating-explainer-toggle-text {
-  color: var(--color-text-secondary);
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-primary);
+  letter-spacing: 0.01em;
 }
 .rating-explainer-toggle-chevron {
-  font-size: 0.7rem;
-  color: var(--color-text-tertiary);
+  font-size: 0.85rem;
+  color: var(--color-accent-primary);
+  transition: transform 0.2s ease;
 }
+.rating-explainer-toggle[aria-expanded="true"] .rating-explainer-toggle-chevron {
+  transform: rotate(90deg);
+}
+
+/* Rating explainer body */
 .rating-explainer {
   text-align: left;
   font-size: var(--font-body-sm);
-  line-height: 1.5;
-  margin-top: var(--space-md);
+  line-height: 1.6;
+  margin-top: var(--space-lg);
+  padding: 0 var(--space-xs);
   color: var(--color-text-secondary);
 }
 .rating-explainer p {
-  margin: 0 0 var(--space-sm) 0;
+  margin: 0 0 var(--space-md) 0;
 }
 .rating-explainer strong {
   color: var(--color-text-primary);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
+
+/* Rating tiers table */
 .rating-tiers {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin: var(--space-md) 0;
-  border-radius: var(--radius-sm);
+  margin: var(--space-lg) 0;
+  border-radius: var(--radius-button);
   overflow: hidden;
+  box-shadow: var(--shadow);
 }
 .rating-tier {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px var(--space-md);
-  background: var(--color-surface-secondary);
+  padding: 10px var(--space-lg);
+  background: var(--color-bg-surface);
+  border-left: 4px solid var(--color-divider);
+  transition: background 0.1s ease;
 }
-.rating-tier:nth-child(odd) {
-  background: var(--color-surface);
+.rating-tier:not(:last-child) {
+  border-bottom: 1px solid var(--color-divider);
 }
+/* Color-coded left borders per tier level */
+.rating-tier:nth-child(1) { border-left-color: #8B5CF6; } /* Pro — purple */
+.rating-tier:nth-child(2) { border-left-color: var(--color-accent-primary); } /* Semi-pro — blue */
+.rating-tier:nth-child(3) { border-left-color: var(--color-positive-primary); } /* Elite — green */
+.rating-tier:nth-child(4) { border-left-color: #10B981; } /* Strong — teal */
+.rating-tier:nth-child(5) { border-left-color: var(--color-warning-primary); } /* Club — amber */
+.rating-tier:nth-child(6) { border-left-color: var(--color-text-muted); } /* Beginner — gray */
+.rating-tier:nth-child(7) { border-left-color: var(--color-divider); } /* Newcomer — light gray */
+
 .tier-range {
   font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  min-width: 80px;
 }
 .tier-label {
-  font-weight: 600;
-  font-size: 0.8rem;
+  font-weight: var(--weight-bold);
+  font-size: var(--font-body-sm);
   color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
 }
 .rating-explainer-footnote {
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-  margin: 0;
-  font-style: italic;
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  margin: var(--space-sm) 0 0 0;
+  padding-left: var(--space-xs);
+  border-left: 2px solid var(--color-divider);
 }
 
 /* ================================================

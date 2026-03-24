@@ -404,9 +404,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
 
       {/* Rating Explanation (collapsed by default) */}
       <div className="card profile-section">
-        <button className="rating-explainer-toggle" onClick={() => setShowRatingInfo(!showRatingInfo)}>
+        <button className="rating-explainer-toggle" aria-expanded={showRatingInfo} onClick={() => setShowRatingInfo(!showRatingInfo)}>
           <span className="rating-explainer-toggle-text">How ratings work</span>
-          <span className="rating-explainer-toggle-chevron">{showRatingInfo ? '▾' : '▸'}</span>
+          <span className="rating-explainer-toggle-chevron">›</span>
         </button>
         {showRatingInfo && (
           <div className="rating-explainer">
