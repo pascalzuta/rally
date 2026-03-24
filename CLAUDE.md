@@ -32,21 +32,34 @@ There are two environments. Both share the same Supabase database.
 - **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is the #1 rule. `main` is production and updates play-rally.com immediately. There are no exceptions.
 - **Always branch from `staging`**, not from `main`.
 - **After merging to `staging`**, always push so Vercel picks it up.
+- **After pushing to staging**, check the Vercel deployments page to confirm the build succeeded before telling the user it's live. Do not assume the deploy worked.
 - **Do not ask the user whether to deploy to production.** Just deploy to staging and let them decide.
+- **Never commit `package-lock.json` changes from a different branch.** If you stash/cherry-pick across branches, always exclude the lock file and run `npm install` on the target branch instead.
 - If you cannot push (e.g. auth error), tell the user and stop. Do not force-push or use workarounds.
 
-## Key Architecture
-- `apps/play-tennis/` — The Rally Tennis web app (the only tennis frontend)
-- `apps/tennis-server/` — The Rally backend (Express, port 8788)
+## Monorepo Structure
+This is a monorepo with `apps/*` and `packages/*` workspaces. Only Rally Tennis code lives here — all legacy apps (grp, cms, daily-priorities) were removed.
+
+| Directory | Package | Purpose |
+|-----------|---------|---------|
+| `apps/play-tennis/` | `@play-tennis/web` | Rally Tennis web app (React 18 + Vite) |
+| `apps/tennis-server/` | `@rally/server` | Rally backend (Express, port 8788) |
+| `packages/tennis-core/` | `@rally/core` | Shared types, schemas, utilities |
+
+### Key Files
 - `apps/play-tennis/src/store.ts` — All game state (localStorage + Supabase sync)
 - `apps/play-tennis/src/sync.ts` — Bi-directional Supabase sync layer
 - `apps/play-tennis/src/supabase.ts` — Supabase client (hardcoded config, project ref: gxiflulfgqahlvdirecz)
 - Data flows: localStorage (fast local cache) ↔ Supabase (shared persistence)
 
-## Component Routing (important!)
+## UI Structure
+- **Bottom tabs**: Home, Bracket, Play Now, Availability (renamed from Profile)
+- **Top nav icons**: Messages, Notifications, Trophy (opens Rating panel)
 - `App.tsx` → `BracketTab` is the main tournament view (NOT `TournamentView.tsx`)
 - `BracketTab` renders `ScheduleSummary` as the default "aha moment" view for round-robin tournaments
 - `TournamentView.tsx` exists but is a secondary/legacy code path — changes there may not be visible on the live site
+- `Profile.tsx` — The Availability tab: player profile, tennis profile, availability editor
+- `RatingPanel.tsx` — Trophy overlay: Rally Rating, record, trophies, rating chart, match history
 
 ## Supabase Project
 - Name: rally-tennis
@@ -102,17 +115,20 @@ Full briefing: `apps/play-tennis/docs/scheduling-briefing.md` (18 sections)
 5. **P2**: Weekly cap preference, waitlist experience
 
 ## Pending Tasks
-- Configure DNS on Namecheap for play-rally.com → GitHub Pages (4 A records + 1 CNAME for www)
 - Test multi-user sync end-to-end with real users
 - Implement availability sync to Supabase (PR 1 — critical path)
 - Build scheduling tier UI and "aha moment" screen (PR 2)
 
 ## Development
 ```bash
-cd apps/play-tennis
-npm run dev        # Dev server on port 5180
-npm run build      # TypeScript check + Vite build
+npm run dev:play-tennis     # Dev server on port 5180
+npm run build:play-tennis   # TypeScript check + Vite build
+npm run dev:tennis-server   # Backend on port 8788
 ```
+
+## Git Hooks
+- **pre-commit**: Runs `tsc --noEmit` on play-tennis (type check only, no build)
+- **pre-push**: Runs full `build:play-tennis` (ensures deployable code)
 
 ## Branch Strategy
 See "Deployment & Branch Rules" above — that section is the single source of truth for branching and deployment.
