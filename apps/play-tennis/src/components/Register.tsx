@@ -113,7 +113,7 @@ type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'email' | 'verify' | 'sign
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
   // R-12: Auto-skip onboarding for returning users
-  const [step, setStep] = useState<Step>(() => {
+  const [step, setStepRaw] = useState<Step>(() => {
     if (inviteCounty) return 'email'
     try {
       const saved = localStorage.getItem('play-tennis-profile')
@@ -124,6 +124,26 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     } catch { /* ignore */ }
     return 'onboard-1'
   })
+
+  // Wrap setStep to push browser history so the back button works
+  const setStep = (next: Step) => {
+    window.history.pushState({ step: next }, '')
+    setStepRaw(next)
+  }
+
+  // Listen for browser back/forward button
+  useEffect(() => {
+    // Replace initial state so popstate has something to land on
+    window.history.replaceState({ step }, '')
+
+    function onPopState(e: PopStateEvent) {
+      if (e.state?.step) {
+        setStepRaw(e.state.step)
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auth state
   const [email, setEmail] = useState('')
