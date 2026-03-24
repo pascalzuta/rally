@@ -446,6 +446,107 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
         </div>
       </div>
 
+      {/* Availability Section */}
+      <div className="card profile-section">
+        <h3 className="profile-section-title">
+          <span>Your Availability</span>
+          {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
+        </h3>
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
+        {!editing ? (
+          <div className="availability-current">
+            {slots.length === 0 ? (
+              <div>
+                <p className="subtle">No availability set</p>
+                <p style={{ color: 'var(--color-warning, #e6a200)', fontSize: '0.85rem', marginTop: 8 }}>Set your availability to get better match times</p>
+              </div>
+            ) : (
+              slots.map((slot, i) => {
+                const dayInfo = DAYS.find(d => d.key === slot.day)
+                return (
+                  <div key={i} className="availability-slot-item">
+                    <span className="availability-slot-day">{dayInfo?.short ?? slot.day}</span>
+                    <span className="availability-slot-hours">{formatHour(slot.startHour).replace(':00', '')}–{formatHour(slot.endHour).replace(':00', '')}</span>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="avail-segmented-control">
+              <button
+                className={`avail-segment-btn ${availMode === 'quick' ? 'active' : ''}`}
+                onClick={() => setAvailMode('quick')}
+              >
+                Quick Presets
+              </button>
+              <button
+                className={`avail-segment-btn ${availMode === 'custom' ? 'active' : ''}`}
+                onClick={() => setAvailMode('custom')}
+              >
+                Custom Times
+              </button>
+            </div>
+
+            {availMode === 'quick' && (
+              <div className="quick-slots">
+                {QUICK_SLOTS.map(qs => (
+                  <button
+                    key={qs.label}
+                    className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
+                    onClick={() => toggleQuickSlot(qs)}
+                  >
+                    <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
+                    {qs.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {availMode === 'custom' && (
+              <div className="detailed-add-row">
+                <select value={detailDay} onChange={e => setDetailDay(e.target.value as DayOfWeek)}>
+                  {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
+                </select>
+                <select value={detailStart} onChange={e => setDetailStart(Number(e.target.value))}>
+                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
+                    <option key={h} value={h}>{formatHour(h)}</option>
+                  ))}
+                </select>
+                <span>–</span>
+                <select value={detailEnd} onChange={e => setDetailEnd(Number(e.target.value))}>
+                  {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
+                    <option key={h} value={h}>{formatHour(h)}</option>
+                  ))}
+                </select>
+                <button className="btn btn-small" onClick={addDetailedSlot}>Add</button>
+              </div>
+            )}
+
+            {slots.length > 0 && (
+              <div className="availability-current">
+                {slots.map((slot, i) => {
+                  const dayInfo = DAYS.find(d => d.key === slot.day)
+                  return (
+                    <div key={i} className="availability-slot-item">
+                      <span className="availability-slot-day">{dayInfo?.label ?? slot.day}</span>
+                      <span className="availability-slot-hours">{formatHour(slot.startHour)}–{formatHour(slot.endHour)}</span>
+                      <button className="btn-icon" onClick={() => removeSlot(i)}>✕</button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="btn-row">
+              <button className="btn btn-primary" onClick={handleSaveAvailability}>Save</button>
+              <button className="btn" onClick={handleCancelEdit}>Cancel</button>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Bio & Playing Style */}
       <div className="card profile-section">
         <h3 className="profile-section-title"><span>Your Tennis Profile</span></h3>
@@ -715,107 +816,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
               )
             })}
           </div>
-        )}
-      </div>
-
-      {/* Availability Section */}
-      <div className="card profile-section">
-        <h3 className="profile-section-title">
-          <span>Your Availability</span>
-          {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
-        </h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
-        {!editing ? (
-          <div className="availability-current">
-            {slots.length === 0 ? (
-              <div>
-                <p className="subtle">No availability set</p>
-                <p style={{ color: 'var(--color-warning, #e6a200)', fontSize: '0.85rem', marginTop: 8 }}>Set your availability to get better match times</p>
-              </div>
-            ) : (
-              slots.map((slot, i) => {
-                const dayInfo = DAYS.find(d => d.key === slot.day)
-                return (
-                  <div key={i} className="availability-slot-item">
-                    <span className="availability-slot-day">{dayInfo?.short ?? slot.day}</span>
-                    <span className="availability-slot-hours">{formatHour(slot.startHour).replace(':00', '')}–{formatHour(slot.endHour).replace(':00', '')}</span>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="avail-segmented-control">
-              <button
-                className={`avail-segment-btn ${availMode === 'quick' ? 'active' : ''}`}
-                onClick={() => setAvailMode('quick')}
-              >
-                Quick Presets
-              </button>
-              <button
-                className={`avail-segment-btn ${availMode === 'custom' ? 'active' : ''}`}
-                onClick={() => setAvailMode('custom')}
-              >
-                Custom Times
-              </button>
-            </div>
-
-            {availMode === 'quick' && (
-              <div className="quick-slots">
-                {QUICK_SLOTS.map(qs => (
-                  <button
-                    key={qs.label}
-                    className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
-                    onClick={() => toggleQuickSlot(qs)}
-                  >
-                    <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
-                    {qs.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {availMode === 'custom' && (
-              <div className="detailed-add-row">
-                <select value={detailDay} onChange={e => setDetailDay(e.target.value as DayOfWeek)}>
-                  {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
-                </select>
-                <select value={detailStart} onChange={e => setDetailStart(Number(e.target.value))}>
-                  {Array.from({ length: 16 }, (_, i) => i + 6).map(h => (
-                    <option key={h} value={h}>{formatHour(h)}</option>
-                  ))}
-                </select>
-                <span>–</span>
-                <select value={detailEnd} onChange={e => setDetailEnd(Number(e.target.value))}>
-                  {Array.from({ length: 16 }, (_, i) => i + 7).map(h => (
-                    <option key={h} value={h}>{formatHour(h)}</option>
-                  ))}
-                </select>
-                <button className="btn btn-small" onClick={addDetailedSlot}>Add</button>
-              </div>
-            )}
-
-            {slots.length > 0 && (
-              <div className="availability-current">
-                {slots.map((slot, i) => {
-                  const dayInfo = DAYS.find(d => d.key === slot.day)
-                  return (
-                    <div key={i} className="availability-slot-item">
-                      <span className="availability-slot-day">{dayInfo?.label ?? slot.day}</span>
-                      <span className="availability-slot-hours">{formatHour(slot.startHour)}–{formatHour(slot.endHour)}</span>
-                      <button className="btn-icon" onClick={() => removeSlot(i)}>✕</button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            <div className="btn-row">
-              <button className="btn btn-primary" onClick={handleSaveAvailability}>Save</button>
-              <button className="btn" onClick={handleCancelEdit}>Cancel</button>
-            </div>
-          </>
         )}
       </div>
 
