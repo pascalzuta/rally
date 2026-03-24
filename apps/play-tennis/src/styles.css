@@ -2495,6 +2495,12 @@ select:focus {
   gap: var(--space-sm);
 }
 
+.quick-presets-hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
 /* Feedback area */
 .avail-feedback {
   min-height: 44px;

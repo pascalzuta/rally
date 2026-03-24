@@ -746,33 +746,44 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
           </div>
         ) : (
           <>
-            <div className="avail-segmented-control">
+            <div className="avail-mode-toggle">
               <button
-                className={`avail-segment-btn ${availMode === 'quick' ? 'active' : ''}`}
-                onClick={() => setAvailMode('quick')}
-              >
-                Quick Presets
-              </button>
-              <button
-                className={`avail-segment-btn ${availMode === 'custom' ? 'active' : ''}`}
+                className={`avail-mode-btn ${availMode === 'custom' ? 'active' : ''}`}
                 onClick={() => setAvailMode('custom')}
               >
-                Custom Times
+                Custom times
+              </button>
+              <button
+                className={`avail-mode-btn ${availMode === 'quick' ? 'active' : ''}`}
+                onClick={() => setAvailMode('quick')}
+              >
+                Quick presets
               </button>
             </div>
 
             {availMode === 'quick' && (
-              <div className="quick-slots">
-                {QUICK_SLOTS.map(qs => (
-                  <button
-                    key={qs.label}
-                    className={`quick-slot-btn ${isQuickSlotActive(qs) ? 'selected' : ''}`}
-                    onClick={() => toggleQuickSlot(qs)}
-                  >
-                    <span className="quick-slot-check">{isQuickSlotActive(qs) ? '✓' : ''}</span>
-                    {qs.label}
-                  </button>
-                ))}
+              <div className="quick-slots-v2">
+                <p className="quick-presets-hint">Tap to add common time blocks</p>
+                <button
+                  className={`quick-slot-v2 quick-slot-v2--wide ${isQuickSlotActive(QUICK_SLOTS[0]) ? 'selected' : ''}`}
+                  onClick={() => toggleQuickSlot(QUICK_SLOTS[0])}
+                >
+                  <span className="quick-slot-v2-check">{isQuickSlotActive(QUICK_SLOTS[0]) ? '\u2713' : ''}</span>
+                  <span className="quick-slot-v2-label">{QUICK_SLOTS[0].label}</span>
+                  <span className="quick-slot-v2-time">Mon–Fri 6–9pm</span>
+                </button>
+                <div className="quick-slots-grid">
+                  {QUICK_SLOTS.slice(1).map(qs => (
+                    <button
+                      key={qs.label}
+                      className={`quick-slot-v2 ${isQuickSlotActive(qs) ? 'selected' : ''}`}
+                      onClick={() => toggleQuickSlot(qs)}
+                    >
+                      <span className="quick-slot-v2-check">{isQuickSlotActive(qs) ? '\u2713' : ''}</span>
+                      <span className="quick-slot-v2-label">{qs.label.replace('Saturday ', 'Sat ').replace('Sunday ', 'Sun ')}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
