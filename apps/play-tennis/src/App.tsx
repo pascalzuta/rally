@@ -395,6 +395,7 @@ export default function App() {
               onJoinLobby={() => setAutoJoinLobby(true)}
               onSetAvailability={() => setActiveTab('profile')}
               onFindMatch={() => setActiveTab('bracket')}
+              onLogout={() => setProfile(null)}
             />
           )}
 
