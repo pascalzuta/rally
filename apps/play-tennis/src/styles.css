@@ -5699,16 +5699,10 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: var(--space-md) var(--space-lg);
-  background: var(--color-accent-bg);
+  padding: 0;
+  background: none;
   border: none;
-  border-left: 4px solid var(--color-accent-primary);
-  border-radius: var(--radius-button);
   cursor: pointer;
-  transition: background 0.15s ease;
-}
-.rating-explainer-toggle:active {
-  background: #c8d8ff;
 }
 .rating-explainer-toggle-text {
   font-size: var(--font-body-md);
@@ -5775,7 +5769,6 @@ select:focus {
 
 .tier-range {
   font-variant-numeric: tabular-nums;
-  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
   font-weight: var(--weight-medium);
