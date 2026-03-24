@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore, getRescheduleUiState } from '../store'
+import { getPlayerName, getPlayerSeed, getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, hasUnreadFrom, getConversationList, confirmMatchScore, getRescheduleUiState, logout } from '../store'
 import { PlayerProfile, Tournament, Match } from '../types'
 import Lobby from './Lobby'
 import MatchSchedulePanel from './MatchSchedulePanel'
@@ -18,6 +18,7 @@ interface Props {
   onViewOffers?: () => void
   onDataChanged?: () => void
   onViewHelp?: () => void
+  onLogout?: () => void
 }
 
 // --- Onboarding ---
@@ -372,10 +373,18 @@ export default function Home({
   onViewOffers,
   onDataChanged,
   onViewHelp,
+  onLogout,
 }: Props) {
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
   const [hiwDismissed, setHiwDismissed] = useState(() => localStorage.getItem('rally_hiw_dismissed') === '1')
+
+  async function handleLogout() {
+    if (confirm('Sign out? You can sign back in with your email.')) {
+      await logout()
+      onLogout?.()
+    }
+  }
 
   function toggleCardExpansion(cardKey: string) {
     setMessagingCardKey(null)
@@ -554,6 +563,7 @@ export default function Home({
         {/* Leaderboard Block */}
         {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'See where you stand before your next tournament.')}
 
+        <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
       </div>
     )
   }
@@ -571,6 +581,8 @@ export default function Home({
 
         {/* Leaderboard Block */}
         {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each result, even while the bracket is forming.')}
+
+        <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
       </div>
     )
   }
@@ -815,6 +827,8 @@ export default function Home({
           View full bracket and standings
         </button>
       </div>
+
+      <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
     </div>
   )
 }

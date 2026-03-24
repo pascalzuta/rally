@@ -849,9 +849,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewLeaderboa
         <button className="btn btn-large help-link-btn" onClick={onViewHelp}>How Rally Works</button>
       )}
 
-      {/* Sign Out */}
-      <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
-
       {/* Trophy Detail Modal */}
       {selectedTrophy && (
         <TrophyDetailModal trophy={selectedTrophy} onClose={() => setSelectedTrophy(null)} />
