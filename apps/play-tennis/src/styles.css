@@ -2041,12 +2041,13 @@ select:focus {
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 56px);
-  padding: 24px 24px 32px;
+  padding: 16px 24px env(safe-area-inset-bottom, 24px);
   justify-content: space-between;
   background: #fff;
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
+  overflow: hidden;
 }
 
 /* Rally logo lockup */
@@ -2054,18 +2055,13 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding-top: 8px;
-}
-
-.onboard-logo svg {
-  flex-shrink: 0;
+  padding-top: 12px;
 }
 
 .onboard-logo-text {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
-  color: #16a34a;
+  color: var(--color-text-primary);
   letter-spacing: -0.5px;
   line-height: 1;
 }
@@ -2078,7 +2074,8 @@ select:focus {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 20px;
+  gap: 16px;
+  padding: 0 8px;
 }
 
 .onboard-title {
@@ -2270,8 +2267,9 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding-top: 24px;
+  gap: 12px;
+  padding-top: 16px;
+  padding-bottom: 8px;
 }
 
 .onboard-btn {

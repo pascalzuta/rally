@@ -383,118 +383,100 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   }
 
 
-  // --- Swipeable Onboarding ---
-  const onboardScreens: ('onboard-1' | 'onboard-2' | 'onboard-3')[] = ['onboard-1', 'onboard-2', 'onboard-3']
-  const currentIdx = onboardScreens.indexOf(step as 'onboard-1' | 'onboard-2' | 'onboard-3')
+  // --- Onboarding Screens ---
+  const isOnboarding = step === 'onboard-1' || step === 'onboard-2' || step === 'onboard-3'
+  const onboardIdx = step === 'onboard-1' ? 0 : step === 'onboard-2' ? 1 : step === 'onboard-3' ? 2 : -1
 
-  if (currentIdx >= 0) {
-    function handleSwipe(dir: 'left' | 'right') {
-      if (dir === 'left' && currentIdx < 2) {
-        setStep(onboardScreens[currentIdx + 1])
-      } else if (dir === 'right' && currentIdx > 0) {
-        setStep(onboardScreens[currentIdx - 1])
-      }
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const screens: Step[] = ['onboard-1', 'onboard-2', 'onboard-3']
+      if (dx < 0 && onboardIdx < 2) setStep(screens[onboardIdx + 1])
+      else if (dx > 0 && onboardIdx > 0) setStep(screens[onboardIdx - 1])
     }
+  }
 
-    function onTouchStart(e: React.TouchEvent) {
-      touchStartX.current = e.touches[0].clientX
-      touchStartY.current = e.touches[0].clientY
-    }
-
-    function onTouchEnd(e: React.TouchEvent) {
-      const dx = e.changedTouches[0].clientX - touchStartX.current
-      const dy = e.changedTouches[0].clientY - touchStartY.current
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        handleSwipe(dx < 0 ? 'left' : 'right')
-      }
-    }
-
-    const slides = [
-      {
-        visual: (
-          <div className="onboard-chat onboard-chat-chaotic">
-            <div className="onboard-chat-bubble onboard-chat-out">Can you play Tuesday?</div>
-            <div className="onboard-chat-bubble onboard-chat-in">Maybe Wednesday?</div>
-            <div className="onboard-chat-bubble onboard-chat-out">Next week?</div>
-            <div className="onboard-chat-bubble onboard-chat-in">Let me check...</div>
-          </div>
-        ),
-        title: 'Scheduling tennis shouldn\'t take 20 messages',
-        subtitle: 'Rally handles the back-and-forth for you.',
-      },
-      {
-        visual: (
-          <div className="onboard-match-visual">
-            <div className="onboard-match-row">
-              <span className="onboard-match-player">You</span>
-              <span className="onboard-match-time">Sat 9am</span>
-            </div>
-            <div className="onboard-match-row">
-              <span className="onboard-match-player">Opponent</span>
-              <span className="onboard-match-time">Sat 9am</span>
-            </div>
-            <div className="onboard-match-confirmed">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span>Match scheduled</span>
-            </div>
-          </div>
-        ),
-        title: 'Matches are scheduled automatically',
-        subtitle: 'Set your availability. Rally does the rest.',
-      },
-      {
-        visual: (
-          <div className="onboard-leaderboard">
-            <div className="onboard-lb-header">Local Rankings</div>
-            {[
-              { rank: '#1', name: 'Taylor Kim', rating: 1650 },
-              { rank: '#2', name: 'Alex Rivera', rating: 1580 },
-              { rank: '#3', name: 'Sam Patel', rating: 1520 },
-              { rank: '#4', name: 'You', rating: '\u2014', isYou: true },
-            ].map((row, i) => (
-              <div key={i} className={`onboard-lb-row ${row.isYou ? 'onboard-lb-you' : ''}`}>
-                <span className="onboard-lb-rank">{row.rank}</span>
-                <span className="onboard-lb-name">{row.name}</span>
-                <span className="onboard-lb-rating">{row.rating}</span>
-              </div>
-            ))}
-          </div>
-        ),
-        title: 'Compete in your local ladder',
-        subtitle: 'Play matches. Climb the rankings.',
-      },
+  if (isOnboarding) {
+    const titles = [
+      'Scheduling tennis shouldn\'t take 20 messages',
+      'Matches are scheduled automatically',
+      'Compete in your local ladder',
+    ]
+    const subtitles = [
+      'Rally handles the back-and-forth for you.',
+      'Set your availability. Rally does the rest.',
+      'Play matches. Climb the rankings.',
     ]
 
-    const slide = slides[currentIdx]
+    const visuals = [
+      <div key="chat" className="onboard-chat onboard-chat-chaotic">
+        <div className="onboard-chat-bubble onboard-chat-out">Can you play Tuesday?</div>
+        <div className="onboard-chat-bubble onboard-chat-in">Maybe Wednesday?</div>
+        <div className="onboard-chat-bubble onboard-chat-out">Next week?</div>
+        <div className="onboard-chat-bubble onboard-chat-in">Let me check...</div>
+      </div>,
+      <div key="match" className="onboard-match-visual">
+        <div className="onboard-match-row">
+          <span className="onboard-match-player">You</span>
+          <span className="onboard-match-time">Sat 9am</span>
+        </div>
+        <div className="onboard-match-row">
+          <span className="onboard-match-player">Opponent</span>
+          <span className="onboard-match-time">Sat 9am</span>
+        </div>
+        <div className="onboard-match-confirmed">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+            <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>Match scheduled</span>
+        </div>
+      </div>,
+      <div key="lb" className="onboard-leaderboard">
+        <div className="onboard-lb-header">Local Rankings</div>
+        {[
+          { rank: '#1', name: 'Taylor Kim', rating: 1650 },
+          { rank: '#2', name: 'Alex Rivera', rating: 1580 },
+          { rank: '#3', name: 'Sam Patel', rating: 1520 },
+          { rank: '#4', name: 'You', rating: '\u2014', isYou: true },
+        ].map((row, i) => (
+          <div key={i} className={`onboard-lb-row ${row.isYou ? 'onboard-lb-you' : ''}`}>
+            <span className="onboard-lb-rank">{row.rank}</span>
+            <span className="onboard-lb-name">{row.name}</span>
+            <span className="onboard-lb-rating">{row.rating}</span>
+          </div>
+        ))}
+      </div>,
+    ]
 
     return (
       <div
         className="onboard-screen"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <div className="onboard-logo">
-          <svg width="120" height="40" viewBox="8 20 208 94" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 12 21 L 13 21 L 14 21 L 15 21 L 16 21 L 17 21 L 18 22 L 19 22 L 20 22 L 21 22 L 22 22 L 23 23 L 24 23 L 25 23 L 26 23 L 27 23 L 28 23 L 29 24 L 30 24 L 31 24 L 32 24 L 33 24 L 34 25 L 35 25 L 36 25 L 37 25 L 38 25 L 39 26 L 40 26 L 41 26 L 42 26 L 43 26 L 44 27 L 45 27 L 46 27 L 47 27 L 48 27 L 49 28 L 50 28 L 51 28 L 52 28 L 53 28 L 54 29 L 55 29 L 56 29 L 57 29 L 58 29 L 59 30 L 60 30 L 61 30 L 62 30 L 63 31 L 64 31 L 65 31 L 66 31 L 67 31 L 68 32 L 69 32 L 70 32 L 71 32 L 72 33 L 73 33 L 74 33 L 75 34 L 76 34 L 77 34 L 78 35 L 79 35 L 80 35 L 81 36 L 82 36 L 83 37 L 84 38 L 85 38 L 86 39 L 87 39 L 88 40 L 89 41 L 90 41 L 91 42 L 92 43 L 93 43 L 94 44 L 95 45 L 96 45 L 97 46 L 98 47 L 99 47 L 100 48 L 101 49 L 102 49 L 103 49 L 104 50 L 105 51 L 106 51 L 107 51 L 108 52 L 109 52 L 110 53 L 111 53 L 112 54 L 113 54 L 114 54 L 115 55 L 116 55 L 117 55 L 118 56 L 119 56 L 120 56 L 121 57 L 122 57 L 123 57 L 124 57 L 125 58 L 126 58 L 127 58 L 128 58 L 129 58 L 130 59 L 131 59 L 132 59 L 133 59 L 134 59 L 135 59 L 136 60 L 137 60 L 138 60 L 139 60 L 140 60 L 141 60 L 142 60 L 143 61 L 144 61 L 145 61 L 146 61 L 147 61 L 148 62 L 149 62 L 150 62 L 151 62 L 152 62 L 153 62 L 154 62 L 155 62 L 156 63 L 155 64 L 154 64 L 153 64 L 152 64 L 151 64 L 150 64 L 149 65 L 148 65 L 147 65 L 146 65 L 145 65 L 144 65 L 143 66 L 142 66 L 141 66 L 140 66 L 139 66 L 138 66 L 137 67 L 136 67 L 135 67 L 134 67 L 133 68 L 132 68 L 131 68 L 130 68 L 129 69 L 128 69 L 127 69 L 126 69 L 125 70 L 124 70 L 123 70 L 122 71 L 121 71 L 120 71 L 119 72 L 118 72 L 117 72 L 116 73 L 115 73 L 114 74 L 113 74 L 112 74 L 111 75 L 110 75 L 109 76 L 108 76 L 107 77 L 106 77 L 105 78 L 104 79 L 103 80 L 102 80 L 101 81 L 100 82 L 99 82 L 98 83 L 97 84 L 96 84 L 95 85 L 94 86 L 93 87 L 92 87 L 91 88 L 90 89 L 89 90 L 88 90 L 87 91 L 86 92 L 85 92 L 84 93 L 83 94 L 82 94 L 81 95 L 80 95 L 79 96 L 78 96 L 77 97 L 76 97 L 75 98 L 74 98 L 73 98 L 72 99 L 71 99 L 70 99 L 69 100 L 68 100 L 67 100 L 66 101 L 65 101 L 64 101 L 63 101 L 62 101 L 61 102 L 60 102 L 59 102 L 58 102 L 57 102 L 56 103 L 55 103 L 54 103 L 53 103 L 52 104 L 51 104 L 50 104 L 49 104 L 48 104 L 47 105 L 46 105 L 45 105 L 44 105 L 43 106 L 42 106 L 41 106 L 40 106 L 39 107 L 38 107 L 37 107 L 36 107 L 35 107 L 34 108 L 33 108 L 32 108 L 31 108 L 30 108 L 29 109 L 28 109 L 27 109 L 26 109 L 25 109 L 24 110 L 23 110 L 22 110 L 21 110 L 20 110 L 19 111 L 18 111 L 17 111 L 16 111 L 15 111 L 14 112 L 13 112 L 12 112 L 11 112 L 10 112 L 11 112 L 12 112 L 13 112 L 14 112 L 15 112 L 16 112 L 17 112 L 18 112 L 19 112 L 20 112 L 21 112 L 22 112 L 23 112 L 24 112 L 25 112 L 26 112 L 27 112 L 28 112 L 29 112 L 30 112 L 31 112 L 32 112 L 33 112 L 34 112 L 35 112 L 36 112 L 37 112 L 38 112 L 39 112 L 40 111 L 41 111 L 42 111 L 43 111 L 44 111 L 45 111 L 46 111 L 47 111 L 48 111 L 49 111 L 50 111 L 51 111 L 52 111 L 53 111 L 54 111 L 55 111 L 56 111 L 57 111 L 58 111 L 59 111 L 60 111 L 61 111 L 62 111 L 63 111 L 64 111 L 65 111 L 66 111 L 67 111 L 68 111 L 69 110 L 70 110 L 71 110 L 72 110 L 73 110 L 74 110 L 75 110 L 76 110 L 77 110 L 78 110 L 79 110 L 80 110 L 81 110 L 82 110 L 83 109 L 84 109 L 85 109 L 86 109 L 87 109 L 88 109 L 89 108 L 90 108 L 91 107 L 92 107 L 93 107 L 94 106 L 95 105 L 96 105 L 97 104 L 98 104 L 99 103 L 100 102 L 101 101 L 102 101 L 103 100 L 104 99 L 105 98 L 106 98 L 107 97 L 108 96 L 109 95 L 110 94 L 111 93 L 112 92 L 113 91 L 114 91 L 115 90 L 116 89 L 117 88 L 118 87 L 119 86 L 120 85 L 121 85 L 122 84 L 123 83 L 124 82 L 125 82 L 126 81 L 127 80 L 128 80 L 129 79 L 130 78 L 131 78 L 132 77 L 133 77 L 134 76 L 135 76 L 136 75 L 137 75 L 138 74 L 139 74 L 140 73 L 141 73 L 142 72 L 143 72 L 144 72 L 145 71 L 146 71 L 147 71 L 148 70 L 149 70 L 150 70 L 151 69 L 152 69 L 153 69 L 154 69 L 155 68 L 156 68 L 157 68 L 158 68 L 159 68 L 160 68 L 161 68 L 162 68 L 163 69 L 164 69 L 165 69 L 166 69 L 167 69 L 168 69 L 169 69 L 170 70 L 171 70 L 172 70 L 173 70 L 174 70 L 175 70 L 176 70 L 177 70 L 178 71 L 179 71 L 180 71 L 181 71 L 182 71 L 183 71 L 184 71 L 185 72 L 186 72 L 187 72 L 188 72 L 189 72 L 190 72 L 191 72 L 192 72 L 193 72 L 194 73 L 195 73 L 196 73 L 197 73 L 198 73 L 199 73 L 200 73 L 201 73 L 202 74 L 203 74 L 204 74 L 205 74 L 206 74 L 207 74 L 208 74 L 209 74 L 210 74 L 211 75 L 212 74 L 213 74 L 213 73 L 214 72 L 214 71 L 214 70 L 214 69 L 214 68 L 214 67 L 214 66 L 214 65 L 214 64 L 214 63 L 214 62 L 214 61 L 214 60 L 214 59 L 214 58 L 214 57 L 213 56 L 213 55 L 212 55 L 211 55 L 210 56 L 209 56 L 208 56 L 207 56 L 206 56 L 205 56 L 204 56 L 203 56 L 202 57 L 201 57 L 200 57 L 199 57 L 198 57 L 197 57 L 196 57 L 195 57 L 194 57 L 193 57 L 192 57 L 191 58 L 190 58 L 189 58 L 188 58 L 187 58 L 186 58 L 185 58 L 184 59 L 183 59 L 182 59 L 181 59 L 180 59 L 179 59 L 178 59 L 177 59 L 176 59 L 175 59 L 174 60 L 173 60 L 172 60 L 171 60 L 170 60 L 169 60 L 168 61 L 167 61 L 166 61 L 165 61 L 164 61 L 163 61 L 162 61 L 161 61 L 160 61 L 159 60 L 158 61 L 157 60 L 156 60 L 155 60 L 154 60 L 153 60 L 152 59 L 151 59 L 150 59 L 149 58 L 148 58 L 147 58 L 146 57 L 145 57 L 144 57 L 143 56 L 142 56 L 141 55 L 140 55 L 139 55 L 138 54 L 137 54 L 136 53 L 135 53 L 134 52 L 133 52 L 132 51 L 131 51 L 130 50 L 129 50 L 128 49 L 127 48 L 126 48 L 125 47 L 124 47 L 123 46 L 122 45 L 121 45 L 120 44 L 119 43 L 118 43 L 117 42 L 116 41 L 115 40 L 114 39 L 113 39 L 112 38 L 111 37 L 110 37 L 109 36 L 108 35 L 107 34 L 106 33 L 105 33 L 104 32 L 103 31 L 102 30 L 101 30 L 100 29 L 99 29 L 98 28 L 97 27 L 96 27 L 95 26 L 94 26 L 93 25 L 92 25 L 91 25 L 90 24 L 89 24 L 88 24 L 87 24 L 86 24 L 85 23 L 84 23 L 83 23 L 82 23 L 81 23 L 80 23 L 79 23 L 78 23 L 77 23 L 76 23 L 75 23 L 74 23 L 73 23 L 72 23 L 71 23 L 70 23 L 69 23 L 68 22 L 67 22 L 66 22 L 65 22 L 64 22 L 63 22 L 62 22 L 61 22 L 60 22 L 59 22 L 58 22 L 57 22 L 56 22 L 55 22 L 54 22 L 53 22 L 52 22 L 51 22 L 50 22 L 49 22 L 48 22 L 47 22 L 46 22 L 45 22 L 44 22 L 43 22 L 42 22 L 41 21 L 40 21 L 39 21 L 38 21 L 37 21 L 36 21 L 35 21 L 34 21 L 33 21 L 32 21 L 31 21 L 30 21 L 29 21 L 28 21 L 27 21 L 26 21 L 25 21 L 24 21 L 23 21 L 22 21 L 21 21 L 20 21 L 19 21 L 18 21 L 17 21 L 16 21 L 15 21 L 14 21 L 13 21 Z" fill="#16a34a" fillRule="evenodd"/>
-          </svg>
           <span className="onboard-logo-text">Rally</span>
         </div>
 
         <div className="onboard-content">
           <div className="onboard-visual" key={step}>
-            {slide.visual}
+            {visuals[onboardIdx]}
           </div>
-          <h1 className="onboard-title">{slide.title}</h1>
-          <p className="onboard-subtitle">{slide.subtitle}</p>
+          <h1 className="onboard-title">{titles[onboardIdx]}</h1>
+          <p className="onboard-subtitle">{subtitles[onboardIdx]}</p>
         </div>
 
         <div className="onboard-actions">
           <div className="onboard-dots">
-            {onboardScreens.map((s, i) => (
-              <span key={s} className={`onboard-dot ${i === currentIdx ? 'active' : ''}`} />
+            {[0, 1, 2].map(i => (
+              <span key={i} className={`onboard-dot ${i === onboardIdx ? 'active' : ''}`} />
             ))}
           </div>
           <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
@@ -506,7 +488,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     )
   }
 
-    // --- Email Screen ---
+      // --- Email Screen ---
   if (step === 'email') {
     async function handleSendOtp(e: React.FormEvent) {
       e.preventDefault()
