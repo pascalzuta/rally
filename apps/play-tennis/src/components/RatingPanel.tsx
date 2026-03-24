@@ -429,15 +429,14 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
 
           {/* Rating Explanation */}
           <div className="card profile-section">
-            <h3 className="profile-section-title">
-              <button className="btn-link" onClick={() => setShowRatingInfo(!showRatingInfo)}>
-                {showRatingInfo ? 'Hide rating info ▾' : 'How Rally Ratings work — and why they make matches fairer ▸'}
-              </button>
-            </h3>
+            <button className="rating-explainer-toggle" onClick={() => setShowRatingInfo(!showRatingInfo)}>
+              <span className="rating-explainer-toggle-text">How ratings work</span>
+              <span className="rating-explainer-toggle-chevron">{showRatingInfo ? '▾' : '▸'}</span>
+            </button>
             {showRatingInfo && (
               <div className="rating-explainer">
-                <p>Rally uses an <strong>Elo rating system</strong>, similar to chess rankings. Every player starts at <strong>1500</strong>.</p>
-                <p>When you win against a higher-rated opponent, you gain more points. Losing to a lower-rated opponent costs more. This means upsets are rewarded and the system finds your true level over time.</p>
+                <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1500</strong>.</p>
+                <p>Beat a stronger opponent for a bigger boost. Lose to a weaker one and you drop more. The system finds your true level over time.</p>
                 <div className="rating-tiers">
                   <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
                   <div className="rating-tier"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
@@ -447,7 +446,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                   <div className="rating-tier"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
                   <div className="rating-tier"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
                 </div>
-                <p className="subtle">Your rating changes more in your first matches, then stabilises as you play more.</p>
+                <p className="rating-explainer-footnote">Ratings shift more in your first few matches, then stabilise.</p>
               </div>
             )}
           </div>
