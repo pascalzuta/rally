@@ -107,6 +107,45 @@ export async function apiSaveTournament(tournament: Tournament): Promise<boolean
   return result.ok
 }
 
+// --- Profile API ---
+
+export interface ServerProfile {
+  id: string
+  authId: string
+  name: string
+  county: string
+  email?: string
+  skillLevel?: string
+  gender?: string
+  weeklyCap?: number
+  createdAt: string
+}
+
+/**
+ * Fetch the current user's profile from the server.
+ * Returns null if no profile exists (new user).
+ */
+export async function apiFetchProfile(): Promise<ServerProfile | null> {
+  const result = await apiFetch<{ profile: ServerProfile }>('/profile', { method: 'GET' })
+  if (!result.ok || !result.data?.profile) return null
+  return result.data.profile
+}
+
+/**
+ * Save or update the current user's profile on the server.
+ */
+export async function apiSaveProfile(profile: {
+  playerName: string
+  county: string
+  email?: string
+  skillLevel?: string
+  gender?: string
+  weeklyCap?: number
+}): Promise<boolean> {
+  const result = await apiFetch('/profile', { body: profile })
+  return result.ok
+}
+
 /**
  * Check if the backend API is reachable.
  */
