@@ -35,11 +35,15 @@ function getActivationSteps(
     t.players.some(p => p.id === profile.id)
   )
 
+  const inSetupTournament = tournaments.some(t =>
+    t.status === 'setup' && t.players.some(p => p.id === profile.id)
+  )
+
   return [
     { label: 'Set up your profile', completed: true },
     { label: `Join the ${profile.county} lobby`, completed: inTournament || hasPlayedMatch },
     { label: 'Set your availability', completed: hasAvailability },
-    { label: 'Play your first match', completed: hasPlayedMatch },
+    { label: inSetupTournament && !hasPlayedMatch ? 'Wait for tournament to start' : 'Play your first match', completed: hasPlayedMatch },
   ]
 }
 
@@ -281,6 +285,8 @@ export default function Home({
   )
   const myRating = getPlayerRating(profile.id, profile.name)
 
+  const hasTournamentInSetup = setupTournaments.length > 0
+
   const welcomeCard = showOnboarding ? (
     <WelcomeCard
       activationSteps={activationSteps}
@@ -288,6 +294,7 @@ export default function Home({
       onJoinLobby={onJoinLobby || (() => {})}
       onSetAvailability={onSetAvailability || (() => {})}
       onFindMatch={onFindMatch || (() => {})}
+      hideAction={hasTournamentInSetup}
     />
   ) : null
 
@@ -369,16 +376,13 @@ export default function Home({
     )
   }
 
-  // Setup tournament: show lobby + status + leaderboard
+  // Setup tournament: show lobby + welcome + leaderboard (no status card — lobby card covers it)
   if (activeTournaments.length === 0 && setupTournaments.length > 0) {
     return (
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
         {welcomeCard}
-
-        {/* User Status Block */}
-        {renderUserStatusCard('Tournament forming', 'Waiting for more players to join your bracket.', 'Status')}
 
         {/* Leaderboard Block */}
         {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each result, even while the bracket is forming.')}

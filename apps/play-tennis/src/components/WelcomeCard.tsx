@@ -11,6 +11,7 @@ interface Props {
   onJoinLobby: () => void
   onSetAvailability: () => void
   onFindMatch: () => void
+  hideAction?: boolean
 }
 
 type HiwSection = 'overview' | 'scheduling' | 'scoring' | 'deadlines' | 'faq'
@@ -23,7 +24,7 @@ const HIW_TABS: { id: HiwSection; label: string }[] = [
   { id: 'faq', label: 'FAQ' },
 ]
 
-export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSetAvailability, onFindMatch }: Props) {
+export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSetAvailability, onFindMatch, hideAction }: Props) {
   const [hiwExpanded, setHiwExpanded] = useState(false)
   const [hiwTab, setHiwTab] = useState<HiwSection>('overview')
 
@@ -72,7 +73,7 @@ export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSe
         ))}
       </div>
 
-      {nextAction && (
+      {nextAction && !hideAction && (
         <button className="btn btn-primary onboarding-cta" onClick={nextAction.action}>
           {nextAction.label}
         </button>
