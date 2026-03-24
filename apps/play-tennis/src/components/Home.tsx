@@ -5,6 +5,7 @@ import { getMatchCardView } from '../matchCardModel'
 import Lobby from './Lobby'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
+import WelcomeCard, { ActivationStep } from './WelcomeCard'
 
 interface Props {
   profile: PlayerProfile
@@ -17,15 +18,10 @@ interface Props {
   onViewLeaderboard?: () => void
   onViewOffers?: () => void
   onDataChanged?: () => void
-  onViewHelp?: () => void
+  onJoinLobby?: () => void
+  onSetAvailability?: () => void
+  onFindMatch?: () => void
   onLogout?: () => void
-}
-
-// --- Onboarding ---
-
-interface ActivationStep {
-  label: string
-  completed: boolean
 }
 
 function getActivationSteps(
@@ -41,9 +37,9 @@ function getActivationSteps(
 
   return [
     { label: 'Set up your profile', completed: true },
-    { label: 'Join your local tournament', completed: inTournament || hasPlayedMatch },
-    { label: 'Tell us when you\'re free (we\'ll auto-schedule your matches)', completed: hasAvailability },
-    { label: 'Play your first match and get rated', completed: hasPlayedMatch },
+    { label: `Join the ${profile.county} lobby`, completed: inTournament || hasPlayedMatch },
+    { label: 'Set your availability', completed: hasAvailability },
+    { label: 'Play your first match', completed: hasPlayedMatch },
   ]
 }
 
@@ -215,12 +211,13 @@ export default function Home({
   onViewLeaderboard,
   onViewOffers,
   onDataChanged,
-  onViewHelp,
+  onJoinLobby,
+  onSetAvailability,
+  onFindMatch,
   onLogout,
 }: Props) {
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
-  const [hiwDismissed, setHiwDismissed] = useState(() => localStorage.getItem('rally_hiw_dismissed') === '1')
 
   async function handleLogout() {
     if (confirm('Sign out? You can sign back in with your email.')) {
@@ -284,16 +281,14 @@ export default function Home({
   )
   const myRating = getPlayerRating(profile.id, profile.name)
 
-  const availabilityReminder = !hasAvailability ? (
-    <div className="card card-inline-alert card-inline-alert--warning">
-      <div className="card-status-row">
-        <div className="card-status-label card-status-label--amber">Needs Setup</div>
-      </div>
-      <div className="card-summary-main">
-        <div className="card-title">Add your availability</div>
-        <div className="card-supporting">Matches schedule around your calendar. Go to Profile to set your times.</div>
-      </div>
-    </div>
+  const welcomeCard = showOnboarding ? (
+    <WelcomeCard
+      activationSteps={activationSteps}
+      county={profile.county}
+      onJoinLobby={onJoinLobby || (() => {})}
+      onSetAvailability={onSetAvailability || (() => {})}
+      onFindMatch={onFindMatch || (() => {})}
+    />
   ) : null
 
   const renderUserStatusCard = (headline: string, supporting: string, statusLabel: string) => (
@@ -361,44 +356,7 @@ export default function Home({
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
-        {availabilityReminder}
-
-        {/* How Rally Works card */}
-        {!hiwDismissed && (
-          <div className="how-rally-works">
-            <div className="how-rally-works-header">
-              <h3>How Rally Works</h3>
-              <button className="how-rally-works-dismiss" onClick={() => { setHiwDismissed(true); localStorage.setItem('rally_hiw_dismissed', '1') }} aria-label="Dismiss">&#10005;</button>
-            </div>
-            <div className="how-rally-steps">
-              <div className="how-rally-step">
-                <div className="how-rally-step-icon how-rally-step-icon--join">1</div>
-                <div className="how-rally-step-text">
-                  <strong>Join</strong>
-                  <span>Sign up for a tournament in your area</span>
-                </div>
-              </div>
-              <div className="how-rally-step">
-                <div className="how-rally-step-icon how-rally-step-icon--play">2</div>
-                <div className="how-rally-step-text">
-                  <strong>Play</strong>
-                  <span>Matches auto-scheduled from your availability</span>
-                </div>
-              </div>
-              <div className="how-rally-step">
-                <div className="how-rally-step-icon how-rally-step-icon--compete">3</div>
-                <div className="how-rally-step-text">
-                  <strong>Compete</strong>
-                  <span>Top 4 advance to finals for the championship</span>
-                </div>
-              </div>
-            </div>
-            <div className="how-rally-footer">
-              ~30 days per season
-              {onViewHelp && <button className="how-rally-learn-more" onClick={onViewHelp}>Learn more</button>}
-            </div>
-          </div>
-        )}
+        {welcomeCard}
 
         {/* User Status Block */}
         {renderUserStatusCard('Not in a tournament', 'Join the lobby above to start competing.', 'Status')}
@@ -417,7 +375,7 @@ export default function Home({
       <div className="home-section home-section-spaced">
         <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
 
-        {availabilityReminder}
+        {welcomeCard}
 
         {/* User Status Block */}
         {renderUserStatusCard('Tournament forming', 'Waiting for more players to join your bracket.', 'Status')}
@@ -433,39 +391,7 @@ export default function Home({
   // Active tournament dashboard
   return (
     <div className="home-section">
-      {/* Onboarding (shows until all steps complete) */}
-      {showOnboarding && (
-        <div className="card onboarding-card">
-          <div className="card-status-row">
-            <div className="card-status-label card-status-label--blue">Get Started</div>
-            <div className="card-meta-chip">{activationSteps.filter(step => step.completed).length}/{activationSteps.length} complete</div>
-          </div>
-          <div className="card-summary-main">
-            <div className="card-title">Welcome to Rally</div>
-            <div className="card-supporting">Finish these steps and Rally will handle the scheduling for you.</div>
-          </div>
-          <div className="onboarding-steps">
-            {activationSteps.map((step, i) => (
-              <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
-                <span className="onboarding-step-icon">
-                  {step.completed ? (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
-                    </svg>
-                  )}
-                </span>
-                <span className="onboarding-step-label">{step.label}</span>
-              </div>
-            ))}
-          </div>
-          <button className="btn btn-primary onboarding-cta" onClick={() => handleInvite(profile.county)}>Invite Friends — Fill Your Tournament Faster</button>
-        </div>
-      )}
+      {welcomeCard}
 
       {/* Tournament Summary Card */}
       {activeTournaments.map(tournament => {

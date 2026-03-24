@@ -392,7 +392,9 @@ export default function App() {
               onViewLeaderboard={() => setActiveTab('leaderboard')}
               onViewOffers={() => setActiveTab('playnow')}
               onDataChanged={() => setRefreshKey(r => r + 1)}
-              onViewHelp={() => setActiveTab('help')}
+              onJoinLobby={() => setAutoJoinLobby(true)}
+              onSetAvailability={() => setActiveTab('profile')}
+              onFindMatch={() => setActiveTab('bracket')}
             />
           )}
 
