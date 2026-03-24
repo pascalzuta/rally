@@ -11,7 +11,23 @@ interface Props {
   onTournamentUpdated?: () => void
 }
 
-function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; weekStart: Date }> {
+function getWeekOneMonday(tournament: Tournament): Date {
+  if (tournament.startsAt) {
+    const [y, m, d] = tournament.startsAt.split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    date.setHours(0, 0, 0, 0)
+    return date
+  }
+  // Fallback: Monday of the week the tournament was created
+  const created = new Date(tournament.createdAt)
+  const mondayOffset = (created.getDay() + 6) % 7
+  const monday = new Date(created)
+  monday.setDate(created.getDate() - mondayOffset)
+  monday.setHours(0, 0, 0, 0)
+  return monday
+}
+
+function groupMatchesByWeek(matches: Match[], tournament: Tournament): Map<number, { matches: Match[]; weekStart: Date }> {
   const weeks = new Map<number, { matches: Match[]; weekStart: Date }>()
 
   const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -28,11 +44,7 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
   let weekMatchCount = 0
   const maxPerWeek = 3
 
-  const today = new Date()
-  const mondayOffset = (today.getDay() + 6) % 7
-  const thisMonday = new Date(today)
-  thisMonday.setDate(today.getDate() - mondayOffset)
-  thisMonday.setHours(0, 0, 0, 0)
+  const weekOneMonday = getWeekOneMonday(tournament)
 
   for (const match of scheduled) {
     if (weekMatchCount >= maxPerWeek) {
@@ -40,8 +52,8 @@ function groupMatchesByWeek(matches: Match[]): Map<number, { matches: Match[]; w
       weekMatchCount = 0
     }
     if (!weeks.has(currentWeek)) {
-      const weekStart = new Date(thisMonday)
-      weekStart.setDate(thisMonday.getDate() + (currentWeek - 1) * 7)
+      const weekStart = new Date(weekOneMonday)
+      weekStart.setDate(weekOneMonday.getDate() + (currentWeek - 1) * 7)
       weeks.set(currentWeek, { matches: [], weekStart })
     }
     weeks.get(currentWeek)!.matches.push(match)
@@ -69,12 +81,15 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
   const groupMatchesCompleted = groupMatches.filter(m => m.completed).length
   const groupMatchesTotal = groupMatches.length
 
-  // Estimated end date
-  const estimatedWeeksRemaining = totalMatches > 0 ? Math.max(1, Math.ceil((totalMatches - completedMatchCount) / 2)) : 0
+  // Estimated end date — based on tournament start + total weeks needed
+  const playerCount = tournament.players.length
+  const matchesPerWeek = Math.max(1, Math.floor(playerCount / 2))
+  const totalWeeks = totalMatches > 0 ? Math.max(3, Math.ceil(totalMatches / matchesPerWeek)) : 0
   const estimatedEndDate = (() => {
     if (completedMatchCount >= totalMatches) return null
-    const d = new Date()
-    d.setDate(d.getDate() + estimatedWeeksRemaining * 7)
+    const weekOneMonday = getWeekOneMonday(tournament)
+    const d = new Date(weekOneMonday)
+    d.setDate(d.getDate() + totalWeeks * 7)
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   })()
 
@@ -92,9 +107,17 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
   const nextMatch = nextConfirmed ?? myMatches[0]
 
   // Group my matches by week for the agenda
-  const weekGroups = groupMatchesByWeek(myMatches)
+  const weekGroups = groupMatchesByWeek(myMatches, tournament)
   const getWeekLabel = (week: number, weekStart: Date) => {
-    return week === 1 ? 'This Week' : `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    const now = new Date()
+    const nowMonday = new Date(now)
+    nowMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+    nowMonday.setHours(0, 0, 0, 0)
+    const isCurrentWeek = weekStart.getTime() === nowMonday.getTime()
+    if (isCurrentWeek) return 'This Week'
+    const isPast = weekStart.getTime() < nowMonday.getTime()
+    const weekLabel = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return isPast ? `Week of ${weekLabel} (past)` : `Week of ${weekLabel}`
   }
 
   return (
