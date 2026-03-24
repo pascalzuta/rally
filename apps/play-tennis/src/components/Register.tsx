@@ -212,6 +212,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [suggestedCounty, setSuggestedCounty] = useState<string | null>(null)
   const [detectingLocation, setDetectingLocation] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
 
   const [skillLevel, setSkillLevel] = useState<SkillLevel | ''>('')
   const [gender, setGender] = useState<Gender | ''>('')
@@ -393,9 +395,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         setStep(onboardScreens[currentIdx - 1])
       }
     }
-
-    const touchStartX = useRef(0)
-    const touchStartY = useRef(0)
 
     function onTouchStart(e: React.TouchEvent) {
       touchStartX.current = e.touches[0].clientX
