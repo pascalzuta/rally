@@ -3,8 +3,6 @@ import { getConversationList, markConversationRead, sendMessage } from '../store
 import { Tournament } from '../types'
 import MessagePanel from './MessagePanel'
 
-const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!']
-
 interface Props {
   currentPlayerId: string
   currentPlayerName: string
@@ -37,6 +35,17 @@ function findMatchContext(
   return null
 }
 
+/** Generate a consistent color from a player name using Rally palette tones */
+function avatarColor(name: string): string {
+  const colors = [
+    '#2A5BD7', '#1F9D55', '#D97706', '#D64545', '#7c3aed',
+    '#0891b2', '#374151', '#c026d3', '#059669', '#ea580c'
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
+}
+
 export default function Inbox({ currentPlayerId, currentPlayerName, tournaments, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<'current' | 'past'>('current')
   const [openConversation, setOpenConversation] = useState<{ playerId: string; playerName: string } | null>(null)
@@ -45,7 +54,6 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
 
   // Split conversations by whether the other player is in an active or past tournament
   const activeTournamentPlayerIds = new Set<string>()
-  const pastTournamentPlayerIds = new Set<string>()
 
   for (const t of tournaments) {
     const isParticipant = t.players.some(p => p.id === currentPlayerId)
@@ -54,8 +62,6 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
       if (p.id === currentPlayerId) continue
       if (t.status === 'in-progress' || t.status === 'setup') {
         activeTournamentPlayerIds.add(p.id)
-      } else {
-        pastTournamentPlayerIds.add(p.id)
       }
     }
   }
@@ -73,139 +79,155 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
     const yesterday = new Date(now)
     yesterday.setDate(yesterday.getDate() - 1)
     if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'short' })
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
   }
 
+  // --- Conversation view ---
   if (openConversation) {
     return (
-      <div className="inbox-overlay" onClick={onClose}>
-        <div className="inbox-panel" onClick={e => e.stopPropagation()}>
-          <div className="inbox-header">
-            <button className="inbox-back-btn" onClick={() => setOpenConversation(null)}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <span className="inbox-title">Messages</span>
-            <button className="inbox-close-btn" onClick={onClose} aria-label="Close">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
+      <div className="chat-fullscreen">
+        <div className="chat-conv-header">
+          <button className="chat-back-btn" onClick={() => setOpenConversation(null)}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M13 4L7 10l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div
+            className="chat-conv-avatar"
+            style={{ background: avatarColor(openConversation.playerName) }}
+          >
+            {openConversation.playerName[0]?.toUpperCase() ?? '?'}
           </div>
-          <div className="inbox-quick-messages">
-            {QUICK_MESSAGES.map(qm => (
-              <button
-                key={qm}
-                className="quick-msg-btn"
-                onClick={() => {
-                  sendMessage(currentPlayerId, currentPlayerName, openConversation.playerId, openConversation.playerName, qm)
-                  // Force re-render by toggling conversation
-                  const conv = openConversation
-                  setOpenConversation(null)
-                  setTimeout(() => setOpenConversation(conv), 0)
-                }}
-              >
-                {qm}
-              </button>
-            ))}
+          <div className="chat-conv-header-info">
+            <span className="chat-conv-header-name">{openConversation.playerName}</span>
+            {(() => {
+              const ctx = findMatchContext(tournaments, currentPlayerId, openConversation.playerId)
+              return ctx ? (
+                <span className="chat-conv-header-sub">
+                  {ctx.tournamentName}{ctx.matchDate && ` \u00B7 ${ctx.matchDate}`}
+                </span>
+              ) : null
+            })()}
           </div>
-          <div className="inbox-conversation-view">
-            <MessagePanel
-              currentPlayerId={currentPlayerId}
-              currentPlayerName={currentPlayerName}
-              otherPlayerId={openConversation.playerId}
-              otherPlayerName={openConversation.playerName}
-              onClose={() => setOpenConversation(null)}
-            />
-          </div>
+          <button className="chat-close-btn" onClick={onClose} aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <div className="chat-conv-body">
+          <MessagePanel
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            otherPlayerId={openConversation.playerId}
+            otherPlayerName={openConversation.playerName}
+            onClose={() => setOpenConversation(null)}
+            embedded
+          />
         </div>
       </div>
     )
   }
 
+  // --- Conversation list ---
+  const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
+
   return (
-    <div className="inbox-overlay" onClick={onClose}>
-      <div className="inbox-panel" onClick={e => e.stopPropagation()}>
-        <div className="inbox-header">
-          <span className="inbox-title">
+    <div className="chat-fullscreen">
+      <div className="chat-list-header">
+        <div className="chat-list-header-top">
+          <span className="chat-list-title">
             Messages
-            {(() => {
-              const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
-              return totalUnread > 0 ? <span className="inbox-unread-badge">{totalUnread}</span> : null
-            })()}
+            {totalUnread > 0 && <span className="chat-list-badge">{totalUnread > 99 ? '99+' : totalUnread}</span>}
           </span>
-          <button className="inbox-close-btn" onClick={onClose} aria-label="Close">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <button className="chat-close-btn" onClick={onClose} aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
         </div>
-
-        <div className="inbox-tabs">
+        <div className="chat-tabs">
           <button
-            className={`inbox-tab ${activeTab === 'current' ? 'active' : ''}`}
+            className={`chat-tab ${activeTab === 'current' ? 'active' : ''}`}
             onClick={() => setActiveTab('current')}
           >
             Current Tournament
           </button>
           <button
-            className={`inbox-tab ${activeTab === 'past' ? 'active' : ''}`}
+            className={`chat-tab ${activeTab === 'past' ? 'active' : ''}`}
             onClick={() => setActiveTab('past')}
           >
             Past Tournaments
           </button>
         </div>
+      </div>
 
-        <div className="inbox-list">
-          {displayedConversations.length === 0 ? (
-            <div className="inbox-empty">
-              {activeTab === 'current'
-                ? 'No messages in current tournament'
-                : 'No messages from past tournaments'}
+      <div className="chat-list">
+        {displayedConversations.length === 0 ? (
+          <div className="chat-empty">
+            <div className="chat-empty-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect x="4" y="8" width="40" height="28" rx="6" stroke="currentColor" strokeWidth="2" fill="none" />
+                <path d="M4 30l16-10 4 3 4-3 16 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
             </div>
-          ) : (
-            displayedConversations.map(conv => {
-              const matchCtx = findMatchContext(tournaments, currentPlayerId, conv.otherPlayerId)
-              return (
-                <button
-                  key={conv.otherPlayerId}
-                  className={`inbox-card ${conv.unreadCount > 0 ? 'inbox-card-unread' : ''}`}
-                  onClick={() => {
-                    markConversationRead(currentPlayerId, conv.otherPlayerId)
-                    setOpenConversation({ playerId: conv.otherPlayerId, playerName: conv.otherPlayerName })
-                  }}
-                >
-                  <div className="inbox-card-avatar">
+            <p>
+              {activeTab === 'current'
+                ? 'No messages in your current tournament yet'
+                : 'No messages from past tournaments'}
+            </p>
+            {activeTab === 'current' && (
+              <span className="chat-empty-hint">Tap the chat icon on a match to start a conversation</span>
+            )}
+          </div>
+        ) : (
+          displayedConversations.map(conv => {
+            const matchCtx = findMatchContext(tournaments, currentPlayerId, conv.otherPlayerId)
+            const isUnread = conv.unreadCount > 0
+            return (
+              <button
+                key={conv.otherPlayerId}
+                className={`chat-card ${isUnread ? 'chat-card-unread' : ''}`}
+                onClick={() => {
+                  markConversationRead(currentPlayerId, conv.otherPlayerId)
+                  setOpenConversation({ playerId: conv.otherPlayerId, playerName: conv.otherPlayerName })
+                }}
+              >
+                <div className="chat-card-avatar-wrap">
+                  <div
+                    className="chat-card-avatar"
+                    style={{ background: avatarColor(conv.otherPlayerName) }}
+                  >
                     {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
-                    {conv.unreadCount > 0 && <span className="inbox-card-dot" />}
                   </div>
-                  <div className="inbox-card-content">
-                    <div className="inbox-card-top">
-                      <span className="inbox-card-name">{conv.otherPlayerName}</span>
-                      <span className="inbox-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
-                    </div>
-                    {matchCtx && (
-                      <div className="inbox-card-match-tag">
-                        {matchCtx.tournamentName}
-                        {matchCtx.matchDate && <span> &middot; {matchCtx.matchDate}</span>}
-                      </div>
-                    )}
-                    <div className="inbox-card-preview">
-                      {conv.lastMessage.senderId === currentPlayerId ? 'You: ' : ''}
-                      {conv.lastMessage.text.length > 60
-                        ? conv.lastMessage.text.slice(0, 60) + '...'
-                        : conv.lastMessage.text}
-                    </div>
+                </div>
+                <div className="chat-card-body">
+                  <div className="chat-card-row">
+                    <span className="chat-card-name">{conv.otherPlayerName}</span>
+                    <span className="chat-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <span className="inbox-card-badge">{conv.unreadCount}</span>
+                  {matchCtx && (
+                    <div className="chat-card-context">
+                      {matchCtx.tournamentName}
+                      {matchCtx.matchDate && <span> &middot; {matchCtx.matchDate}</span>}
+                    </div>
                   )}
-                </button>
-              )
-            })
-          )}
-        </div>
+                  <div className="chat-card-preview">
+                    {conv.lastMessage.senderId === currentPlayerId ? 'You: ' : ''}
+                    {conv.lastMessage.text.length > 55
+                      ? conv.lastMessage.text.slice(0, 55) + '...'
+                      : conv.lastMessage.text}
+                  </div>
+                </div>
+                {isUnread && (
+                  <span className="chat-card-badge">{conv.unreadCount}</span>
+                )}
+              </button>
+            )
+          })
+        )}
       </div>
     </div>
   )
