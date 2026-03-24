@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead } from '../store'
-import type { RatingSnapshot, MatchHistoryEntry } from '../store'
+import type { MatchHistoryEntry } from '../store'
+import type { RatingSnapshot } from '../types'
 import { PlayerProfile, Trophy, TrophyTier, Badge } from '../types'
 
 interface Props {
