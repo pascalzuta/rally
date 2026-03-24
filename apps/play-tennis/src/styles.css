@@ -2716,6 +2716,12 @@ select:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-sm);
+
+.quick-presets-hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
 }
 
 /* Feedback area */
