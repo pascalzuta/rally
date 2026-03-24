@@ -3,8 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, getSession, onAuthStateChange } from '../supabase'
-import { apiFetchProfile, apiSaveProfile } from '../api'
+import { sendOtp, verifyOtp, getSession, onAuthStateChange, fetchPlayerProfile, savePlayerProfile } from '../supabase'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -155,21 +154,21 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [resendCountdown, setResendCountdown] = useState(0)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
 
-  // Shared helper: try to restore a returning user's profile from the server
+  // Shared helper: try to restore a returning user's profile from Supabase
   const tryRestoreProfile = async (userId: string, userEmail: string) => {
     try {
-      const serverProfile = await apiFetchProfile()
-      if (serverProfile) {
+      const existing = await fetchPlayerProfile(userId)
+      if (existing) {
         const restored: PlayerProfile = {
-          id: serverProfile.id,
-          authId: serverProfile.authId,
-          email: userEmail,
-          name: serverProfile.name,
-          county: serverProfile.county,
-          skillLevel: (serverProfile.skillLevel as SkillLevel) ?? undefined,
-          gender: (serverProfile.gender as Gender) ?? undefined,
-          weeklyCap: (serverProfile.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
-          createdAt: serverProfile.createdAt,
+          id: userId,
+          authId: userId,
+          email: userEmail || existing.email,
+          name: existing.name,
+          county: existing.county,
+          skillLevel: (existing.skillLevel as SkillLevel) ?? undefined,
+          gender: (existing.gender as Gender) ?? undefined,
+          weeklyCap: (existing.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
+          createdAt: existing.createdAt ?? new Date().toISOString(),
         }
         localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
         setCreatedProfile(restored)
@@ -178,7 +177,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         return true
       }
     } catch {
-      // Server unreachable — fall through to signup form
+      // Supabase unreachable — fall through to signup form
     }
     return false
   }
@@ -381,15 +380,17 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       }
     }
 
-    // Save full profile to server so returning users can be restored
-    apiSaveProfile({
-      playerName: fullName,
-      county,
-      email: email || undefined,
-      skillLevel: skillLevel || undefined,
-      gender: gender || undefined,
-      weeklyCap,
-    }).catch(() => { /* offline — profile will be saved on next lobby join */ })
+    // Save full profile to Supabase so returning users can be restored
+    if (authUserId) {
+      savePlayerProfile(authUserId, {
+        name: fullName,
+        county,
+        email: email || undefined,
+        skillLevel: skillLevel || undefined,
+        gender: gender || undefined,
+        weeklyCap,
+      }).catch(() => { /* offline — profile will be saved on next lobby join */ })
+    }
 
     setCreatedProfile(p)
     setStep('confirmed')

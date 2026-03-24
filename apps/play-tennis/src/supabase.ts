@@ -113,12 +113,58 @@ export function onAuthStateChange(
 }
 
 /**
- * Check if a player already exists in the lobby table by their auth user ID.
- * Returns their name and county if found, null otherwise.
+ * Fetch a player's full profile from the players table by auth user ID.
+ * Returns profile fields if found, null if new user.
  */
-export async function fetchExistingPlayer(userId: string): Promise<{ name: string; county: string } | null> {
+export async function fetchPlayerProfile(userId: string): Promise<{
+  name: string
+  county: string
+  email?: string
+  skillLevel?: string
+  gender?: string
+  weeklyCap?: number
+  createdAt?: string
+} | null> {
   if (!client) return null
-  const { data, error } = await client.from('lobby').select('player_name, county').eq('player_id', userId).maybeSingle()
+  const { data, error } = await client
+    .from('players')
+    .select('player_name, county, email, sex, experience_level, weekly_cap, created_at')
+    .eq('auth_id', userId)
+    .maybeSingle()
   if (error || !data) return null
-  return { name: data.player_name, county: data.county }
+  return {
+    name: data.player_name,
+    county: data.county,
+    email: data.email ?? undefined,
+    skillLevel: data.experience_level ?? undefined,
+    gender: data.sex ?? undefined,
+    weeklyCap: data.weekly_cap ?? 2,
+    createdAt: data.created_at,
+  }
+}
+
+/**
+ * Save or update a player's full profile in the players table.
+ * Uses auth_id as the key for upsert.
+ */
+export async function savePlayerProfile(userId: string, profile: {
+  name: string
+  county: string
+  email?: string
+  skillLevel?: string
+  gender?: string
+  weeklyCap?: number
+}): Promise<boolean> {
+  if (!client) return false
+  const { error } = await client.from('players').upsert({
+    player_id: userId,
+    auth_id: userId,
+    player_name: profile.name,
+    county: profile.county.toLowerCase(),
+    email: profile.email ?? null,
+    sex: profile.gender ?? null,
+    experience_level: profile.skillLevel ?? null,
+    weekly_cap: profile.weeklyCap ?? 2,
+  }, { onConflict: 'player_id' })
+  return !error
 }

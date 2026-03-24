@@ -4,8 +4,7 @@ import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
-import { initSupabase, getSession, onAuthStateChange } from './supabase'
-import { apiFetchProfile } from './api'
+import { initSupabase, getSession, onAuthStateChange, fetchPlayerProfile } from './supabase'
 import Register from './components/Register'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
@@ -63,22 +62,22 @@ export default function App() {
         const session = await getSession()
         if (!session || cancelled) { setAuthLoading(false); return }
 
-        // Session exists — try to fetch profile from server
-        const serverProfile = await apiFetchProfile()
+        // Session exists — try to fetch profile from Supabase
+        const existing = await fetchPlayerProfile(session.userId)
         if (cancelled) return
 
-        if (serverProfile) {
+        if (existing) {
           // Returning user! Restore profile to localStorage
           const restored: PlayerProfile = {
-            id: serverProfile.id,
-            authId: serverProfile.authId,
+            id: session.userId,
+            authId: session.userId,
             email: session.email,
-            name: serverProfile.name,
-            county: serverProfile.county,
-            skillLevel: (serverProfile.skillLevel as PlayerProfile['skillLevel']) ?? undefined,
-            gender: (serverProfile.gender as PlayerProfile['gender']) ?? undefined,
-            weeklyCap: (serverProfile.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
-            createdAt: serverProfile.createdAt,
+            name: existing.name,
+            county: existing.county,
+            skillLevel: (existing.skillLevel as PlayerProfile['skillLevel']) ?? undefined,
+            gender: (existing.gender as PlayerProfile['gender']) ?? undefined,
+            weeklyCap: (existing.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
+            createdAt: existing.createdAt ?? new Date().toISOString(),
           }
           localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
           setProfile(restored)
