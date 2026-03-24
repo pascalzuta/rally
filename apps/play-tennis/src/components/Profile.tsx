@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, logout, getAvailability, saveAvailability, switchProfile } from '../store'
-import type { RatingSnapshot, MatchHistoryEntry } from '../store'
+import type { MatchHistoryEntry } from '../store'
+import type { RatingSnapshot } from '../types'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, Trophy, TrophyTier, Badge } from '../types'
 import { useToast } from './Toast'
 

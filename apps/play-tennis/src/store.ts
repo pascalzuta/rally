@@ -1,10 +1,11 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
   syncTournaments, syncLobbyForCounty, syncRatings,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
   getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
+  syncRatingSnapshot, syncTrophiesToRemote, syncBadgesToRemote,
   SyncResult,
 } from './sync'
 import { getClient } from './supabase'
@@ -2223,11 +2224,6 @@ export async function updateRatings(
 
 // --- Rating History ---
 
-export interface RatingSnapshot {
-  rating: number
-  timestamp: string
-}
-
 function loadRatingHistory(): Record<string, RatingSnapshot[]> {
   try {
     const data = localStorage.getItem(RATING_HISTORY_KEY)
@@ -2242,10 +2238,15 @@ function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
 }
 
 function recordRatingSnapshot(playerId: string, rating: number): void {
+  const timestamp = new Date().toISOString()
   const history = loadRatingHistory()
   if (!history[playerId]) history[playerId] = []
-  history[playerId].push({ rating, timestamp: new Date().toISOString() })
+  history[playerId].push({ rating, timestamp })
   saveRatingHistory(history)
+  // Sync to Supabase
+  if (SUPABASE_PRIMARY) {
+    syncRatingSnapshot(playerId, rating, timestamp)
+  }
 }
 
 export function getRatingHistory(playerId: string): RatingSnapshot[] {
@@ -2483,8 +2484,11 @@ function loadTrophies(): Trophy[] {
   }
 }
 
-function saveTrophies(trophies: Trophy[]): void {
+function saveTrophies(trophies: Trophy[], newTrophies?: Trophy[]): void {
   localStorage.setItem(TROPHIES_KEY, JSON.stringify(trophies))
+  if (SUPABASE_PRIMARY && newTrophies && newTrophies.length > 0) {
+    syncTrophiesToRemote(newTrophies)
+  }
 }
 
 export function getPlayerTrophies(playerId: string): Trophy[] {
@@ -2660,7 +2664,7 @@ export function awardTournamentTrophies(tournamentId: string, tournamentObj?: To
   }
 
   trophies.push(...newTrophies)
-  saveTrophies(trophies)
+  saveTrophies(trophies, newTrophies)
 
   // Set pending victory for each player so UI can show animation
   for (const trophy of newTrophies) {
@@ -2698,8 +2702,11 @@ function loadBadges(): Badge[] {
   }
 }
 
-function saveBadges(badges: Badge[]): void {
+function saveBadges(badges: Badge[], newBadges?: Badge[]): void {
   localStorage.setItem(BADGES_KEY, JSON.stringify(badges))
+  if (SUPABASE_PRIMARY && newBadges && newBadges.length > 0) {
+    syncBadgesToRemote(newBadges)
+  }
 }
 
 export function getPlayerBadges(playerId: string): Badge[] {
@@ -2722,7 +2729,7 @@ function awardBadge(playerId: string, type: BadgeType, tournamentId?: string): v
   const badges = loadBadges()
   if (badges.some(b => b.playerId === playerId && b.type === type)) return
   const def = BADGE_DEFS[type]
-  badges.push({
+  const newBadge: Badge = {
     id: generateId(),
     playerId,
     type,
@@ -2730,8 +2737,9 @@ function awardBadge(playerId: string, type: BadgeType, tournamentId?: string): v
     description: def.description,
     awardedAt: new Date().toISOString(),
     tournamentId,
-  })
-  saveBadges(badges)
+  }
+  badges.push(newBadge)
+  saveBadges(badges, [newBadge])
 }
 
 export function checkAndAwardBadges(playerId: string, tournamentId: string, tournamentObj?: Tournament): Badge[] {

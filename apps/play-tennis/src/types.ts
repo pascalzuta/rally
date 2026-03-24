@@ -287,6 +287,13 @@ export interface Badge {
   tournamentId?: string     // optional: which tournament triggered it
 }
 
+// --- Rating History ---
+
+export interface RatingSnapshot {
+  rating: number
+  timestamp: string
+}
+
 // --- Match Offers ---
 
 export type OfferStatus = 'proposed' | 'accepted' | 'declined' | 'expired'

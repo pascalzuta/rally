@@ -1,6 +1,6 @@
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { initSupabase, getClient, getAuthUserId } from './supabase'
-import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot } from './types'
+import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot, Trophy, TrophyTier, Badge, RatingSnapshot } from './types'
 
 // Feature flag: set to false to revert to localStorage-first (old behavior)
 export const SUPABASE_PRIMARY = true
@@ -252,6 +252,162 @@ export async function fetchAvailabilityForPlayers(
   return result
 }
 
+// --- Rating History sync ---
+
+const RATING_HISTORY_KEY = 'play-tennis-rating-history'
+
+export async function syncRatingSnapshot(playerId: string, rating: number, timestamp: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const authId = await getAuthUserId()
+  await client.from('rating_history').insert({
+    player_id: playerId,
+    rating,
+    recorded_at: timestamp,
+    auth_id: authId ?? undefined,
+  })
+}
+
+async function refreshRatingHistoryFromRemote(playerId: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client
+    .from('rating_history')
+    .select('rating, recorded_at')
+    .eq('player_id', playerId)
+    .order('recorded_at', { ascending: true })
+  if (!data || data.length === 0) return
+
+  const snapshots: RatingSnapshot[] = data.map(row => ({
+    rating: Number(row.rating),
+    timestamp: row.recorded_at,
+  }))
+
+  const local: Record<string, RatingSnapshot[]> = safeParseJSON(localStorage.getItem(RATING_HISTORY_KEY), {})
+  local[playerId] = snapshots
+  localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(local))
+}
+
+// --- Trophies sync ---
+
+const TROPHIES_KEY = 'play-tennis-trophies'
+
+export async function syncTrophiesToRemote(trophies: Trophy[]): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const authId = await getAuthUserId()
+  const rows = trophies.map(t => ({
+    id: t.id,
+    player_id: t.playerId,
+    player_name: t.playerName,
+    tournament_id: t.tournamentId,
+    tournament_name: t.tournamentName,
+    county: t.county.toLowerCase(),
+    tier: t.tier,
+    date: t.date,
+    awarded_at: t.awardedAt,
+    final_match: t.finalMatch ?? null,
+    auth_id: authId ?? undefined,
+  }))
+  await client.from('trophies').upsert(rows, { onConflict: 'id' })
+}
+
+async function refreshTrophiesFromRemote(playerId: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client
+    .from('trophies')
+    .select('*')
+    .eq('player_id', playerId)
+  if (!data || data.length === 0) return
+
+  const remoteTrophies: Trophy[] = data.map(row => ({
+    id: row.id,
+    playerId: row.player_id,
+    playerName: row.player_name,
+    tournamentId: row.tournament_id,
+    tournamentName: row.tournament_name,
+    county: row.county,
+    tier: row.tier as TrophyTier,
+    date: row.date,
+    awardedAt: row.awarded_at,
+    ...(row.final_match ? { finalMatch: row.final_match as Trophy['finalMatch'] } : {}),
+  }))
+
+  // Merge: remote trophies take precedence, keep local-only ones
+  const localTrophies: Trophy[] = safeParseJSON(localStorage.getItem(TROPHIES_KEY), [])
+  const remoteIds = new Set(remoteTrophies.map(t => t.id))
+  const localOnly = localTrophies.filter(t => t.playerId !== playerId || !remoteIds.has(t.id))
+  // Also keep trophies for OTHER players that are local-only
+  const otherPlayerLocal = localTrophies.filter(t => t.playerId !== playerId)
+  const merged = [...remoteTrophies, ...localOnly.filter(t => t.playerId === playerId), ...otherPlayerLocal.filter(t => !remoteIds.has(t.id))]
+  // Deduplicate by id
+  const seen = new Set<string>()
+  const deduped = merged.filter(t => {
+    if (seen.has(t.id)) return false
+    seen.add(t.id)
+    return true
+  })
+  localStorage.setItem(TROPHIES_KEY, JSON.stringify(deduped))
+}
+
+// --- Badges sync ---
+
+const BADGES_KEY = 'play-tennis-badges'
+
+export async function syncBadgesToRemote(badges: Badge[]): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const authId = await getAuthUserId()
+  const rows = badges.map(b => ({
+    id: b.id,
+    player_id: b.playerId,
+    badge_type: b.type,
+    label: b.label,
+    description: b.description,
+    awarded_at: b.awardedAt,
+    tournament_id: b.tournamentId ?? null,
+    auth_id: authId ?? undefined,
+  }))
+  await client.from('badges').upsert(rows, { onConflict: 'id' })
+}
+
+async function refreshBadgesFromRemote(playerId: string): Promise<void> {
+  const client = getClient()
+  if (!client) return
+  const { data } = await client
+    .from('badges')
+    .select('*')
+    .eq('player_id', playerId)
+  if (!data || data.length === 0) return
+
+  const remoteBadges: Badge[] = data.map(row => ({
+    id: row.id,
+    playerId: row.player_id,
+    type: row.badge_type as Badge['type'],
+    label: row.label,
+    description: row.description,
+    awardedAt: row.awarded_at,
+    ...(row.tournament_id ? { tournamentId: row.tournament_id } : {}),
+  }))
+
+  const localBadges: Badge[] = safeParseJSON(localStorage.getItem(BADGES_KEY), [])
+  const remoteIds = new Set(remoteBadges.map(b => b.id))
+  const otherPlayerLocal = localBadges.filter(b => b.playerId !== playerId)
+  const merged = [...remoteBadges, ...otherPlayerLocal.filter(b => !remoteIds.has(b.id))]
+  localStorage.setItem(BADGES_KEY, JSON.stringify(merged))
+}
+
+/** Refresh rating history, trophies, and badges for the current player from Supabase */
+export async function refreshPlayerProfileData(playerId: string): Promise<void> {
+  await Promise.all([
+    refreshRatingHistoryFromRemote(playerId),
+    refreshTrophiesFromRemote(playerId),
+    refreshBadgesFromRemote(playerId),
+  ])
+  dispatchSync()
+}
+
 // --- Supabase Realtime subscriptions ---
 
 let channel: RealtimeChannel | null = null
@@ -418,6 +574,20 @@ export async function initSync(county: string): Promise<void> {
   await refreshRatingsFromRemote()
   await refreshAvailabilityFromRemote(countyKey)
 
+  // Fetch player-specific data (rating history, trophies, badges)
+  const PROFILE_KEY = 'play-tennis-profile'
+  try {
+    const profileStr = localStorage.getItem(PROFILE_KEY)
+    if (profileStr) {
+      const profile = JSON.parse(profileStr)
+      if (profile?.id) {
+        await refreshPlayerProfileData(profile.id)
+      }
+    }
+  } catch {
+    // Non-critical — continue with local data
+  }
+
   // Link existing localStorage profile to auth session (Phase 3 migration)
   await linkProfileToAuth(client, county)
 
@@ -458,6 +628,22 @@ async function linkProfileToAuth(client: ReturnType<typeof getClient>, county: s
 
     // Backfill auth_id on ratings row (if exists)
     await client.from('ratings')
+      .update({ auth_id: authId })
+      .eq('player_id', profile.id)
+      .is('auth_id', null)
+
+    // Backfill auth_id on rating_history, trophies, badges
+    await client.from('rating_history')
+      .update({ auth_id: authId })
+      .eq('player_id', profile.id)
+      .is('auth_id', null)
+
+    await client.from('trophies')
+      .update({ auth_id: authId })
+      .eq('player_id', profile.id)
+      .is('auth_id', null)
+
+    await client.from('badges')
       .update({ auth_id: authId })
       .eq('player_id', profile.id)
       .is('auth_id', null)
