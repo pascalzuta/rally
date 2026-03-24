@@ -53,6 +53,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   const { showSuccess } = useToast()
 
   const [editing, setEditing] = useState(false)
+  const [showRatingInfo, setShowRatingInfo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoUrl, setPhotoUrl] = useState<string>(profile.photoUrl ?? '')
   const [bio, setBio] = useState<string>(profile.bio ?? '')
@@ -399,6 +400,30 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             </div>
           )}
         </div>
+      </div>
+
+      {/* Rating Explanation (collapsed by default) */}
+      <div className="card profile-section">
+        <button className="rating-explainer-toggle" onClick={() => setShowRatingInfo(!showRatingInfo)}>
+          <span className="rating-explainer-toggle-text">How ratings work</span>
+          <span className="rating-explainer-toggle-chevron">{showRatingInfo ? '▾' : '▸'}</span>
+        </button>
+        {showRatingInfo && (
+          <div className="rating-explainer">
+            <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1500</strong>.</p>
+            <p>Beat a stronger opponent for a bigger boost. Lose to a weaker one and you drop more. The system finds your true level over time.</p>
+            <div className="rating-tiers">
+              <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
+              <div className="rating-tier"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
+              <div className="rating-tier"><span className="tier-range">1800–1999</span><span className="tier-label">Elite</span></div>
+              <div className="rating-tier"><span className="tier-range">1600–1799</span><span className="tier-label">Strong</span></div>
+              <div className="rating-tier"><span className="tier-range">1400–1599</span><span className="tier-label">Club</span></div>
+              <div className="rating-tier"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
+              <div className="rating-tier"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
+            </div>
+            <p className="rating-explainer-footnote">Ratings shift more in your first few matches, then stabilise.</p>
+          </div>
+        )}
       </div>
 
       {/* Help & How Rally Works */}
