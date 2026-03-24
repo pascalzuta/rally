@@ -205,6 +205,15 @@ function getNextTournamentNumber(county: string, extraTournaments: Tournament[] 
   return maxNum + 1
 }
 
+function getStartsAt(now: Date = new Date()): string {
+  // Next Monday (or today if already Monday)
+  const day = now.getDay() // 0=Sun, 1=Mon
+  const daysUntilMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + daysUntilMonday)
+  return monday.toISOString().split('T')[0]
+}
+
 function createTournament(county: string, players: LobbyEntry[], extraTournaments: Tournament[] = []): Tournament {
   const num = getNextTournamentNumber(county, extraTournaments)
   return {
@@ -217,6 +226,7 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
     matches: [],
     status: 'setup',
     createdAt: new Date().toISOString(),
+    startsAt: getStartsAt(),
     countdownStartedAt: new Date().toISOString(),
   }
 }

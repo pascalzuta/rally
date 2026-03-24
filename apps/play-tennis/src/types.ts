@@ -216,6 +216,7 @@ export interface Tournament {
   matches: Match[]
   status: 'setup' | 'scheduling' | 'in-progress' | 'completed'
   createdAt: string
+  startsAt?: string  // ISO date (YYYY-MM-DD) — Monday of the week matches begin; anchors all week numbers
   countdownStartedAt?: string  // ISO timestamp when 6-player countdown began
   groupPhaseComplete?: boolean  // for group-knockout: true once all group matches done
   clusterRunId?: string  // links to cluster_runs for traceability

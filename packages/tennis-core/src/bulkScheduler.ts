@@ -182,7 +182,13 @@ export function bulkScheduleMatches(
   constraintsInput?: Partial<SchedulingConstraints>,
 ): BulkScheduleResult {
   const constraints = { ...DEFAULT_CONSTRAINTS, ...constraintsInput }
-  const weeks = Math.max(3, Math.ceil(matches.length / (constraints.weeklyCapPerPlayer * 2)))
+  // Calculate weeks based on actual player count: with N players and cap K,
+  // at most N*K/2 matches can happen per week (each match uses 2 player slots)
+  const playerIds = new Set<string>()
+  for (const m of matches) { playerIds.add(m.player1Id); playerIds.add(m.player2Id) }
+  const playerCount = playerIds.size
+  const matchesPerWeek = Math.max(1, Math.floor(playerCount * constraints.weeklyCapPerPlayer / 2))
+  const weeks = Math.max(3, Math.ceil(matches.length / matchesPerWeek))
 
   // Filter out bye matches (missing player IDs)
   const validMatches = matches.filter(m => m.player1Id && m.player2Id)
