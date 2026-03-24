@@ -4517,6 +4517,13 @@ select:focus {
   margin-top: var(--space-sm);
 }
 
+.home-sign-out {
+  display: block;
+  margin: var(--space-lg) auto var(--space-sm);
+  color: var(--color-text-tertiary);
+  font-size: 0.85rem;
+}
+
 /* ================================================
    Play Now Tab
    ================================================ */

@@ -383,6 +383,7 @@ export default function App() {
               onViewOffers={() => setActiveTab('playnow')}
               onDataChanged={() => setRefreshKey(r => r + 1)}
               onViewHelp={() => setActiveTab('help')}
+              onLogout={() => setProfile(null)}
             />
           )}
 
