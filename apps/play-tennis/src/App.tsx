@@ -9,6 +9,7 @@ import Register from './components/Register'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
+import Profile from './components/Profile'
 import RatingPanel from './components/RatingPanel'
 import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
@@ -392,7 +393,7 @@ export default function App() {
               onViewOffers={() => setActiveTab('playnow')}
               onDataChanged={() => setRefreshKey(r => r + 1)}
               onJoinLobby={() => setAutoJoinLobby(true)}
-              onSetAvailability={() => setActiveTab('home')}
+              onSetAvailability={() => setActiveTab('profile')}
               onFindMatch={() => setActiveTab('bracket')}
               onLogout={() => setProfile(null)}
             />
@@ -427,8 +428,20 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'profile' && (
+            <Profile
+              profile={profile}
+              onLogout={() => setProfile(null)}
+              onNavigate={(tab) => {
+                if (tab === 'home') setAutoJoinLobby(true)
+                setActiveTab(tab)
+              }}
+              onViewHelp={() => setActiveTab('help')}
+            />
+          )}
+
           {activeTab === 'help' && (
-            <Help onBack={() => setActiveTab('home')} />
+            <Help onBack={() => setActiveTab('profile')} />
           )}
         </main>
 
@@ -452,6 +465,15 @@ export default function App() {
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
             <span className="tab-text">Quick Play</span>
+          </button>
+          <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+            <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span className="tab-text">Availability</span>
           </button>
         </nav>
       </div>
