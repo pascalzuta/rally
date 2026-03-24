@@ -42,7 +42,7 @@ export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSe
   return (
     <div className="card onboarding-card">
       <div className="card-status-row">
-        <div className="card-status-label card-status-label--blue">Getting Started</div>
+        <div className="card-status-label card-status-label--green">Getting Started</div>
         <div className="card-meta-chip">{completed}/{activationSteps.length} complete</div>
       </div>
       <div className="card-summary-main">

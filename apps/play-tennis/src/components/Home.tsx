@@ -316,7 +316,7 @@ export default function Home({
     return (
       <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
         <div className="card-status-row">
-          <div className="card-status-label card-status-label--blue">Leaderboard</div>
+          <div className="card-status-label card-status-label--slate">Leaderboard</div>
           <div className="card-meta-chip">{profile.county}</div>
         </div>
         <div className="card-summary-main">
@@ -428,8 +428,8 @@ export default function Home({
         return (
           <div className="card offer-summary-card" onClick={onViewOffers} style={{ cursor: 'pointer' }}>
             <div className="card-status-row">
-              <div className="card-status-label card-status-label--blue">Match Offers</div>
-              <div className="card-meta-chip card-meta-chip--blue">{incoming.length} waiting</div>
+              <div className="card-status-label card-status-label--amber">Match Offers</div>
+              <div className="card-meta-chip card-meta-chip--amber">{incoming.length} waiting</div>
             </div>
             <div className="card-summary-main">
               <div className="card-title">{incoming.length} offer{incoming.length !== 1 ? 's' : ''} waiting</div>
@@ -485,7 +485,7 @@ export default function Home({
                 }}
               >
                 <div className="action-card-status-row">
-                  <div className="card-status-label card-status-label--blue">{card.label}</div>
+                  <div className="card-status-label card-status-label--amber">{card.label}</div>
                 </div>
                 <div className="action-card-main">
                   <div className="action-card-opponent">From {card.opponentName}</div>

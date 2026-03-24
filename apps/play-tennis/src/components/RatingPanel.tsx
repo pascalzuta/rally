@@ -234,7 +234,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           {/* Rally Rating Hero Card */}
           <div className="card rating-hero">
             <div className="card-status-row">
-              <div className="card-status-label card-status-label--blue">Rally Rating</div>
+              <div className="card-status-label card-status-label--slate">Rally Rating</div>
               {rankInfo.total > 1 && (
                 <div className="card-meta-chip card-meta-chip--blue">Rank #{rankInfo.rank}</div>
               )}
