@@ -4976,6 +4976,49 @@ select:focus {
   width: 100%;
 }
 
+/* Welcome Card — expandable "How it works" */
+.welcome-hiw-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-sm);
+  cursor: pointer;
+  padding: 0;
+  margin-top: var(--space-md);
+}
+
+.welcome-hiw-chevron {
+  font-size: 12px;
+  transition: transform 200ms ease-out;
+  display: inline-block;
+}
+
+.welcome-hiw-chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.welcome-hiw-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 200ms ease-out, opacity 200ms ease-out;
+}
+
+.welcome-hiw-content.expanded {
+  max-height: 400px;
+  opacity: 1;
+  margin-top: var(--space-md);
+}
+
+.welcome-hiw-season {
+  margin-top: var(--space-sm);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
 /* ================================================
    Rating Hero Card (Profile)
    ================================================ */
@@ -7749,35 +7792,7 @@ select:focus {
   line-height: 1.5;
 }
 
-/* How Rally Works card (Home screen) */
-
-.how-rally-works {
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow);
-}
-
-.how-rally-works-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
-.how-rally-works-header h3 {
-  font-size: var(--font-body-lg);
-  font-weight: var(--weight-semibold);
-}
-
-.how-rally-works-dismiss {
-  border: none;
-  background: none;
-  font-size: 18px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  padding: var(--space-xs);
-}
+/* How Rally Works steps (used inside WelcomeCard expandable section) */
 
 .how-rally-steps {
   display: flex;
@@ -7818,23 +7833,6 @@ select:focus {
   color: var(--color-text-secondary);
 }
 
-.how-rally-footer {
-  margin-top: var(--space-md);
-  text-align: center;
-  font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
-}
-
-.how-rally-learn-more {
-  border: none;
-  background: none;
-  color: var(--color-accent-primary);
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  padding: 0;
-  margin-left: var(--space-sm);
-}
 
 .help-link-btn {
   background: var(--color-neutral-bg) !important;
