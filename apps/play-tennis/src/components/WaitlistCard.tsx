@@ -34,7 +34,7 @@ export default function WaitlistCard({ county, onUpdateAvailability, onFindMatch
       {/* Availability improvement prompt */}
       <div className="card waitlist-improve-card">
         <div className="waitlist-card-status-row">
-          <div className="card-status-label card-status-label--amber">Improve Match Rate</div>
+          <div className="card-status-label card-status-label--purple">Improve Match Rate</div>
         </div>
         <div className="waitlist-card-main">
           <div className="waitlist-improve-title">Want to match faster?</div>

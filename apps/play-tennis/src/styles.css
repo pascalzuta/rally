@@ -41,6 +41,10 @@
   --color-warning-bg: #FEF3C7;
   --color-warning-primary: #D97706;
 
+  /* Purple (attention/pending) */
+  --color-purple-bg: #F0EAFF;
+  --color-purple-primary: #7C3AED;
+
   /* Typography */
   --font-title-lg: 28px;
   --font-title-md: 22px;
@@ -724,6 +728,11 @@ body {
   color: var(--color-warning-primary);
 }
 
+.card-meta-chip--purple {
+  background: var(--color-purple-bg);
+  color: var(--color-purple-primary);
+}
+
 .card-meta-chip--red {
   background: var(--color-negative-bg);
   color: var(--color-negative-primary);
@@ -741,6 +750,7 @@ body {
 .card-status-label--blue { color: var(--color-accent-primary); }
 .card-status-label--green { color: var(--color-positive-primary); }
 .card-status-label--amber { color: var(--color-warning-primary); }
+.card-status-label--purple { color: var(--color-purple-primary); }
 .card-status-label--red { color: var(--color-negative-primary); }
 
 .card-inline-alert {

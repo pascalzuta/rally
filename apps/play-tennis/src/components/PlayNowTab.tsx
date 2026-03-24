@@ -297,7 +297,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
                 <div className="offer-card-status-row">
-                  <span className="card-status-label card-status-label--amber">Awaiting Response</span>
+                  <span className="card-status-label card-status-label--purple">Awaiting Response</span>
                   <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
@@ -465,7 +465,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                     }}
                   >
                     <div className="action-card-status-row">
-                      <div className={`card-status-label ${hasPendingRequest ? 'card-status-label--amber' : (row.isNow ? 'card-status-label--green' : 'card-status-label--slate')}`}>
+                      <div className={`card-status-label ${hasPendingRequest ? 'card-status-label--purple' : (row.isNow ? 'card-status-label--green' : 'card-status-label--slate')}`}>
                         {hasPendingRequest ? 'Request Sent' : row.isNow ? 'Available Now' : 'Available'}
                       </div>
                       <div className="card-meta-chip">
