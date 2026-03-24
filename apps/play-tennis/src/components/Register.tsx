@@ -3,6 +3,7 @@ import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } fr
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
 import { sendOtp, verifyOtp, getSession, initSupabase } from '../supabase'
+import { apiFetchProfile, apiSaveProfile } from '../api'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -102,7 +103,7 @@ const STATE_ABBREVS: Record<string, string> = {
   'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
 }
 
-type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'email' | 'verify' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
+type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'email' | 'verify' | 'welcome-back' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
   // R-12: Auto-skip onboarding for returning users
@@ -130,11 +131,34 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   // Check for existing session on mount
   useEffect(() => {
     initSupabase()
-    getSession().then(session => {
+    getSession().then(async session => {
       if (session) {
         setAuthUserId(session.userId)
         setEmail(session.email)
-        // Already authenticated — skip to profile setup
+        // Already authenticated — check if returning user with profile on server
+        try {
+          const serverProfile = await apiFetchProfile()
+          if (serverProfile) {
+            const restored: PlayerProfile = {
+              id: serverProfile.id,
+              authId: serverProfile.authId,
+              email: session.email,
+              name: serverProfile.name,
+              county: serverProfile.county,
+              skillLevel: (serverProfile.skillLevel as SkillLevel) ?? undefined,
+              gender: (serverProfile.gender as Gender) ?? undefined,
+              weeklyCap: (serverProfile.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
+              createdAt: serverProfile.createdAt,
+            }
+            localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
+            setCreatedProfile(restored)
+            setStep('welcome-back')
+            setTimeout(() => onRegistered(restored), 1500)
+            return
+          }
+        } catch {
+          // Server unreachable — fall through to signup form
+        }
         if (step === 'email' || step === 'verify') {
           setStep('signup')
         }
@@ -313,6 +337,17 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         saveAvailability(p.id, slots, county, weeklyCap)
       }
     }
+
+    // Save full profile to server (fire-and-forget)
+    apiSaveProfile({
+      playerName: fullName,
+      county,
+      email: email || undefined,
+      skillLevel: skillLevel || undefined,
+      gender: gender || undefined,
+      weeklyCap,
+    }).catch(() => { /* offline — profile will be saved on next lobby join */ })
+
     setCreatedProfile(p)
     setStep('confirmed')
     setTimeout(() => onRegistered(p), 1500)
@@ -522,6 +557,31 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       setOtpVerifying(false)
       if (result.ok && result.userId) {
         setAuthUserId(result.userId)
+        // Check if this is a returning user with an existing profile
+        try {
+          const serverProfile = await apiFetchProfile()
+          if (serverProfile) {
+            // Returning user — restore profile and show welcome back
+            const restored: PlayerProfile = {
+              id: serverProfile.id,
+              authId: serverProfile.authId,
+              email: email.trim().toLowerCase(),
+              name: serverProfile.name,
+              county: serverProfile.county,
+              skillLevel: (serverProfile.skillLevel as SkillLevel) ?? undefined,
+              gender: (serverProfile.gender as Gender) ?? undefined,
+              weeklyCap: (serverProfile.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
+              createdAt: serverProfile.createdAt,
+            }
+            localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
+            setCreatedProfile(restored)
+            setStep('welcome-back')
+            setTimeout(() => onRegistered(restored), 1500)
+            return
+          }
+        } catch {
+          // Server unreachable — fall through to normal signup
+        }
         setStep('signup')
       } else {
         setOtpError('Invalid or expired code. Please try again.')
@@ -781,6 +841,26 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   }
 
   // --- Step: Confirmed ---
+  // --- Welcome Back Screen (returning user) ---
+  if (step === 'welcome-back') {
+    const welcomeName = createdProfile?.name?.split(' ')[0] || 'back'
+    return (
+      <div className="onboard-screen">
+        <div className="onboard-content confirmed-content">
+          <div className="confirmed-check">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="24" fill="var(--color-positive-primary)" className="confirmed-circle" />
+              <path d="M14 24l7 7 13-13" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="confirmed-path" />
+            </svg>
+          </div>
+          <h1 className="onboard-title">Welcome back, {welcomeName}!</h1>
+          <p className="onboard-subtitle">Good to see you again.</p>
+          <div className="confirmed-ball">🎾</div>
+        </div>
+      </div>
+    )
+  }
+
   if (step === 'confirmed') {
     return (
       <div className="onboard-screen">

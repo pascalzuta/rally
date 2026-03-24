@@ -5,6 +5,7 @@ import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
 import { initSupabase, getSession } from './supabase'
+import { apiFetchProfile } from './api'
 import Register from './components/Register'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
@@ -39,6 +40,7 @@ function clearInviteParam() {
 
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
+  const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
@@ -48,6 +50,48 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showInbox, setShowInbox] = useState(false)
+
+  // On mount: if no localStorage profile, check for existing Supabase session
+  // and try to restore profile from server (returning user on new device/cleared cache)
+  useEffect(() => {
+    if (profile) return // already have a profile, no need to check
+    let cancelled = false
+
+    async function tryRestoreSession() {
+      try {
+        initSupabase()
+        const session = await getSession()
+        if (!session || cancelled) { setAuthLoading(false); return }
+
+        // Session exists — try to fetch profile from server
+        const serverProfile = await apiFetchProfile()
+        if (cancelled) return
+
+        if (serverProfile) {
+          // Returning user! Restore profile to localStorage
+          const restored: PlayerProfile = {
+            id: serverProfile.id,
+            authId: serverProfile.authId,
+            email: session.email,
+            name: serverProfile.name,
+            county: serverProfile.county,
+            skillLevel: (serverProfile.skillLevel as PlayerProfile['skillLevel']) ?? undefined,
+            gender: (serverProfile.gender as PlayerProfile['gender']) ?? undefined,
+            weeklyCap: (serverProfile.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
+            createdAt: serverProfile.createdAt,
+          }
+          localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
+          setProfile(restored)
+        }
+      } catch {
+        // Network error — fall through to Register
+      }
+      if (!cancelled) setAuthLoading(false)
+    }
+
+    tryRestoreSession()
+    return () => { cancelled = true }
+  }, [])
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -210,6 +254,21 @@ export default function App() {
     }
     setProfile(p)
     setActiveTab('home')
+  }
+
+  // Show a brief loading state while checking for existing session
+  if (authLoading) {
+    return (
+      <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center', opacity: 0.6 }}>
+          <div className="rally-logo-loading" style={{ marginBottom: '1rem' }}>
+            <svg className="rally-logo" height="44" viewBox="0 0 579 151" xmlns="http://www.w3.org/2000/svg">
+              <use href="#rally-logo" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!profile) {

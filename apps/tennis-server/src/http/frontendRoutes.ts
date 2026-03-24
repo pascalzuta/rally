@@ -57,6 +57,15 @@ const scoreSubmitSchema = z.object({
   score: z.string().min(1).max(50),
 });
 
+const saveProfileSchema = z.object({
+  playerName: z.string().trim().min(1).max(80),
+  county: z.string().trim().min(1).max(80),
+  email: z.string().email().optional(),
+  skillLevel: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  weeklyCap: z.number().int().min(1).max(7).optional(),
+});
+
 export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
   const router = Router();
   const { config, supabase } = deps;
@@ -185,6 +194,75 @@ export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
     // For now, validate and pass through — full scoring logic stays client-side
     // until tournament engine is wired up
     res.json({ ok: true, validated: true });
+  });
+
+  // ── Get Profile (by auth_id) ─────────────────────────────────────────
+
+  router.get("/profile", requireAuth, async (req, res) => {
+    const authId = req.authUser!.authId;
+
+    const { data, error } = await supabase
+      .from("players")
+      .select("player_id, auth_id, player_name, county, email, sex, experience_level, weekly_cap, created_at")
+      .eq("auth_id", authId)
+      .maybeSingle();
+
+    if (error) {
+      res.status(500).json({ error: "profile_fetch_failed", message: error.message });
+      return;
+    }
+
+    if (!data) {
+      res.status(404).json({ error: "profile_not_found" });
+      return;
+    }
+
+    // Map DB columns to frontend profile shape
+    res.json({
+      ok: true,
+      profile: {
+        id: data.player_id,
+        authId: data.auth_id,
+        name: data.player_name,
+        county: data.county,
+        email: data.email ?? undefined,
+        skillLevel: data.experience_level ?? undefined,
+        gender: data.sex ?? undefined,
+        weeklyCap: data.weekly_cap ?? 2,
+        createdAt: data.created_at,
+      },
+    });
+  });
+
+  // ── Save / Update Profile ──────────────────────────────────────────────
+
+  router.post("/profile", requireAuth, async (req, res) => {
+    const parsed = saveProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_payload", details: parsed.error.flatten() });
+      return;
+    }
+
+    const { playerName, county, email, skillLevel, gender, weeklyCap } = parsed.data;
+    const authId = req.authUser!.authId;
+
+    const { error } = await supabase.from("players").upsert({
+      player_id: authId,
+      auth_id: authId,
+      player_name: playerName,
+      county: county.toLowerCase(),
+      email: email ?? null,
+      sex: gender ?? null,
+      experience_level: skillLevel ?? null,
+      weekly_cap: weeklyCap ?? 2,
+    }, { onConflict: "player_id" });
+
+    if (error) {
+      res.status(500).json({ error: "profile_save_failed", message: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
   });
 
   // ── Health check for frontend routes ───────────────────────────────────
