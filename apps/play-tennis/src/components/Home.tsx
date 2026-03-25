@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { getAvailability, getPlayerRating, getCountyLeaderboard, getTournamentsByCounty, getIncomingOffers, getConversationList, logout } from '../store'
-import { PlayerProfile, Tournament, Match } from '../types'
+import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
 import { getMatchCardView } from '../matchCardModel'
-import Lobby from './Lobby'
+import { PlayerProfile, Tournament, Match } from '../types'
+import HomeHeroCard from './HomeHeroCard'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
-import WelcomeCard, { ActivationStep } from './WelcomeCard'
 
 interface Props {
   profile: PlayerProfile
@@ -22,48 +21,6 @@ interface Props {
   onSetAvailability?: () => void
   onFindMatch?: () => void
   onLogout?: () => void
-}
-
-function getActivationSteps(
-  profile: PlayerProfile,
-  tournaments: Tournament[],
-  hasAvailability: boolean,
-  hasPlayedMatch: boolean
-): ActivationStep[] {
-  const inTournament = tournaments.some(t =>
-    (t.status === 'setup' || t.status === 'in-progress') &&
-    t.players.some(p => p.id === profile.id)
-  )
-
-  const inSetupTournament = tournaments.some(t =>
-    t.status === 'setup' && t.players.some(p => p.id === profile.id)
-  )
-
-  return [
-    { label: 'Set up your profile', completed: true },
-    { label: `Join the ${profile.county} lobby`, completed: inTournament || hasPlayedMatch },
-    { label: 'Set your availability', completed: hasAvailability },
-    { label: inSetupTournament && !hasPlayedMatch ? 'Wait for tournament to start' : 'Play your first match', completed: hasPlayedMatch },
-  ]
-}
-
-function getInviteLink(county: string): string {
-  const url = new URL(window.location.href)
-  url.search = ''
-  url.searchParams.set('join', county)
-  return url.toString()
-}
-
-function handleInvite(county: string) {
-  const link = getInviteLink(county)
-  const message = `Join the Rally tennis tournament in ${county}. Let's start competing.\n${link}`
-  if (navigator.share) {
-    navigator.share({ title: 'Rally Tennis', text: message, url: link }).catch(() => {
-      window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
-    })
-  } else {
-    window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
-  }
 }
 
 interface HomeMatchCard {
@@ -151,38 +108,6 @@ function buildMessageCards(
   return cards
 }
 
-function getProgressText(tournament: Tournament): string {
-  if (tournament.format === 'single-elimination') {
-    const totalRounds = Math.max(...tournament.matches.map(m => m.round), 1)
-    const completedRounds = tournament.matches.reduce((max, m) => {
-      if (!m.completed) return max
-      return Math.max(max, m.round)
-    }, 0)
-    const incompleteMatches = tournament.matches.filter(m => !m.completed && m.player1Id && m.player2Id)
-    const currentRound = incompleteMatches.length > 0
-      ? Math.min(...incompleteMatches.map(m => m.round))
-      : completedRounds
-    return `Round ${currentRound} of ${totalRounds}`
-  }
-
-  if (tournament.format === 'group-knockout') {
-    const groupMatches = tournament.matches.filter(m => m.phase === 'group')
-    const groupDone = groupMatches.filter(m => m.completed).length
-    if (!tournament.groupPhaseComplete) {
-      return `Group stage: ${groupDone} of ${groupMatches.length} matches`
-    }
-    const knockoutMatches = tournament.matches.filter(m => m.phase === 'knockout')
-    const knockoutDone = knockoutMatches.filter(m => m.completed).length
-    if (knockoutDone === 0) return 'Semifinals'
-    if (knockoutDone < knockoutMatches.length) return 'Final'
-    return 'Completed'
-  }
-
-  const completed = tournament.matches.filter(m => m.completed).length
-  const total = tournament.matches.length
-  return `${completed} of ${total} matches played`
-}
-
 function getUpNextMatch(
   tournaments: Tournament[],
   playerId: string
@@ -264,59 +189,21 @@ export default function Home({
     [activeTournaments, profile.id, matchCards]
   )
 
-  // Onboarding state
-  const hasAvailability = getAvailability(profile.id).length > 0
-  const hasPlayedMatch = tournaments.some(t =>
-    t.matches.some(m =>
-      m.completed &&
-      (m.player1Id === profile.id || m.player2Id === profile.id)
-    )
-  )
-  const activationSteps = getActivationSteps(profile, tournaments, hasAvailability, hasPlayedMatch)
-  const showOnboarding = !activationSteps.every(s => s.completed)
-
   // Leaderboard teaser
   const leaderboard = useMemo(() => getCountyLeaderboard(profile.county), [profile.county, tournaments])
   const topPlayers = leaderboard.slice(0, 3)
 
-  // Player's own leaderboard entry (for personalized leaderboard)
   const myLeaderboardEntry = leaderboard.find(
     e => e.name.toLowerCase() === profile.name.toLowerCase()
   )
   const myRating = getPlayerRating(profile.id, profile.name)
-
-  const hasTournamentInSetup = setupTournaments.length > 0
-
-  const welcomeCard = showOnboarding ? (
-    <WelcomeCard
-      activationSteps={activationSteps}
-      county={profile.county}
-      onJoinLobby={onJoinLobby || (() => {})}
-      onSetAvailability={onSetAvailability || (() => {})}
-      onFindMatch={onFindMatch || (() => {})}
-      hideAction={hasTournamentInSetup}
-    />
-  ) : null
-
-  const renderUserStatusCard = (headline: string, supporting: string, statusLabel: string) => (
-    <div className="card user-status-card">
-      <div className="card-status-row">
-        <div className="card-status-label card-status-label--slate">{statusLabel}</div>
-        <div className="card-meta-chip card-meta-chip--blue">Rating {Math.round(myRating.rating)}</div>
-      </div>
-      <div className="card-summary-main">
-        <div className="card-title">{headline}</div>
-        <div className="card-supporting">{supporting}</div>
-      </div>
-    </div>
-  )
 
   const renderLeaderboardTeaser = (title: string, supporting: string) => {
     if (topPlayers.length <= 1) return null
     return (
       <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
         <div className="card-status-row">
-          <div className="card-status-label card-status-label--slate">Leaderboard</div>
+          <div className="card-status-label card-status-label--blue">Leaderboard</div>
           <div className="card-meta-chip">{profile.county}</div>
         </div>
         <div className="card-summary-main">
@@ -357,69 +244,32 @@ export default function Home({
     )
   }
 
-  // No active or setup tournament: show lobby + status + leaderboard
-  if (activeTournaments.length === 0 && setupTournaments.length === 0) {
-    return (
-      <div className="home-section home-section-spaced">
-        <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
-
-        {welcomeCard}
-
-        {/* User Status Block */}
-        {renderUserStatusCard('Not in a tournament', 'Join the lobby above to start competing.', 'Status')}
-
-        {/* Leaderboard Block */}
-        {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'See where you stand before your next tournament.')}
-
-        <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
-      </div>
-    )
-  }
-
-  // Setup tournament: show lobby + welcome + leaderboard (no status card — lobby card covers it)
-  if (activeTournaments.length === 0 && setupTournaments.length > 0) {
-    return (
-      <div className="home-section home-section-spaced">
-        <Lobby profile={profile} autoJoin={autoJoin} onAutoJoinConsumed={onAutoJoinConsumed} onTournamentCreated={onTournamentCreated} />
-
-        {welcomeCard}
-
-        {/* Leaderboard Block */}
-        {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each result, even while the bracket is forming.')}
-
-        <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
-      </div>
-    )
-  }
-
-  // Active tournament dashboard
+  // Unified hero card for all states
   return (
-    <div className="home-section">
-      {welcomeCard}
+    <div className="home-section home-section-spaced">
+      <HomeHeroCard
+        profile={profile}
+        tournaments={tournaments}
+        autoJoin={autoJoin}
+        onAutoJoinConsumed={onAutoJoinConsumed}
+        onTournamentCreated={onTournamentCreated}
+        onSetAvailability={onSetAvailability}
+        onJoinLobby={onJoinLobby}
+        onFindMatch={onFindMatch}
+        actionCardCount={actionCards.length + messageCards.length}
+      />
 
-      {/* Tournament Summary Card */}
-      {activeTournaments.map(tournament => {
-        const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
-        const completedMatches = tournament.matches.filter(m => m.completed).length
-        const progressPct = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
-        return (
-          <div key={tournament.id} className="card tournament-card" onClick={() => onViewTournament(tournament.id)}>
-            <div className="card-status-row">
-              <div className="card-status-label card-status-label--slate">Your Tournament</div>
-              <div className="card-meta-chip">{progressPct}% complete</div>
-            </div>
-            <div className="card-summary-main">
-              <div className="card-title">{tournament.name}</div>
-              <div className="card-supporting">
-                {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Playoffs' : tournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Round robin'} · {getProgressText(tournament)}
-              </div>
-            </div>
-            <div className="tournament-progress-bar">
-              <div className="tournament-progress-fill" style={{ width: `${progressPct}%` }} />
-            </div>
-          </div>
-        )
-      })}
+      {/* Leaderboard (pre-tournament states) */}
+      {activeTournaments.length === 0 && renderLeaderboardTeaser(
+        `Top players in ${profile.county}`,
+        setupTournaments.length > 0
+          ? 'Ratings update after each result, even while the bracket is forming.'
+          : 'See where you stand before your next tournament.'
+      )}
+
+      {/* === Active tournament content below the hero card === */}
+      {activeTournaments.length === 0 ? null : (
+        <>
 
       {/* Match Offers summary — details on Find Match tab */}
       {(() => {
@@ -428,8 +278,8 @@ export default function Home({
         return (
           <div className="card offer-summary-card" onClick={onViewOffers} style={{ cursor: 'pointer' }}>
             <div className="card-status-row">
-              <div className="card-status-label card-status-label--purple">Match Offers</div>
-              <div className="card-meta-chip card-meta-chip--purple">{incoming.length} waiting</div>
+              <div className="card-status-label card-status-label--blue">Match Offers</div>
+              <div className="card-meta-chip card-meta-chip--blue">{incoming.length} waiting</div>
             </div>
             <div className="card-summary-main">
               <div className="card-title">{incoming.length} offer{incoming.length !== 1 ? 's' : ''} waiting</div>
@@ -441,7 +291,7 @@ export default function Home({
       })()}
 
       {/* Action Cards */}
-      {actionCards.length > 0 || messageCards.length > 0 ? (
+      {(actionCards.length > 0 || messageCards.length > 0) && (
         <div className="action-cards">
           {actionCards.map(card => {
             const cardKey = `${card.tournament.id}-${card.match.id}`
@@ -485,7 +335,7 @@ export default function Home({
                 }}
               >
                 <div className="action-card-status-row">
-                  <div className="card-status-label card-status-label--purple">{card.label}</div>
+                  <div className="card-status-label card-status-label--blue">{card.label}</div>
                 </div>
                 <div className="action-card-main">
                   <div className="action-card-opponent">From {card.opponentName}</div>
@@ -517,16 +367,6 @@ export default function Home({
               </div>
             )
           })}
-        </div>
-      ) : (
-        <div className="card card-inline-alert" style={{ cursor: 'default' }}>
-          <div className="card-status-row">
-            <div className="card-status-label card-status-label--green">All Clear</div>
-          </div>
-          <div className="card-summary-main">
-            <div className="card-title">You're all caught up</div>
-            <div className="card-supporting">No matches need your attention right now.</div>
-          </div>
         </div>
       )}
 
@@ -569,6 +409,8 @@ export default function Home({
           View full bracket and standings
         </button>
       </div>
+        </>
+      )}
 
       <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
     </div>
