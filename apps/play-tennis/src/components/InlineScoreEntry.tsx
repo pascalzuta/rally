@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { saveMatchScore, getPlayerName, getSeeds } from '../store'
 import { Tournament } from '../types'
-import { useToast } from './Toast'
+import { useToast, ConfirmationTone } from './Toast'
 
 function isValidSet(s1: number, s2: number): boolean {
   if (s1 === 6 && s2 <= 4) return true
@@ -18,10 +18,11 @@ interface Props {
   matchId: string
   currentPlayerId?: string
   onSaved: () => void
+  onActionComplete?: (message: string, tone: ConfirmationTone) => void
   embedded?: boolean
 }
 
-export default function InlineScoreEntry({ tournament, matchId, currentPlayerId, onSaved, embedded = false }: Props) {
+export default function InlineScoreEntry({ tournament, matchId, currentPlayerId, onSaved, onActionComplete, embedded = false }: Props) {
   const { showSuccess, showError } = useToast()
   const match = tournament.matches.find(m => m.id === matchId)!
   const p1Name = getPlayerName(tournament, match.player1Id)
@@ -130,9 +131,13 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     setSaveState('saving')
     try {
       await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId, currentPlayerId)
-      setSaveState('success')
-      showSuccess('Score reported — waiting for opponent to confirm')
-      setTimeout(() => onSaved(), 2000)
+      if (onActionComplete) {
+        onActionComplete('Score submitted. Your opponent has 48 hours to confirm.', 'blue')
+      } else {
+        setSaveState('success')
+        showSuccess('Score reported — waiting for opponent to confirm')
+        setTimeout(() => onSaved(), 2000)
+      }
     } catch {
       setSaveState('error')
       showError('Failed to save score')
