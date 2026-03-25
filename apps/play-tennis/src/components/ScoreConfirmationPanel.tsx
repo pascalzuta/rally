@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName } from '../store'
 import { Tournament, Match } from '../types'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 
@@ -21,7 +22,7 @@ interface Props {
   onUpdated: () => void
 }
 
-type Mode = 'options' | 'correction' | 'issue' | 'dispute-review'
+type Mode = 'options' | 'correction' | 'issue' | 'dispute-review' | 'feedback'
 
 function formatCountdown(ms: number): string {
   const totalMinutes = Math.max(0, Math.ceil(ms / 60000))
@@ -162,7 +163,8 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleConfirm() {
     setSaving(true)
     await confirmMatchScore(tournament.id, match.id, currentPlayerId)
-    onUpdated()
+    setSaving(false)
+    setMode('feedback')
   }
 
   async function handleSubmitCorrection() {
@@ -182,7 +184,28 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleResolveDispute(action: 'accept' | 'reject') {
     setSaving(true)
     await resolveScoreDispute(tournament.id, match.id, currentPlayerId, action)
-    onUpdated()
+    if (action === 'accept') {
+      setSaving(false)
+      setMode('feedback')
+    } else {
+      onUpdated()
+    }
+  }
+
+  // Post-match feedback — shown right after confirming score
+  if (mode === 'feedback') {
+    const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
+    const opponentName = getPlayerName(tournament, opponentId)
+    return (
+      <PostMatchFeedbackInline
+        matchId={match.id}
+        tournamentId={tournament.id}
+        playerId={currentPlayerId}
+        opponentId={opponentId!}
+        opponentName={opponentName}
+        onDone={onUpdated}
+      />
+    )
   }
 
   // Dispute review mode (for original reporter when opponent proposed correction)
