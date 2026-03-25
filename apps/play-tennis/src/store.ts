@@ -29,6 +29,30 @@ const MESSAGES_KEY = 'rally-direct-messages'
 const FEEDBACK_KEY = 'play-tennis-feedback'
 const RELIABILITY_KEY = 'play-tennis-reliability'
 const ETIQUETTE_KEY = 'play-tennis-etiquette'
+const PENDING_FEEDBACK_KEY = 'play-tennis-pending-feedback'
+
+// --- Pending post-match feedback ---
+// Stored in localStorage so it survives component unmount/remount from sync events
+
+export function setPendingFeedback(matchId: string, tournamentId: string): void {
+  localStorage.setItem(PENDING_FEEDBACK_KEY, JSON.stringify({ matchId, tournamentId, ts: Date.now() }))
+}
+
+export function getPendingFeedback(): { matchId: string; tournamentId: string } | null {
+  const raw = localStorage.getItem(PENDING_FEEDBACK_KEY)
+  if (!raw) return null
+  const data = JSON.parse(raw)
+  // Expire after 5 minutes
+  if (Date.now() - data.ts > 5 * 60 * 1000) {
+    localStorage.removeItem(PENDING_FEEDBACK_KEY)
+    return null
+  }
+  return data
+}
+
+export function clearPendingFeedback(): void {
+  localStorage.removeItem(PENDING_FEEDBACK_KEY)
+}
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -1955,6 +1979,7 @@ export async function confirmMatchScore(
   }
 
   await saveAndSync(all, t)
+  setPendingFeedback(matchId, tournamentId)
   return t
 }
 

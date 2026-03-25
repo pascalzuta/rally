@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Tournament, Match } from '../types'
-import { getSchedulingSummary, getPlayerName } from '../store'
+import { getSchedulingSummary, getPlayerName, getPendingFeedback, clearPendingFeedback } from '../store'
 import MatchActionCard from './MatchActionCard'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
@@ -68,7 +68,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
   const [visible, setVisible] = useState(false)
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
-  const [feedbackMatchId, setFeedbackMatchId] = useState<string | null>(null)
+  const pendingFeedback = getPendingFeedback()
 
   const summary = getSchedulingSummary(tournament)
   const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
@@ -212,28 +212,28 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
             }}
             onUpdated={() => {
               setExpandedMatchId(null)
-              setFeedbackMatchId(nextMatch.id)
+              onTournamentUpdated?.()
             }}
           />
         )
       })()}
 
-      {/* Post-match feedback — shown right after confirming */}
-      {feedbackMatchId && (() => {
-        const fbMatch = tournament.matches.find(m => m.id === feedbackMatchId)
+      {/* Post-match feedback — shown right after confirming (read from localStorage) */}
+      {pendingFeedback && (() => {
+        const fbMatch = tournament.matches.find(m => m.id === pendingFeedback.matchId)
         if (!fbMatch || !fbMatch.player1Id || !fbMatch.player2Id) return null
         const opponentId = fbMatch.player1Id === currentPlayerId ? fbMatch.player2Id : fbMatch.player1Id
         const opponentName = getPlayerName(tournament, opponentId)
         return (
           <div className="card action-card action-completed">
             <PostMatchFeedbackInline
-              matchId={feedbackMatchId}
+              matchId={pendingFeedback.matchId}
               tournamentId={tournament.id}
               playerId={currentPlayerId}
               opponentId={opponentId}
               opponentName={opponentName}
               onDone={() => {
-                setFeedbackMatchId(null)
+                clearPendingFeedback()
                 onTournamentUpdated?.()
               }}
             />
@@ -273,7 +273,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                     }}
                     onUpdated={() => {
                       setExpandedMatchId(null)
-                      setFeedbackMatchId(match.id)
+                      onTournamentUpdated?.()
                     }}
                   />
                 )

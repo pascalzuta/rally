@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
-import { getPlayerName } from '../store'
+import { getPlayerName, getPendingFeedback, clearPendingFeedback } from '../store'
 import MatchActionCard from './MatchActionCard'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
@@ -104,7 +104,7 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
 export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated }: Props) {
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
-  const [feedbackMatchId, setFeedbackMatchId] = useState<string | null>(null)
+  const pendingFeedback = getPendingFeedback()
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
   const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
   const weeks = groupByWeek(sorted)
@@ -154,7 +154,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
 
             return (
               <div key={match.id}>
-                {feedbackMatchId === match.id && isMyMatch && match.player1Id && match.player2Id ? (
+                {pendingFeedback?.matchId === match.id && isMyMatch && match.player1Id && match.player2Id ? (
                   <div className="card action-card action-completed">
                     <div className="action-card-status-row">
                       <div className="card-status-label card-status-label--slate">Completed</div>
@@ -171,7 +171,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       opponentId={opponentId!}
                       opponentName={opponentName}
                       onDone={() => {
-                        setFeedbackMatchId(null)
+                        clearPendingFeedback()
                         onTournamentUpdated()
                       }}
                     />
@@ -206,11 +206,11 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                     }}
                     onUpdated={() => {
                       setExpandedMatchId(null)
-                      setFeedbackMatchId(match.id)
+                      onTournamentUpdated()
                     }}
                     onScoreSaved={() => {
                       setExpandedMatchId(null)
-                      setFeedbackMatchId(match.id)
+                      onTournamentUpdated()
                     }}
                   />
                 )}
