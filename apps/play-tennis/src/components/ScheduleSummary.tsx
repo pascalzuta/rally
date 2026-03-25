@@ -190,6 +190,39 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         </div>
       </div>
 
+      {/* Post-match feedback — takes priority over next match card */}
+      {pendingFeedback && (() => {
+        const fbMatch = tournament.matches.find(m => m.id === pendingFeedback.matchId)
+        if (!fbMatch || !fbMatch.player1Id || !fbMatch.player2Id) return null
+        const opponentId = fbMatch.player1Id === currentPlayerId ? fbMatch.player2Id : fbMatch.player1Id
+        const opponentName = getPlayerName(tournament, opponentId)
+        const score = fbMatch.score1?.length > 0
+          ? fbMatch.score1.map((s: number, i: number) => `${s}-${fbMatch.score2[i]}`).join(', ')
+          : null
+        return (
+          <div className="card action-card action-completed">
+            <div className="action-card-status-row">
+              <div className="card-status-label card-status-label--green">Score Confirmed</div>
+            </div>
+            <div className="action-card-main">
+              <div className="action-card-opponent">vs {opponentName}</div>
+              {score && <div className="action-card-supporting">{score}</div>}
+            </div>
+            <PostMatchFeedbackInline
+              matchId={pendingFeedback.matchId}
+              tournamentId={tournament.id}
+              playerId={currentPlayerId}
+              opponentId={opponentId}
+              opponentName={opponentName}
+              onDone={() => {
+                clearPendingFeedback()
+                onTournamentUpdated?.()
+              }}
+            />
+          </div>
+        )
+      })()}
+
       {/* Next match card */}
       {nextMatch && (() => {
         const isMessaging = messagingMatchId === nextMatch.id
@@ -215,29 +248,6 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
               onTournamentUpdated?.()
             }}
           />
-        )
-      })()}
-
-      {/* Post-match feedback — shown right after confirming (read from localStorage) */}
-      {pendingFeedback && (() => {
-        const fbMatch = tournament.matches.find(m => m.id === pendingFeedback.matchId)
-        if (!fbMatch || !fbMatch.player1Id || !fbMatch.player2Id) return null
-        const opponentId = fbMatch.player1Id === currentPlayerId ? fbMatch.player2Id : fbMatch.player1Id
-        const opponentName = getPlayerName(tournament, opponentId)
-        return (
-          <div className="card action-card action-completed">
-            <PostMatchFeedbackInline
-              matchId={pendingFeedback.matchId}
-              tournamentId={tournament.id}
-              playerId={currentPlayerId}
-              opponentId={opponentId}
-              opponentName={opponentName}
-              onDone={() => {
-                clearPendingFeedback()
-                onTournamentUpdated?.()
-              }}
-            />
-          </div>
         )
       })()}
 
