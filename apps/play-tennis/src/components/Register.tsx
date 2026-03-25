@@ -173,7 +173,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
         setCreatedProfile(restored)
         setStep('welcome-back')
-        setTimeout(() => onRegistered(restored), 1500)
+        setTimeout(() => onRegistered(restored), 3750)
         return true
       }
     } catch {
@@ -394,7 +394,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
     setCreatedProfile(p)
     setStep('confirmed')
-    setTimeout(() => onRegistered(p), 1500)
+    setTimeout(() => onRegistered(p), 3750)
   }
 
   // Social proof number (deterministic based on county)
