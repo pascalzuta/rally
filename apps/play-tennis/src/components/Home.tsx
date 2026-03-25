@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
+import { useStableOrder } from '../useStableOrder'
 import HomeHeroCard from './HomeHeroCard'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
@@ -169,9 +170,14 @@ export default function Home({
     [tournaments, profile.id]
   )
 
-  const matchCards = useMemo(
+  const matchCardsRaw = useMemo(
     () => buildHomeMatchCards(activeTournaments, profile.id),
     [activeTournaments, profile.id]
+  )
+
+  const matchCards = useStableOrder(
+    matchCardsRaw,
+    card => `${card.tournament.id}-${card.match.id}`,
   )
 
   const upNext = useMemo(
