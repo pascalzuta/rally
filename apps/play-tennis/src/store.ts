@@ -2995,9 +2995,53 @@ export async function autoConfirmAllSchedules(tournamentId: string): Promise<Tou
   return t
 }
 
+/** Directly complete a match for dev simulation — bypasses RPC and two-phase confirmation */
+function devCompleteMatch(
+  tournament: Tournament, matchId: string,
+  s1: number[], s2: number[], winnerId: string
+) {
+  const match = tournament.matches.find(m => m.id === matchId)
+  if (!match) return
+  match.score1 = s1
+  match.score2 = s2
+  match.winnerId = winnerId
+  match.completed = true
+  match.scoreReportedBy = winnerId
+  match.scoreReportedAt = new Date().toISOString()
+  match.scoreConfirmedBy = match.player1Id === winnerId ? match.player2Id! : match.player1Id!
+  match.scoreConfirmedAt = new Date().toISOString()
+
+  // Advance winner in single-elimination or knockout phase
+  if ((tournament.format === 'single-elimination' || match.phase === 'knockout') && winnerId) {
+    const nextRoundMatches = tournament.matches.filter(
+      m => m.round === match.round + 1 && (match.phase !== 'knockout' || m.phase === 'knockout')
+    )
+    const nextMatch = nextRoundMatches[Math.floor(match.position / 2)]
+    if (nextMatch) {
+      if (match.position % 2 === 0) {
+        nextMatch.player1Id = winnerId
+      } else {
+        nextMatch.player2Id = winnerId
+      }
+      if (nextMatch.player1Id && nextMatch.player2Id && !nextMatch.schedule) {
+        nextMatch.schedule = generateMatchSchedule(nextMatch.player1Id, nextMatch.player2Id)
+      }
+    }
+  }
+
+  // Group phase completion check
+  if ((tournament.format === 'group-knockout' || tournament.format === 'round-robin') && match.phase === 'group') {
+    const groupMatches = tournament.matches.filter(m => m.phase === 'group')
+    if (groupMatches.every(m => m.completed) && !tournament.groupPhaseComplete) {
+      generateKnockoutPhase(tournament)
+    }
+  }
+}
+
 // Simulate random scores for the current round of a tournament
 export async function simulateRoundScores(tournamentId: string): Promise<Tournament | undefined> {
-  const t = getTournament(tournamentId)
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
   if (!t || t.status !== 'in-progress') return undefined
 
   // Find the earliest incomplete round with scoreable matches
@@ -3020,15 +3064,19 @@ export async function simulateRoundScores(tournamentId: string): Promise<Tournam
     { s1: [4, 2], s2: [6, 6], w: 2 },
   ]
 
-  let updated = t
   for (const match of roundMatches) {
     const pick = SCORES[Math.floor(Math.random() * SCORES.length)]
     const winnerId = pick.w === 1 ? match.player1Id! : match.player2Id!
-    const result = await saveMatchScore(tournamentId, match.id, pick.s1, pick.s2, winnerId)
-    if (result) updated = result
+    devCompleteMatch(t, match.id, pick.s1, pick.s2, winnerId)
   }
 
-  return updated
+  // Check if tournament is done
+  if (t.matches.every(m => m.completed)) {
+    t.status = 'completed'
+  }
+
+  await saveAndSync(all, t)
+  return t
 }
 
 // Simulate a tournament all the way to the final, with the given player as a finalist
@@ -3073,56 +3121,31 @@ export async function simulateToFinal(playerId: string, county: string): Promise
 }
 
 async function simulateToFinalInner(tournamentId: string, playerId: string): Promise<{ tournamentId: string } | null> {
-  let t = getTournament(tournamentId)
-  if (!t) return null
+  const all = load()
+  const tournament = all.find(x => x.id === tournamentId)
+  if (!tournament) return null
+  const t = tournament // const binding for closure narrowing
+
+  /** Score a match: player always wins their matches, player1 wins others */
+  function simScore(match: Match) {
+    if (match.completed || !match.player1Id || !match.player2Id) return
+    const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
+    const winnerId = isMyMatch ? playerId : match.player1Id!
+    const s1 = winnerId === match.player1Id ? [6, 6] : [3, 4]
+    const s2 = winnerId === match.player1Id ? [3, 4] : [6, 6]
+    devCompleteMatch(t, match.id, s1, s2, winnerId)
+  }
 
   // For group-knockout: score all group matches, ensuring player wins enough
   if (t.format === 'group-knockout') {
-    const groupMatches = t.matches.filter(m => m.phase === 'group')
-    for (const match of groupMatches) {
-      if (match.completed || !match.player1Id || !match.player2Id) continue
-      const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
-      const s1 = [6, 6]
-      const s2 = [3, 4]
-      let winnerId: string
-      if (isMyMatch) {
-        winnerId = playerId
-      } else {
-        winnerId = match.player1Id!
-      }
-      // Set scores so the winner wins
-      if (winnerId === match.player1Id) {
-        await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
-      } else {
-        await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
-      }
+    for (const match of t.matches.filter(m => m.phase === 'group')) {
+      simScore(match)
     }
-
-    // Reload tournament (knockout phase should now exist)
-    t = getTournament(tournamentId)
-    if (!t) return null
-
     // Score semifinals, ensuring our player wins
-    const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
-    const semis = knockoutMatches.filter(m => m.round === 2)
-    for (const semi of semis) {
-      if (semi.completed || !semi.player1Id || !semi.player2Id) continue
-      const isMyMatch = semi.player1Id === playerId || semi.player2Id === playerId
-      const s1 = [6, 6]
-      const s2 = [3, 4]
-      let winnerId: string
-      if (isMyMatch) {
-        winnerId = playerId
-      } else {
-        winnerId = semi.player1Id!
-      }
-      if (winnerId === semi.player1Id) {
-        await saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
-      } else {
-        await saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
-      }
+    for (const semi of t.matches.filter(m => m.phase === 'knockout' && m.round === 2)) {
+      simScore(semi)
     }
-
+    await saveAndSync(all, t)
     return { tournamentId }
   }
 
@@ -3130,74 +3153,25 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
   if (t.format === 'single-elimination') {
     const maxRound = Math.max(...t.matches.map(m => m.round))
     for (let round = 1; round < maxRound; round++) {
-      t = getTournament(tournamentId)
-      if (!t) return null
       const roundMatches = t.matches.filter(m => m.round === round && !m.completed && m.player1Id && m.player2Id)
       for (const match of roundMatches) {
-        const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
-        const s1 = [6, 6]
-        const s2 = [3, 4]
-        let winnerId: string
-        if (isMyMatch) {
-          winnerId = playerId
-        } else {
-          winnerId = match.player1Id!
-        }
-        if (winnerId === match.player1Id) {
-          await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
-        } else {
-          await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
-        }
+        simScore(match)
       }
     }
+    await saveAndSync(all, t)
     return { tournamentId }
   }
 
   // Round-robin with playoffs: score all group matches, then semis, leave final
-  const groupMatches = t.matches.filter(m => m.phase === 'group')
-  for (const match of groupMatches) {
-    if (match.completed || !match.player1Id || !match.player2Id) continue
-    const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
-    const s1 = [6, 6]
-    const s2 = [3, 4]
-    let winnerId: string
-    if (isMyMatch) {
-      winnerId = playerId
-    } else {
-      winnerId = match.player1Id!
-    }
-    if (winnerId === match.player1Id) {
-      await saveMatchScore(tournamentId, match.id, s1, s2, winnerId)
-    } else {
-      await saveMatchScore(tournamentId, match.id, s2, s1, winnerId)
-    }
+  for (const match of t.matches.filter(m => m.phase === 'group')) {
+    simScore(match)
   }
-
-  // Reload tournament (knockout phase should now exist)
-  t = getTournament(tournamentId)
-  if (!t) return null
-
   // Score semifinals, ensuring our player wins
-  const knockoutMatches = t.matches.filter(m => m.phase === 'knockout')
-  const semis = knockoutMatches.filter(m => m.round === 2)
+  const semis = t.matches.filter(m => m.phase === 'knockout' && m.round === 2)
   for (const semi of semis) {
-    if (semi.completed || !semi.player1Id || !semi.player2Id) continue
-    const isMyMatch = semi.player1Id === playerId || semi.player2Id === playerId
-    const s1 = [6, 6]
-    const s2 = [3, 4]
-    let winnerId: string
-    if (isMyMatch) {
-      winnerId = playerId
-    } else {
-      winnerId = semi.player1Id!
-    }
-    if (winnerId === semi.player1Id) {
-      await saveMatchScore(tournamentId, semi.id, s1, s2, winnerId)
-    } else {
-      await saveMatchScore(tournamentId, semi.id, s2, s1, winnerId)
-    }
+    simScore(semi)
   }
-
+  await saveAndSync(all, t)
   return { tournamentId }
 }
 
