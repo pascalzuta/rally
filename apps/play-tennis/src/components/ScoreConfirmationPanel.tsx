@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName } from '../store'
+import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName, clearPendingFeedback } from '../store'
 import { Tournament, Match } from '../types'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 
@@ -159,10 +160,12 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     return () => window.clearInterval(interval)
   }, [])
 
+  const [showFeedback, setShowFeedback] = useState(false)
+
   async function handleConfirm() {
     setSaving(true)
     await confirmMatchScore(tournament.id, match.id, currentPlayerId)
-    onUpdated()
+    setShowFeedback(true)
   }
 
   async function handleSubmitCorrection() {
@@ -182,7 +185,23 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleResolveDispute(action: 'accept' | 'reject') {
     setSaving(true)
     await resolveScoreDispute(tournament.id, match.id, currentPlayerId, action)
-    onUpdated()
+    setShowFeedback(true)
+  }
+
+  // After confirming / resolving, show feedback form in the same panel
+  if (showFeedback) {
+    const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
+    const opponentName = getPlayerName(tournament, opponentId)
+    return (
+      <PostMatchFeedbackInline
+        matchId={match.id}
+        tournamentId={tournament.id}
+        playerId={currentPlayerId}
+        opponentId={opponentId}
+        opponentName={opponentName}
+        onDismiss={() => { clearPendingFeedback(); onUpdated() }}
+      />
+    )
   }
 
   // Dispute review mode (for original reporter when opponent proposed correction)

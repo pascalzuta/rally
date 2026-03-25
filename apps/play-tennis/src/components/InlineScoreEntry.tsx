@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { saveMatchScore, getPlayerName, getSeeds } from '../store'
+import { saveMatchScore, getPlayerName, getSeeds, clearPendingFeedback } from '../store'
 import { Tournament } from '../types'
 import { useToast } from './Toast'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 function isValidSet(s1: number, s2: number): boolean {
   if (s1 === 6 && s2 <= 4) return true
@@ -132,7 +133,6 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
       await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId, currentPlayerId)
       setSaveState('success')
       showSuccess('Score reported — waiting for opponent to confirm')
-      setTimeout(() => onSaved(), 2000)
     } catch {
       setSaveState('error')
       showError('Failed to save score')
@@ -140,6 +140,8 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   }
 
   if (saveState === 'success') {
+    const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
+    const opponentName = getPlayerName(tournament, opponentId)
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
         <div className="workflow-header">
@@ -147,10 +149,14 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
           <div className="schedule-panel-title">Waiting for opponent confirmation</div>
           <div className="schedule-panel-copy">Your opponent has 48 hours to confirm the result.</div>
         </div>
-        <div className="score-toast score-toast--success">
-          <span className="score-toast-check">✓</span>
-          <strong>Score reported!</strong>
-        </div>
+        <PostMatchFeedbackInline
+          matchId={matchId}
+          tournamentId={tournament.id}
+          playerId={currentPlayerId!}
+          opponentId={opponentId}
+          opponentName={opponentName}
+          onDismiss={() => { clearPendingFeedback(); onSaved() }}
+        />
       </div>
     )
   }

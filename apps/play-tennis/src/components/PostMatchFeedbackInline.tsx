@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { saveMatchFeedback, getPlayerFeedbackForMatch } from '../store'
+import { saveMatchFeedback, getPlayerFeedbackForMatch, clearPendingFeedback } from '../store'
 import { FeedbackSentiment, IssueCategory } from '../types'
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
   playerId: string
   opponentId: string
   opponentName: string
+  onDismiss?: () => void
 }
 
 const ISSUE_OPTIONS: { value: IssueCategory; label: string; detail: string }[] = [
@@ -18,7 +19,7 @@ const ISSUE_OPTIONS: { value: IssueCategory; label: string; detail: string }[] =
   { value: 'other', label: 'Other', detail: 'Something else happened that does not fit the options above.' },
 ]
 
-export default function PostMatchFeedbackInline({ matchId, tournamentId, playerId, opponentId, opponentName }: Props) {
+export default function PostMatchFeedbackInline({ matchId, tournamentId, playerId, opponentId, opponentName, onDismiss }: Props) {
   const existing = getPlayerFeedbackForMatch(matchId, playerId)
   const [sentiment, setSentiment] = useState<FeedbackSentiment | null>(existing?.sentiment ?? null)
   const [issueCategories, setIssueCategories] = useState<IssueCategory[]>(existing?.issueCategories ?? [])
@@ -46,7 +47,10 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
       issueCategories: chosenSentiment === 'negative' ? issueCategories : undefined,
       issueText: chosenSentiment === 'negative' && issueText.trim() ? issueText.trim() : undefined,
     })
+    clearPendingFeedback()
     setSaved(true)
+    onDismiss?.()
+
   }
 
   if (saved) {

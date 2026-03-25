@@ -29,6 +29,32 @@ const MESSAGES_KEY = 'rally-direct-messages'
 const FEEDBACK_KEY = 'play-tennis-feedback'
 const RELIABILITY_KEY = 'play-tennis-reliability'
 const ETIQUETTE_KEY = 'play-tennis-etiquette'
+const PENDING_FEEDBACK_KEY = 'play-tennis-pending-feedback'
+
+// --- Pending Feedback ---
+// Persists across sync-driven re-renders so the feedback form stays visible
+
+export interface PendingFeedback {
+  matchId: string
+  tournamentId: string
+  opponentId: string
+  opponentName: string
+}
+
+export function setPendingFeedback(data: PendingFeedback): void {
+  try { localStorage.setItem(PENDING_FEEDBACK_KEY, JSON.stringify(data)) } catch {}
+}
+
+export function getPendingFeedback(): PendingFeedback | null {
+  try {
+    const raw = localStorage.getItem(PENDING_FEEDBACK_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+export function clearPendingFeedback(): void {
+  try { localStorage.removeItem(PENDING_FEEDBACK_KEY) } catch {}
+}
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -1843,6 +1869,11 @@ export async function saveMatchScore(
   match.scoreReportedAt = new Date().toISOString()
   // Don't set completed=true — wait for opponent confirmation
 
+  // Persist pending feedback so the form shows after reporting
+  const feedbackOpponentId = match.player1Id === (reportedBy ?? winnerId) ? match.player2Id! : match.player1Id!
+  const feedbackOpponentName = t.players.find(p => p.id === feedbackOpponentId)?.name ?? 'Opponent'
+  setPendingFeedback({ matchId, tournamentId, opponentId: feedbackOpponentId, opponentName: feedbackOpponentName })
+
   // Send notification to opponent
   const reporterName = t.players.find(p => p.id === match.scoreReportedBy)?.name ?? 'Your opponent'
   const opponentId = match.player1Id === match.scoreReportedBy ? match.player2Id : match.player1Id
@@ -1953,6 +1984,11 @@ export async function confirmMatchScore(
       checkAndAwardBadges(p.id, t.id, t)
     }
   }
+
+  // Persist pending feedback so the form survives sync-driven re-renders
+  const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
+  const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+  setPendingFeedback({ matchId, tournamentId, opponentId, opponentName })
 
   await saveAndSync(all, t)
   return t
@@ -3840,6 +3876,11 @@ export async function resolveScoreDispute(
       relatedTournamentId: tournamentId,
     })
   }
+
+  // Persist pending feedback so the form survives sync-driven re-renders
+  const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
+  const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+  setPendingFeedback({ matchId, tournamentId, opponentId, opponentName })
 
   // Check tournament completion
   const allDone = t.matches.every(m => m.completed)
