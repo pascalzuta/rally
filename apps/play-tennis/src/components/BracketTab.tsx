@@ -110,6 +110,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
   const [showAllMatches, setShowAllMatches] = useState(false) // R-28
+  const [feedbackMatchId, setFeedbackMatchId] = useState<string | null>(null)
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const pendingScrollId = useRef<string | null>(null)
   // R-05: Track rendered match IDs to prevent duplicates
@@ -194,8 +195,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     onTournamentUpdated()
   }
 
-  function handleScoreSaved() {
+  function handleScoreSaved(matchId?: string) {
     setExpandedMatchId(null)
+    if (matchId) setFeedbackMatchId(matchId)
     refresh()
     // Check if player advanced to a new round
     const updated = getTournament(tournament!.id)
@@ -377,9 +379,10 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           }}
           onUpdated={() => {
             setExpandedMatchId(null)
+            setFeedbackMatchId(match.id)
             refresh()
           }}
-          onScoreSaved={handleScoreSaved}
+          onScoreSaved={() => handleScoreSaved(match.id)}
         />
       )
     }
@@ -522,14 +525,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
-                  onUpdated={() => { setExpandedMatchId(null); refresh() }}
+                  onUpdated={() => { setExpandedMatchId(null); setFeedbackMatchId(match.id); refresh() }}
                 />
               ) : match.scoreDispute?.status === 'pending' && match.scoreReportedBy === currentPlayerId ? (
                 <ScoreConfirmationPanel
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
-                  onUpdated={() => { setExpandedMatchId(null); refresh() }}
+                  onUpdated={() => { setExpandedMatchId(null); setFeedbackMatchId(match.id); refresh() }}
                 />
               ) : match.schedule ? (
                 <UpcomingMatchPanel
@@ -537,14 +540,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   match={match}
                   currentPlayerId={currentPlayerId}
                   onUpdated={refresh}
-                  onScoreSaved={handleScoreSaved}
+                  onScoreSaved={() => handleScoreSaved(match.id)}
                 />
               ) : null}
             </div>
           )}
 
-          {/* R-23: Post-match feedback for completed matches */}
-          {match.completed && isMyMatch && match.player1Id && match.player2Id && (() => {
+          {/* R-23: Post-match feedback — shown right after scoring/confirming */}
+          {feedbackMatchId === match.id && match.completed && isMyMatch && match.player1Id && match.player2Id && (() => {
             const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
             const opponentName = getPlayerName(tournament!, opponentId)
             return (

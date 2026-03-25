@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
 import { getPlayerName } from '../store'
 import MatchActionCard from './MatchActionCard'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 interface Props {
   tournament: Tournament
@@ -103,6 +104,7 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
 export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated }: Props) {
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
+  const [feedbackMatchId, setFeedbackMatchId] = useState<string | null>(null)
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
   const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
   const weeks = groupByWeek(sorted)
@@ -162,6 +164,15 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       <div className="action-card-opponent">vs {opponentName}</div>
                       <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
                     </div>
+                    {feedbackMatchId === match.id && isMyMatch && match.player1Id && match.player2Id && (
+                      <PostMatchFeedbackInline
+                        matchId={match.id}
+                        tournamentId={tournament.id}
+                        playerId={currentPlayerId}
+                        opponentId={opponentId!}
+                        opponentName={opponentName}
+                      />
+                    )}
                   </div>
                 ) : (
                   <MatchActionCard
@@ -182,6 +193,12 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                     }}
                     onUpdated={() => {
                       setExpandedMatchId(null)
+                      setFeedbackMatchId(match.id)
+                      onTournamentUpdated()
+                    }}
+                    onScoreSaved={() => {
+                      setExpandedMatchId(null)
+                      setFeedbackMatchId(match.id)
                       onTournamentUpdated()
                     }}
                   />
