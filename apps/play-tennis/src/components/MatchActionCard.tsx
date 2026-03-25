@@ -50,12 +50,12 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     if (collapseTimer.current) clearTimeout(collapseTimer.current)
     collapseTimer.current = setTimeout(() => {
       onToggleExpanded()
-    }, 800)
+    }, 1200)
 
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
-    }, 1050)
+    }, 1500)
   }, [showConfirmation, onUpdated, onToggleExpanded])
 
   const handleScoreActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
@@ -67,12 +67,12 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     if (collapseTimer.current) clearTimeout(collapseTimer.current)
     collapseTimer.current = setTimeout(() => {
       onToggleExpanded()
-    }, 800)
+    }, 1200)
 
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
-    }, 1050)
+    }, 1500)
   }, [showConfirmation, onUpdated, onScoreSaved, onToggleExpanded])
 
   const view = getMatchCardView(tournament, match, currentPlayerId)
