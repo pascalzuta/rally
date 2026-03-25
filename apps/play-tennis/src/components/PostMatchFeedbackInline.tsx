@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { saveMatchFeedback, getPlayerFeedbackForMatch, hasBothFeedback } from '../store'
+import { saveMatchFeedback, getPlayerFeedbackForMatch } from '../store'
 import { FeedbackSentiment, IssueCategory } from '../types'
 
 interface Props {
@@ -50,17 +50,12 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
   }
 
   if (saved) {
-    const bothSubmitted = hasBothFeedback(matchId)
     return (
       <div className="post-match-feedback workflow-module" onClick={e => e.stopPropagation()}>
         <div className="workflow-header">
           <div className="workflow-status workflow-status--green">Feedback Saved</div>
           <div className="schedule-panel-title">Thanks for your feedback</div>
-          <div className="schedule-panel-copy">
-            {bothSubmitted
-              ? 'Both players have now responded.'
-              : 'Feedback stays anonymous until both players respond.'}
-          </div>
+          <div className="schedule-panel-copy">This information is only for us at Play Rally.</div>
         </div>
       </div>
     )
@@ -125,7 +120,7 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
       <div className="workflow-header">
         <div className="workflow-status workflow-status--slate">Rate Match</div>
         <div className="schedule-panel-title">How was the match with {opponentName}?</div>
-        <div className="schedule-panel-copy">Your feedback stays anonymous until both players respond.</div>
+        <div className="schedule-panel-copy">Your feedback is only visible to Play Rally.</div>
       </div>
       <div className="feedback-sentiment-row">
         <button

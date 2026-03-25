@@ -183,7 +183,23 @@ export interface MatchFeedback {
   issueCategories?: IssueCategory[]
   issueText?: string
   createdAt: string
-  revealedAt?: string
+}
+
+// --- Etiquette Score ---
+
+export interface EtiquetteScore {
+  email: string
+  overallScore: number          // 0-100
+  sentimentAvg: number          // 0-1 weighted average of sentiment
+  issueBreakdown: {
+    showedUpLate: number        // count
+    leftEarly: number
+    disputedUnfairly: number
+    unsportsmanlike: number
+    other: number
+  }
+  feedbackCount: number         // total feedback entries received
+  lastUpdated: string
 }
 
 // --- Reliability Score ---

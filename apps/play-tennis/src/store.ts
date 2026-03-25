@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
 import {
   SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
@@ -28,6 +28,7 @@ const NOTIFICATIONS_KEY = 'rally-notifications'
 const MESSAGES_KEY = 'rally-direct-messages'
 const FEEDBACK_KEY = 'play-tennis-feedback'
 const RELIABILITY_KEY = 'play-tennis-reliability'
+const ETIQUETTE_KEY = 'play-tennis-etiquette'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -3895,7 +3896,7 @@ function saveFeedbackToStorage(feedback: MatchFeedback[]): void {
 }
 
 export async function saveMatchFeedback(
-  feedback: Omit<MatchFeedback, 'id' | 'createdAt' | 'revealedAt'>
+  feedback: Omit<MatchFeedback, 'id' | 'createdAt'>
 ): Promise<void> {
   const all = loadFeedback()
   const existing = all.findIndex(f => f.matchId === feedback.matchId && f.fromPlayerId === feedback.fromPlayerId)
@@ -3910,15 +3911,6 @@ export async function saveMatchFeedback(
     all[existing] = entry
   } else {
     all.push(entry)
-  }
-
-  // Double-blind: check if both players have submitted
-  const matchFeedbacks = all.filter(f => f.matchId === feedback.matchId)
-  if (matchFeedbacks.length >= 2) {
-    const now = new Date().toISOString()
-    for (const f of matchFeedbacks) {
-      if (!f.revealedAt) f.revealedAt = now
-    }
   }
 
   saveFeedbackToStorage(all)
@@ -3938,7 +3930,6 @@ export async function saveMatchFeedback(
           issue_categories: entry.issueCategories ?? [],
           issue_text: entry.issueText ?? null,
           created_at: entry.createdAt,
-          revealed_at: entry.revealedAt ?? null,
         })
       } catch {
         enqueue('feedback', entry)
@@ -3948,6 +3939,9 @@ export async function saveMatchFeedback(
 
   // Recalculate reliability for the rated player
   recalculateReliability(feedback.toPlayerId)
+
+  // Recalculate etiquette score for the rated player
+  recalculateEtiquetteScore(feedback.toPlayerId)
 }
 
 export function getMatchFeedback(matchId: string): MatchFeedback[] {
@@ -4188,6 +4182,140 @@ function checkReliabilityBadges(
       awardBadge(playerId, 'community-regular')
     }
   }
+}
+
+// --- Etiquette Score ---
+
+function loadEtiquetteScores(): Record<string, EtiquetteScore> {
+  try {
+    const data = localStorage.getItem(ETIQUETTE_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveEtiquetteScores(scores: Record<string, EtiquetteScore>): void {
+  localStorage.setItem(ETIQUETTE_KEY, JSON.stringify(scores))
+}
+
+/**
+ * Computes an etiquette score for a player based on all feedback received about them.
+ *
+ * Score composition:
+ * - Sentiment average (0-1): positive=1, neutral=0.5, negative=0
+ * - Issue category penalties: unsportsmanlike weighs heaviest, others moderate
+ * - Time-decay: 6-month half-life so recent behavior matters more
+ *
+ * The overall score (0-100) combines sentiment with issue severity.
+ * Stored by player ID locally; keyed by email in Supabase via auth join.
+ */
+export async function recalculateEtiquetteScore(playerId: string): Promise<EtiquetteScore> {
+  const feedback = loadFeedback()
+  const received = feedback.filter(f => f.toPlayerId === playerId)
+  const now = Date.now()
+
+  // Resolve email from profile if this is the current user, otherwise store playerId as key
+  const profile = getProfile()
+  const email = profile?.id === playerId && profile.email ? profile.email : playerId
+
+  if (received.length === 0) {
+    const score: EtiquetteScore = {
+      email,
+      overallScore: 100,
+      sentimentAvg: 1,
+      issueBreakdown: { showedUpLate: 0, leftEarly: 0, disputedUnfairly: 0, unsportsmanlike: 0, other: 0 },
+      feedbackCount: 0,
+      lastUpdated: new Date().toISOString(),
+    }
+    const scores = loadEtiquetteScores()
+    scores[playerId] = score
+    saveEtiquetteScores(scores)
+    return score
+  }
+
+  function decayWeight(dateStr: string): number {
+    const ageMs = now - new Date(dateStr).getTime()
+    const ageMonths = ageMs / (30 * 24 * 60 * 60 * 1000)
+    return Math.pow(0.5, ageMonths / 6)
+  }
+
+  // Weighted sentiment average
+  let sentimentWeightedSum = 0
+  let sentimentWeightTotal = 0
+  const issueBreakdown = { showedUpLate: 0, leftEarly: 0, disputedUnfairly: 0, unsportsmanlike: 0, other: 0 }
+
+  for (const f of received) {
+    const weight = decayWeight(f.createdAt)
+    const sentimentVal = f.sentiment === 'positive' ? 1 : f.sentiment === 'neutral' ? 0.5 : 0
+    sentimentWeightedSum += weight * sentimentVal
+    sentimentWeightTotal += weight
+
+    // Count issue categories from negative feedback
+    if (f.sentiment === 'negative' && f.issueCategories) {
+      for (const cat of f.issueCategories) {
+        if (cat === 'showed_up_late') issueBreakdown.showedUpLate++
+        else if (cat === 'left_early') issueBreakdown.leftEarly++
+        else if (cat === 'disputed_unfairly') issueBreakdown.disputedUnfairly++
+        else if (cat === 'unsportsmanlike') issueBreakdown.unsportsmanlike++
+        else if (cat === 'other') issueBreakdown.other++
+      }
+    }
+  }
+
+  const sentimentAvg = sentimentWeightTotal > 0 ? sentimentWeightedSum / sentimentWeightTotal : 1
+
+  // Issue severity penalty (per-incident, decay not applied to keep it simple)
+  // Each incident reduces the score; unsportsmanlike is the heaviest
+  const issuePenalty =
+    issueBreakdown.unsportsmanlike * 8 +
+    issueBreakdown.disputedUnfairly * 4 +
+    issueBreakdown.showedUpLate * 3 +
+    issueBreakdown.leftEarly * 3 +
+    issueBreakdown.other * 2
+
+  // Overall: 70% sentiment, 30% issue-free (capped penalty at 30 points)
+  const overallScore = Math.max(0, Math.round(
+    sentimentAvg * 70 + Math.max(0, 30 - issuePenalty)
+  ))
+
+  const score: EtiquetteScore = {
+    email,
+    overallScore,
+    sentimentAvg,
+    issueBreakdown,
+    feedbackCount: received.length,
+    lastUpdated: new Date().toISOString(),
+  }
+
+  const scores = loadEtiquetteScores()
+  scores[playerId] = score
+  saveEtiquetteScores(scores)
+
+  // Sync to Supabase
+  if (SUPABASE_PRIMARY) {
+    const client = getClient()
+    if (client) {
+      try {
+        await client.from('etiquette_scores').upsert({
+          player_id: playerId,
+          email,
+          overall_score: overallScore,
+          sentiment_avg: sentimentAvg,
+          issue_breakdown: issueBreakdown,
+          feedback_count: received.length,
+          last_updated: score.lastUpdated,
+        })
+      } catch { /* silent — etiquette sync is best-effort */ }
+    }
+  }
+
+  return score
+}
+
+export function getEtiquetteScore(playerId: string): EtiquetteScore | null {
+  const scores = loadEtiquetteScores()
+  return scores[playerId] ?? null
 }
 
 // --- Auto-accept timeout (48h) ---
