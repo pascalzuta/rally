@@ -33,7 +33,7 @@ export async function sendOtp(email: string): Promise<{ ok: boolean; error?: str
 
   const { error } = await client.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
   })
 
   if (error) {
