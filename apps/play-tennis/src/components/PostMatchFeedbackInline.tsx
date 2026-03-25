@@ -8,6 +8,7 @@ interface Props {
   playerId: string
   opponentId: string
   opponentName: string
+  onDone?: () => void
 }
 
 const ISSUE_OPTIONS: { value: IssueCategory; label: string; detail: string }[] = [
@@ -18,7 +19,7 @@ const ISSUE_OPTIONS: { value: IssueCategory; label: string; detail: string }[] =
   { value: 'other', label: 'Other', detail: 'Something else happened that does not fit the options above.' },
 ]
 
-export default function PostMatchFeedbackInline({ matchId, tournamentId, playerId, opponentId, opponentName }: Props) {
+export default function PostMatchFeedbackInline({ matchId, tournamentId, playerId, opponentId, opponentName, onDone }: Props) {
   const existing = getPlayerFeedbackForMatch(matchId, playerId)
   const [sentiment, setSentiment] = useState<FeedbackSentiment | null>(existing?.sentiment ?? null)
   const [issueCategories, setIssueCategories] = useState<IssueCategory[]>(existing?.issueCategories ?? [])
@@ -47,6 +48,7 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
       issueText: chosenSentiment === 'negative' && issueText.trim() ? issueText.trim() : undefined,
     })
     setSaved(true)
+    if (onDone) setTimeout(onDone, 1500)
   }
 
   if (saved) {

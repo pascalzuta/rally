@@ -380,7 +380,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           onUpdated={() => {
             setExpandedMatchId(null)
             setFeedbackMatchId(match.id)
-            refresh()
           }}
           onScoreSaved={() => handleScoreSaved(match.id)}
         />
@@ -525,14 +524,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
-                  onUpdated={() => { setExpandedMatchId(null); setFeedbackMatchId(match.id); refresh() }}
+                  onUpdated={() => { setExpandedMatchId(null); setFeedbackMatchId(match.id) }}
                 />
               ) : match.scoreDispute?.status === 'pending' && match.scoreReportedBy === currentPlayerId ? (
                 <ScoreConfirmationPanel
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
-                  onUpdated={() => { setExpandedMatchId(null); setFeedbackMatchId(match.id); refresh() }}
+                  onUpdated={() => { setExpandedMatchId(null); setFeedbackMatchId(match.id) }}
                 />
               ) : match.schedule ? (
                 <UpcomingMatchPanel
@@ -547,7 +546,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           )}
 
           {/* R-23: Post-match feedback — shown right after scoring/confirming */}
-          {feedbackMatchId === match.id && match.completed && isMyMatch && match.player1Id && match.player2Id && (() => {
+          {feedbackMatchId === match.id && isMyMatch && match.player1Id && match.player2Id && (() => {
             const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
             const opponentName = getPlayerName(tournament!, opponentId)
             return (
@@ -558,6 +557,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   playerId={currentPlayerId}
                   opponentId={opponentId}
                   opponentName={opponentName}
+                  onDone={() => { setFeedbackMatchId(null); refresh() }}
                 />
               </div>
             )

@@ -154,7 +154,29 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
 
             return (
               <div key={match.id}>
-                {isCompleted ? (
+                {feedbackMatchId === match.id && isMyMatch && match.player1Id && match.player2Id ? (
+                  <div className="card action-card action-completed">
+                    <div className="action-card-status-row">
+                      <div className="card-status-label card-status-label--slate">Completed</div>
+                      {slot && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
+                    </div>
+                    <div className="action-card-main">
+                      <div className="action-card-opponent">vs {opponentName}</div>
+                      <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
+                    </div>
+                    <PostMatchFeedbackInline
+                      matchId={match.id}
+                      tournamentId={tournament.id}
+                      playerId={currentPlayerId}
+                      opponentId={opponentId!}
+                      opponentName={opponentName}
+                      onDone={() => {
+                        setFeedbackMatchId(null)
+                        onTournamentUpdated()
+                      }}
+                    />
+                  </div>
+                ) : isCompleted ? (
                   <div className="card action-card action-completed">
                     <div className="action-card-status-row">
                       <div className={`card-status-label card-status-label--${getTierTone(tier, true)}`}>Completed</div>
@@ -164,15 +186,6 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       <div className="action-card-opponent">vs {opponentName}</div>
                       <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
                     </div>
-                    {feedbackMatchId === match.id && isMyMatch && match.player1Id && match.player2Id && (
-                      <PostMatchFeedbackInline
-                        matchId={match.id}
-                        tournamentId={tournament.id}
-                        playerId={currentPlayerId}
-                        opponentId={opponentId!}
-                        opponentName={opponentName}
-                      />
-                    )}
                   </div>
                 ) : (
                   <MatchActionCard
@@ -194,12 +207,10 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                     onUpdated={() => {
                       setExpandedMatchId(null)
                       setFeedbackMatchId(match.id)
-                      onTournamentUpdated()
                     }}
                     onScoreSaved={() => {
                       setExpandedMatchId(null)
                       setFeedbackMatchId(match.id)
-                      onTournamentUpdated()
                     }}
                   />
                 )}
