@@ -179,12 +179,12 @@ body {
 
 .top-nav-register {
   justify-content: center;
-  padding-top: var(--space-md);
-  padding-bottom: var(--space-md);
+  padding-top: 16px;
+  padding-bottom: 8px;
 }
 
 .top-nav-logo-large {
-  padding: var(--space-sm) 0;
+  padding: 4px 0;
 }
 
 .rally-icon {
@@ -341,9 +341,10 @@ body {
 
 .btn-large {
   width: 100%;
-  height: 48px;
-  font-size: var(--font-body-lg);
-  border-radius: var(--radius-card);
+  height: 54px;
+  font-size: 17px;
+  font-weight: 600;
+  border-radius: 28px;
 }
 
 .btn-icon {
@@ -1896,7 +1897,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 56px);
-  padding: var(--space-xl);
+  padding: 24px 24px 40px;
   justify-content: space-between;
 }
 
@@ -1907,40 +1908,40 @@ select:focus {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: var(--space-lg);
+  gap: 8px;
+  padding-bottom: 8px;
 }
 
 .onboard-title {
-  font-size: var(--font-title-lg);
-  font-weight: var(--weight-bold);
+  font-size: 24px;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--color-text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
+  max-width: 300px;
 }
 
 .onboard-subtitle {
-  font-size: var(--font-body-lg);
+  font-size: 15px;
   color: var(--color-text-secondary);
-  max-width: 320px;
-  line-height: 1.5;
+  max-width: 300px;
+  line-height: 1.45;
 }
 
 .onboard-tagline {
-  font-size: var(--font-body-md);
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
+  display: none;
 }
 
 /* Onboarding visuals */
 .onboard-visual {
-  margin-bottom: var(--space-xl);
+  margin-bottom: 24px;
 }
 
 .onboard-chat {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 260px;
+  gap: 8px;
+  width: 280px;
   opacity: 0;
   animation: onboardFadeIn 0.5s ease forwards;
 }
@@ -1995,8 +1996,8 @@ select:focus {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  width: 280px;
+  padding: 20px;
+  width: 300px;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -2053,8 +2054,8 @@ select:focus {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  width: 280px;
+  padding: 20px;
+  width: 300px;
   opacity: 0;
   animation: onboardFadeIn 0.5s ease 0.1s forwards;
 }
@@ -2110,8 +2111,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-lg);
-  padding-top: var(--space-xl);
+  gap: 16px;
+  padding-top: 16px;
 }
 
 .onboard-btn {
@@ -2124,16 +2125,21 @@ select:focus {
 }
 
 .onboard-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--color-divider);
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s;
 }
 
 .onboard-dot.active {
   background: var(--color-text-primary);
-  transform: scale(1.2);
+}
+
+.onboard-skip {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent-primary);
 }
 
 /* Onboard animations */
@@ -2152,39 +2158,44 @@ select:focus {
    ================================================ */
 .signup-screen {
   justify-content: flex-start;
-  padding-top: var(--space-xxl);
+  padding-top: 32px;
+  padding-bottom: 40px;
 }
 
 .signup-content {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .signup-header {
   text-align: center;
-  margin-bottom: var(--space-xl);
+  margin-bottom: 28px;
 }
 
 .signup-title {
-  font-size: var(--font-title-lg);
-  font-weight: var(--weight-bold);
-  letter-spacing: -0.5px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
   line-height: 1.1;
   color: var(--color-text-primary);
 }
 
 .signup-subtitle {
-  font-size: var(--font-title-sm);
-  font-weight: var(--weight-medium);
+  font-size: 16px;
+  font-weight: 500;
   color: var(--color-text-secondary);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .signup-desc {
-  font-size: var(--font-body-md);
+  font-size: 14px;
   color: var(--color-text-muted);
-  margin-top: var(--space-sm);
+  margin-top: 8px;
+  line-height: 1.4;
 }
 
 .signup-invite-banner {
@@ -2201,11 +2212,11 @@ select:focus {
 .signup-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: 16px;
 }
 
 .signup-cta {
-  margin-top: var(--space-sm);
+  margin-top: 8px;
 }
 
 .otp-error {
@@ -2220,19 +2231,21 @@ select:focus {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .otp-actions .btn-link {
-  font-size: var(--font-body-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-accent-primary);
 }
 
 .signup-social-proof {
   text-align: center;
-  font-size: var(--font-body-sm);
+  font-size: 13px;
   color: var(--color-text-muted);
-  margin-top: var(--space-lg);
-  font-weight: var(--weight-medium);
+  margin-top: 20px;
+  font-weight: 500;
 }
 
 /* County autocomplete */
@@ -2323,9 +2336,9 @@ select:focus {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  border: 1.5px solid var(--color-divider);
+  border-radius: 14px;
   background: var(--color-bg-surface);
   cursor: pointer;
   transition: all 0.15s;
@@ -2360,13 +2373,13 @@ select:focus {
 
 .gender-option {
   flex: 1;
-  padding: var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  border: 1.5px solid var(--color-divider);
+  border-radius: 14px;
   background: var(--color-bg-surface);
   cursor: pointer;
-  font-size: var(--font-body-md);
-  font-weight: var(--weight-medium);
+  font-size: 14px;
+  font-weight: 500;
   transition: all 0.15s;
   font-family: inherit;
   color: var(--color-text-primary);
@@ -2635,7 +2648,8 @@ select:focus {
 .availability-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 8px;
+  margin-top: 24px;
 }
 
 /* ================================================

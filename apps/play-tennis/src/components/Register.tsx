@@ -346,15 +346,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
-            Continue
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
             <span className="onboard-dot" />
           </div>
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-2')}>
+            Continue
+          </button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
         </div>
       </div>
     )
@@ -392,15 +392,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
-            Continue
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
             <span className="onboard-dot" />
           </div>
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('onboard-3')}>
+            Continue
+          </button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
         </div>
       </div>
     )
@@ -435,15 +435,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         </div>
 
         <div className="onboard-actions">
-          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('email')}>
-            Join Rally
-          </button>
-          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Skip intro</button>
           <div className="onboard-dots">
             <span className="onboard-dot" />
             <span className="onboard-dot" />
             <span className="onboard-dot active" />
           </div>
+          <button className="btn btn-primary btn-large onboard-btn" onClick={() => setStep('email')}>
+            Join Rally
+          </button>
+          <button className="btn-link onboard-skip" onClick={() => setStep('email')}>Log in</button>
         </div>
       </div>
     )
