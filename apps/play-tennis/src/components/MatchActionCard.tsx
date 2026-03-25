@@ -1,7 +1,8 @@
-import { forwardRef } from 'react'
+import { forwardRef, useState, useCallback, useRef } from 'react'
 import { Tournament, Match } from '../types'
 import { hasUnreadFrom } from '../store'
 import { getMatchCardView } from '../matchCardModel'
+import { useToast, ConfirmationTone } from './Toast'
 import MessagePanel from './MessagePanel'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
@@ -36,10 +37,49 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
   },
   ref
 ) {
+  const { showConfirmation } = useToast()
+  const [highlightTone, setHighlightTone] = useState<ConfirmationTone | null>(null)
+  const collapseTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const highlightTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handleActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
+    showConfirmation(message, tone)
+    setHighlightTone(tone)
+    onUpdated()
+
+    if (collapseTimer.current) clearTimeout(collapseTimer.current)
+    collapseTimer.current = setTimeout(() => {
+      onToggleExpanded()
+    }, 800)
+
+    if (highlightTimer.current) clearTimeout(highlightTimer.current)
+    highlightTimer.current = setTimeout(() => {
+      setHighlightTone(null)
+    }, 1050)
+  }, [showConfirmation, onUpdated, onToggleExpanded])
+
+  const handleScoreActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
+    showConfirmation(message, tone)
+    setHighlightTone(tone)
+    const scoreCb = onScoreSaved ?? onUpdated
+    scoreCb()
+
+    if (collapseTimer.current) clearTimeout(collapseTimer.current)
+    collapseTimer.current = setTimeout(() => {
+      onToggleExpanded()
+    }, 800)
+
+    if (highlightTimer.current) clearTimeout(highlightTimer.current)
+    highlightTimer.current = setTimeout(() => {
+      setHighlightTone(null)
+    }, 1050)
+  }, [showConfirmation, onUpdated, onScoreSaved, onToggleExpanded])
+
   const view = getMatchCardView(tournament, match, currentPlayerId)
   const canToggleExpanded = Boolean(view.primaryActionLabel && view.expansionKind)
   const hasUnread = view.opponentId ? hasUnreadFrom(currentPlayerId, view.opponentId) : false
-  const classes = ['action-card', `action-${view.tone}`, className].filter(Boolean).join(' ')
+  const highlightClass = highlightTone ? `action-card--highlight-${highlightTone}` : ''
+  const classes = ['action-card', `action-${view.tone}`, highlightClass, className].filter(Boolean).join(' ')
   const toneClass = view.tone === 'completed'
     ? 'slate'
     : view.tone === 'confirm-score'
@@ -142,6 +182,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             match={match}
             currentPlayerId={currentPlayerId}
             onUpdated={onUpdated}
+            onActionComplete={handleActionComplete}
           />
         </div>
       )}
@@ -155,6 +196,8 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             mode="schedule"
             onUpdated={onUpdated}
             onScoreSaved={onScoreSaved}
+            onActionComplete={handleActionComplete}
+            onScoreActionComplete={handleScoreActionComplete}
           />
         </div>
       )}

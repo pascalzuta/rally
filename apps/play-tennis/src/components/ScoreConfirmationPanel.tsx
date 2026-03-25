@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName } from '../store'
 import { Tournament, Match } from '../types'
+import { ConfirmationTone } from './Toast'
 
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 
@@ -19,6 +20,7 @@ interface Props {
   match: Match
   currentPlayerId: string
   onUpdated: () => void
+  onActionComplete?: (message: string, tone: ConfirmationTone) => void
 }
 
 type Mode = 'options' | 'correction' | 'issue' | 'dispute-review'
@@ -48,7 +50,7 @@ function formatDeadline(iso: string | null | undefined): string | null {
   })
 }
 
-export default function ScoreConfirmationPanel({ tournament, match, currentPlayerId, onUpdated }: Props) {
+export default function ScoreConfirmationPanel({ tournament, match, currentPlayerId, onUpdated, onActionComplete }: Props) {
   const isReporter = match.scoreReportedBy === currentPlayerId
   const hasDispute = match.scoreDispute?.status === 'pending'
   const initialMode: Mode = hasDispute && isReporter ? 'dispute-review' : 'options'
@@ -162,27 +164,47 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleConfirm() {
     setSaving(true)
     await confirmMatchScore(tournament.id, match.id, currentPlayerId)
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete('Score confirmed. Ratings updated.', 'green')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handleSubmitCorrection() {
     if (!scores || !winnerId) return
     setSaving(true)
     await proposeScoreCorrection(tournament.id, match.id, currentPlayerId, scores.score1, scores.score2, winnerId)
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete('Correction submitted. Your opponent will review.', 'blue')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handleSubmitIssue() {
     if (!issueText.trim()) return
     setSaving(true)
     await reportMatchIssue(tournament.id, match.id, currentPlayerId, issueText.trim())
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete('Issue reported. An admin will review.', 'red')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handleResolveDispute(action: 'accept' | 'reject') {
     setSaving(true)
     await resolveScoreDispute(tournament.id, match.id, currentPlayerId, action)
-    onUpdated()
+    if (onActionComplete) {
+      if (action === 'accept') {
+        onActionComplete('Correction accepted. Ratings updated.', 'green')
+      } else {
+        onActionComplete('Correction rejected. Match marked as disputed.', 'red')
+      }
+    } else {
+      onUpdated()
+    }
   }
 
   // Dispute review mode (for original reporter when opponent proposed correction)
