@@ -7,7 +7,7 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 - React 18 + TypeScript + Vite
 - Supabase (Realtime Database for multi-user sync)
 - Vercel (staging + production deploys — automatic per branch)
-- Custom domain: play-rally.com (Vercel, DNS: A 76.76.21.21 + CNAME www → cname.vercel-dns.com)
+- DNS (Namecheap): A 76.76.21.21, CNAME www → cname.vercel-dns.com, CNAME staging → cname.vercel-dns.com
 
 ## Deployment & Branch Rules (READ THIS FIRST)
 
@@ -15,23 +15,26 @@ There are two environments. Both share the same Supabase database.
 
 | Environment | URL | Branch | Deploys via |
 |-------------|-----|--------|-------------|
-| **Staging** | rally-play-tennis.vercel.app | `staging` | Vercel (automatic) |
-| **Production** | play-rally.com | `main` | Vercel (automatic) |
+| **Staging** | staging.play-rally.com | `staging` | Vercel (automatic on push) |
+| **Production** | play-rally.com | `main` | Vercel (automatic on push) |
+
+Note: `rally-play-tennis.vercel.app` is Vercel's auto-generated domain — it points to **production** (`main`), not staging. Always use `staging.play-rally.com` for staging.
 
 ### How to deploy (step by step)
 
 1. **Create a feature branch** off `staging` (not `main`)
 2. **Do your work** on the feature branch, commit and push
-3. **Merge into `staging`** and push → Vercel auto-deploys to rally-play-tennis.vercel.app
-4. **Stop here.** Tell the user the staging URL is updated. Do NOT touch `main`.
-5. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → Vercel auto-deploys to play-rally.com
+3. **Merge into `staging`** and push → Vercel auto-deploys to staging.play-rally.com
+4. **Verify the deploy** by checking the Vercel deployments page (or curling staging.play-rally.com). Do not assume the deploy worked.
+5. **Stop here.** Tell the user the staging URL is updated. Do NOT touch `main`.
+6. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → Vercel auto-deploys to play-rally.com
 
 ### Rules
 
 - **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is the #1 rule. `main` is production and updates play-rally.com immediately. There are no exceptions.
 - **Always branch from `staging`**, not from `main`.
 - **After merging to `staging`**, always push so Vercel picks it up.
-- **After pushing to staging**, check the Vercel deployments page to confirm the build succeeded before telling the user it's live. Do not assume the deploy worked.
+- **After pushing to staging**, verify the deploy succeeded before telling the user it's live. Check the Vercel deployments page or load staging.play-rally.com. Do not assume the deploy worked.
 - **Do not ask the user whether to deploy to production.** Just deploy to staging and let them decide.
 - **Never commit `package-lock.json` changes from a different branch.** If you stash/cherry-pick across branches, always exclude the lock file and run `npm install` on the target branch instead.
 - If you cannot push (e.g. auth error), tell the user and stop. Do not force-push or use workarounds.
