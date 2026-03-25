@@ -53,7 +53,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   const { showSuccess } = useToast()
 
   const [editing, setEditing] = useState(false)
-  const [showRatingInfo, setShowRatingInfo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoUrl, setPhotoUrl] = useState<string>(profile.photoUrl ?? '')
   const [bio, setBio] = useState<string>(profile.bio ?? '')
@@ -172,18 +171,10 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     <div className="profile-content">
       {/* Player Identity */}
       <div className="card profile-identity-card">
-        <div className="card-status-row">
-          <div className="card-status-label card-status-label--slate">Player Profile</div>
-          {profile.skillLevel && (
-            <div className="card-meta-chip">
-              {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}
-            </div>
-          )}
-        </div>
-        <div className="profile-card">
-          <div className="profile-photo-section" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+        <div className="profile-identity-header">
+          <div className="profile-photo-section" onClick={() => fileInputRef.current?.click()}>
             {photoUrl ? (
-              <img src={photoUrl} alt={profile.name} className="profile-avatar-img" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
+              <img src={photoUrl} alt={profile.name} className="profile-avatar-img" />
             ) : (
               <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
             )}
@@ -194,43 +185,42 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
               style={{ display: 'none' }}
               onChange={handlePhotoUpload}
             />
-            <div className="profile-photo-hint" style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: 4 }}>Tap to change photo</div>
+            <div className="profile-photo-hint">Tap to change</div>
           </div>
-          <h2 className="profile-name">{profile.name}</h2>
-          {profile.email && (
-            <p className="profile-email" style={{ fontSize: 'var(--font-body-sm)', color: 'var(--color-text-muted)', margin: '2px 0 0' }}>{profile.email}</p>
-          )}
-          <p className="profile-county">{profile.county}</p>
-          {profile.skillLevel && (
-            <div className="profile-details">
-              <p className="profile-skill">{profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)} &middot; {profile.skillLevel === 'beginner' ? 'NTRP 2.0\u20132.5' : profile.skillLevel === 'intermediate' ? 'NTRP 3.0\u20133.5' : profile.skillLevel === 'advanced' ? 'NTRP 4.0+' : ''}</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 2 }}>Your starting level — updates to Rally Rating after first matches</p>
-            </div>
-          )}
-          {bio && <p className="profile-bio-display" style={{ marginTop: 6, fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{bio}</p>}
-          {playingStyle.length > 0 && (
-            <div className="profile-style-tags-display" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, justifyContent: 'center' }}>
-              {playingStyle.map(s => (
-                <span key={s} className="profile-style-tag" style={{ padding: '2px 10px', borderRadius: 12, background: 'var(--color-surface-alt, #f0f0f0)', fontSize: '0.8rem' }}>{s}</span>
-              ))}
-            </div>
-          )}
+          <div className="profile-identity-info">
+            <h2 className="profile-name">{profile.name}</h2>
+            {profile.email && <p className="profile-email">{profile.email}</p>}
+            <p className="profile-county">{profile.county}</p>
+          </div>
         </div>
+        <div className="profile-identity-meta">
+          {profile.skillLevel && (
+            <span className="profile-meta-chip">
+              {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)} &middot; {profile.skillLevel === 'beginner' ? 'NTRP 2.0\u20132.5' : profile.skillLevel === 'intermediate' ? 'NTRP 3.0\u20133.5' : profile.skillLevel === 'advanced' ? 'NTRP 4.0+' : ''}
+            </span>
+          )}
+          {playingStyle.length > 0 && playingStyle.map(s => (
+            <span key={s} className="profile-meta-chip profile-meta-chip--accent">{s}</span>
+          ))}
+        </div>
+        {bio && <p className="profile-bio-display">{bio}</p>}
       </div>
 
       {/* Availability Section */}
-      <div className="card profile-section">
-        <h3 className="profile-section-title">
-          <span>Your Availability</span>
+      <div className="card profile-edit-card">
+        <div className="profile-avail-header">
+          <div>
+            <h3 className="profile-edit-title">Availability</h3>
+            <p className="profile-edit-subtitle">More times = more auto-scheduled matches</p>
+          </div>
           {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
-        </h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: 12 }}>The more times you add, the more matches Rally can auto-schedule</p>
+        </div>
         {!editing ? (
           <div className="availability-current">
             {slots.length === 0 ? (
               <div>
                 <p className="subtle">No availability set</p>
-                <p style={{ color: 'var(--color-warning, #e6a200)', fontSize: '0.85rem', marginTop: 8 }}>Set your availability to get better match times</p>
+                <p className="profile-avail-warning">Set your availability to get better match times</p>
               </div>
             ) : (
               slots.map((slot, i) => {
@@ -331,11 +321,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
       </div>
 
       {/* Bio & Playing Style */}
-      <div className="card profile-section">
-        <h3 className="profile-section-title"><span>Your Tennis Profile</span></h3>
+      <div className="card profile-edit-card">
+        <h3 className="profile-edit-title">Edit Profile</h3>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 4, color: 'var(--color-text-secondary)' }}>Bio</label>
+        <div className="profile-edit-field">
+          <label className="profile-edit-label">Bio</label>
           <input
             type="text"
             className="form-input"
@@ -343,20 +333,18 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             value={bio}
             maxLength={150}
             onChange={e => handleBioChange(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box' }}
           />
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textAlign: 'right', marginTop: 2 }}>{150 - bio.length} characters remaining</div>
+          <div className="profile-edit-hint">{150 - bio.length} characters remaining</div>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Playing Style</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className="profile-edit-field">
+          <label className="profile-edit-label">Playing Style</label>
+          <div className="profile-style-options">
             {STYLE_OPTIONS.map(style => (
               <button
                 key={style}
-                className={`btn btn-small ${playingStyle.includes(style) ? 'btn-primary' : ''}`}
+                className={`profile-style-pill ${playingStyle.includes(style) ? 'active' : ''}`}
                 onClick={() => togglePlayingStyle(style)}
-                style={{ borderRadius: 20 }}
               >
                 {style}
               </button>
@@ -364,29 +352,20 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, color: 'var(--color-text-secondary)' }}>Home Courts (max 3)</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: preferredCourts.length > 0 ? 8 : 0 }}>
-            {preferredCourts.map(court => (
-              <span key={court} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '4px 10px', borderRadius: 16,
-                background: 'var(--color-surface-alt, #f0f0f0)',
-                fontSize: '0.85rem',
-              }}>
-                {court}
-                <button
-                  className="btn-icon"
-                  onClick={() => removeCourt(court)}
-                  style={{ fontSize: '0.75rem', padding: 0, lineHeight: 1 }}
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
-          </div>
+        <div className="profile-edit-field">
+          <label className="profile-edit-label">Home Courts (max 3)</label>
+          {preferredCourts.length > 0 && (
+            <div className="profile-courts-list">
+              {preferredCourts.map(court => (
+                <span key={court} className="profile-court-chip">
+                  {court}
+                  <button className="profile-court-remove" onClick={() => removeCourt(court)}>✕</button>
+                </span>
+              ))}
+            </div>
+          )}
           {preferredCourts.length < 3 && (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="profile-court-add">
               <input
                 type="text"
                 className="form-input"
@@ -394,36 +373,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
                 value={newCourt}
                 onChange={e => setNewCourt(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') addCourt() }}
-                style={{ flex: 1 }}
               />
               <button className="btn btn-small" onClick={addCourt}>Add</button>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Rating Explanation (collapsed by default) */}
-      <div className="card profile-section">
-        <button className="rating-explainer-toggle" aria-expanded={showRatingInfo} onClick={() => setShowRatingInfo(!showRatingInfo)}>
-          <span className="rating-explainer-toggle-text">How ratings work</span>
-          <span className="rating-explainer-toggle-chevron">›</span>
-        </button>
-        {showRatingInfo && (
-          <div className="rating-explainer">
-            <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1500</strong>.</p>
-            <p>Beat a stronger opponent for a bigger boost. Lose to a weaker one and you drop more. The system finds your true level over time.</p>
-            <div className="rating-tiers">
-              <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
-              <div className="rating-tier"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
-              <div className="rating-tier"><span className="tier-range">1800–1999</span><span className="tier-label">Elite</span></div>
-              <div className="rating-tier"><span className="tier-range">1600–1799</span><span className="tier-label">Strong</span></div>
-              <div className="rating-tier"><span className="tier-range">1400–1599</span><span className="tier-label">Club</span></div>
-              <div className="rating-tier"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
-              <div className="rating-tier"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
-            </div>
-            <p className="rating-explainer-footnote">Ratings shift more in your first few matches, then stabilise.</p>
-          </div>
-        )}
       </div>
 
       {/* Help & How Rally Works */}
