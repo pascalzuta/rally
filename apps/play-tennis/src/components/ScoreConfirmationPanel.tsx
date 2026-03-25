@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName } from '../store'
+import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName, clearPendingFeedback } from '../store'
 import { Tournament, Match } from '../types'
 import { ConfirmationTone } from './Toast'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 
@@ -60,6 +61,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   const [issueText, setIssueText] = useState('')
   const [saving, setSaving] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  const [showFeedback, setShowFeedback] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const p1Name = getPlayerName(tournament, match.player1Id)
@@ -161,14 +163,18 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     return () => window.clearInterval(interval)
   }, [])
 
-  async function handleConfirm() {
-    setSaving(true)
-    await confirmMatchScore(tournament.id, match.id, currentPlayerId)
+  function finishAction() {
     if (onActionComplete) {
       onActionComplete('Score confirmed. Ratings updated.', 'green')
     } else {
       onUpdated()
     }
+  }
+
+  async function handleConfirm() {
+    setSaving(true)
+    await confirmMatchScore(tournament.id, match.id, currentPlayerId)
+    setShowFeedback(true)
   }
 
   async function handleSubmitCorrection() {
@@ -196,15 +202,23 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleResolveDispute(action: 'accept' | 'reject') {
     setSaving(true)
     await resolveScoreDispute(tournament.id, match.id, currentPlayerId, action)
-    if (onActionComplete) {
-      if (action === 'accept') {
-        onActionComplete('Correction accepted. Ratings updated.', 'green')
-      } else {
-        onActionComplete('Correction rejected. Match marked as disputed.', 'red')
-      }
-    } else {
-      onUpdated()
-    }
+    setShowFeedback(true)
+  }
+
+  // After confirming / resolving, show feedback form in the same panel
+  if (showFeedback) {
+    const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
+    const opponentName = getPlayerName(tournament, opponentId)
+    return (
+      <PostMatchFeedbackInline
+        matchId={match.id}
+        tournamentId={tournament.id}
+        playerId={currentPlayerId}
+        opponentId={opponentId}
+        opponentName={opponentName}
+        onDone={() => { clearPendingFeedback(); finishAction() }}
+      />
+    )
   }
 
   // Dispute review mode (for original reporter when opponent proposed correction)

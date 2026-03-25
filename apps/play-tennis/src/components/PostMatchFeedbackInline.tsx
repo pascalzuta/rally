@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { saveMatchFeedback, getPlayerFeedbackForMatch } from '../store'
+import { saveMatchFeedback, getPlayerFeedbackForMatch, clearPendingFeedback } from '../store'
 import { FeedbackSentiment, IssueCategory } from '../types'
 
 interface Props {
@@ -47,6 +47,7 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
       issueCategories: chosenSentiment === 'negative' ? issueCategories : undefined,
       issueText: chosenSentiment === 'negative' && issueText.trim() ? issueText.trim() : undefined,
     })
+    clearPendingFeedback()
     setSaved(true)
     if (onDone) setTimeout(onDone, 1500)
   }
