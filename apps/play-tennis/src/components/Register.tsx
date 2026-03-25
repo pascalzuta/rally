@@ -229,7 +229,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [gender, setGender] = useState<Gender | ''>('')
 
   const [selectedQuick, setSelectedQuick] = useState<Set<number>>(new Set())
-  const [detailedMode, setDetailedMode] = useState(true)  // Custom times is now the default/primary
+  const [detailedMode, setDetailedMode] = useState(false)  // Quick presets is the default
   const [detailedSlots, setDetailedSlots] = useState<AvailabilitySlot[]>([])
   const [addingDay, setAddingDay] = useState<DayOfWeek | ''>('')
   const [addingStart, setAddingStart] = useState(18)
@@ -888,19 +888,19 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           </p>
         </div>
 
-        {/* Mode toggle -- Custom times is primary/default */}
+        {/* Mode toggle -- Quick presets is primary/default */}
         <div className="avail-mode-toggle">
-          <button
-            className={`avail-mode-btn ${detailedMode ? 'active' : ''}`}
-            onClick={() => setDetailedMode(true)}
-          >
-            Custom times
-          </button>
           <button
             className={`avail-mode-btn ${!detailedMode ? 'active' : ''}`}
             onClick={() => setDetailedMode(false)}
           >
             Quick presets
+          </button>
+          <button
+            className={`avail-mode-btn ${detailedMode ? 'active' : ''}`}
+            onClick={() => setDetailedMode(true)}
+          >
+            Custom times
           </button>
         </div>
 
