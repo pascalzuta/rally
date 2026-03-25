@@ -52,7 +52,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = ++idRef.current
     setToast({ id, message, type, variant, tone })
     if (type !== 'error') {
-      const duration = variant === 'confirmation' ? 6000 : 3000
+      const duration = variant === 'confirmation' ? 12000 : 3000
       timerRef.current = setTimeout(() => {
         setToast(prev => prev?.id === id ? null : prev)
       }, duration)
