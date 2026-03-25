@@ -5,6 +5,9 @@ import { PlayerProfile, Tournament, Match } from '../types'
 import HomeHeroCard from './HomeHeroCard'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
+import BuddiesSection from './BuddiesSection'
+import CreateInviteLink from './CreateInviteLink'
+import TrialBanner from './TrialBanner'
 
 interface Props {
   profile: PlayerProfile
@@ -247,6 +250,8 @@ export default function Home({
   // Unified hero card for all states
   return (
     <div className="home-section home-section-spaced">
+      <TrialBanner playerId={profile.id} />
+
       <HomeHeroCard
         profile={profile}
         tournaments={tournaments}
@@ -258,6 +263,14 @@ export default function Home({
         onFindMatch={onFindMatch}
         actionCardCount={actionCards.length + messageCards.length}
       />
+
+      {/* Buddies section */}
+      <BuddiesSection profile={profile} />
+
+      {/* Invite friends */}
+      {activeTournaments.length === 0 && (
+        <CreateInviteLink profile={profile} />
+      )}
 
       {/* Leaderboard (pre-tournament states) */}
       {activeTournaments.length === 0 && renderLeaderboardTeaser(

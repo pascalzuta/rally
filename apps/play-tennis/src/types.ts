@@ -368,3 +368,116 @@ export interface DoublesTeam {
   player2Id: string
   teamName: string
 }
+
+// --- Invite Links ---
+
+export type InviteLinkStatus = 'active' | 'full' | 'expired' | 'tournament_created'
+
+export interface InviteLink {
+  id: string
+  shortcode: string
+  creatorId: string
+  creatorName: string
+  lobbyName?: string
+  county: string
+  maxPlayers: number
+  status: InviteLinkStatus
+  tournamentId?: string
+  createdAt: string
+  expiresAt: string
+}
+
+export interface LobbyMember {
+  id: string
+  inviteLinkId: string
+  guestId: string
+  playerId?: string
+  displayName: string
+  email?: string
+  joinedAt: string
+}
+
+// --- Tennis Buddies ---
+
+export type BuddyStatus = 'pending' | 'accepted' | 'declined'
+
+export interface Buddy {
+  id: string
+  requesterId: string
+  requesterName: string
+  recipientId: string
+  recipientName: string
+  status: BuddyStatus
+  createdAt: string
+  acceptedAt?: string
+}
+
+export type PingStatus = 'proposed' | 'accepted' | 'declined' | 'expired'
+
+export interface BuddyPing {
+  id: string
+  senderId: string
+  senderName: string
+  recipientId: string
+  recipientName: string
+  proposedDate: string
+  proposedTime: string
+  location?: string
+  message?: string
+  status: PingStatus
+  createdAt: string
+  expiresAt: string
+}
+
+// --- Referrals ---
+
+export type ReferralType = 'influencer' | 'viral'
+
+export interface Referral {
+  id: string
+  slug: string
+  type: ReferralType
+  creatorId: string
+  creatorName: string
+  parentReferralId?: string
+  clickCount: number
+  signupCount: number
+  createdAt: string
+}
+
+export type ReferralEventType = 'click' | 'signup' | 'lobby_join' | 'match_played' | 'tournament_created'
+
+export interface ReferralEvent {
+  id: string
+  referralId: string
+  eventType: ReferralEventType
+  playerId?: string
+  metadata?: Record<string, unknown>
+  createdAt: string
+}
+
+// --- Subscriptions (Freemium) ---
+
+export type SubscriptionTier = 'free' | 'trial' | 'pro'
+export type SubscriptionPlan = 'monthly' | 'annual'
+export type SubscriptionStatus = 'trial' | 'active' | 'cancelled' | 'expired'
+
+export interface Subscription {
+  id: string
+  playerId: string
+  plan?: SubscriptionPlan
+  status: SubscriptionStatus
+  trialMatchesRemaining: number
+  trialEndsAt?: string
+  currentPeriodStart?: string
+  currentPeriodEnd?: string
+  createdAt: string
+}
+
+export type PremiumFeature =
+  | 'algorithmic_matching'
+  | 'priority_scheduling'
+  | 'county_leaderboard_position'
+  | 'advanced_stats'
+  | 'head_to_head_records'
+  | 'custom_tournament_formats'

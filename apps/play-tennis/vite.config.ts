@@ -13,6 +13,17 @@ export default defineConfig({
         )
       },
     },
+    {
+      name: 'spa-fallback',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.url && (req.url.startsWith('/t/') || req.url.startsWith('/r/'))) {
+            req.url = '/index.html'
+          }
+          next()
+        })
+      },
+    },
   ],
   base: '/',
 })

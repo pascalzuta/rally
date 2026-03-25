@@ -16,6 +16,10 @@ import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
 import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
+import InviteLanding from './components/InviteLanding'
+import ReferralLanding from './components/ReferralLanding'
+import PostSignupShare from './components/PostSignupShare'
+import { trackReferralSignup, getReferralSource, clearReferralSource, createViralReferral } from './referrals'
 import './styles.css'
 
 type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
@@ -38,6 +42,20 @@ function clearInviteParam() {
   window.history.replaceState({}, '', url.pathname)
 }
 
+function getInviteShortcode(): string | null {
+  const match = window.location.pathname.match(/^\/t\/([a-z0-9]+)$/i)
+  return match ? match[1] : null
+}
+
+function getReferralSlug(): string | null {
+  const match = window.location.pathname.match(/^\/r\/([a-z0-9-]+)$/i)
+  return match ? match[1] : null
+}
+
+function clearPathRoute() {
+  window.history.replaceState({}, '', '/#home')
+}
+
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
@@ -49,6 +67,9 @@ export default function App() {
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [inviteShortcode] = useState<string | null>(getInviteShortcode)
+  const [referralSlug, setReferralSlug] = useState<string | null>(getReferralSlug)
+  const [showPostSignupShare, setShowPostSignupShare] = useState(false)
 
   // On mount: if no localStorage profile, check for existing Supabase session
   // and try to restore profile from server (returning user on new device/cleared cache)
@@ -250,8 +271,61 @@ export default function App() {
       await joinLobby({ ...p, county: inviteCounty })
       clearInviteParam()
     }
+    // Track referral signup if coming from a referral link
+    const refSlug = getReferralSource()
+    if (refSlug) {
+      await trackReferralSignup(refSlug, p.id)
+      await createViralReferral(p.id, p.name, refSlug)
+      clearReferralSource()
+    }
     setProfile(p)
-    setActiveTab('home')
+    setShowPostSignupShare(true)
+  }
+
+  // Handle /t/{shortcode} invite link route
+  if (inviteShortcode) {
+    return (
+      <div className="app">
+        <InviteLanding
+          shortcode={inviteShortcode}
+          profile={profile}
+          onJoined={() => {
+            clearPathRoute()
+            setActiveTab('home')
+          }}
+        />
+      </div>
+    )
+  }
+
+  // Handle /r/{slug} referral link route
+  if (referralSlug) {
+    return (
+      <div className="app">
+        <ReferralLanding
+          slug={referralSlug}
+          onContinue={() => {
+            setReferralSlug(null)
+            clearPathRoute()
+          }}
+        />
+      </div>
+    )
+  }
+
+  // Show post-signup share screen
+  if (showPostSignupShare && profile) {
+    return (
+      <div className="app">
+        <PostSignupShare
+          profile={profile}
+          onDismiss={() => {
+            setShowPostSignupShare(false)
+            setActiveTab('home')
+          }}
+        />
+      </div>
+    )
   }
 
   // Show a brief loading state while checking for existing session

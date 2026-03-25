@@ -10529,3 +10529,464 @@ main {
 
 
 /* deploy trigger 1774332130 */
+
+/* ================================================
+   Invite Landing Page
+   ================================================ */
+.invite-landing {
+  padding: var(--space-xl) var(--space-lg);
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.invite-landing-loading {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-md);
+}
+
+.invite-landing-card {
+  text-align: center;
+  padding: var(--space-xxl) var(--space-xl);
+}
+
+.invite-landing-emoji {
+  font-size: 48px;
+  margin-bottom: var(--space-lg);
+}
+
+.invite-landing-members {
+  margin: var(--space-xl) 0;
+}
+
+.invite-landing-count {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.invite-landing-count-number {
+  font-size: var(--font-title-lg);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.invite-landing-count-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.invite-landing-progress {
+  height: 6px;
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-chip);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.invite-landing-progress-bar {
+  height: 100%;
+  background: var(--color-purple-primary);
+  border-radius: var(--radius-chip);
+  transition: width 0.3s ease;
+}
+
+.invite-landing-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  justify-content: center;
+}
+
+.invite-landing-name-chip {
+  background: var(--color-neutral-bg);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-chip);
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.invite-landing-joined {
+  margin-top: var(--space-xl);
+}
+
+.invite-landing-joined-check {
+  font-size: 32px;
+  color: var(--color-positive-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.invite-landing-status {
+  margin-top: var(--space-xl);
+  color: var(--color-text-secondary);
+  font-size: var(--font-body-md);
+}
+
+.invite-landing-action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.invite-landing-error {
+  color: var(--color-negative-primary);
+  font-size: var(--font-body-sm);
+}
+
+.invite-landing-join-btn {
+  background: var(--color-purple-primary) !important;
+}
+
+/* ================================================
+   Create Invite Link Card
+   ================================================ */
+.create-invite-card {
+  margin-top: var(--space-lg);
+}
+
+.create-invite-existing {
+  margin: var(--space-md) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.create-invite-link-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-button);
+}
+
+.create-invite-link-name {
+  font-weight: var(--weight-medium);
+  font-size: var(--font-body-md);
+}
+
+.create-invite-link-meta {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.create-invite-btn {
+  width: 100%;
+  margin-top: var(--space-md);
+  background: var(--color-purple-primary) !important;
+}
+
+/* ================================================
+   Buddies Section
+   ================================================ */
+.buddies-section {
+  margin-top: var(--space-lg);
+}
+
+.buddies-subtitle {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.buddies-pings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: var(--space-md) 0;
+}
+
+.buddies-ping-card {
+  background: var(--color-purple-bg);
+  border-radius: var(--radius-button);
+  padding: var(--space-md);
+}
+
+.buddies-ping-header {
+  font-size: var(--font-body-md);
+  margin-bottom: var(--space-xs);
+}
+
+.buddies-ping-details {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.buddies-ping-message {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-sm);
+}
+
+.buddies-ping-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.buddies-pending {
+  margin: var(--space-md) 0;
+}
+
+.buddies-request-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.buddies-request-row:last-child {
+  border-bottom: none;
+}
+
+.buddies-request-name {
+  font-weight: var(--weight-medium);
+}
+
+.buddies-request-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.buddies-list {
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-md) 0;
+}
+
+.buddies-row {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.buddies-row:last-child {
+  border-bottom: none;
+}
+
+.buddies-row-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.buddies-row-name {
+  font-weight: var(--weight-medium);
+}
+
+.buddies-row-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.buddies-ping-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-button);
+}
+
+.buddies-empty {
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+.buddies-find-btn {
+  width: 100%;
+  margin-top: var(--space-md);
+}
+
+.buddies-search {
+  margin-top: var(--space-md);
+}
+
+.buddies-search-input-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.buddies-search-input-row .input {
+  flex: 1;
+}
+
+.buddies-search-results {
+  margin-top: var(--space-sm);
+}
+
+.buddies-search-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.buddies-search-result-row:last-child {
+  border-bottom: none;
+}
+
+.btn-positive {
+  background: var(--color-positive-primary) !important;
+  color: white !important;
+}
+
+.btn-outline {
+  background: transparent !important;
+  border: 1px solid var(--color-divider) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.btn-danger-text {
+  color: var(--color-negative-primary) !important;
+}
+
+/* ================================================
+   Referral Landing Page
+   ================================================ */
+.referral-landing {
+  padding: var(--space-xl) var(--space-lg);
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.referral-landing-loading {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.referral-landing-card {
+  text-align: center;
+  padding: var(--space-xxl) var(--space-xl);
+}
+
+.referral-landing-emoji {
+  font-size: 48px;
+  margin-bottom: var(--space-lg);
+}
+
+.referral-landing-cta {
+  width: 100%;
+  margin-top: var(--space-xl);
+  background: var(--color-purple-primary) !important;
+}
+
+.referral-landing-stats {
+  margin-top: var(--space-md);
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.referral-landing-stat {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================
+   Premium Gate
+   ================================================ */
+.premium-gate {
+  border-left: 3px solid var(--color-purple-primary);
+}
+
+.premium-gate-trial {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.premium-gate-trial .btn {
+  background: var(--color-purple-primary) !important;
+}
+
+.premium-gate-trial-info {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* ================================================
+   Trial Banner
+   ================================================ */
+.trial-banner {
+  background: var(--color-purple-bg);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-button);
+  margin-bottom: var(--space-md);
+}
+
+.trial-banner-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-body-sm);
+}
+
+.trial-banner-label {
+  font-weight: var(--weight-semibold);
+  color: var(--color-purple-primary);
+}
+
+.trial-banner-detail {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================
+   Post-Signup Share
+   ================================================ */
+.post-signup-share {
+  text-align: center;
+  padding: var(--space-xxl) var(--space-xl);
+  margin: var(--space-xl) var(--space-lg);
+}
+
+.post-signup-share-emoji {
+  font-size: 48px;
+  margin-bottom: var(--space-lg);
+}
+
+.post-signup-share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.post-signup-share-actions .btn {
+  background: var(--color-purple-primary) !important;
+}
+
+.post-signup-share-done {
+  margin-top: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.post-signup-share-check {
+  color: var(--color-positive-primary);
+  font-weight: var(--weight-semibold);
+  font-size: var(--font-body-lg);
+}
+
+/* Card status label purple variant */
+.card-status-label--purple {
+  background: var(--color-purple-bg);
+  color: var(--color-purple-primary);
+}
