@@ -45,35 +45,34 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
   const handleActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
     showConfirmation(message, tone)
     setHighlightTone(tone)
-    onUpdated()
 
+    // Delay collapse + data refresh so card stays in place during animation
     if (collapseTimer.current) clearTimeout(collapseTimer.current)
     collapseTimer.current = setTimeout(() => {
-      onToggleExpanded()
+      onUpdated()
     }, 1200)
 
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
     }, 1500)
-  }, [showConfirmation, onUpdated, onToggleExpanded])
+  }, [showConfirmation, onUpdated])
 
   const handleScoreActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
     showConfirmation(message, tone)
     setHighlightTone(tone)
-    const scoreCb = onScoreSaved ?? onUpdated
-    scoreCb()
 
     if (collapseTimer.current) clearTimeout(collapseTimer.current)
     collapseTimer.current = setTimeout(() => {
-      onToggleExpanded()
+      const scoreCb = onScoreSaved ?? onUpdated
+      scoreCb()
     }, 1200)
 
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
     }, 1500)
-  }, [showConfirmation, onUpdated, onScoreSaved, onToggleExpanded])
+  }, [showConfirmation, onUpdated, onScoreSaved])
 
   const view = getMatchCardView(tournament, match, currentPlayerId)
   const canToggleExpanded = Boolean(view.primaryActionLabel && view.expansionKind)
