@@ -6,9 +6,8 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 ## Tech Stack
 - React 18 + TypeScript + Vite
 - Supabase (Realtime Database for multi-user sync)
-- GitHub Pages (production deploy via `.github/workflows/deploy-pages.yml`)
-- Vercel (staging/preview deploys — automatic per branch)
-- Custom domain: play-rally.com (GitHub Pages, DNS: 185.199.x.x)
+- Vercel (staging + production deploys — automatic per branch)
+- Custom domain: play-rally.com (Vercel, DNS: A 76.76.21.21 + CNAME www → cname.vercel-dns.com)
 
 ## Deployment & Branch Rules (READ THIS FIRST)
 
@@ -17,7 +16,7 @@ There are two environments. Both share the same Supabase database.
 | Environment | URL | Branch | Deploys via |
 |-------------|-----|--------|-------------|
 | **Staging** | rally-play-tennis.vercel.app | `staging` | Vercel (automatic) |
-| **Production** | play-rally.com | `main` | GitHub Pages (automatic) |
+| **Production** | play-rally.com | `main` | Vercel (automatic) |
 
 ### How to deploy (step by step)
 
@@ -25,7 +24,7 @@ There are two environments. Both share the same Supabase database.
 2. **Do your work** on the feature branch, commit and push
 3. **Merge into `staging`** and push → Vercel auto-deploys to rally-play-tennis.vercel.app
 4. **Stop here.** Tell the user the staging URL is updated. Do NOT touch `main`.
-5. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → GitHub Pages auto-deploys to play-rally.com
+5. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → Vercel auto-deploys to play-rally.com
 
 ### Rules
 
