@@ -3050,6 +3050,231 @@ select:focus {
 .availability-slot-day { font-weight: var(--weight-semibold); }
 .availability-slot-hours { color: var(--color-text-secondary); }
 
+/* --- Redesigned Profile Sections --- */
+
+.profile-identity-card {
+  cursor: default;
+}
+
+.profile-identity-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.profile-identity-header .profile-photo-section {
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.profile-identity-header .profile-avatar {
+  margin: 0;
+  width: 72px;
+  height: 72px;
+  font-size: 28px;
+}
+
+.profile-identity-header .profile-avatar-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-photo-hint {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.profile-identity-info {
+  min-width: 0;
+}
+
+.profile-identity-info .profile-name {
+  font-size: var(--font-title-md);
+  font-weight: var(--weight-bold);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.profile-identity-info .profile-email {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  margin: 2px 0 0;
+}
+
+.profile-identity-info .profile-county {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.profile-identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-md);
+}
+
+.profile-meta-chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-chip);
+  background: var(--color-neutral-bg);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.profile-meta-chip--accent {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+}
+
+.profile-bio-display {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-md);
+  line-height: 1.5;
+  border-left: 3px solid var(--color-divider);
+  padding-left: var(--space-md);
+}
+
+/* Edit Profile Card */
+.profile-edit-card {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  cursor: default;
+}
+
+.profile-edit-title {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.profile-edit-subtitle {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  margin: 2px 0 0;
+}
+
+.profile-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-edit-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.profile-edit-hint {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.profile-edit-field .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-style-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-style-pill {
+  padding: 6px 16px;
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--color-divider);
+  background: var(--color-bg-surface);
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.profile-style-pill:hover {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.profile-style-pill.active {
+  background: var(--color-accent-primary);
+  border-color: var(--color-accent-primary);
+  color: white;
+}
+
+.profile-courts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-court-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-chip);
+  background: var(--color-neutral-bg);
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+}
+
+.profile-court-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.profile-court-remove:hover {
+  color: var(--color-negative-primary);
+}
+
+.profile-court-add {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-court-add .form-input {
+  flex: 1;
+}
+
+/* Availability header */
+.profile-avail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.profile-avail-warning {
+  color: var(--color-warning-primary);
+  font-size: var(--font-body-sm);
+  margin-top: 8px;
+}
+
 .tournament-history {
   display: flex;
   flex-direction: column;
