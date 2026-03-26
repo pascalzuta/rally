@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
 import { getPlayerName, getPendingFeedback, clearPendingFeedback } from '../store'
+import { useStableOrder } from '../useStableOrder'
 import MatchActionCard from './MatchActionCard'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
@@ -107,7 +108,8 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
   const pendingFeedback = getPendingFeedback()
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
   const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
-  const weeks = groupByWeek(sorted)
+  const stableSorted = useStableOrder(sorted, m => m.id)
+  const weeks = groupByWeek(stableSorted)
 
   // Summary stats
   const confirmed = allMatches.filter(m => m.schedule?.schedulingTier === 'auto').length

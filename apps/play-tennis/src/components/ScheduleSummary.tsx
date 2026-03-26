@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Tournament, Match } from '../types'
 import { getSchedulingSummary, getPlayerName, getPendingFeedback, clearPendingFeedback } from '../store'
+import { useStableOrder } from '../useStableOrder'
 import MatchActionCard from './MatchActionCard'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
@@ -108,8 +109,11 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
   const nextConfirmed = myMatches.find(m => m.schedule?.schedulingTier === 'auto' && m.schedule?.confirmedSlot)
   const nextMatch = nextConfirmed ?? myMatches[0]
 
+  // Stabilize match order so cards don't jump after actions
+  const stableMyMatches = useStableOrder(myMatches, m => m.id)
+
   // Group my matches by week for the agenda
-  const weekGroups = groupMatchesByWeek(myMatches, tournament)
+  const weekGroups = groupMatchesByWeek(stableMyMatches, tournament)
   const getWeekLabel = (week: number, weekStart: Date) => {
     const now = new Date()
     const nowMonday = new Date(now)
