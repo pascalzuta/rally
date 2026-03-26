@@ -2707,6 +2707,77 @@ select:focus {
   font-weight: var(--weight-semibold);
 }
 
+/* Frequency picker */
+.avail-frequency {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.avail-frequency-label {
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.avail-frequency-options {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.avail-frequency-pill {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--color-divider, #E5E7EB);
+  background: var(--color-surface, #fff);
+  font-size: var(--font-body-sm, 13px);
+  font-weight: var(--weight-semibold);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.avail-frequency-pill.selected {
+  border-color: var(--color-accent-primary, #2563EB);
+  background: rgba(37, 99, 235, 0.05);
+  color: var(--color-accent-primary, #2563EB);
+}
+
+.avail-frequency-pill:active {
+  transform: scale(0.97);
+}
+
+/* Progressive disclosure — add custom times link */
+.avail-add-custom-link {
+  display: block;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: var(--font-body-sm, 13px);
+  color: var(--color-accent-primary);
+  cursor: pointer;
+  padding: var(--space-xs) 0;
+  margin-top: var(--space-xs);
+}
+
+.avail-custom-section {
+  margin-top: var(--space-xs);
+}
+
+/* Threshold message */
+.avail-threshold {
+  font-size: var(--font-body-sm, 13px);
+  color: var(--color-positive-primary);
+  font-weight: var(--weight-medium);
+  margin: 0 0 2px;
+}
+
 /* Mode toggle — segmented control */
 .avail-mode-toggle {
   display: flex;
