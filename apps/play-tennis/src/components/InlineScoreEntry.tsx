@@ -198,12 +198,16 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
 
   return (
     <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
-      <div className="workflow-header">
-        <div className="workflow-status workflow-status--amber">Report Score</div>
-        <div className="schedule-panel-title">Enter the final result</div>
-        <div className="schedule-panel-copy">Save it for your opponent to confirm.</div>
-      </div>
-      <div className="workflow-divider" />
+      {!embedded && (
+        <>
+          <div className="workflow-header">
+            <div className="workflow-status workflow-status--amber">Report Score</div>
+            <div className="schedule-panel-title">Enter the final result</div>
+            <div className="schedule-panel-copy">Save it for your opponent to confirm.</div>
+          </div>
+          <div className="workflow-divider" />
+        </>
+      )}
       <div className="score-grid" style={{ gridTemplateColumns: `1fr repeat(${visibleSets}, 60px)` }}>
         <div className="score-header"></div>
         {sets.slice(0, visibleSets).map((_, i) => (
@@ -248,7 +252,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
 
       <div className="workflow-actions">
         <button className="btn btn-primary" onClick={handleSaveClick} disabled={!canSave} style={{ width: '100%' }}>
-          Save Score
+          {embedded ? 'Report Score' : 'Save Score'}
         </button>
       </div>
     </div>

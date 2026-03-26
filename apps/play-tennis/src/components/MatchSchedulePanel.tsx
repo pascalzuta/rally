@@ -431,11 +431,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 ? `Your current match time still holds unless ${opponentName} accepts a new one.`
                 : `${opponentName} asked to move this match. Review the new options below.`
           )
-        ) : (
-          <div className="schedule-panel-compact-header">
-            <div className="schedule-panel-title">Match time</div>
-          </div>
-        )}
+        ) : null}
         <div className="confirmed-slot">
           <span className="confirmed-day">{dayLabel(s.day)}</span>
           <span className="confirmed-time">{formatHourCompact(s.startHour)}{'\u2013'}{formatHourCompact(s.endHour)}</span>
@@ -499,7 +495,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             This match time is view-only because you are not one of the two players.
           </div>
         ) : showScoreEntry && isScoreable ? (
-          <div className="schedule-score-entry">
+          <>
             <InlineScoreEntry
               tournament={tournament}
               matchId={match.id}
@@ -515,10 +511,10 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                   setShowScoreEntry(false)
                 }}
               >
-                Back to Match
+                Cancel
               </button>
             </div>
-          </div>
+          </>
         ) : isScheduleLocked ? (
           <div className="schedule-locked-note">
             {match.completed
