@@ -14,6 +14,7 @@ import {
   getRescheduleUiState,
 } from '../store'
 import { Match, Tournament, DayOfWeek, MatchProposal, MatchSlot, RescheduleIntent, RescheduleReason } from '../types'
+import { ConfirmationTone } from './Toast'
 import InlineScoreEntry from './InlineScoreEntry'
 
 interface Props {
@@ -22,6 +23,8 @@ interface Props {
   currentPlayerId: string
   onUpdated: () => void
   onScoreSaved?: () => void
+  onActionComplete?: (message: string, tone: ConfirmationTone) => void
+  onScoreActionComplete?: (message: string, tone: ConfirmationTone) => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -98,7 +101,7 @@ function getVenueSuggestion(
   return null
 }
 
-export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated, onScoreSaved }: Props) {
+export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated, onScoreSaved, onActionComplete, onScoreActionComplete }: Props) {
   const [showPropose, setShowPropose] = useState(false)
   const [propDay, setPropDay] = useState<DayOfWeek | ''>('')
   const [propStart, setPropStart] = useState(18)
@@ -162,8 +165,14 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   }
 
   async function handleAccept(proposalId: string) {
+    const proposal = schedule?.proposals.find(p => p.id === proposalId)
     await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
-    onUpdated()
+    if (onActionComplete && proposal) {
+      const label = proposalLabel(proposal)
+      onActionComplete(`Time confirmed \u2014 ${label}. Find this match in your bracket.`, 'green')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handlePropose() {
@@ -173,7 +182,11 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     ])
     setShowPropose(false)
     setPropDay('')
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete("Time proposed. You'll be notified when they respond.", 'blue')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handleReschedule() {
@@ -182,7 +195,11 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
       if (slots.length === 0) return
       await counterReschedule(tournament.id, match.id, currentPlayerId, slots, rescheduleNote)
       resetRescheduleForm()
-      onUpdated()
+      if (onActionComplete) {
+        onActionComplete("Time proposed. You'll be notified when they respond.", 'blue')
+      } else {
+        onUpdated()
+      }
       return
     }
 
@@ -196,6 +213,12 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         slots,
         rescheduleNote,
       )
+      resetRescheduleForm()
+      if (onActionComplete) {
+        onActionComplete('Reschedule requested. Your current time stays until they respond.', 'blue')
+      } else {
+        onUpdated()
+      }
     } else {
       await requestHardReschedule(
         tournament.id,
@@ -205,9 +228,13 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         slots,
         rescheduleNote,
       )
+      resetRescheduleForm()
+      if (onActionComplete) {
+        onActionComplete('Time released. Your opponent will see your new options.', 'blue')
+      } else {
+        onUpdated()
+      }
     }
-    resetRescheduleForm()
-    onUpdated()
   }
 
   async function handleCancelMatch() {
@@ -215,17 +242,29 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     await cancelMatch(tournament.id, match.id, cancelReason)
     setShowCancel(false)
     setCancelReason('')
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete('Match cancelled. Your opponent receives a walkover win.', 'orange')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handleDeclineSoftRequest() {
     await declineSoftReschedule(tournament.id, match.id, currentPlayerId)
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete('Reschedule declined. Original time stands.', 'green')
+    } else {
+      onUpdated()
+    }
   }
 
   async function handleWithdrawSoftRequest() {
     await withdrawSoftReschedule(tournament.id, match.id, currentPlayerId)
-    onUpdated()
+    if (onActionComplete) {
+      onActionComplete('Request withdrawn. Original time stands.', 'green')
+    } else {
+      onUpdated()
+    }
   }
 
   function renderRescheduleForm(mode: 'new' | 'counter') {
@@ -505,6 +544,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               matchId={match.id}
               currentPlayerId={currentPlayerId}
               onSaved={onScoreSaved ?? onUpdated}
+              onActionComplete={onScoreActionComplete}
               embedded
             />
             <div className="confirmed-actions-footer">
