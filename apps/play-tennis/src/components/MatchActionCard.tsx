@@ -46,15 +46,11 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     showConfirmation(message, tone)
     setHighlightTone(tone)
 
-    // Delay collapse + data refresh so card stays in place during animation
+    // Delay data refresh until after pulse completes so card doesn't unmount mid-animation
     if (collapseTimer.current) clearTimeout(collapseTimer.current)
     collapseTimer.current = setTimeout(() => {
-      onUpdated()
-    }, 1200)
-
-    if (highlightTimer.current) clearTimeout(highlightTimer.current)
-    highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
+      onUpdated()
     }, 3000)
   }, [showConfirmation, onUpdated])
 
@@ -64,13 +60,9 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
 
     if (collapseTimer.current) clearTimeout(collapseTimer.current)
     collapseTimer.current = setTimeout(() => {
+      setHighlightTone(null)
       const scoreCb = onScoreSaved ?? onUpdated
       scoreCb()
-    }, 1200)
-
-    if (highlightTimer.current) clearTimeout(highlightTimer.current)
-    highlightTimer.current = setTimeout(() => {
-      setHighlightTone(null)
     }, 3000)
   }, [showConfirmation, onUpdated, onScoreSaved])
 
