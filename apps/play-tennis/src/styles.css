@@ -3270,9 +3270,21 @@ select:focus {
   align-items: center;
   gap: 2px;
   padding: var(--space-md) var(--space-lg);
-  background: var(--color-surface);
+}
+
+.formation-choice-options .btn.btn-primary {
+  font-size: 1.05rem;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+}
+
+.formation-choice-options .formation-cta-secondary {
+  background: var(--color-neutral-bg);
+  color: var(--color-text-secondary);
+}
+
+.formation-choice-options .formation-cta-secondary .formation-choice-label {
   color: var(--color-text-primary);
-  border: 1.5px solid var(--color-divider);
+  font-weight: var(--weight-medium);
 }
 
 .formation-choice-label {
@@ -3282,7 +3294,7 @@ select:focus {
 
 .formation-choice-desc {
   font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
+  opacity: 0.75;
   font-weight: var(--weight-regular);
 }
 
