@@ -2275,6 +2275,71 @@ select:focus {
   font-size: 14px;
 }
 
+/* Matchup visual (screen 3) */
+.onboard-matchup {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  opacity: 0;
+  animation: onboardFadeIn 0.4s ease 0.1s forwards;
+}
+
+.onboard-matchup-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboard-matchup-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  border: 2px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.onboard-matchup-rating {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.onboard-matchup-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.onboard-matchup-vs-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.onboard-matchup-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--color-positive-primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* Onboarding actions & dots */
 .onboard-actions {
   display: flex;

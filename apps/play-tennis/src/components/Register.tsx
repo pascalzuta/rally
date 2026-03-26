@@ -429,12 +429,12 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     const titles = [
       'Scheduling tennis shouldn\'t take 20 messages',
       'Matches are scheduled automatically',
-      'Compete in your local ladder',
+      'Every match, a fair fight',
     ]
     const subtitles = [
       'Rally handles the back-and-forth for you.',
       'Set your availability. Rally does the rest.',
-      'Play matches. Climb the rankings.',
+      'Rally rates your real game — so every opponent is a genuine challenge.',
     ]
 
     const visuals = [
@@ -461,20 +461,24 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <span>Match scheduled</span>
         </div>
       </div>,
-      <div key="lb" className="onboard-leaderboard">
-        <div className="onboard-lb-header">Local Rankings</div>
-        {[
-          { rank: '#1', name: 'Taylor Kim', rating: 1650 },
-          { rank: '#2', name: 'Alex Rivera', rating: 1580 },
-          { rank: '#3', name: 'Sam Patel', rating: 1520 },
-          { rank: '#4', name: 'You', rating: '\u2014', isYou: true },
-        ].map((row, i) => (
-          <div key={i} className={`onboard-lb-row ${row.isYou ? 'onboard-lb-you' : ''}`}>
-            <span className="onboard-lb-rank">{row.rank}</span>
-            <span className="onboard-lb-name">{row.name}</span>
-            <span className="onboard-lb-rating">{row.rating}</span>
+      <div key="matchup" className="onboard-matchup">
+        <div className="onboard-matchup-player">
+          <div className="onboard-matchup-avatar">You</div>
+          <div className="onboard-matchup-rating">1520</div>
+        </div>
+        <div className="onboard-matchup-vs">
+          <span className="onboard-matchup-vs-label">vs</span>
+          <div className="onboard-matchup-badge">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1L7.5 4.5L11 5L8.5 7.5L9 11L6 9.5L3 11L3.5 7.5L1 5L4.5 4.5L6 1Z" fill="currentColor" />
+            </svg>
+            Close match
           </div>
-        ))}
+        </div>
+        <div className="onboard-matchup-player">
+          <div className="onboard-matchup-avatar">SP</div>
+          <div className="onboard-matchup-rating">1545</div>
+        </div>
       </div>,
     ]
 
