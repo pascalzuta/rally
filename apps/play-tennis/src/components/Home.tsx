@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
@@ -36,6 +36,10 @@ interface MessageCard {
   opponentName: string
   priority: number
 }
+
+// Module-level pinned order: survives component remounts, resets on page reload
+let pinnedCardOrder: string[] | null = null
+let pinnedUpNextKey: string | null | undefined = undefined // undefined = not yet captured
 
 function isPlayerInTournament(tournament: Tournament, playerId: string): boolean {
   return tournament.players.some(p => p.id === playerId)
@@ -174,37 +178,46 @@ export default function Home({
     [activeTournaments, profile.id]
   )
 
-  // Pin card order: only re-sort on mount, not after in-place actions
-  const cardOrderRef = useRef<string[] | null>(null)
+  // Pin card order and upNext identity: only re-sort on page reload, not after actions
   const matchCards = useMemo(() => {
-    if (cardOrderRef.current === null) {
-      // First render or remount: use the freshly sorted order
-      cardOrderRef.current = latestMatchCards.map(c => `${c.tournament.id}-${c.match.id}`)
+    if (pinnedCardOrder === null) {
+      pinnedCardOrder = latestMatchCards.map(c => `${c.tournament.id}-${c.match.id}`)
       return latestMatchCards
     }
-    // Preserve existing order, append any new cards at the end
     const byKey = new Map(latestMatchCards.map(c => [`${c.tournament.id}-${c.match.id}`, c]))
     const ordered: HomeMatchCard[] = []
-    for (const key of cardOrderRef.current) {
+    for (const key of pinnedCardOrder) {
       const card = byKey.get(key)
       if (card) {
         ordered.push(card)
         byKey.delete(key)
       }
     }
-    // Append new cards not in the pinned order
     for (const card of byKey.values()) {
       ordered.push(card)
     }
-    // Update ref to reflect removals/additions but keep pinned positions
-    cardOrderRef.current = ordered.map(c => `${c.tournament.id}-${c.match.id}`)
+    pinnedCardOrder = ordered.map(c => `${c.tournament.id}-${c.match.id}`)
     return ordered
   }, [latestMatchCards])
 
-  const upNext = useMemo(
+  const latestUpNext = useMemo(
     () => getUpNextMatch(activeTournaments, profile.id),
     [activeTournaments, profile.id]
   )
+
+  // Pin which card is upNext so cards don't jump between sections after an action
+  const upNext = useMemo(() => {
+    if (pinnedUpNextKey === undefined) {
+      pinnedUpNextKey = latestUpNext ? `${latestUpNext.tournament.id}-${latestUpNext.match.id}` : null
+      return latestUpNext
+    }
+    if (pinnedUpNextKey === null) return null
+    // Keep using the originally pinned upNext card
+    const match = activeTournaments
+      .flatMap(t => t.matches.map(m => ({ tournament: t, match: m })))
+      .find(({ tournament, match }) => `${tournament.id}-${match.id}` === pinnedUpNextKey)
+    return match ?? null
+  }, [latestUpNext, activeTournaments])
 
   const actionCards = useMemo(
     () => matchCards.filter(card => !(upNext && card.tournament.id === upNext.tournament.id && card.match.id === upNext.match.id)),
