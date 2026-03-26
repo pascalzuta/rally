@@ -1,6 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
-import { useState, useRef } from 'react'
-import { logout, getAvailability, saveAvailability, switchProfile } from '../store'
+import { useState, useRef, useMemo } from 'react'
+import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
 
@@ -122,6 +122,66 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     setAvailMode('quick')
   }
 
+  // Social proof: count lobby players who overlap with current slots
+  const matchableCount = useMemo(() => {
+    if (slots.length === 0) return 0
+    const lobby = getLobbyByCounty(profile.county)
+    let count = 0
+    for (const entry of lobby) {
+      if (entry.playerId === profile.id) continue
+      const playerSlots = getAvailability(entry.playerId)
+      if (playerSlots.length === 0) continue
+      const hasOverlap = slots.some(cs =>
+        playerSlots.some(ps =>
+          cs.day === ps.day &&
+          Math.min(cs.endHour, ps.endHour) - Math.max(cs.startHour, ps.startHour) >= 2
+        )
+      )
+      if (hasOverlap) count++
+    }
+    return count
+  }, [slots, profile.county, profile.id])
+
+  // Nudge: find which unselected quick slot would unlock the most additional matches
+  const nudgeSuggestion = useMemo(() => {
+    const lobby = getLobbyByCounty(profile.county)
+    if (lobby.length === 0) return null
+
+    let bestSlot: { label: string; gain: number } | null = null
+    for (const qs of QUICK_SLOTS) {
+      const alreadyHas = qs.slots.every(s =>
+        slots.some(es => es.day === s.day && es.startHour === s.startHour && es.endHour === s.endHour)
+      )
+      if (alreadyHas) continue
+
+      const combinedSlots = [...slots, ...qs.slots]
+      let newMatches = 0
+      for (const entry of lobby) {
+        if (entry.playerId === profile.id) continue
+        const playerSlots = getAvailability(entry.playerId)
+        if (playerSlots.length === 0) continue
+        const alreadyMatched = slots.some(cs =>
+          playerSlots.some(ps =>
+            cs.day === ps.day &&
+            Math.min(cs.endHour, ps.endHour) - Math.max(cs.startHour, ps.startHour) >= 2
+          )
+        )
+        if (alreadyMatched) continue
+        const nowMatches = combinedSlots.some(cs =>
+          playerSlots.some(ps =>
+            cs.day === ps.day &&
+            Math.min(cs.endHour, ps.endHour) - Math.max(cs.startHour, ps.startHour) >= 2
+          )
+        )
+        if (nowMatches) newMatches++
+      }
+      if (newMatches > 0 && (!bestSlot || newMatches > bestSlot.gain)) {
+        bestSlot = { label: qs.label.toLowerCase(), gain: newMatches }
+      }
+    }
+    return bestSlot
+  }, [slots, profile.county, profile.id])
+
   const STYLE_OPTIONS = ['Singles', 'Doubles', 'Competitive', 'Casual'] as const
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -227,15 +287,28 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
                 <p className="profile-avail-warning">Set your availability to get better match times</p>
               </div>
             ) : (
-              slots.map((slot, i) => {
-                const dayInfo = DAYS.find(d => d.key === slot.day)
-                return (
-                  <div key={i} className="availability-slot-item">
-                    <span className="availability-slot-day">{dayInfo?.short ?? slot.day}</span>
-                    <span className="availability-slot-hours">{formatHourCompact(slot.startHour).replace(':00', '')}–{formatHourCompact(slot.endHour).replace(':00', '')}</span>
+              <>
+                {slots.map((slot, i) => {
+                  const dayInfo = DAYS.find(d => d.key === slot.day)
+                  return (
+                    <div key={i} className="availability-slot-item">
+                      <span className="availability-slot-day">{dayInfo?.short ?? slot.day}</span>
+                      <span className="availability-slot-hours">{formatHourCompact(slot.startHour).replace(':00', '')}–{formatHourCompact(slot.endHour).replace(':00', '')}</span>
+                    </div>
+                  )
+                })}
+                {matchableCount > 0 && (
+                  <div className="avail-social-proof">
+                    <span className="avail-social-proof-count">{matchableCount}</span>
+                    <span className="avail-social-proof-label">player{matchableCount !== 1 ? 's' : ''} share your times</span>
                   </div>
-                )
-              })
+                )}
+                {nudgeSuggestion && (
+                  <p className="avail-profile-nudge">
+                    Add {nudgeSuggestion.label} to match with {nudgeSuggestion.gain} more player{nudgeSuggestion.gain !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </>
             )}
           </div>
         ) : (

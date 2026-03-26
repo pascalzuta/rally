@@ -3912,6 +3912,34 @@ select:focus {
   margin-top: 8px;
 }
 
+/* Social proof + nudge in Profile availability */
+.avail-social-proof {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-divider, #E5E7EB);
+}
+
+.avail-social-proof-count {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-title-sm, 20px);
+  font-weight: 700;
+  color: var(--color-positive-primary);
+}
+
+.avail-social-proof-label {
+  font-size: var(--font-body-md);
+  color: var(--color-text-secondary);
+}
+
+.avail-profile-nudge {
+  font-size: var(--font-body-sm, 13px);
+  color: var(--color-accent-primary);
+  margin-top: 4px;
+}
+
 .tournament-history {
   display: flex;
   flex-direction: column;
