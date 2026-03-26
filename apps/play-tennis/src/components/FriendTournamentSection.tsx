@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  createFriendTournament, cancelFriendTournament, startFriendTournament,
+  cancelFriendTournament, startFriendTournament,
 } from '../store'
 import { PlayerProfile, Tournament } from '../types'
 import { SYNC_EVENT } from '../sync'
@@ -137,23 +137,6 @@ export default function FriendTournamentSection({
   const [showShareSheet, setShowShareSheet] = useState(false)
   const [shareInviteCode, setShareInviteCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [creating, setCreating] = useState(false)
-
-  async function handleCreate() {
-    if (creating) return
-    setCreating(true)
-    try {
-      const t = await createFriendTournament(profile)
-      window.dispatchEvent(new Event(SYNC_EVENT))
-      onDataChanged?.()
-      // Auto-open share sheet
-      setShareInviteCode(t.inviteCode!)
-      setShowShareSheet(true)
-    } finally {
-      setCreating(false)
-    }
-  }
-
   async function handleCancel(tournamentId: string) {
     if (!confirm('Cancel this tournament? All invited players will be removed.')) return
     await cancelFriendTournament(tournamentId, profile.id)
@@ -209,14 +192,12 @@ export default function FriendTournamentSection({
   // Only show setup/in-progress/completed friend tournaments
   const friendTournaments = tournaments.filter(t => t.type === 'friend')
 
+  if (friendTournaments.length === 0 && !showShareSheet) return null
+
   return (
     <div className="friend-tournament-section">
-      <div className="friend-tournament-header">Your Tournaments</div>
-
-      {friendTournaments.length === 0 && (
-        <div className="friend-tournament-empty">
-          <p>Organize a free tournament with friends. Invite 5+ players and Rally handles the rest.</p>
-        </div>
+      {friendTournaments.length > 0 && (
+        <div className="friend-tournament-header">Your Tournaments</div>
       )}
 
       {friendTournaments.map(t => (
@@ -230,14 +211,6 @@ export default function FriendTournamentSection({
           onView={(id) => onViewTournament?.(id)}
         />
       ))}
-
-      <button
-        className="btn btn-large friend-tournament-create"
-        onClick={handleCreate}
-        disabled={creating}
-      >
-        + Create Free Tournament
-      </button>
 
       {showShareSheet && (
         <div className="modal-overlay" onClick={() => setShowShareSheet(false)}>
