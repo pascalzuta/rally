@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
@@ -169,10 +169,37 @@ export default function Home({
     [tournaments, profile.id]
   )
 
-  const matchCards = useMemo(
+  const latestMatchCards = useMemo(
     () => buildHomeMatchCards(activeTournaments, profile.id),
     [activeTournaments, profile.id]
   )
+
+  // Pin card order: only re-sort on mount, not after in-place actions
+  const cardOrderRef = useRef<string[] | null>(null)
+  const matchCards = useMemo(() => {
+    if (cardOrderRef.current === null) {
+      // First render or remount: use the freshly sorted order
+      cardOrderRef.current = latestMatchCards.map(c => `${c.tournament.id}-${c.match.id}`)
+      return latestMatchCards
+    }
+    // Preserve existing order, append any new cards at the end
+    const byKey = new Map(latestMatchCards.map(c => [`${c.tournament.id}-${c.match.id}`, c]))
+    const ordered: HomeMatchCard[] = []
+    for (const key of cardOrderRef.current) {
+      const card = byKey.get(key)
+      if (card) {
+        ordered.push(card)
+        byKey.delete(key)
+      }
+    }
+    // Append new cards not in the pinned order
+    for (const card of byKey.values()) {
+      ordered.push(card)
+    }
+    // Update ref to reflect removals/additions but keep pinned positions
+    cardOrderRef.current = ordered.map(c => `${c.tournament.id}-${c.match.id}`)
+    return ordered
+  }, [latestMatchCards])
 
   const upNext = useMemo(
     () => getUpNextMatch(activeTournaments, profile.id),
