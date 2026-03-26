@@ -10,13 +10,11 @@ interface Props {
   onClose: () => void
   /** When true, rendered inside Inbox full-screen view (hides own header) */
   embedded?: boolean
-  /** When true, hides the input bar (for system messages) */
-  readOnly?: boolean
 }
 
 const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!']
 
-export default function MessagePanel({ currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, onClose, embedded, readOnly }: Props) {
+export default function MessagePanel({ currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, onClose, embedded }: Props) {
   const [messages, setMessages] = useState<DirectMessage[]>([])
   const [text, setText] = useState('')
   const [showQuick, setShowQuick] = useState(false)
@@ -136,7 +134,7 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
       </div>
 
       {/* Quick replies */}
-      {!readOnly && showQuick && (
+      {showQuick && (
         <div className="chat-quick-tray">
           {QUICK_MESSAGES.map(qm => (
             <button
@@ -151,41 +149,39 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
       )}
 
       {/* Input */}
-      {!readOnly && (
-        <div className="chat-input-bar">
-          <button
-            className={`chat-quick-toggle ${showQuick ? 'active' : ''}`}
-            onClick={() => setShowQuick(!showQuick)}
-            aria-label="Quick replies"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              <path d="M6 11.5a4 4 0 008 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-              <circle cx="7.5" cy="8" r="1" fill="currentColor" />
-              <circle cx="12.5" cy="8" r="1" fill="currentColor" />
-            </svg>
-          </button>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Message..."
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            maxLength={500}
-          />
-          <button
-            className="chat-send-btn"
-            onClick={() => handleSend()}
-            disabled={!text.trim()}
-            aria-label="Send"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M3 10l14-7-7 14v-7H3z" fill="currentColor" />
-            </svg>
-          </button>
-        </div>
-      )}
+      <div className="chat-input-bar">
+        <button
+          className={`chat-quick-toggle ${showQuick ? 'active' : ''}`}
+          onClick={() => setShowQuick(!showQuick)}
+          aria-label="Quick replies"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <path d="M6 11.5a4 4 0 008 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            <circle cx="7.5" cy="8" r="1" fill="currentColor" />
+            <circle cx="12.5" cy="8" r="1" fill="currentColor" />
+          </svg>
+        </button>
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Message..."
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          maxLength={500}
+        />
+        <button
+          className="chat-send-btn"
+          onClick={() => handleSend()}
+          disabled={!text.trim()}
+          aria-label="Send"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 10l14-7-7 14v-7H3z" fill="currentColor" />
+          </svg>
+        </button>
+      </div>
     </div>
   )
 }
