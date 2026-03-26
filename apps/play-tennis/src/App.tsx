@@ -287,7 +287,7 @@ export default function App() {
       <div className="app">
         <nav className="top-nav top-nav-register">
           <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="53" src="/rally-logo.svg" alt="Rally" />
+              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
             </div>
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
