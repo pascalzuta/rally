@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
+import { useStableOrder } from '../useStableOrder'
 import HomeHeroCard from './HomeHeroCard'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
@@ -37,8 +38,7 @@ interface MessageCard {
   priority: number
 }
 
-// Module-level pinned order: survives component remounts, resets on page reload
-let pinnedCardOrder: string[] | null = null
+// Module-level pin: survives component remounts, resets on page reload
 let pinnedUpNextKey: string | null | undefined = undefined // undefined = not yet captured
 
 function isPlayerInTournament(tournament: Tournament, playerId: string): boolean {
@@ -173,32 +173,15 @@ export default function Home({
     [tournaments, profile.id]
   )
 
-  const latestMatchCards = useMemo(
+  const matchCardsRaw = useMemo(
     () => buildHomeMatchCards(activeTournaments, profile.id),
     [activeTournaments, profile.id]
   )
 
-  // Pin card order and upNext identity: only re-sort on page reload, not after actions
-  const matchCards = useMemo(() => {
-    if (pinnedCardOrder === null) {
-      pinnedCardOrder = latestMatchCards.map(c => `${c.tournament.id}-${c.match.id}`)
-      return latestMatchCards
-    }
-    const byKey = new Map(latestMatchCards.map(c => [`${c.tournament.id}-${c.match.id}`, c]))
-    const ordered: HomeMatchCard[] = []
-    for (const key of pinnedCardOrder) {
-      const card = byKey.get(key)
-      if (card) {
-        ordered.push(card)
-        byKey.delete(key)
-      }
-    }
-    for (const card of byKey.values()) {
-      ordered.push(card)
-    }
-    pinnedCardOrder = ordered.map(c => `${c.tournament.id}-${c.match.id}`)
-    return ordered
-  }, [latestMatchCards])
+  const matchCards = useStableOrder(
+    matchCardsRaw,
+    card => `${card.tournament.id}-${card.match.id}`,
+  )
 
   const latestUpNext = useMemo(
     () => getUpNextMatch(activeTournaments, profile.id),

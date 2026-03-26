@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Tournament, Match, MatchReaction } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, checkAutoAcceptScores, getPendingFeedback, clearPendingFeedback, getPlayerFeedbackForMatch } from '../store'
 import { getMatchCardView } from '../matchCardModel'
+import { useStableSortPriority } from '../useStableOrder'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
 import Standings from './Standings'
@@ -131,6 +132,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   // R-05: Track rendered match IDs to prevent duplicates
   const renderedMatchIds = useRef<Set<string>>(new Set())
+
+  // Stable sort: freeze match priorities from first render so cards don't jump after actions
+  const getStablePriority = useStableSortPriority(
+    tournament?.matches ?? [],
+    m => m.id,
+    m => matchSortPriority(m, currentPlayerId),
+    tournament?.id,
+  )
 
   // Check for auto-accept (48h timeout) on mount
   useEffect(() => { checkAutoAcceptScores() }, [])
@@ -272,7 +281,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   // Group + knockout phase data (applies to group-knockout AND round-robin)
   const hasGroupPhase = tournament.format === 'group-knockout' || tournament.format === 'round-robin'
   const groupMatches = hasGroupPhase
-    ? tournament.matches.filter(m => m.phase === 'group').sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId))
+    ? tournament.matches.filter(m => m.phase === 'group').sort((a, b) => getStablePriority(a) - getStablePriority(b))
     : []
   const knockoutMatches = hasGroupPhase
     ? tournament.matches.filter(m => m.phase === 'knockout')
@@ -793,7 +802,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 const roundMatches = tournament.matches
                   .filter(m => m.round === round)
                   .filter(filterMatch)
-                  .sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId))
+                  .sort((a, b) => getStablePriority(a) - getStablePriority(b))
                 return (
                   <div key={round} className={`round ${isFinalRound ? 'round-final' : ''}`}>
                     <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
@@ -853,7 +862,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   <>
                     <div className="round">
                       <h3 className="round-label">Semifinals</h3>
-                      {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
+                      {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => getStablePriority(a) - getStablePriority(b)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
@@ -939,7 +948,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   <>
                     <div className="round">
                       <h3 className="round-label">Semifinals</h3>
-                      {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => matchSortPriority(a, currentPlayerId) - matchSortPriority(b, currentPlayerId)).map(m => renderMatchCard(m))}
+                      {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => getStablePriority(a) - getStablePriority(b)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
