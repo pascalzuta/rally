@@ -557,6 +557,7 @@ export default function App() {
         <Inbox
           currentPlayerId={profile.id}
           currentPlayerName={profile.name}
+          county={profile.county}
           tournaments={tournaments}
           onClose={() => setShowInbox(false)}
         />
