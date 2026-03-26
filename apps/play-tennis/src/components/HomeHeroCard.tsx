@@ -432,14 +432,16 @@ export default function HomeHeroCard({
           )}
 
           {(heroState === 'new' || heroState === 'returning') && (
-            <>
+            <div className="formation-choice-options">
               <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>
-                Join Tournament
+                <span className="formation-choice-label">Join Tournament</span>
+                <span className="formation-choice-desc">Get matched by location and rating</span>
               </button>
-              <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
-                {copied ? 'Copied!' : 'Copy Invite Link'}
+              <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
+                <span className="formation-choice-label">Create Free Tournament</span>
+                <span className="formation-choice-desc">Invite 5+ friends and play together</span>
               </button>
-            </>
+            </div>
           )}
 
           {heroState === 'joined-ready' && (

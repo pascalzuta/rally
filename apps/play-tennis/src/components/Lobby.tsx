@@ -261,13 +261,19 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
               <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Tournament starts when it ends or {maxPlayers} join.</p>
               <div className="formation-actions">
                 {!isUserInvolved ? (
-                  <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>Join Tournament</button>
+                  <div className="formation-choice-options">
+                    <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>
+                      <span className="formation-choice-label">Join Tournament</span>
+                      <span className="formation-choice-desc">Get matched by location and rating</span>
+                    </button>
+                    <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
+                      <span className="formation-choice-label">Create Free Tournament</span>
+                      <span className="formation-choice-desc">Invite 5+ friends and play together</span>
+                    </button>
+                  </div>
                 ) : (
                   <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>Invite Players</button>
                 )}
-                <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
-                  {copied ? 'Copied!' : 'Copy Invite Link'}
-                </button>
               </div>
             </>
           )}
