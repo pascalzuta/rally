@@ -9431,6 +9431,12 @@ select:focus {
   border-radius: 14px;
   border: 1px solid rgba(17, 17, 17, 0.06);
 }
+.score-confirm-overlay--embedded {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  border: none;
+}
 .score-confirm-summary {
   font-size: var(--font-body-md);
   font-weight: var(--weight-semibold);

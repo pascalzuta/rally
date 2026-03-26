@@ -154,11 +154,16 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
-        <div className="workflow-header">
-          <div className="workflow-status workflow-status--green">Score Reported</div>
-          <div className="schedule-panel-title">Waiting for opponent confirmation</div>
-          <div className="schedule-panel-copy">Your opponent has 48 hours to confirm the result.</div>
-        </div>
+        {!embedded && (
+          <div className="workflow-header">
+            <div className="workflow-status workflow-status--green">Score Reported</div>
+            <div className="schedule-panel-title">Waiting for opponent confirmation</div>
+            <div className="schedule-panel-copy">Your opponent has 48 hours to confirm the result.</div>
+          </div>
+        )}
+        {embedded && (
+          <div className="schedule-panel-copy">Score reported. Your opponent has 48 hours to confirm.</div>
+        )}
         <PostMatchFeedbackInline
           matchId={matchId}
           tournamentId={tournament.id}
@@ -181,16 +186,17 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   if (saveState === 'error') {
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
-        <div className="workflow-header">
-          <div className="workflow-status workflow-status--red">Save Failed</div>
-          <div className="schedule-panel-title">Could not report the score</div>
-          <div className="schedule-panel-copy">Check the result and try again.</div>
-        </div>
-        <div className="score-toast score-toast--error">
-          <strong>Failed to save score</strong>
-          <div className="workflow-actions">
-            <button className="btn" onClick={() => setSaveState('idle')}>Try Again</button>
+        {!embedded ? (
+          <div className="workflow-header">
+            <div className="workflow-status workflow-status--red">Save Failed</div>
+            <div className="schedule-panel-title">Could not report the score</div>
+            <div className="schedule-panel-copy">Check the result and try again.</div>
           </div>
+        ) : (
+          <div className="schedule-panel-copy">Could not report the score. Please try again.</div>
+        )}
+        <div className="workflow-actions">
+          <button className="btn" onClick={() => setSaveState('idle')} style={{ width: '100%' }}>Try Again</button>
         </div>
       </div>
     )
@@ -203,18 +209,20 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     const scoreSummary = yourScores.map((s, i) => `${s}-${oppScores[i]}`).join(', ')
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
-        <div className="workflow-header">
-          <div className="workflow-status workflow-status--amber">Report Score</div>
-          <div className="schedule-panel-title">Confirm the final result</div>
-          <div className="schedule-panel-copy">Review the score below before sending it to your opponent.</div>
-        </div>
-        <div className="score-confirm-overlay">
-          <div className="score-confirm-summary">You entered: {scoreSummary}</div>
+        {!embedded && (
+          <div className="workflow-header">
+            <div className="workflow-status workflow-status--amber">Report Score</div>
+            <div className="schedule-panel-title">Confirm the final result</div>
+            <div className="schedule-panel-copy">Review the score below before sending it to your opponent.</div>
+          </div>
+        )}
+        <div className={`score-confirm-overlay ${embedded ? 'score-confirm-overlay--embedded' : ''}`}>
+          <div className="score-confirm-summary">{scoreSummary}</div>
           <div className="score-confirm-winner">Winner: {getPlayerName(tournament, winnerId)}</div>
           <div className="score-confirm-actions">
             <button className="btn" onClick={() => setSaveState('idle')}>Edit</button>
             <button className="btn btn-primary" onClick={handleConfirm}>
-              Confirm Score
+              Report Score
             </button>
           </div>
         </div>
