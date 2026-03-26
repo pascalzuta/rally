@@ -185,7 +185,7 @@ body {
 
 .top-nav-register {
   justify-content: center;
-  padding-top: 12px;
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
   padding-bottom: 4px;
 }
 
@@ -2087,30 +2087,30 @@ select:focus {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 10px;
+  gap: 16px;
   padding: 0 8px;
 }
 
 .onboard-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--color-text-primary);
-  letter-spacing: -0.3px;
-  max-width: 300px;
+  letter-spacing: -0.5px;
+  max-width: 320px;
 }
 
 .onboard-subtitle {
-  font-size: 16px;
+  font-size: 17px;
   color: var(--color-text-secondary);
-  max-width: 280px;
-  line-height: 1.5;
+  max-width: 300px;
+  line-height: 1.45;
   font-weight: 400;
 }
 
 /* Onboarding visuals */
 .onboard-visual {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   animation: onboardFadeIn 0.35s ease forwards;
 }
 
@@ -2118,16 +2118,16 @@ select:focus {
 .onboard-chat {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 280px;
+  gap: 10px;
+  width: 320px;
 }
 
 .onboard-chat-bubble {
-  padding: 10px 14px;
-  border-radius: 18px;
-  font-size: 15px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  font-size: 16px;
   line-height: 1.35;
-  max-width: 210px;
+  max-width: 240px;
   opacity: 0;
   animation: onboardSlideUp 0.3s ease forwards;
 }
@@ -2171,7 +2171,7 @@ select:focus {
   border: 1px solid var(--color-divider);
   border-radius: 16px;
   padding: 20px;
-  width: 300px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2224,7 +2224,7 @@ select:focus {
   border: 1px solid var(--color-divider);
   border-radius: 16px;
   padding: 20px;
-  width: 300px;
+  width: 320px;
   opacity: 0;
   animation: onboardFadeIn 0.4s ease 0.1s forwards;
 }
@@ -2280,8 +2280,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding-top: 12px;
+  gap: 16px;
+  padding-top: 16px;
 }
 
 .onboard-btn {
