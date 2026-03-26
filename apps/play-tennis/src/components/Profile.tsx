@@ -29,10 +29,14 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
     { day: 'thursday', startHour: 18, endHour: 21 },
     { day: 'friday', startHour: 18, endHour: 21 },
   ]},
-  { label: 'Saturday mornings', slots: [{ day: 'saturday', startHour: 8, endHour: 12 }]},
-  { label: 'Saturday afternoons', slots: [{ day: 'saturday', startHour: 13, endHour: 17 }]},
-  { label: 'Sunday mornings', slots: [{ day: 'sunday', startHour: 8, endHour: 12 }]},
-  { label: 'Sunday afternoons', slots: [{ day: 'sunday', startHour: 13, endHour: 17 }]},
+  { label: 'Weekend mornings', slots: [
+    { day: 'saturday', startHour: 8, endHour: 12 },
+    { day: 'sunday', startHour: 8, endHour: 12 },
+  ]},
+  { label: 'Weekend afternoons', slots: [
+    { day: 'saturday', startHour: 13, endHour: 17 },
+    { day: 'sunday', startHour: 13, endHour: 17 },
+  ]},
   { label: 'Weekday mornings', slots: [
     { day: 'monday', startHour: 8, endHour: 12 },
     { day: 'tuesday', startHour: 8, endHour: 12 },
@@ -254,26 +258,16 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             {availMode === 'quick' && (
               <div className="quick-slots-v2">
                 <p className="quick-presets-hint">Tap to add common time blocks</p>
-                <button
-                  className={`quick-slot-v2 quick-slot-v2--wide ${isQuickSlotActive(QUICK_SLOTS[0]) ? 'selected' : ''}`}
-                  onClick={() => toggleQuickSlot(QUICK_SLOTS[0])}
-                >
-                  <span className="quick-slot-v2-check">{isQuickSlotActive(QUICK_SLOTS[0]) ? '\u2713' : ''}</span>
-                  <span className="quick-slot-v2-label">{QUICK_SLOTS[0].label}</span>
-                  <span className="quick-slot-v2-time">Mon–Fri 6–9pm</span>
-                </button>
-                <div className="quick-slots-grid">
-                {QUICK_SLOTS.slice(1).map(qs => (
+                {QUICK_SLOTS.map(qs => (
                   <button
                     key={qs.label}
                     className={`quick-slot-v2 ${isQuickSlotActive(qs) ? 'selected' : ''}`}
                     onClick={() => toggleQuickSlot(qs)}
                   >
                     <span className="quick-slot-v2-check">{isQuickSlotActive(qs) ? '\u2713' : ''}</span>
-                    <span className="quick-slot-v2-label">{qs.label.replace('Saturday ', 'Sat ').replace('Sunday ', 'Sun ')}</span>
+                    <span className="quick-slot-v2-label">{qs.label}</span>
                   </button>
                 ))}
-              </div>
               </div>
             )}
 

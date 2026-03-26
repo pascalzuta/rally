@@ -20,34 +20,30 @@ const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
   { key: 'sunday', label: 'Sunday', short: 'Sun' },
 ]
 
-const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
-  { label: 'Weekday evenings', slots: [
+const QUICK_SLOTS: { label: string; time: string; slots: AvailabilitySlot[] }[] = [
+  { label: 'Weekday evenings', time: 'Mon–Fri 6–9pm', slots: [
     { day: 'monday', startHour: 18, endHour: 21 },
     { day: 'tuesday', startHour: 18, endHour: 21 },
     { day: 'wednesday', startHour: 18, endHour: 21 },
     { day: 'thursday', startHour: 18, endHour: 21 },
     { day: 'friday', startHour: 18, endHour: 21 },
   ]},
-  { label: 'Saturday mornings', slots: [
+  { label: 'Weekend mornings', time: 'Sat–Sun 8am–12pm', slots: [
     { day: 'saturday', startHour: 8, endHour: 12 },
-  ]},
-  { label: 'Saturday afternoons', slots: [
-    { day: 'saturday', startHour: 13, endHour: 17 },
-  ]},
-  { label: 'Sunday mornings', slots: [
     { day: 'sunday', startHour: 8, endHour: 12 },
   ]},
-  { label: 'Sunday afternoons', slots: [
+  { label: 'Weekend afternoons', time: 'Sat–Sun 1–5pm', slots: [
+    { day: 'saturday', startHour: 13, endHour: 17 },
     { day: 'sunday', startHour: 13, endHour: 17 },
   ]},
-  { label: 'Weekday mornings', slots: [
+  { label: 'Weekday mornings', time: 'Mon–Fri 8am–12pm', slots: [
     { day: 'monday', startHour: 8, endHour: 12 },
     { day: 'tuesday', startHour: 8, endHour: 12 },
     { day: 'wednesday', startHour: 8, endHour: 12 },
     { day: 'thursday', startHour: 8, endHour: 12 },
     { day: 'friday', startHour: 8, endHour: 12 },
   ]},
-  { label: 'Weekday afternoons', slots: [
+  { label: 'Weekday afternoons', time: 'Mon–Fri 1–5pm', slots: [
     { day: 'monday', startHour: 13, endHour: 17 },
     { day: 'tuesday', startHour: 13, endHour: 17 },
     { day: 'wednesday', startHour: 13, endHour: 17 },
@@ -228,9 +224,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [skillLevel, setSkillLevel] = useState<SkillLevel | ''>('')
   const [gender, setGender] = useState<Gender | ''>('')
 
-  const [selectedQuick, setSelectedQuick] = useState<Set<number>>(new Set())
-  const [detailedMode, setDetailedMode] = useState(true)  // Custom times is now the default/primary
-  const [detailedSlots, setDetailedSlots] = useState<AvailabilitySlot[]>([])
+  const [selectedQuick, setSelectedQuick] = useState<Set<number>>(() => new Set([0]))
+  const [showCustomTimes, setShowCustomTimes] = useState(false)
+  const [detailedSlots, setDetailedSlots] = useState<AvailabilitySlot[]>(() => [...QUICK_SLOTS[0].slots])
   const [addingDay, setAddingDay] = useState<DayOfWeek | ''>('')
   const [addingStart, setAddingStart] = useState(18)
   const [addingEnd, setAddingEnd] = useState(21)
@@ -320,7 +316,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         }
         return combined
       })
-      setDetailedMode(true)
     }
     setSelectedQuick(next)
   }
@@ -872,147 +867,121 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
   // --- Step: Availability ---
   const hasSlots = detailedSlots.length > 0
-  const capDurationLabels: Record<number, string> = { 1: '~5 weeks', 2: '~3 weeks', 3: '~2 weeks' }
-  const slotCount = detailedSlots.length
+  const slotGroupCount = selectedQuick.size + (detailedSlots.filter(s =>
+    !QUICK_SLOTS.some(qs => qs.slots.some(qss => qss.day === s.day && qss.startHour === s.startHour && qss.endHour === s.endHour))
+  ).length > 0 ? 1 : 0)
 
   return (
     <div className="onboard-screen avail-screen">
       <div className="signup-content">
-        {/* Motivational header */}
+        {/* Header */}
         <div className="avail-header">
-          <h1 className="signup-title">When can you play?</h1>
+          <h1 className="signup-title">When do you want to play?</h1>
           <p className="avail-value-prop">
-            More times = more opponents matched.
-            <br />
-            <span className="avail-value-highlight">We handle all the scheduling.</span>
+            Pick your times. <span className="avail-value-highlight">We handle the scheduling.</span>
           </p>
         </div>
 
-        {/* Mode toggle -- Custom times is primary/default */}
-        <div className="avail-mode-toggle">
-          <button
-            className={`avail-mode-btn ${detailedMode ? 'active' : ''}`}
-            onClick={() => setDetailedMode(true)}
-          >
-            Custom times
-          </button>
-          <button
-            className={`avail-mode-btn ${!detailedMode ? 'active' : ''}`}
-            onClick={() => setDetailedMode(false)}
-          >
-            Quick presets
-          </button>
+        {/* Frequency question */}
+        <div className="avail-frequency">
+          <span className="avail-frequency-label">How often?</span>
+          <div className="avail-frequency-options">
+            {([
+              { cap: 1 as const, label: '1–2×/week' },
+              { cap: 2 as const, label: '2–3×/week' },
+              { cap: 3 as const, label: '3+/week' },
+            ]).map(opt => (
+              <button
+                key={opt.cap}
+                className={`avail-frequency-pill ${weeklyCap === opt.cap ? 'selected' : ''}`}
+                onClick={() => setWeeklyCap(opt.cap)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="availability-picker">
-          {!detailedMode ? (
-            <>
-              <div className="quick-slots-v2">
-                <p className="quick-presets-hint">Tap to add common time blocks</p>
-                <button
-                  className={`quick-slot-v2 quick-slot-v2--wide ${selectedQuick.has(0) ? 'selected' : ''}`}
-                  onClick={() => toggleQuickSlot(0)}
-                >
-                  <span className="quick-slot-v2-check">{selectedQuick.has(0) ? '\u2713' : ''}</span>
-                  <span className="quick-slot-v2-label">{QUICK_SLOTS[0].label}</span>
-                  <span className="quick-slot-v2-time">Mon-Fri 6-9pm</span>
-                </button>
-                <div className="quick-slots-grid">
-                  {QUICK_SLOTS.slice(1).map((slot, idx) => (
-                    <button
-                      key={idx + 1}
-                      className={`quick-slot-v2 ${selectedQuick.has(idx + 1) ? 'selected' : ''}`}
-                      onClick={() => toggleQuickSlot(idx + 1)}
-                    >
-                      <span className="quick-slot-v2-check">{selectedQuick.has(idx + 1) ? '\u2713' : ''}</span>
-                      <span className="quick-slot-v2-label">{slot.label.replace('Saturday ', 'Sat ').replace('Sunday ', 'Sun ')}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {detailedSlots.length > 0 && (
-                <div className="quick-presets-slots-preview">
-                  <div className="quick-presets-slots-label">{detailedSlots.length} time slot{detailedSlots.length !== 1 ? 's' : ''} added</div>
-                  <ul className="detailed-slot-list">
-                    {detailedSlots.map((s, i) => (
-                      <li key={i} className="detailed-slot-item">
-                        <span>{DAYS.find(d => d.key === s.day)?.label} {formatHourCompact(s.startHour)}-{formatHourCompact(s.endHour)}</span>
-                        <button className="btn-icon" onClick={() => removeDetailedSlot(i)}>{'\u2715'}</button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {detailedSlots.length > 0 && (
-                <ul className="detailed-slot-list">
-                  {detailedSlots.map((s, i) => (
-                    <li key={i} className="detailed-slot-item">
-                      <span>{DAYS.find(d => d.key === s.day)?.label} {formatHourCompact(s.startHour)}–{formatHourCompact(s.endHour)}</span>
-                      <button className="btn-icon" onClick={() => removeDetailedSlot(i)}>✕</button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="detailed-add-row">
-                <select value={addingDay} onChange={e => setAddingDay(e.target.value as DayOfWeek | '')}>
-                  <option value="">Day...</option>
-                  {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
-                </select>
-                <select value={addingStart} onChange={e => setAddingStart(Number(e.target.value))}>
-                  {START_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-                <span>-</span>
-                <select value={addingEnd} onChange={e => setAddingEnd(Number(e.target.value))}>
-                  {END_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-                <button className="btn" onClick={addDetailedSlot} disabled={!addingDay || addingStart >= addingEnd}>
-                  Add
-                </button>
-              </div>
-            </>
-          )}
+        {/* Quick-slot chips — primary input */}
+        <div className="quick-slots-v2">
+          {QUICK_SLOTS.map((qs, idx) => (
+            <button
+              key={idx}
+              className={`quick-slot-v2 ${selectedQuick.has(idx) ? 'selected' : ''}`}
+              onClick={() => toggleQuickSlot(idx)}
+            >
+              <span className="quick-slot-v2-check">{selectedQuick.has(idx) ? '\u2713' : ''}</span>
+              <span className="quick-slot-v2-label">{qs.label}</span>
+              <span className="quick-slot-v2-time">{qs.time}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Live feedback — matchable count + social proof nudge */}
+        {/* Progressive disclosure — custom times */}
+        {!showCustomTimes ? (
+          <button className="avail-add-custom-link" onClick={() => setShowCustomTimes(true)}>
+            + Add specific times
+          </button>
+        ) : (
+          <div className="avail-custom-section">
+            <div className="detailed-add-row">
+              <select value={addingDay} onChange={e => setAddingDay(e.target.value as DayOfWeek | '')}>
+                <option value="">Day...</option>
+                {DAYS.map(d => <option key={d.key} value={d.key}>{d.short}</option>)}
+              </select>
+              <select value={addingStart} onChange={e => setAddingStart(Number(e.target.value))}>
+                {START_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <span>–</span>
+              <select value={addingEnd} onChange={e => setAddingEnd(Number(e.target.value))}>
+                {END_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <button className="btn btn-small" onClick={addDetailedSlot} disabled={!addingDay || addingStart >= addingEnd}>
+                Add
+              </button>
+            </div>
+            {detailedSlots.filter(s =>
+              !QUICK_SLOTS.some(qs => qs.slots.some(qss => qss.day === s.day && qss.startHour === s.startHour && qss.endHour === s.endHour))
+            ).length > 0 && (
+              <ul className="detailed-slot-list">
+                {detailedSlots.filter(s =>
+                  !QUICK_SLOTS.some(qs => qs.slots.some(qss => qss.day === s.day && qss.startHour === s.startHour && qss.endHour === s.endHour))
+                ).map((s, i) => (
+                  <li key={i} className="detailed-slot-item">
+                    <span>{DAYS.find(d => d.key === s.day)?.label} {formatHourCompact(s.startHour)}–{formatHourCompact(s.endHour)}</span>
+                    <button className="btn-icon" onClick={() => {
+                      const idx = detailedSlots.findIndex(ds => ds.day === s.day && ds.startHour === s.startHour && ds.endHour === s.endHour)
+                      if (idx >= 0) removeDetailedSlot(idx)
+                    }}>✕</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Live feedback */}
         <div className={`avail-feedback ${hasSlots ? 'visible' : ''}`}>
+          {hasSlots && (
+            <p className="avail-threshold">
+              {slotGroupCount >= 2
+                ? `${detailedSlots.length} time slots — great coverage for auto-scheduling`
+                : `${detailedSlots.length} time slot${detailedSlots.length !== 1 ? 's' : ''} — enough to start matching!`}
+            </p>
+          )}
           {matchableCount > 0 && (
             <div className="avail-feedback-row">
               <span className="avail-feedback-count">{matchableCount}</span>
-              <span className="avail-feedback-label">players match your times</span>
+              <span className="avail-feedback-label">player{matchableCount !== 1 ? 's' : ''} share your times</span>
             </div>
-          )}
-          {hasSlots && slotCount < 3 && (
-            <p className="avail-nudge">Players who pick 3+ slots get matched 2× faster</p>
           )}
           {matchableCount >= 5 && (
             <p className="avail-nudge avail-nudge--positive">Enough for a full tournament group!</p>
           )}
-        </div>
-
-        {/* Compact weekly cap — inline row */}
-        <div className="avail-cap-row">
-          <span className="avail-cap-label">Matches / week</span>
-          <div className="avail-cap-pills">
-            {([1, 2, 3] as const).map(cap => (
-              <button
-                key={cap}
-                className={`avail-cap-pill ${weeklyCap === cap ? 'selected' : ''}`}
-                onClick={() => setWeeklyCap(cap)}
-              >
-                {cap}
-              </button>
-            ))}
-          </div>
-          <span className="avail-cap-duration">{capDurationLabels[weeklyCap]}</span>
         </div>
 
         <div className="availability-actions">
