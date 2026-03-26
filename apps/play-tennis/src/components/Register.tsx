@@ -182,11 +182,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     return false
   }
 
+  // Track whether profile restore has already been attempted (avoid duplicate calls)
+  const restoreAttempted = useRef(false)
+
   // Check for existing session on mount + listen for magic link auth
   useEffect(() => {
     // Check if already authenticated (e.g. page refresh with valid session)
     getSession().then(async session => {
-      if (session) {
+      if (session && !restoreAttempted.current) {
+        restoreAttempted.current = true
         setAuthUserId(session.userId)
         setEmail(session.email)
         const restored = await tryRestoreProfile(session.userId, session.email)
@@ -196,7 +200,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
     // Listen for magic link redirect (tokens arrive via URL hash)
     const unsub = onAuthStateChange(async (event, userId, userEmail) => {
-      if (event === 'SIGNED_IN' && userId) {
+      if (event === 'SIGNED_IN' && userId && !restoreAttempted.current) {
+        restoreAttempted.current = true
         setAuthUserId(userId)
         if (userEmail) setEmail(userEmail)
         const restored = await tryRestoreProfile(userId, userEmail ?? '')
@@ -590,6 +595,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       const result = await verifyOtp(email.trim().toLowerCase(), otpCode)
       setOtpVerifying(false)
       if (result.ok && result.userId) {
+        restoreAttempted.current = true
         setAuthUserId(result.userId)
         // Check if this is a returning user with a full profile on the server
         const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
