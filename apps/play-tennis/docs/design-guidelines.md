@@ -160,6 +160,18 @@ Completed cards do not need the full upcoming-match action model.
 
 ## Visual Language
 
+### Logo
+
+The only approved Rally logo is `brand/rally-logo.svg` (sourced from `rally_logo_page4_lower_left.svg`). This is the Rally wordmark and must be used everywhere the Rally brand appears:
+
+- email templates (embedded as base64 data URI)
+- browser favicon (`public/favicon.svg`)
+- any marketing or onboarding surfaces
+
+Do not use `rally-logo-mark.svg` (the tennis ball trajectory shape) as the logo. It is not the Rally logo.
+
+When embedding in emails, convert to base64 data URI (`data:image/svg+xml;base64,...`) for maximum client compatibility.
+
 ### Typography
 
 - keep current Rally typography scale
