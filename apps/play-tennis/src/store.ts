@@ -515,6 +515,25 @@ export function getTournamentByInviteCode(inviteCode: string): Tournament | unde
   return load().find(t => t.inviteCode === inviteCode)
 }
 
+/** Fetch just the county for a tournament invite code (used to pre-fill registration) */
+export async function getInviteTournamentCounty(inviteCode: string): Promise<string | null> {
+  const local = getTournamentByInviteCode(inviteCode)
+  if (local) return local.county
+
+  const client = getClient()
+  if (!client) return null
+  const { data } = await client
+    .from('tournaments')
+    .select('data')
+    .contains('data', { inviteCode })
+    .maybeSingle()
+  if (data) {
+    const tournament = data.data as Tournament
+    return tournament.county
+  }
+  return null
+}
+
 export async function joinFriendTournament(inviteCode: string, profile: PlayerProfile): Promise<Tournament | null> {
   let tournament = getTournamentByInviteCode(inviteCode)
 

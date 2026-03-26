@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
@@ -58,11 +58,21 @@ export default function App() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
+  const [inviteTournamentCounty, setInviteTournamentCounty] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [autoJoinLobby, setAutoJoinLobby] = useState(false)
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Resolve tournament invite county for pre-filling registration
+  useEffect(() => {
+    if (inviteTournamentCode && !inviteTournamentCounty) {
+      getInviteTournamentCounty(inviteTournamentCode).then(county => {
+        if (county) setInviteTournamentCounty(county)
+      })
+    }
+  }, [inviteTournamentCode])
 
   // On mount: if no localStorage profile, check for existing Supabase session
   // and try to restore profile from server (returning user on new device/cleared cache)
@@ -297,7 +307,7 @@ export default function App() {
               <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
             </div>
         </nav>
-        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty} />
+        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} />
         <DevTools
           onProfileSwitch={p => setProfile(p)}
           activeTournamentId={null}
