@@ -498,6 +498,7 @@ export default function App() {
             <Help onBack={() => setActiveTab('profile')} />
           )}
         </main>
+      </div>
 
         <nav className="bottom-tabs">
           <button className={`bottom-tab ${activeTab === 'home' || activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
@@ -530,7 +531,6 @@ export default function App() {
             <span className="tab-text">Availability</span>
           </button>
         </nav>
-      </div>
       {showInbox && (
         <div ref={inboxWrapperRef}>
         <Inbox
