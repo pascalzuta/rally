@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
@@ -32,9 +32,15 @@ function getInviteCounty(): string | null {
   return params.get('join')
 }
 
+function getInviteTournamentCode(): string | null {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('tournament')
+}
+
 function clearInviteParam() {
   const url = new URL(window.location.href)
   url.searchParams.delete('join')
+  url.searchParams.delete('tournament')
   window.history.replaceState({}, '', url.pathname)
 }
 
@@ -44,6 +50,7 @@ export default function App() {
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
+  const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
   const [refreshKey, setRefreshKey] = useState(0)
   const [autoJoinLobby, setAutoJoinLobby] = useState(false)
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
@@ -211,14 +218,20 @@ export default function App() {
     }
   }, [profile?.id])
 
-  // Auto-join lobby when an existing user opens an invite link
+  // Auto-join when an existing user opens an invite link (county or tournament)
   useEffect(() => {
-    if (profile && inviteCounty) {
+    if (profile && inviteTournamentCode) {
+      joinFriendTournament(inviteTournamentCode, profile).then(() => {
+        clearInviteParam()
+        setActiveTab('home')
+        setRefreshKey(r => r + 1)
+      })
+    } else if (profile && inviteCounty) {
       joinLobby({ ...profile, county: inviteCounty })
       clearInviteParam()
       setActiveTab('home')
     }
-  }, [profile, inviteCounty])
+  }, [profile, inviteCounty, inviteTournamentCode])
 
   useEffect(() => {
     if (profile) refreshTournaments()
@@ -245,7 +258,11 @@ export default function App() {
   }
 
   async function handleRegistered(p: PlayerProfile) {
-    if (inviteCounty) {
+    if (inviteTournamentCode) {
+      // After registering via tournament invite, auto-join the friend tournament
+      await joinFriendTournament(inviteTournamentCode, p)
+      clearInviteParam()
+    } else if (inviteCounty) {
       // After registering via invite, auto-join the invite county's lobby
       await joinLobby({ ...p, county: inviteCounty })
       clearInviteParam()

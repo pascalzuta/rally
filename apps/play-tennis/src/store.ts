@@ -455,6 +455,116 @@ export async function forceStartTournament(tournamentId: string): Promise<Tourna
   return await generateBracket(tournamentId)
 }
 
+// --- Friend Tournaments ---
+
+export async function createFriendTournament(profile: PlayerProfile): Promise<Tournament> {
+  const inviteCode = generateId()
+  const tournament: Tournament = {
+    id: generateId(),
+    name: `${profile.name.split(' ')[0]}'s Tournament`,
+    date: new Date().toISOString().split('T')[0],
+    county: profile.county,
+    format: 'round-robin',
+    players: [{ id: profile.id, name: profile.name }],
+    matches: [],
+    status: 'setup',
+    createdAt: new Date().toISOString(),
+    type: 'friend',
+    createdBy: profile.id,
+    inviteCode,
+    maxPlayers: 8,
+  }
+
+  const all = load()
+  all.unshift(tournament)
+  await saveAndSync(all, tournament)
+  return tournament
+}
+
+export function getFriendTournaments(playerId: string): Tournament[] {
+  return load().filter(t => t.type === 'friend' && t.players.some(p => p.id === playerId))
+}
+
+export function getTournamentByInviteCode(inviteCode: string): Tournament | undefined {
+  return load().find(t => t.inviteCode === inviteCode)
+}
+
+export async function joinFriendTournament(inviteCode: string, profile: PlayerProfile): Promise<Tournament | null> {
+  let tournament = getTournamentByInviteCode(inviteCode)
+
+  // If not found locally, try fetching from Supabase
+  if (!tournament) {
+    const client = getClient()
+    if (client) {
+      const { data } = await client
+        .from('tournaments')
+        .select('*')
+        .filter('data->>inviteCode', 'eq', inviteCode)
+        .single()
+      if (data) {
+        tournament = data.data as Tournament
+        // Cache locally
+        const all = load()
+        if (!all.find(t => t.id === tournament!.id)) {
+          all.unshift(tournament)
+          save(all)
+        }
+        if (data.updated_at) {
+          setTournamentTimestamp(tournament.id, data.updated_at)
+        }
+      }
+    }
+  }
+
+  if (!tournament) return null
+  if (tournament.status !== 'setup') return null
+  if (tournament.players.some(p => p.id === profile.id)) return tournament // already joined
+  const max = tournament.maxPlayers ?? 8
+  if (tournament.players.length >= max) return null // full
+
+  const all = load()
+  const t = all.find(x => x.id === tournament!.id)
+  if (!t) return null
+
+  t.players.push({ id: profile.id, name: profile.name })
+
+  // If we hit max, start countdown
+  if (t.players.length >= MIN_PLAYERS && !t.countdownStartedAt) {
+    t.countdownStartedAt = new Date().toISOString()
+  }
+
+  await saveAndSync(all, t)
+
+  // Auto-start if at max
+  if (t.players.length >= max) {
+    await generateBracket(t.id)
+  }
+
+  return getTournament(t.id) ?? t
+}
+
+export async function cancelFriendTournament(tournamentId: string, playerId: string): Promise<boolean> {
+  const tournament = getTournament(tournamentId)
+  if (!tournament) return false
+  if (tournament.type !== 'friend') return false
+  if (tournament.createdBy !== playerId) return false
+  if (tournament.status !== 'setup') return false
+
+  await deleteTournament(tournamentId)
+  return true
+}
+
+export async function startFriendTournament(tournamentId: string, playerId: string): Promise<Tournament | undefined> {
+  const tournament = getTournament(tournamentId)
+  if (!tournament) return undefined
+  if (tournament.type !== 'friend') return undefined
+  if (tournament.createdBy !== playerId) return undefined
+  if (tournament.status !== 'setup') return undefined
+  if (tournament.players.length < MIN_PLAYERS) return undefined
+
+  return await generateBracket(tournamentId)
+}
+
 // --- Availability ---
 
 function loadAllAvailability(): Record<string, AvailabilitySlot[]> {
