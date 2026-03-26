@@ -3722,6 +3722,60 @@ export function hasUnreadFrom(playerId: string, otherPlayerId: string): boolean 
   return loadMessages().some(m => m.recipientId === playerId && m.senderId === otherPlayerId && !m.read)
 }
 
+// --- Welcome Message ---
+
+export const RALLY_SYSTEM_ID = 'rally-system'
+const RALLY_SYSTEM_NAME = 'Rally'
+
+const WELCOME_MESSAGE_TEXT = `Welcome to Rally! Here's how it works:
+
+OVERVIEW
+Rally runs free monthly tennis tournaments in your county — and schedules every match automatically.
+
+1. Join the Lobby — Enter the player pool for your county. Invite friends to start sooner.
+2. Tournament Starts — When 6+ players join, a round-robin is created automatically. You play every other player once.
+3. Play Your Matches — Matches are auto-scheduled from your availability. Show up, play, report your score.
+4. Playoffs — Top 4 advance to single-elimination playoffs. Win the championship.
+
+SCHEDULING
+Rally auto-schedules matches using your weekly availability. More slots = smoother scheduling.
+• Auto — 75+ min overlap: match is booked automatically.
+• Flex — 30–74 min overlap: one tap to confirm an adjusted time.
+• Manual — No overlap: you propose 2–3 times, your opponent picks one.
+
+Tip: Add 3+ availability slots across different days to maximize auto-scheduled matches.
+
+SCORING
+After playing, both players report and confirm the score. If no response within 48 hours, the score auto-confirms. Your Elo rating updates after each match — new players start at 1500.
+
+CREATE A FREE TOURNAMENT
+Want to organize your own tournament? It's easy and completely free:
+• Go to the Home tab and tap "Join Lobby" to enter your county's player pool.
+• Share the invite link with friends — the more players, the better the tournament.
+• Once 6+ players join, a round-robin tournament is created automatically.
+• All matches are scheduled based on player availability — no coordination needed.
+• Track standings, report scores, and compete for the top spot, all within Rally.
+
+That's it — no fees, no paperwork, just tennis.`
+
+export function sendWelcomeMessage(playerId: string): void {
+  const msgs = loadMessages()
+  // Don't send if already exists
+  if (msgs.some(m => m.senderId === RALLY_SYSTEM_ID && m.recipientId === playerId)) return
+  const msg: DirectMessage = {
+    id: generateId(),
+    senderId: RALLY_SYSTEM_ID,
+    senderName: RALLY_SYSTEM_NAME,
+    recipientId: playerId,
+    recipientName: '',
+    text: WELCOME_MESSAGE_TEXT,
+    createdAt: new Date().toISOString(),
+    read: false,
+  }
+  msgs.push(msg)
+  saveMessages(msgs)
+}
+
 // --- Score Disputes ---
 
 export async function proposeScoreCorrection(

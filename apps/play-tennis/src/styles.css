@@ -7439,6 +7439,16 @@ select:focus {
   color: white;
 }
 
+.chat-card-avatar--system {
+  background: var(--color-positive-primary);
+  color: white;
+}
+
+.chat-conv-avatar--system {
+  background: var(--color-positive-primary);
+  color: white;
+}
+
 .chat-card-body {
   flex: 1;
   min-width: 0;
@@ -7719,6 +7729,7 @@ select:focus {
 
 .chat-bubble-text {
   word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .chat-bubble-time {

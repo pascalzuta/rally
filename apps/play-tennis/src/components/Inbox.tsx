@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getConversationList, markConversationRead, sendMessage } from '../store'
+import { getConversationList, markConversationRead, sendMessage, RALLY_SYSTEM_ID } from '../store'
 import { Tournament } from '../types'
 import MessagePanel from './MessagePanel'
 
@@ -66,8 +66,8 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
     }
   }
 
-  const currentConversations = conversations.filter(c => activeTournamentPlayerIds.has(c.otherPlayerId))
-  const pastConversations = conversations.filter(c => !activeTournamentPlayerIds.has(c.otherPlayerId))
+  const currentConversations = conversations.filter(c => activeTournamentPlayerIds.has(c.otherPlayerId) || c.otherPlayerId === RALLY_SYSTEM_ID)
+  const pastConversations = conversations.filter(c => !activeTournamentPlayerIds.has(c.otherPlayerId) && c.otherPlayerId !== RALLY_SYSTEM_ID)
 
   const displayedConversations = activeTab === 'current' ? currentConversations : pastConversations
 
@@ -86,6 +86,7 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
 
   // --- Conversation view ---
   if (openConversation) {
+    const isSystemConv = openConversation.playerId === RALLY_SYSTEM_ID
     return (
       <div className="chat-fullscreen">
         <div className="chat-conv-header">
@@ -94,15 +95,26 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
               <path d="M13 4L7 10l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <div
-            className="chat-conv-avatar"
-            style={{ background: avatarColor(openConversation.playerName) }}
-          >
-            {openConversation.playerName[0]?.toUpperCase() ?? '?'}
-          </div>
+          {isSystemConv ? (
+            <div className="chat-conv-avatar chat-conv-avatar--system">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2.5 12c0-1.5 4-5.5 9.5-5.5s9.5 4 9.5 5.5-4 5.5-9.5 5.5S2.5 13.5 2.5 12z" />
+              </svg>
+            </div>
+          ) : (
+            <div
+              className="chat-conv-avatar"
+              style={{ background: avatarColor(openConversation.playerName) }}
+            >
+              {openConversation.playerName[0]?.toUpperCase() ?? '?'}
+            </div>
+          )}
           <div className="chat-conv-header-info">
             <span className="chat-conv-header-name">{openConversation.playerName}</span>
-            {(() => {
+            {isSystemConv ? (
+              <span className="chat-conv-header-sub">How does Rally work?</span>
+            ) : (() => {
               const ctx = findMatchContext(tournaments, currentPlayerId, openConversation.playerId)
               return ctx ? (
                 <span className="chat-conv-header-sub">
@@ -125,6 +137,7 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
             otherPlayerName={openConversation.playerName}
             onClose={() => setOpenConversation(null)}
             embedded
+            readOnly={isSystemConv}
           />
         </div>
       </div>
@@ -184,7 +197,8 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
           </div>
         ) : (
           displayedConversations.map(conv => {
-            const matchCtx = findMatchContext(tournaments, currentPlayerId, conv.otherPlayerId)
+            const isSystem = conv.otherPlayerId === RALLY_SYSTEM_ID
+            const matchCtx = isSystem ? null : findMatchContext(tournaments, currentPlayerId, conv.otherPlayerId)
             const isUnread = conv.unreadCount > 0
             return (
               <button
@@ -196,18 +210,30 @@ export default function Inbox({ currentPlayerId, currentPlayerName, tournaments,
                 }}
               >
                 <div className="chat-card-avatar-wrap">
-                  <div
-                    className="chat-card-avatar"
-                    style={{ background: avatarColor(conv.otherPlayerName) }}
-                  >
-                    {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
-                  </div>
+                  {isSystem ? (
+                    <div className="chat-card-avatar chat-card-avatar--system">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M2.5 12c0-1.5 4-5.5 9.5-5.5s9.5 4 9.5 5.5-4 5.5-9.5 5.5S2.5 13.5 2.5 12z" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div
+                      className="chat-card-avatar"
+                      style={{ background: avatarColor(conv.otherPlayerName) }}
+                    >
+                      {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
+                    </div>
+                  )}
                 </div>
                 <div className="chat-card-body">
                   <div className="chat-card-row">
                     <span className="chat-card-name">{conv.otherPlayerName}</span>
                     <span className="chat-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
                   </div>
+                  {isSystem && (
+                    <div className="chat-card-context">How does Rally work?</div>
+                  )}
                   {matchCtx && (
                     <div className="chat-card-context">
                       {matchCtx.tournamentName}
