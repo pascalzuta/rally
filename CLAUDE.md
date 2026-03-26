@@ -24,9 +24,11 @@ Note: `rally-play-tennis.vercel.app` is Vercel's auto-generated domain — it po
 
 **Do NOT create pull requests.** This is a solo project — deploy by direct merge + push.
 
+**NEVER run `npm run dev` as a substitute for deploying.** The user cannot access local dev servers. "Deploy" always means merge to `staging` and push so the change is live at staging.play-rally.com. When the user says "deploy", "ship it", "make it live", or asks to see their changes — always deploy to staging via the steps below.
+
 1. **Create a feature branch** off `staging` (not `main`)
 2. **Do your work** on the feature branch, commit and push
-3. **When the user says "deploy to staging"**: checkout `staging`, merge the feature branch, push
+3. **When the user says "deploy to staging"** (or any variant like "deploy", "ship it", "make it live"): checkout `staging`, merge the feature branch, push
    ```bash
    git checkout staging
    git merge <feature-branch> --no-edit
@@ -143,10 +145,11 @@ Full briefing: `apps/play-tennis/docs/scheduling-briefing.md` (18 sections)
 
 ## Development
 ```bash
-npm run dev:play-tennis     # Dev server on port 5180
-npm run build:play-tennis   # TypeScript check + Vite build
+npm run dev:play-tennis     # Local dev server (port 5180) — for debugging only, NOT for deploying
+npm run build:play-tennis   # TypeScript check + Vite build (used by pre-push hook)
 npm run dev:tennis-server   # Backend on port 8788
 ```
+**Note:** `npm run dev` is only useful for local debugging during development. The user works through Conductor and cannot access local dev servers. To show the user changes, always deploy to staging (merge to `staging` branch + push).
 
 ## Git Hooks
 - **pre-commit**: Runs `tsc --noEmit` on play-tennis (type check only, no build)
