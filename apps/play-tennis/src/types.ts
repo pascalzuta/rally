@@ -222,6 +222,8 @@ export interface SchedulingSummary {
   scheduledAt: string
 }
 
+export type TournamentType = 'matched' | 'friend'
+
 export interface Tournament {
   id: string
   name: string
@@ -240,6 +242,10 @@ export interface Tournament {
   waitlistedPlayerIds?: string[]  // player IDs that couldn't be placed in any group
   mode?: 'singles' | 'doubles'
   teams?: DoublesTeam[]
+  type?: TournamentType           // 'matched' (default) or 'friend' (invite-only)
+  createdBy?: string              // player ID of creator (friend tournaments)
+  inviteCode?: string             // unique code for invite URL (friend tournaments)
+  maxPlayers?: number             // cap (default 8 for friend tournaments)
 }
 
 // --- Match Broadcast ---

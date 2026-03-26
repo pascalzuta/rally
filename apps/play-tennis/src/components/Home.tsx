@@ -4,6 +4,7 @@ import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
 import { useStableOrder } from '../useStableOrder'
 import HomeHeroCard from './HomeHeroCard'
+import FriendTournamentSection from './FriendTournamentSection'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
 
@@ -270,6 +271,13 @@ export default function Home({
   // Unified hero card for all states
   return (
     <div className="home-section home-section-spaced">
+      <FriendTournamentSection
+        profile={profile}
+        tournaments={tournaments}
+        onDataChanged={onDataChanged}
+        onViewTournament={onViewTournament}
+      />
+
       <HomeHeroCard
         profile={profile}
         tournaments={tournaments}
