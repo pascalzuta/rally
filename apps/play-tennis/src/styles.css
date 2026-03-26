@@ -3888,6 +3888,23 @@ select:focus {
   gap: var(--space-md);
 }
 
+/* Flatten schedule-panel when nested inside card expansion */
+.action-card-expansion .schedule-panel {
+  margin-top: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+/* Flatten score entry wrapper when nested inside card expansion */
+.action-card-expansion .schedule-score-entry {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
 .inline-score-entry {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
