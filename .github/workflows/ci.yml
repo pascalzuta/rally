@@ -1,10 +1,10 @@
-name: CI — Check code quality
+name: CI
 
 on:
+  push:
+    branches: [staging, main]
   pull_request:
-    branches:
-      - staging
-      - main
+    branches: [staging, main]
 
 jobs:
   check:
@@ -24,6 +24,3 @@ jobs:
 
       - name: Build
         run: npm run build:play-tennis
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
