@@ -10522,10 +10522,10 @@ select:focus {
   100% { background-color: transparent; }
 }
 
-.action-card--highlight-green { animation: confirmPulse-green 1500ms ease-out; }
-.action-card--highlight-blue { animation: confirmPulse-blue 1500ms ease-out; }
-.action-card--highlight-orange { animation: confirmPulse-orange 1500ms ease-out; }
-.action-card--highlight-red { animation: confirmPulse-red 1500ms ease-out; }
+.action-card--highlight-green { animation: confirmPulse-green 3000ms ease-out; }
+.action-card--highlight-blue { animation: confirmPulse-blue 3000ms ease-out; }
+.action-card--highlight-orange { animation: confirmPulse-orange 3000ms ease-out; }
+.action-card--highlight-red { animation: confirmPulse-red 3000ms ease-out; }
 
 /* ================================================
    RM-04: Standings Improvements

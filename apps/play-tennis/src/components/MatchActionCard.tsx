@@ -55,7 +55,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
-    }, 1500)
+    }, 3000)
   }, [showConfirmation, onUpdated])
 
   const handleScoreActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
@@ -71,7 +71,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => {
       setHighlightTone(null)
-    }, 1500)
+    }, 3000)
   }, [showConfirmation, onUpdated, onScoreSaved])
 
   const view = getMatchCardView(tournament, match, currentPlayerId)
