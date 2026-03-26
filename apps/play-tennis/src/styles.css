@@ -3270,6 +3270,9 @@ select:focus {
   align-items: center;
   gap: 2px;
   padding: var(--space-md) var(--space-lg);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1.5px solid var(--color-divider);
 }
 
 .formation-choice-label {
@@ -3279,7 +3282,7 @@ select:focus {
 
 .formation-choice-desc {
   font-size: var(--font-body-sm);
-  opacity: 0.75;
+  color: var(--color-text-secondary);
   font-weight: var(--weight-regular);
 }
 
