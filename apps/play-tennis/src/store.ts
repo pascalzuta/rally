@@ -525,8 +525,8 @@ export async function joinFriendTournament(inviteCode: string, profile: PlayerPr
       const { data } = await client
         .from('tournaments')
         .select('*')
-        .filter('data->>inviteCode', 'eq', inviteCode)
-        .single()
+        .contains('data', { inviteCode })
+        .maybeSingle()
       if (data) {
         tournament = data.data as Tournament
         // Cache locally

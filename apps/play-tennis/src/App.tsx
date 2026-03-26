@@ -33,14 +33,21 @@ function getInviteCounty(): string | null {
 }
 
 function getInviteTournamentCode(): string | null {
+  // Check URL first, then sessionStorage (survives auth redirects)
   const params = new URLSearchParams(window.location.search)
-  return params.get('tournament')
+  const fromUrl = params.get('tournament')
+  if (fromUrl) {
+    sessionStorage.setItem('rally-invite-tournament', fromUrl)
+    return fromUrl
+  }
+  return sessionStorage.getItem('rally-invite-tournament')
 }
 
 function clearInviteParam() {
   const url = new URL(window.location.href)
   url.searchParams.delete('join')
   url.searchParams.delete('tournament')
+  sessionStorage.removeItem('rally-invite-tournament')
   window.history.replaceState({}, '', url.pathname)
 }
 
