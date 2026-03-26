@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer } from './store'
+import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
@@ -284,6 +284,7 @@ export default function App() {
       await joinLobby({ ...p, county: inviteCounty })
       clearInviteParam()
     }
+    sendWelcomeMessage(p.id)
     setProfile(p)
     setActiveTab('home')
   }
