@@ -6,36 +6,60 @@ Tennis tournament app for local communities. Players join by county, form lobbie
 ## Tech Stack
 - React 18 + TypeScript + Vite
 - Supabase (Realtime Database for multi-user sync)
-- GitHub Pages (production deploy via `.github/workflows/deploy-pages.yml`)
-- Vercel (staging/preview deploys — automatic per branch)
-- Custom domain: play-rally.com (GitHub Pages, DNS: 185.199.x.x)
+- Vercel (staging + production deploys — automatic per branch)
+- DNS (Namecheap): A 76.76.21.21, CNAME www → cname.vercel-dns.com, CNAME staging → cname.vercel-dns.com
 
 ## Deployment & Branch Rules (READ THIS FIRST)
 
-There are two environments. Both share the same Supabase database.
+There are two environments. Both share the same Supabase database. Both deploy via Vercel automatically on push.
 
 | Environment | URL | Branch | Deploys via |
 |-------------|-----|--------|-------------|
-| **Staging** | rally-play-tennis.vercel.app | `staging` | Vercel (automatic) |
-| **Production** | play-rally.com | `main` | GitHub Pages (automatic) |
+| **Staging** | staging.play-rally.com | `staging` | Vercel (automatic on push) |
+| **Production** | play-rally.com | `main` | Vercel (automatic on push) |
 
-### How to deploy (step by step)
+Note: `rally-play-tennis.vercel.app` is Vercel's auto-generated domain — it points to **production** (`main`), not staging. Always use `staging.play-rally.com` for staging.
+
+### How to deploy to staging (step by step)
+
+**Do NOT create pull requests.** This is a solo project — deploy by direct merge + push.
+
+**NEVER run `npm run dev` as a substitute for deploying.** The user cannot access local dev servers. "Deploy" always means merge to `staging` and push so the change is live at staging.play-rally.com. When the user says "deploy", "ship it", "make it live", or asks to see their changes — always deploy to staging via the steps below.
 
 1. **Create a feature branch** off `staging` (not `main`)
 2. **Do your work** on the feature branch, commit and push
-3. **Merge into `staging`** and push → Vercel auto-deploys to rally-play-tennis.vercel.app
-4. **Stop here.** Tell the user the staging URL is updated. Do NOT touch `main`.
-5. **Only when the user says "deploy to live"** (or similar): merge `staging` into `main` and push → GitHub Pages auto-deploys to play-rally.com
+3. **When the user says "deploy to staging"** (or any variant like "deploy", "ship it", "make it live"): checkout `staging`, merge the feature branch, push
+   ```bash
+   git checkout staging
+   git merge <feature-branch> --no-edit
+   git push origin staging
+   ```
+4. Vercel auto-deploys to staging.play-rally.com
+5. **Verify the deploy succeeded** before telling the user it's live (check Vercel or load the URL)
+6. **Stop here.** Do NOT touch `main`.
+
+### How to deploy to production
+
+7. **Only when the user explicitly says "deploy to live/production"**: merge `staging` into `main` and push
+   ```bash
+   git checkout main
+   git merge staging --no-edit
+   git push origin main
+   ```
+8. Vercel auto-deploys to play-rally.com
 
 ### Rules
 
 - **NEVER push or merge to `main` unless the user explicitly says to deploy to live.** This is the #1 rule. `main` is production and updates play-rally.com immediately. There are no exceptions.
+- **NEVER create pull requests.** Always merge directly. PRs require GitHub token permissions that may not be available in all environments (e.g. Conductor workspaces).
 - **Always branch from `staging`**, not from `main`.
 - **After merging to `staging`**, always push so Vercel picks it up.
 - **After pushing to staging**, check the Vercel deployments page to confirm the build succeeded before telling the user it's live. Do not assume the deploy worked.
 - **Do not ask the user whether to deploy to production.** Just deploy to staging and let them decide.
 - **Never commit `package-lock.json` changes from a different branch.** If you stash/cherry-pick across branches, always exclude the lock file and run `npm install` on the target branch instead.
 - If you cannot push (e.g. auth error), tell the user and stop. Do not force-push or use workarounds.
+- **Worktree conflicts**: If `git checkout staging` fails because the branch is checked out in another Conductor workspace (worktree), create a temporary branch from `origin/staging`, merge into it, then `git push origin temp-branch:staging`.
+- **CLAUDE.md is the source of truth for agent behavior.** If you update it, commit and merge to `staging` promptly so all workspaces pick up the changes.
 
 ## Monorepo Structure
 This is a monorepo with `apps/*` and `packages/*` workspaces. Only Rally Tennis code lives here — all legacy apps (grp, cms, daily-priorities) were removed.
@@ -121,10 +145,11 @@ Full briefing: `apps/play-tennis/docs/scheduling-briefing.md` (18 sections)
 
 ## Development
 ```bash
-npm run dev:play-tennis     # Dev server on port 5180
-npm run build:play-tennis   # TypeScript check + Vite build
+npm run dev:play-tennis     # Local dev server (port 5180) — for debugging only, NOT for deploying
+npm run build:play-tennis   # TypeScript check + Vite build (used by pre-push hook)
 npm run dev:tennis-server   # Backend on port 8788
 ```
+**Note:** `npm run dev` is only useful for local debugging during development. The user works through Conductor and cannot access local dev servers. To show the user changes, always deploy to staging (merge to `staging` branch + push).
 
 ## Git Hooks
 - **pre-commit**: Runs `tsc --noEmit` on play-tennis (type check only, no build)
