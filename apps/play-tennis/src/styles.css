@@ -7449,6 +7449,13 @@ select:focus {
   color: white;
 }
 
+.welcome-msg-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+  -webkit-overflow-scrolling: touch;
+}
+
 .chat-card-body {
   flex: 1;
   min-width: 0;
