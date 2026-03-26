@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Tournament, Match, SchedulingTier } from '../types'
-import { getPlayerName } from '../store'
+import { getPlayerName, getPendingFeedback, clearPendingFeedback } from '../store'
 import MatchActionCard from './MatchActionCard'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 interface Props {
   tournament: Tournament
@@ -103,6 +104,7 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
 export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated }: Props) {
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
+  const pendingFeedback = getPendingFeedback()
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
   const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
   const weeks = groupByWeek(sorted)
@@ -152,7 +154,29 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
 
             return (
               <div key={match.id}>
-                {isCompleted ? (
+                {pendingFeedback?.matchId === match.id && isMyMatch && match.player1Id && match.player2Id ? (
+                  <div className="card action-card action-completed">
+                    <div className="action-card-status-row">
+                      <div className="card-status-label card-status-label--slate">Completed</div>
+                      {slot && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
+                    </div>
+                    <div className="action-card-main">
+                      <div className="action-card-opponent">vs {opponentName}</div>
+                      <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
+                    </div>
+                    <PostMatchFeedbackInline
+                      matchId={match.id}
+                      tournamentId={tournament.id}
+                      playerId={currentPlayerId}
+                      opponentId={opponentId!}
+                      opponentName={opponentName}
+                      onDone={() => {
+                        clearPendingFeedback()
+                        onTournamentUpdated()
+                      }}
+                    />
+                  </div>
+                ) : isCompleted ? (
                   <div className="card action-card action-completed">
                     <div className="action-card-status-row">
                       <div className={`card-status-label card-status-label--${getTierTone(tier, true)}`}>Completed</div>
@@ -181,6 +205,10 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       setMessagingMatchId(isMessaging ? null : match.id)
                     }}
                     onUpdated={() => {
+                      setExpandedMatchId(null)
+                      onTournamentUpdated()
+                    }}
+                    onScoreSaved={() => {
                       setExpandedMatchId(null)
                       onTournamentUpdated()
                     }}

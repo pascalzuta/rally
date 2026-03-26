@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { saveMatchScore, getPlayerName, getSeeds } from '../store'
+import { saveMatchScore, getPlayerName, getSeeds, clearPendingFeedback } from '../store'
 import { Tournament } from '../types'
 import { useToast, ConfirmationTone } from './Toast'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 function isValidSet(s1: number, s2: number): boolean {
   if (s1 === 6 && s2 <= 4) return true
@@ -25,8 +26,14 @@ interface Props {
 export default function InlineScoreEntry({ tournament, matchId, currentPlayerId, onSaved, onActionComplete, embedded = false }: Props) {
   const { showSuccess, showError } = useToast()
   const match = tournament.matches.find(m => m.id === matchId)!
-  const p1Name = getPlayerName(tournament, match.player1Id)
-  const p2Name = getPlayerName(tournament, match.player2Id)
+  // Determine if the current user is player1 or player2 to show correct "You" label
+  const isCurrentPlayer2 = currentPlayerId === match.player2Id
+  const youName = isCurrentPlayer2
+    ? getPlayerName(tournament, match.player2Id)
+    : getPlayerName(tournament, match.player1Id)
+  const opponentName = isCurrentPlayer2
+    ? getPlayerName(tournament, match.player1Id)
+    : getPlayerName(tournament, match.player2Id)
 
   const [sets, setSets] = useState<Array<[string, string]>>([['', ''], ['', ''], ['', '']])
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -85,7 +92,11 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     return null
   }
 
-  const scores = getScores()
+  const rawScores = getScores()
+  // Map UI rows back to player1/player2 order for storage
+  const scores = rawScores && isCurrentPlayer2
+    ? { score1: rawScores.score2, score2: rawScores.score1 }
+    : rawScores
   const winnerId = scores ? determineWinner(scores.score1, scores.score2) : null
   const canSave = scores && winnerId
 
@@ -131,13 +142,8 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     setSaveState('saving')
     try {
       await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId, currentPlayerId)
-      if (onActionComplete) {
-        onActionComplete('Score submitted. Your opponent has 48 hours to confirm.', 'blue')
-      } else {
-        setSaveState('success')
-        showSuccess('Score reported — waiting for opponent to confirm')
-        setTimeout(() => onSaved(), 2000)
-      }
+      setSaveState('success')
+      showSuccess('Score reported — waiting for opponent to confirm')
     } catch {
       setSaveState('error')
       showError('Failed to save score')
@@ -145,6 +151,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   }
 
   if (saveState === 'success') {
+    const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
         <div className="workflow-header">
@@ -152,10 +159,21 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
           <div className="schedule-panel-title">Waiting for opponent confirmation</div>
           <div className="schedule-panel-copy">Your opponent has 48 hours to confirm the result.</div>
         </div>
-        <div className="score-toast score-toast--success">
-          <span className="score-toast-check">✓</span>
-          <strong>Score reported!</strong>
-        </div>
+        <PostMatchFeedbackInline
+          matchId={matchId}
+          tournamentId={tournament.id}
+          playerId={currentPlayerId!}
+          opponentId={opponentId}
+          opponentName={opponentName}
+          onDone={() => {
+            clearPendingFeedback()
+            if (onActionComplete) {
+              onActionComplete('Score submitted. Your opponent has 48 hours to confirm.', 'blue')
+            } else {
+              onSaved()
+            }
+          }}
+        />
       </div>
     )
   }
@@ -179,7 +197,10 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   }
 
   if (saveState === 'confirming' && scores && winnerId) {
-    const scoreSummary = scores.score1.map((s, i) => `${s}-${scores.score2[i]}`).join(', ')
+    // Show scores from "You" perspective (your score first)
+    const yourScores = isCurrentPlayer2 ? scores.score2 : scores.score1
+    const oppScores = isCurrentPlayer2 ? scores.score1 : scores.score2
+    const scoreSummary = yourScores.map((s, i) => `${s}-${oppScores[i]}`).join(', ')
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
         <div className="workflow-header">
@@ -215,10 +236,10 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
           <div key={i} className="score-header">Set {i + 1}</div>
         ))}
 
-        <div className="score-player-name score-row-label score-row-label--you">You ({p1Name})</div>
+        <div className="score-player-name score-row-label score-row-label--you">You ({youName})</div>
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
-            key={`p1-${i}`}
+            key={`you-${i}`}
             ref={el => { inputRefs.current[i * 2] = el }}
             type="number"
             min="0"
@@ -230,10 +251,10 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
           />
         ))}
 
-        <div className="score-player-name score-row-label score-row-label--opponent">{p2Name}</div>
+        <div className="score-player-name score-row-label score-row-label--opponent">{opponentName}</div>
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
-            key={`p2-${i}`}
+            key={`opp-${i}`}
             ref={el => { inputRefs.current[i * 2 + 1] = el }}
             type="number"
             min="0"
