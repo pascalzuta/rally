@@ -310,7 +310,7 @@ export default function App() {
       <div className="screen">
         <nav className="top-nav">
           <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
-              <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 2 }} />
+              <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
             </div>
           <div className="top-nav-actions">
             <button className="top-nav-icon" aria-label="Rating & Trophies" onClick={() => { setShowRatingPanel(!showRatingPanel); setShowInbox(false); setShowNotifications(false) }}>
