@@ -114,6 +114,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       const updated = await joinLobby(profile)
       setEntries(updated)
       setJoined(true)
+      fbq('track', 'Lead')
 
       if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
         const tournament = await startTournamentFromLobby(profile.county)

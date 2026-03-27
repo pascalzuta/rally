@@ -65,6 +65,13 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
 
+  // Fire ViewContent when unauthenticated landing page is shown
+  useEffect(() => {
+    if (!authLoading && !profile) {
+      fbq('track', 'ViewContent')
+    }
+  }, [authLoading, profile])
+
   // Resolve tournament invite county for pre-filling registration
   useEffect(() => {
     if (inviteTournamentCode && !inviteTournamentCounty) {
