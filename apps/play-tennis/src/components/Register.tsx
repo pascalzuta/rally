@@ -394,6 +394,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
     setCreatedProfile(p)
     setStep('confirmed')
+    fbq('track', 'CompleteRegistration')
     setTimeout(() => onRegistered(p), 1500)
   }
 
@@ -607,7 +608,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         setAuthUserId(result.userId)
         // Check if this is a returning user with a full profile on the server
         const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
-        if (!restored) setStep('signup')
+        if (!restored) {
+          fbq('track', 'Lead')
+          setStep('signup')
+        }
       } else {
         setOtpError('Invalid or expired code. Please try again.')
         setOtpCode('')
