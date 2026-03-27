@@ -410,6 +410,19 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const isOnboarding = step === 'onboard-1' || step === 'onboard-2' || step === 'onboard-3'
   const onboardIdx = step === 'onboard-1' ? 0 : step === 'onboard-2' ? 1 : step === 'onboard-3' ? 2 : -1
 
+  // Auto-rotate onboarding screens every 4 seconds
+  useEffect(() => {
+    if (!isOnboarding) return
+    const timer = setInterval(() => {
+      setStepRaw(prev => {
+        if (prev === 'onboard-1') return 'onboard-2'
+        if (prev === 'onboard-2') return 'onboard-3'
+        return 'onboard-1'
+      })
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [step])
+
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
