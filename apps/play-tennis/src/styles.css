@@ -2054,8 +2054,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 56px);
-  padding: 16px 24px 40px;
-  padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+  padding: 16px 24px 5px;
+  padding-bottom: max(5px, env(safe-area-inset-bottom, 5px));
   justify-content: space-between;
   background: #fff;
   touch-action: pan-y;
