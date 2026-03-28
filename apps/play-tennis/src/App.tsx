@@ -75,9 +75,14 @@ export default function App() {
   }, [])
 
   // Fire ViewContent when unauthenticated landing page is shown
+  // Identify returning user when profile exists from localStorage
   useEffect(() => {
     if (!authLoading && !profile) {
       analytics.track('ViewContent')
+    }
+    if (profile) {
+      sessionStorage.setItem('rally-analytics-uid', profile.id)
+      analytics.track('PageView', { userId: profile.id, skipMeta: true })
     }
   }, [authLoading, profile])
 
@@ -120,6 +125,8 @@ export default function App() {
             createdAt: existing.createdAt ?? new Date().toISOString(),
           }
           localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
+          analytics.identify(restored.id, { county: restored.county })
+          analytics.track('ReturnVisit', { userId: restored.id })
           setProfile(restored)
         }
       } catch {
@@ -150,11 +157,15 @@ export default function App() {
     if (!window.location.hash) {
       window.history.replaceState({ tab: 'home' }, '', '#home')
     }
-    const onPopState = () => {
+    const onHashChange = () => {
       setActiveTabRaw(getTabFromHash())
     }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
+    window.addEventListener('popstate', onHashChange)
+    window.addEventListener('hashchange', onHashChange)
+    return () => {
+      window.removeEventListener('popstate', onHashChange)
+      window.removeEventListener('hashchange', onHashChange)
+    }
   }, [])
 
   // Dismiss notification panel / inbox on outside click or Escape key
