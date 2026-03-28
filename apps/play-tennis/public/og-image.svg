@@ -1,0 +1,51 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0a"/>
+      <stop offset="100%" style="stop-color:#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#16a34a"/>
+      <stop offset="100%" style="stop-color:#22c55e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Green accent bar -->
+  <rect x="0" y="0" width="1200" height="6" fill="url(#accent)"/>
+
+  <!-- Tennis ball decorative element -->
+  <circle cx="1050" cy="315" r="180" fill="none" stroke="#22c55e" stroke-width="2" opacity="0.15"/>
+  <circle cx="1050" cy="315" r="120" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.1"/>
+  <circle cx="1050" cy="315" r="60" fill="#22c55e" opacity="0.08"/>
+
+  <!-- Logo mark -->
+  <circle cx="100" cy="100" r="32" fill="#16a34a"/>
+  <text x="100" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">R</text>
+
+  <!-- Brand name -->
+  <text x="150" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#a1a1aa" letter-spacing="4">RALLY</text>
+
+  <!-- Main headline -->
+  <text x="80" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="white">Find Local Tennis</text>
+  <text x="80" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="white">Players Near You</text>
+
+  <!-- Subheadline -->
+  <text x="80" y="400" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#a1a1aa">Join your county's lobby · Auto-matched tournaments</text>
+  <text x="80" y="435" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#a1a1aa">Smart scheduling · 100% free</text>
+
+  <!-- Stats bar -->
+  <rect x="80" y="490" width="700" height="70" rx="12" fill="#1a1a2e" stroke="#2a2a3e" stroke-width="1"/>
+  <text x="160" y="533" font-family="ui-monospace, monospace" font-size="28" font-weight="bold" fill="#22c55e">3,000+</text>
+  <text x="340" y="533" font-family="system-ui, sans-serif" font-size="18" fill="#71717a">US Counties</text>
+  <line x1="440" y1="505" x2="440" y2="545" stroke="#2a2a3e" stroke-width="1"/>
+  <text x="480" y="533" font-family="ui-monospace, monospace" font-size="28" font-weight="bold" fill="#22c55e">50</text>
+  <text x="530" y="533" font-family="system-ui, sans-serif" font-size="18" fill="#71717a">States</text>
+  <line x1="600" y1="505" x2="600" y2="545" stroke="#2a2a3e" stroke-width="1"/>
+  <text x="640" y="533" font-family="system-ui, sans-serif" font-size="18" fill="#71717a">Free Forever</text>
+
+  <!-- URL -->
+  <text x="80" y="600" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#16a34a">play-rally.com</text>
+</svg>
