@@ -11309,4 +11309,205 @@ main {
 }
 
 
+/* ================================================
+   Desktop & Tablet Responsive Layout
+   ================================================ */
+
+/* --- Tablet: 768px+ --- */
+@media (min-width: 768px) {
+  .app {
+    max-width: 100%;
+    flex-direction: row;
+  }
+
+  /* Bottom tabs become a sidebar */
+  .bottom-tabs {
+    flex-direction: column;
+    width: 72px;
+    height: 100dvh;
+    box-shadow: 1px 0 4px rgba(0,0,0,0.06);
+    padding-bottom: 0;
+    padding-top: var(--space-lg);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: var(--z-sticky);
+  }
+
+  .bottom-tab {
+    flex: 0 0 auto;
+    padding: var(--space-md) 0;
+  }
+
+  .bottom-tab.active::before {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 24px;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Main content shifts right to make room for sidebar */
+  .screen {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-xl);
+  }
+
+  /* Top nav stretches full width */
+  .top-nav {
+    padding: 0 var(--space-xl);
+  }
+
+  /* Cards get more breathing room */
+  .card {
+    padding: 24px;
+  }
+
+  .action-card {
+    padding: 24px;
+  }
+}
+
+/* --- Desktop: 1024px+ --- */
+@media (min-width: 1024px) {
+  /* Wider sidebar with labels */
+  .bottom-tabs {
+    width: 200px;
+    align-items: flex-start;
+    padding: var(--space-xl) 0;
+    gap: var(--space-xs);
+  }
+
+  .bottom-tab {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    width: 100%;
+    min-height: 44px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  .bottom-tab:hover {
+    background: var(--color-neutral-bg);
+  }
+
+  .bottom-tab.active {
+    background: rgba(42, 91, 215, 0.06);
+  }
+
+  .bottom-tab.active::before {
+    height: 100%;
+    width: 3px;
+    top: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .tab-text {
+    font-size: var(--font-body-md);
+  }
+
+  /* Main content area */
+  .screen {
+    margin-left: 200px;
+    width: calc(100% - 200px);
+  }
+
+  .content {
+    max-width: 960px;
+    padding: var(--space-xl) 40px;
+  }
+
+  .top-nav {
+    padding: 0 40px;
+  }
+
+  /* Action cards in 2-column grid when there are multiple */
+  .action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  /* Home sections get more space */
+  .home-section,
+  .home-section-spaced {
+    gap: var(--space-xl);
+  }
+
+  /* Leaderboard teaser as a wider card */
+  .leaderboard-teaser {
+    max-width: 560px;
+  }
+
+  /* PlayNow opponent grid */
+  .pn-opponent-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: var(--space-md);
+  }
+
+  /* Offer cards in grid */
+  .offer-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: var(--space-md);
+  }
+
+  /* Schedule summary wider layout */
+  .schedule-summary-strip {
+    max-width: 100%;
+  }
+
+  .schedule-summary-stats {
+    flex-wrap: nowrap;
+  }
+
+  /* Tournament bracket: match cards in grid within each round */
+  .round {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .round-label {
+    grid-column: 1 / -1;
+  }
+
+  /* Profile sections side by side */
+  .profile-section {
+    max-width: 600px;
+  }
+}
+
+/* --- Wide desktop: 1280px+ --- */
+@media (min-width: 1280px) {
+  .content {
+    max-width: 1120px;
+    padding: var(--space-xl) 48px;
+  }
+
+  .top-nav {
+    padding: 0 48px;
+  }
+
+  /* 3-column match cards on very wide screens */
+  .action-cards {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .pn-opponent-list {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
 /* deploy trigger 1774332130 */
