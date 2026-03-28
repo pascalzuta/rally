@@ -6,6 +6,7 @@ import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
 import { initSupabase, getSession, onAuthStateChange, fetchPlayerProfile } from './supabase'
 import Register from './components/Register'
+import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
@@ -51,9 +52,22 @@ function clearInviteParam() {
   window.history.replaceState({}, '', url.pathname)
 }
 
+function useIsDesktop(breakpoint = 768) {
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= breakpoint)
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${breakpoint}px)`)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [breakpoint])
+  return isDesktop
+}
+
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
+  const isDesktop = useIsDesktop()
+  const [forceSignup, setForceSignup] = useState(false)
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
@@ -308,6 +322,24 @@ export default function App() {
   }
 
   if (!profile) {
+    // Desktop guest: show full-width landing page (unless user clicked "Get started")
+    if (isDesktop && !forceSignup) {
+      return (
+        <div className="app app-desktop-guest">
+          <DesktopGuestHomepage onGetStarted={() => setForceSignup(true)} />
+          <DevTools
+            onProfileSwitch={p => setProfile(p)}
+            activeTournamentId={null}
+            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+            onTournamentCreated={id => {
+              refreshTournaments()
+              setActiveTab('home')
+            }}
+          />
+        </div>
+      )
+    }
+
     return (
       <div className="app">
         <nav className="top-nav top-nav-register">
