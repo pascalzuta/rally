@@ -1,16 +1,268 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+    <!-- Primary Meta Tags -->
+    <title>Rally — Find Local Tennis Players & Tournaments Near You</title>
+    <meta name="title" content="Rally — Find Local Tennis Players & Tournaments Near You" />
+    <meta name="description" content="Rally connects tennis players in your county for competitive round-robin tournaments. Join your local lobby, get auto-matched by skill level and availability, and play real matches — all for free." />
+    <meta name="keywords" content="tennis, local tennis, tennis tournaments, round robin tennis, find tennis players, tennis league, tennis matchmaking, tennis near me, recreational tennis, competitive tennis, USTA alternative, tennis community, county tennis, play tennis" />
+    <meta name="author" content="Rally" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://play-rally.com/" />
+
+    <!-- Theme & App Config -->
     <meta name="theme-color" content="#16a34a" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <title>Rally</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rally" />
+    <meta name="application-name" content="Rally" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://play-rally.com/" />
+    <meta property="og:title" content="Rally — Find Local Tennis Players & Tournaments Near You" />
+    <meta property="og:description" content="Join your county's tennis lobby, get auto-matched by skill and availability, and play competitive round-robin tournaments. Free for all skill levels." />
+    <meta property="og:image" content="https://play-rally.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Rally — Local tennis tournaments made easy" />
+    <meta property="og:site_name" content="Rally" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://play-rally.com/" />
+    <meta name="twitter:title" content="Rally — Find Local Tennis Players & Tournaments Near You" />
+    <meta name="twitter:description" content="Join your county's tennis lobby, get auto-matched by skill and availability, and play competitive round-robin tournaments. Free for all skill levels." />
+    <meta name="twitter:image" content="https://play-rally.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Rally — Local tennis tournaments made easy" />
+
+    <!-- Geo Tags -->
+    <meta name="geo.region" content="US" />
+    <meta name="geo.placename" content="United States" />
+    <meta name="coverage" content="Worldwide" />
+    <meta name="target" content="all" />
+    <meta name="HandheldFriendly" content="True" />
+
+    <!-- Favicons & Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Preconnects for Performance -->
+    <link rel="preconnect" href="https://gxiflulfgqahlvdirecz.supabase.co" />
+    <link rel="dns-prefetch" href="https://gxiflulfgqahlvdirecz.supabase.co" />
+
+    <!-- JSON-LD Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Rally",
+      "url": "https://play-rally.com",
+      "logo": "https://play-rally.com/rally-logo.svg",
+      "description": "Rally connects local tennis players for competitive round-robin tournaments organized by county.",
+      "foundingDate": "2024",
+      "sameAs": [],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "https://play-rally.com"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Rally",
+      "url": "https://play-rally.com",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "description": "Rally is a free tennis tournament platform that connects players in your county. Join a lobby, get auto-matched by skill level and availability, and play competitive round-robin tournaments.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "County-based player matching",
+        "Automatic round-robin tournament creation",
+        "Skill-level matchmaking (NTRP 2.0–5.0+)",
+        "Smart scheduling based on player availability",
+        "Live tournament brackets and results",
+        "Rally Rating system with ELO-based rankings",
+        "Real-time leaderboards by county"
+      ],
+      "screenshot": "https://play-rally.com/og-image.png"
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data: SportsOrganization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SportsOrganization",
+      "name": "Rally Tennis",
+      "url": "https://play-rally.com",
+      "sport": "https://en.wikipedia.org/wiki/Tennis",
+      "description": "A community-driven platform organizing local tennis tournaments across US counties. Players join lobbies, get auto-grouped by skill and availability, and compete in round-robin formats.",
+      "areaServed": {
+        "@type": "Country",
+        "name": "United States"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Rally?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rally is a free platform that connects local tennis players for competitive round-robin tournaments. Players join their county's lobby, and when enough players sign up (6+), a tournament is automatically created with matches scheduled around everyone's availability."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Rally match tennis players?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rally groups players by county and skill level (NTRP ratings from 2.0 to 5.0+). When 6 or more players join a county lobby, the system automatically creates a round-robin tournament and schedules matches based on overlapping availability windows."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Rally free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Rally is completely free. There are no subscription fees, tournament entry fees, or hidden costs. Simply sign up, join your county's lobby, and start playing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What skill levels does Rally support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rally supports all skill levels using the NTRP (National Tennis Rating Program) scale from 2.0 (beginner) to 5.0+ (advanced/competitive). Players are matched with others at similar skill levels to ensure competitive and enjoyable matches."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How many players are needed to start a tournament?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A minimum of 6 players are needed to start a round-robin tournament. Once your county lobby reaches 6+ players, the tournament is automatically created and match scheduling begins."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a round-robin tournament format?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In a round-robin tournament, every player plays against every other player in their group. This ensures maximum playing time and a fair ranking based on overall performance, not single-elimination luck."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Rally scheduling work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rally uses smart scheduling that analyzes all players' availability to find overlapping 2-hour windows. Matches are categorized as auto-scheduled (confirmed times), needs-accept (proposed times), or needs-negotiation (players coordinate directly)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is Rally Rating?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rally Rating is an ELO-based rating system that tracks your competitive performance over time. Your rating updates after each match based on the result and your opponent's rating, providing an accurate measure of your skill level."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I invite friends to Rally?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! You can share a direct invitation link with friends. When they click the link, they'll be taken directly to your county's lobby to sign up and join the tournament."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What counties and areas does Rally cover?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Rally covers all 3,000+ counties across all 50 US states. Simply select your county during registration and you'll be connected with other tennis players in your area."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- JSON-LD: WebSite (for sitelinks) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Rally",
+      "url": "https://play-rally.com",
+      "description": "Find local tennis players and tournaments in your county.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Rally"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://play-rally.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Find Players",
+          "item": "https://play-rally.com/#home"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Tournaments",
+          "item": "https://play-rally.com/#bracket"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Leaderboard",
+          "item": "https://play-rally.com/#leaderboard"
+        }
+      ]
+    }
+    </script>
+
     <!-- Meta Pixel Code -->
     <script>
       !function(f,b,e,v,n,t,s)
@@ -38,9 +290,73 @@
     <!-- End Google Ads -->
   </head>
   <body>
-    <noscript><img height="1" width="1" style="display:none"
-      src="https://www.facebook.com/tr?id=840050529907859&ev=PageView&noscript=1"
-    /></noscript>
+    <!-- Noscript Fallback for SEO & Accessibility -->
+    <noscript>
+      <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=840050529907859&ev=PageView&noscript=1"
+      />
+      <div style="max-width:800px;margin:40px auto;padding:20px;font-family:system-ui,sans-serif;">
+        <h1>Rally — Find Local Tennis Players & Tournaments Near You</h1>
+        <p>Rally connects tennis players in your county for competitive round-robin tournaments. Join your local lobby, get auto-matched by skill level and availability, and play real matches — all for free.</p>
+
+        <h2>How Rally Works</h2>
+        <ol>
+          <li><strong>Sign up and select your county</strong> — Choose from 3,000+ US counties to find players near you.</li>
+          <li><strong>Join your county's lobby</strong> — See how many players are waiting and invite friends to fill the lobby faster.</li>
+          <li><strong>Tournament auto-creates at 6+ players</strong> — Once enough players join, a round-robin tournament is automatically generated.</li>
+          <li><strong>Smart scheduling</strong> — Matches are scheduled around everyone's availability using intelligent time-slot matching.</li>
+          <li><strong>Play and climb the leaderboard</strong> — Report scores, earn Rally Rating points, and compete for your county's top spot.</li>
+        </ol>
+
+        <h2>Features</h2>
+        <ul>
+          <li>County-based matchmaking across all 50 US states</li>
+          <li>Round-robin tournament format — play every opponent</li>
+          <li>NTRP skill-level matching (2.0 to 5.0+)</li>
+          <li>Availability-based smart scheduling</li>
+          <li>ELO-based Rally Rating system</li>
+          <li>Real-time brackets and leaderboards</li>
+          <li>100% free — no fees, no subscriptions</li>
+        </ul>
+
+        <h2>Frequently Asked Questions</h2>
+
+        <h3>What is Rally?</h3>
+        <p>Rally is a free platform that connects local tennis players for competitive round-robin tournaments. Players join their county's lobby, and when enough players sign up (6+), a tournament is automatically created with matches scheduled around everyone's availability.</p>
+
+        <h3>How does Rally match tennis players?</h3>
+        <p>Rally groups players by county and skill level (NTRP ratings from 2.0 to 5.0+). When 6 or more players join a county lobby, the system automatically creates a round-robin tournament and schedules matches based on overlapping availability windows.</p>
+
+        <h3>Is Rally free to use?</h3>
+        <p>Yes, Rally is completely free. There are no subscription fees, tournament entry fees, or hidden costs. Simply sign up, join your county's lobby, and start playing.</p>
+
+        <h3>What skill levels does Rally support?</h3>
+        <p>Rally supports all skill levels using the NTRP (National Tennis Rating Program) scale from 2.0 (beginner) to 5.0+ (advanced/competitive). Players are matched with others at similar skill levels.</p>
+
+        <h3>How many players are needed to start a tournament?</h3>
+        <p>A minimum of 6 players are needed to start a round-robin tournament. Once your county lobby reaches 6+ players, the tournament is automatically created.</p>
+
+        <h3>What is a round-robin tournament format?</h3>
+        <p>In a round-robin tournament, every player plays against every other player in their group. This ensures maximum playing time and a fair ranking based on overall performance.</p>
+
+        <h3>How does Rally scheduling work?</h3>
+        <p>Rally uses smart scheduling that analyzes all players' availability to find overlapping 2-hour windows. Matches are categorized as auto-scheduled, needs-accept, or needs-negotiation.</p>
+
+        <h3>What is Rally Rating?</h3>
+        <p>Rally Rating is an ELO-based rating system that tracks your competitive performance over time. Your rating updates after each match based on the result and your opponent's rating.</p>
+
+        <h3>What counties and areas does Rally cover?</h3>
+        <p>Rally covers all 3,000+ counties across all 50 US states. Select your county during registration and connect with local tennis players.</p>
+
+        <h3>Can I invite friends to Rally?</h3>
+        <p>Yes! Share a direct invitation link with friends. When they click the link, they'll join your county's lobby directly.</p>
+
+        <h2>Learn More</h2>
+        <p>Visit the <a href="/blog/">Rally Blog</a> for expert articles on tennis technique, analytics, and strategy.</p>
+
+        <p><a href="https://play-rally.com/">Launch Rally App →</a></p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

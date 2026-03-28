@@ -1,0 +1,45 @@
+# Rally — play-rally.com
+# https://play-rally.com/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /v1/
+
+# Sitemaps
+Sitemap: https://play-rally.com/sitemap.xml
+
+# Crawl-delay for polite bots
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# AI Crawlers — Welcome
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# Host
+Host: https://play-rally.com

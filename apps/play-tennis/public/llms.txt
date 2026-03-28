@@ -1,0 +1,62 @@
+# Rally — play-rally.com
+
+> Rally is a free platform that connects local tennis players for competitive round-robin tournaments, organized by county across all 50 US states.
+
+## What Rally Does
+
+Rally solves the problem of finding local tennis opponents. Instead of posting on forums or messaging strangers, players join their county's lobby on Rally. When 6 or more players have joined, a round-robin tournament is automatically created with matches intelligently scheduled around everyone's availability.
+
+## How It Works
+
+1. **Sign up** — Create a free account with your name, county, skill level (NTRP 2.0–5.0+), and gender.
+2. **Set availability** — Tell Rally when you're free to play (weekday mornings, evenings, weekends, etc.).
+3. **Join your county lobby** — See how many players are waiting in your county. Share your invite link to fill the lobby faster.
+4. **Auto-tournament at 6+ players** — When the lobby fills, Rally auto-creates a round-robin tournament.
+5. **Smart scheduling** — Rally's algorithm finds overlapping 2-hour availability windows between opponents and schedules matches automatically.
+6. **Play matches** — Meet your opponents at local courts, play your match, and report the score.
+7. **Earn Rally Rating** — An ELO-based rating system tracks your performance. Climb your county's leaderboard.
+
+## Key Features
+
+- **County-based matchmaking**: Players are organized by their US county (3,000+ counties supported).
+- **Round-robin format**: Every player plays every other player in their group — no single-elimination surprises.
+- **NTRP skill matching**: Players are grouped by skill level using the standard NTRP scale (2.0 beginner to 5.0+ advanced).
+- **Availability-first scheduling**: Matches scheduled around players' real availability, not arbitrary dates.
+- **Three scheduling tiers**: Auto-confirmed, needs-accept (proposed time), and needs-negotiation (players coordinate).
+- **Rally Rating**: ELO-based competitive rating that updates after every match.
+- **County leaderboards**: Compete for the top spot in your county.
+- **Real-time sync**: Multi-player state synced in real-time via Supabase.
+- **Invite links**: Share a link to bring friends directly into your county's lobby.
+- **100% free**: No fees, subscriptions, or paywalls.
+
+## Coverage
+
+Rally is available in all 50 US states, covering 3,000+ counties. Players select their county during registration.
+
+## Technology
+
+Rally is a web application (play-rally.com) built with React. It works on any modern browser on mobile or desktop. No app download required.
+
+## Target Audience
+
+- Recreational and competitive tennis players (NTRP 2.0–5.0+)
+- Players looking for local opponents without joining a traditional tennis club
+- Communities that want organized tennis without the overhead of league management
+- Players of all ages, genders, and backgrounds
+
+## Blog & Educational Content
+
+Rally publishes expert articles on tennis technique, analytics, and strategy at https://play-rally.com/blog/
+
+Featured articles:
+- **Tennis Analytics: Key Metrics That Predict Match Outcomes** — First-serve %, return points won, winners/UE ratio, win probability models (Barnett-Clarke, Klaassen-Magnus), surface adjustments. https://play-rally.com/blog/tennis-analytics-metrics-win-probability/
+- **New Metrics in Tennis: Sports Science, Tracking Data & Betting Models** — Hawk-Eye spatial data, shot quality index, expected points added, rally tempo, live betting models, fatigue models, academic research frontier. https://play-rally.com/blog/new-metrics-tennis-science-sports-betting/
+- **Understanding ELO and Rally Rating** — How ELO works in tennis, surface-adjusted ELO, Glicko/TrueSkill alternatives, and how Rally Rating tracks recreational players. https://play-rally.com/blog/rally-rating-elo-tennis/
+- **Mastering the Modern Tennis Serve** — Kinetic chain biomechanics, grip variations, trophy position, pronation, kick serve technique, drills by NTRP level. https://play-rally.com/blog/mastering-the-modern-tennis-serve/
+- **The Two-Handed Backhand** — Grip setup, swing path, stance variations, common errors and fixes. https://play-rally.com/blog/two-handed-backhand-technique/
+- **Tennis Footwork & Movement Patterns** — Split step, lateral movement, recovery, open vs closed stance, court position drills. https://play-rally.com/blog/tennis-footwork-movement-patterns/
+- **Return of Serve Strategy** — Reading the server, positioning, block returns, aggressive returns, return patterns. https://play-rally.com/blog/return-of-serve-strategy/
+
+## URL
+
+https://play-rally.com

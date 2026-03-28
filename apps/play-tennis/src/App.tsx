@@ -353,6 +353,12 @@ export default function App() {
             </div>
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} />
+        <footer style={{ textAlign: 'center', padding: '24px 16px 32px', borderTop: '1px solid var(--color-border)', marginTop: 32 }}>
+          <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Tennis Blog — Technique, Analytics & Strategy
+          </a>
+        </footer>
         <DevTools
           onProfileSwitch={p => setProfile(p)}
           activeTournamentId={null}
