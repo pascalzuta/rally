@@ -4,6 +4,7 @@ import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
+import { analytics } from './analytics'
 import { initSupabase, getSession, onAuthStateChange, fetchPlayerProfile } from './supabase'
 import Register from './components/Register'
 import Home from './components/Home'
@@ -14,13 +15,14 @@ import RatingPanel from './components/RatingPanel'
 import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
+import AnalyticsDashboard from './components/AnalyticsDashboard'
 import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import './styles.css'
 
-type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
+type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help' | 'analytics'
 
-const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard', 'help']
+const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard', 'help', 'analytics']
 
 function getTabFromHash(): Tab {
   const hash = window.location.hash.replace('#', '')
@@ -65,10 +67,15 @@ export default function App() {
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
 
+  // Capture UTM attribution on mount
+  useEffect(() => {
+    analytics.captureAttribution()
+  }, [])
+
   // Fire ViewContent when unauthenticated landing page is shown
   useEffect(() => {
     if (!authLoading && !profile) {
-      fbq('track', 'ViewContent')
+      analytics.track('ViewContent')
     }
   }, [authLoading, profile])
 
@@ -524,6 +531,10 @@ export default function App() {
 
           {activeTab === 'help' && (
             <Help onBack={() => setActiveTab('profile')} />
+          )}
+
+          {activeTab === 'analytics' && (
+            <AnalyticsDashboard onBack={() => setActiveTab('home')} />
           )}
         </main>
       </div>
