@@ -11316,8 +11316,7 @@ main {
 /* --- Tablet: 768px+ --- */
 @media (min-width: 768px) {
   .app {
-    max-width: 100%;
-    flex-direction: row;
+    max-width: none;
   }
 
   /* Bottom tabs become a sidebar */
