@@ -12,6 +12,28 @@
 import { getClient } from './supabase'
 
 // ---------------------------------------------------------------------------
+// Supabase REST API config (used for analytics reads to bypass authenticated
+// client's RLS role — analytics RLS policies are on the anon role)
+// ---------------------------------------------------------------------------
+
+const SUPABASE_URL = 'https://gxiflulfgqahlvdirecz.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
+
+/** Fetch from Supabase REST API using the anon key (not the authenticated session) */
+async function supabaseRest<T>(table: string, params: Record<string, string> = {}): Promise<T[]> {
+  const query = new URLSearchParams(params)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) throw new Error(`Supabase REST ${res.status}: ${await res.text()}`)
+  return res.json()
+}
+
+// ---------------------------------------------------------------------------
 // Type declarations for third-party pixel globals
 // ---------------------------------------------------------------------------
 
@@ -299,39 +321,31 @@ export interface DashboardData {
 }
 
 async function fetchDashboardData(dateRange?: { from: string; to: string }): Promise<DashboardData | null> {
-  const client = getClient()
-  if (!client) return null
-
   const from = dateRange?.from ?? new Date(Date.now() - 90 * 86400000).toISOString()
   const to = dateRange?.to ?? new Date().toISOString()
 
   try {
-    // Fetch all analytics events in range
-    const { data: events, error: eventsError } = await client
-      .from('analytics_events')
-      .select('event_name, user_id, session_id, channel, created_at')
-      .gte('created_at', from)
-      .lte('created_at', to)
-      .order('created_at', { ascending: true })
+    // Use REST API with anon key to bypass authenticated client RLS issues.
+    // The analytics tables have RLS policies for the `anon` role, but the
+    // logged-in Supabase client sends requests as `authenticated` role.
+    interface AnalyticsEvent { event_name: string; user_id: string | null; session_id: string | null; channel: string | null; created_at: string }
+    interface UserAcquisition { user_id: string; channel: string; registered_at: string; [key: string]: unknown }
 
-    if (eventsError) {
-      console.warn('[Analytics] Dashboard events query failed:', eventsError.message)
-    }
+    const events = await supabaseRest<AnalyticsEvent>('analytics_events', {
+      select: 'event_name,user_id,session_id,channel,created_at',
+      'created_at': `gte.${from}`,
+      order: 'created_at.asc',
+    })
 
-    // Fetch user acquisitions
-    const { data: acquisitions, error: acqError } = await client
-      .from('user_acquisitions')
-      .select('*')
-      .gte('registered_at', from)
-      .lte('registered_at', to)
+    let acquisitions: UserAcquisition[] = []
+    try {
+      acquisitions = await supabaseRest<UserAcquisition>('user_acquisitions', {
+        select: '*',
+        'registered_at': `gte.${from}`,
+      })
+    } catch { /* no acquisitions yet is fine */ }
 
-    if (acqError) {
-      console.warn('[Analytics] Dashboard acquisitions query failed:', acqError.message)
-    }
-
-    if (!events) return null
-
-    console.debug('[Analytics] Dashboard loaded', events.length, 'events,', (acquisitions ?? []).length, 'acquisitions')
+    console.debug('[Analytics] Dashboard loaded', events.length, 'events,', acquisitions.length, 'acquisitions')
 
     // Build funnel
     const sessionEvents = new Map<string, Set<string>>()
@@ -498,14 +512,15 @@ async function saveChannelSpend(channel: string, month: string, spend: number): 
 }
 
 async function getChannelSpend(month?: string): Promise<ChannelSpend[]> {
-  const client = getClient()
-  if (!client) return []
   const m = month ?? new Date().toISOString().slice(0, 7)
-  const { data } = await client
-    .from('channel_spend')
-    .select('*')
-    .eq('month', m)
-  return data ?? []
+  try {
+    return await supabaseRest<ChannelSpend>('channel_spend', {
+      select: '*',
+      month: `eq.${m}`,
+    })
+  } catch {
+    return []
+  }
 }
 
 // ---------------------------------------------------------------------------

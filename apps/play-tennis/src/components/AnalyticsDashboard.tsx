@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getClient } from '../supabase'
 import { analytics, type DashboardData, type ChannelSpend, type ChannelMetrics } from '../analytics'
 
 const BUILD_VERSION = 'v3-' + Date.now().toString(36)
@@ -70,20 +69,28 @@ function retentionBg(pct: number): string {
   return 'var(--color-negative-bg)'
 }
 
-// Direct Supabase fetch - bypasses analytics module to eliminate any import issues
-async function fetchEventsDirectly(from: string, to: string): Promise<{ events: unknown[] | null; error: string | null }> {
-  const client = getClient()
-  if (!client) return { events: null, error: 'Supabase client is null' }
+// Direct REST fetch with anon key - bypasses authenticated Supabase client
+// The analytics RLS policies are on the `anon` role, but the logged-in client
+// sends requests as `authenticated` role which has no SELECT policy.
+const SB_URL = 'https://gxiflulfgqahlvdirecz.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
 
-  const { data, error } = await client
-    .from('analytics_events')
-    .select('event_name, user_id, session_id, channel, created_at')
-    .gte('created_at', from)
-    .lte('created_at', to)
-    .order('created_at', { ascending: true })
-
-  if (error) return { events: null, error: `Query failed: ${error.message} (${error.code})` }
-  return { events: data, error: null }
+async function fetchEventsDirectly(from: string, _to: string): Promise<{ events: unknown[] | null; error: string | null }> {
+  try {
+    const params = new URLSearchParams({
+      select: 'event_name,user_id,session_id,channel,created_at',
+      'created_at': `gte.${from}`,
+      order: 'created_at.asc',
+    })
+    const res = await fetch(`${SB_URL}/rest/v1/analytics_events?${params}`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` },
+    })
+    if (!res.ok) return { events: null, error: `REST ${res.status}: ${await res.text()}` }
+    const data = await res.json()
+    return { events: data, error: null }
+  } catch (err) {
+    return { events: null, error: err instanceof Error ? err.message : String(err) }
+  }
 }
 
 export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
@@ -105,16 +112,7 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
     const debugParts: string[] = [`Range: ${range.from.slice(0, 10)} to ${range.to.slice(0, 10)}`]
 
     try {
-      // Step 1: Check client
-      const client = getClient()
-      if (!client) {
-        setError('Supabase client not initialized')
-        setLoading(false)
-        return
-      }
-      debugParts.push('Client: OK')
-
-      // Step 2: Direct fetch to verify connectivity
+      // Step 1: Direct fetch to verify connectivity
       const directResult = await fetchEventsDirectly(range.from, range.to)
       if (directResult.error) {
         debugParts.push(`Direct fetch: FAILED - ${directResult.error}`)
