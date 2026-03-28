@@ -7,6 +7,7 @@ import { flushQueue } from './offline-queue'
 import { analytics } from './analytics'
 import { initSupabase, getSession, onAuthStateChange, fetchPlayerProfile } from './supabase'
 import Register from './components/Register'
+import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
@@ -56,6 +57,7 @@ function clearInviteParam() {
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
+  const [forceSignup, setForceSignup] = useState(false)
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
@@ -319,6 +321,23 @@ export default function App() {
   }
 
   if (!profile) {
+    if (!forceSignup) {
+      return (
+        <div className="app app-desktop-guest">
+          <DesktopGuestHomepage onGetStarted={() => setForceSignup(true)} />
+          <DevTools
+            onProfileSwitch={p => setProfile(p)}
+            activeTournamentId={null}
+            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+            onTournamentCreated={id => {
+              refreshTournaments()
+              setActiveTab('home')
+            }}
+          />
+        </div>
+      )
+    }
+
     return (
       <div className="app">
         <nav className="top-nav top-nav-register">
