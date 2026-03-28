@@ -148,11 +148,15 @@ export default function App() {
     if (!window.location.hash) {
       window.history.replaceState({ tab: 'home' }, '', '#home')
     }
-    const onPopState = () => {
+    const onHashChange = () => {
       setActiveTabRaw(getTabFromHash())
     }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
+    window.addEventListener('popstate', onHashChange)
+    window.addEventListener('hashchange', onHashChange)
+    return () => {
+      window.removeEventListener('popstate', onHashChange)
+      window.removeEventListener('hashchange', onHashChange)
+    }
   }, [])
 
   // Dismiss notification panel / inbox on outside click or Escape key
