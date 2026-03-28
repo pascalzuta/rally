@@ -330,7 +330,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             {isCounter
               ? 'Send another option that works better for you.'
               : rescheduleIntent === 'hard'
-                ? 'If you leave the replacement blank, the match moves into a needs-new-time state.'
+                ? 'Leave blank to release the current time slot.'
                 : 'The current confirmed time stays on the books until a replacement is accepted.'}
           </div>
 
@@ -390,7 +390,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               Back
             </button>
             <button className="btn btn-primary" onClick={handleReschedule} disabled={!canSubmit}>
-              {isCounter ? 'Send New Option' : rescheduleIntent === 'hard' ? 'Request New Time' : 'Send Request'}
+              {isCounter ? 'Send New Option' : rescheduleIntent === 'hard' ? 'Request New Time' : 'Change Time'}
             </button>
           </div>
         </div>
@@ -821,10 +821,10 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     <div className="schedule-panel">
       {renderPanelHeader(
         acceptableProposals.length > 0
-          ? 'Match Ready'
+          ? 'MATCH READY'
           : myPendingProposals.length > 0
-            ? 'Awaiting Response'
-            : 'Needs Scheduling',
+            ? 'NEEDS RESPONSE'
+            : 'NEEDS SCHEDULING',
         'purple',
         acceptableProposals.length > 0
           ? 'Review Rally\'s time options'
