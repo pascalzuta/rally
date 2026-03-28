@@ -166,7 +166,7 @@ async function persistToSupabase(
     if (!client) return
 
     const attribution = getAttribution()
-    await client.from('analytics_events').insert({
+    const { error } = await client.from('analytics_events').insert({
       event_name: event,
       properties,
       user_id: userId ?? null,
@@ -181,8 +181,11 @@ async function persistToSupabase(
       user_agent: navigator.userAgent,
       created_at: new Date().toISOString(),
     })
-  } catch {
-    // Silently fail — analytics should never break the app
+    if (error) {
+      console.warn('[Analytics] Supabase insert failed:', error.message, error.details)
+    }
+  } catch (err) {
+    console.warn('[Analytics] Supabase insert error:', err)
   }
 }
 
@@ -218,14 +221,14 @@ function sendToGoogle(event: string, properties?: Record<string, unknown>) {
 function track(event: AnalyticsEvent | string, options?: TrackOptions) {
   const props = options?.properties ?? {}
 
+  const userId = options?.userId ?? sessionStorage.getItem('rally-analytics-uid') ?? undefined
+
   if (!options?.skipMeta) sendToMeta(event, props)
   if (!options?.skipGoogle) sendToGoogle(event, props)
-  if (!options?.skipSupabase) persistToSupabase(event, props, options?.userId)
+  if (!options?.skipSupabase) persistToSupabase(event, props, userId)
 
-  // Debug logging in development
-  if (import.meta.env.DEV) {
-    console.debug('[Analytics]', event, props)
-  }
+  // Always log so events are visible in browser console on staging too
+  console.debug('[Analytics]', event, props)
 }
 
 /** Identify a user (called after registration or login) */

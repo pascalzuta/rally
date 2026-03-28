@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { confirmMatchScore, proposeScoreCorrection, resolveScoreDispute, reportMatchIssue, getPlayerName, clearPendingFeedback } from '../store'
 import { Tournament, Match } from '../types'
 import { ConfirmationTone } from './Toast'
+import { analytics } from '../analytics'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
@@ -174,6 +175,8 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleConfirm() {
     setSaving(true)
     await confirmMatchScore(tournament.id, match.id, currentPlayerId)
+    analytics.track('ScoreConfirmed', { userId: currentPlayerId, properties: { tournamentId: tournament.id, matchId: match.id } })
+    analytics.track('MatchPlayed', { userId: currentPlayerId, properties: { tournamentId: tournament.id, matchId: match.id } })
     setShowFeedback(true)
   }
 
