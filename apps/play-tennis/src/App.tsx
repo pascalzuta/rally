@@ -143,14 +143,18 @@ export default function App() {
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
+  const ADMIN_EMAIL = 'pascal.zuta@gmail.com'
+
   // Navigate tabs via hash so browser back/forward buttons work
   const setActiveTab = useCallback((tab: Tab) => {
+    // Gate analytics to admin only
+    if (tab === 'analytics' && profile?.email !== ADMIN_EMAIL) tab = 'home'
     setActiveTabRaw(tab)
     const currentHash = window.location.hash.replace('#', '')
     if (currentHash !== tab) {
       window.history.pushState({ tab }, '', `#${tab}`)
     }
-  }, [])
+  }, [profile?.email])
 
   useEffect(() => {
     // Set initial hash if not present
@@ -566,7 +570,7 @@ export default function App() {
             <Help onBack={() => setActiveTab('profile')} />
           )}
 
-          {activeTab === 'analytics' && (
+          {activeTab === 'analytics' && profile.email === 'pascal.zuta@gmail.com' && (
             <AnalyticsDashboard onBack={() => setActiveTab('home')} />
           )}
         </main>
