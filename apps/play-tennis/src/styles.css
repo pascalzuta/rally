@@ -11356,9 +11356,7 @@ main {
   }
 
   .content {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: var(--space-xl) var(--space-xl);
+    padding: var(--space-xl) 40px;
   }
 
   /* Top nav stretches full width */
@@ -11424,8 +11422,7 @@ main {
   }
 
   .content {
-    max-width: 960px;
-    padding: var(--space-xl) 40px;
+    padding: var(--space-xl) 60px;
   }
 
   .top-nav {
@@ -11493,8 +11490,7 @@ main {
 /* --- Wide desktop: 1280px+ --- */
 @media (min-width: 1280px) {
   .content {
-    max-width: 1120px;
-    padding: var(--space-xl) 48px;
+    padding: var(--space-xl) 80px;
   }
 
   .top-nav {
