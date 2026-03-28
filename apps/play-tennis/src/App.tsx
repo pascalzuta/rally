@@ -69,6 +69,7 @@ export default function App() {
   useEffect(() => {
     if (!authLoading && !profile) {
       fbq('track', 'ViewContent')
+      gtag('event', 'view_item', { send_to: 'AW-XXXXXXXXXX' })
     }
   }, [authLoading, profile])
 

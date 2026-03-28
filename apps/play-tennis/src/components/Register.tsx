@@ -395,6 +395,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     setCreatedProfile(p)
     setStep('confirmed')
     fbq('track', 'CompleteRegistration')
+    gtag('event', 'conversion', { send_to: 'AW-XXXXXXXXXX/REGISTRATION_LABEL' })
     setTimeout(() => onRegistered(p), 1500)
   }
 
@@ -610,6 +611,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
         if (!restored) {
           fbq('track', 'Lead')
+          gtag('event', 'conversion', { send_to: 'AW-XXXXXXXXXX/LEAD_LABEL' })
           setStep('signup')
         }
       } else {

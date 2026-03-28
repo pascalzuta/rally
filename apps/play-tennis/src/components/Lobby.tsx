@@ -115,6 +115,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       setEntries(updated)
       setJoined(true)
       fbq('track', 'Lead')
+      gtag('event', 'conversion', { send_to: 'AW-XXXXXXXXXX/LEAD_LABEL' })
 
       if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
         const tournament = await startTournamentFromLobby(profile.county)
