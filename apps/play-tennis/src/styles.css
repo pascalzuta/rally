@@ -12145,6 +12145,91 @@ main {
   color: var(--color-text-primary);
 }
 
+/* Blog Teaser Section */
+.dgh-blog-teaser {
+  padding: 60px var(--space-xl) 64px;
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-divider);
+}
+.dgh-blog-teaser-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.dgh-blog-teaser-header {
+  margin-bottom: 32px;
+}
+.dgh-blog-teaser-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.dgh-blog-teaser-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.dgh-blog-teaser-subtitle {
+  font-size: 15px;
+  color: var(--color-text-muted);
+}
+.dgh-blog-teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.dgh-blog-teaser-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.dgh-blog-teaser-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+.dgh-blog-teaser-cat {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+}
+.dgh-blog-teaser-card-title {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+  flex: 1;
+}
+.dgh-blog-teaser-read {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.dgh-blog-teaser-all {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.dgh-blog-teaser-all:hover {
+  opacity: 0.8;
+}
+
 /* Desktop homepage responsive — tablet */
 @media (max-width: 900px) {
   .dgh-hero-inner {
@@ -12391,6 +12476,20 @@ main {
 
   .dgh-footer-brand img {
     height: 22px;
+  }
+
+  .dgh-blog-teaser {
+    padding: 40px var(--space-lg) 48px;
+  }
+  .dgh-blog-teaser-title {
+    font-size: 22px;
+  }
+  .dgh-blog-teaser-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .dgh-blog-teaser-card {
+    padding: 16px;
   }
 }
 

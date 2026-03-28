@@ -10,7 +10,7 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
         <div className="dgh-nav-inner">
           <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
           <div className="dgh-nav-actions">
-            <a href="/blog/" className="dgh-btn-link">Blog</a>
+            <a href="/blog/" className="dgh-btn-link">The Baseline</a>
             <button className="dgh-btn-secondary" onClick={onGetStarted}>Log in</button>
             <button className="dgh-btn-primary" onClick={onGetStarted}>Sign up free</button>
           </div>
@@ -280,6 +280,35 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
         </div>
       </section>
 
+      {/* Blog Teaser */}
+      <section className="dgh-blog-teaser">
+        <div className="dgh-blog-teaser-inner">
+          <div className="dgh-blog-teaser-header">
+            <span className="dgh-blog-teaser-label">From the blog</span>
+            <h2 className="dgh-blog-teaser-title">The Baseline</h2>
+            <p className="dgh-blog-teaser-subtitle">Technique breakdowns, match analytics, and the science of winning.</p>
+          </div>
+          <div className="dgh-blog-teaser-grid">
+            <a href="/blog/tennis-analytics-metrics-win-probability/" className="dgh-blog-teaser-card">
+              <span className="dgh-blog-teaser-cat">Analytics</span>
+              <span className="dgh-blog-teaser-card-title">Key Metrics That Predict Match Outcomes</span>
+              <span className="dgh-blog-teaser-read">14 min read</span>
+            </a>
+            <a href="/blog/mastering-the-modern-tennis-serve/" className="dgh-blog-teaser-card">
+              <span className="dgh-blog-teaser-cat">Technique</span>
+              <span className="dgh-blog-teaser-card-title">Mastering the Modern Tennis Serve</span>
+              <span className="dgh-blog-teaser-read">12 min read</span>
+            </a>
+            <a href="/blog/return-of-serve-strategy/" className="dgh-blog-teaser-card">
+              <span className="dgh-blog-teaser-cat">Strategy</span>
+              <span className="dgh-blog-teaser-card-title">Return of Serve: Reading, Positioning & Neutralizing</span>
+              <span className="dgh-blog-teaser-read">9 min read</span>
+            </a>
+          </div>
+          <a href="/blog/" className="dgh-blog-teaser-all">View all articles &rarr;</a>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="dgh-footer">
         <div className="dgh-footer-inner">
@@ -288,7 +317,7 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
             <span className="dgh-footer-tagline">Play tennis. Skip the texting.</span>
           </div>
           <div className="dgh-footer-links">
-            <a href="/blog/">Blog</a>
+            <a href="/blog/">The Baseline Blog</a>
           </div>
           <div className="dgh-footer-copy">
             &copy; {new Date().getFullYear()} Rally Tennis
