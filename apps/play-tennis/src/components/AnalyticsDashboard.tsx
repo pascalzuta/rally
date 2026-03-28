@@ -70,6 +70,7 @@ function retentionBg(pct: number): string {
 export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview')
   const [spendData, setSpendData] = useState<ChannelSpend[]>([])
@@ -77,13 +78,17 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const range = getDateRange(dateRange)
-    const [dashData, spend] = await Promise.all([
-      analytics.fetchDashboardData(range),
-      analytics.getChannelSpend(),
-    ])
-    setData(dashData)
-    setSpendData(spend)
+    setError(null)
+    try {
+      const range = getDateRange(dateRange)
+      const dashData = await analytics.fetchDashboardData(range)
+      let spend: ChannelSpend[] = []
+      try { spend = await analytics.getChannelSpend() } catch { /* ignore */ }
+      setData(dashData)
+      setSpendData(spend)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load analytics data')
+    }
     setLoading(false)
   }, [dateRange])
 
@@ -417,19 +422,19 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
             <div className="analytics-spinner" />
             <span>Loading analytics...</span>
           </div>
+        ) : error ? (
+          <div className="analytics-empty-state">
+            <p style={{ color: 'var(--color-negative-primary)' }}>Error loading data</p>
+            <p className="analytics-empty-sub">{error}</p>
+            <button onClick={fetchData} style={{ marginTop: 12, padding: '8px 16px', border: '1px solid var(--color-divider)', borderRadius: 8, background: 'var(--color-bg-surface)', cursor: 'pointer' }}>Retry</button>
+          </div>
         ) : !data ? (
           <div className="analytics-empty-state">
-            <div className="analytics-empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" />
-              </svg>
-            </div>
-            <p>No analytics data yet</p>
+            <p>No analytics data returned</p>
             <p className="analytics-empty-sub">
-              Run the SQL migration in Supabase to create the analytics tables, then data will start flowing automatically.
+              The query returned no results. Make sure the analytics_events table exists in Supabase and has data.
             </p>
+            <button onClick={fetchData} style={{ marginTop: 12, padding: '8px 16px', border: '1px solid var(--color-divider)', borderRadius: 8, background: 'var(--color-bg-surface)', cursor: 'pointer' }}>Retry</button>
           </div>
         ) : (
           <>
