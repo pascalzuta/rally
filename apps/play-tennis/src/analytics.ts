@@ -307,21 +307,31 @@ async function fetchDashboardData(dateRange?: { from: string; to: string }): Pro
 
   try {
     // Fetch all analytics events in range
-    const { data: events } = await client
+    const { data: events, error: eventsError } = await client
       .from('analytics_events')
       .select('event_name, user_id, session_id, channel, created_at')
       .gte('created_at', from)
       .lte('created_at', to)
       .order('created_at', { ascending: true })
 
+    if (eventsError) {
+      console.warn('[Analytics] Dashboard events query failed:', eventsError.message)
+    }
+
     // Fetch user acquisitions
-    const { data: acquisitions } = await client
+    const { data: acquisitions, error: acqError } = await client
       .from('user_acquisitions')
       .select('*')
       .gte('registered_at', from)
       .lte('registered_at', to)
 
+    if (acqError) {
+      console.warn('[Analytics] Dashboard acquisitions query failed:', acqError.message)
+    }
+
     if (!events) return null
+
+    console.debug('[Analytics] Dashboard loaded', events.length, 'events,', (acquisitions ?? []).length, 'acquisitions')
 
     // Build funnel
     const sessionEvents = new Map<string, Set<string>>()
