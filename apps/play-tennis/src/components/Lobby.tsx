@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getSchedulingConfidence } from '../store'
 import { SYNC_EVENT } from '../sync'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
+import { analytics } from '../analytics'
 
 interface Props {
   profile: PlayerProfile
@@ -114,7 +115,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       const updated = await joinLobby(profile)
       setEntries(updated)
       setJoined(true)
-      fbq('track', 'Lead')
+      analytics.track('LobbyJoined', { userId: profile.id, properties: { county: profile.county } })
 
       if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
         const tournament = await startTournamentFromLobby(profile.county)

@@ -4,6 +4,7 @@ import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } fr
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
 import { sendOtp, verifyOtp, getSession, onAuthStateChange, fetchPlayerProfile, savePlayerProfile } from '../supabase'
+import { analytics } from '../analytics'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -394,7 +395,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
     setCreatedProfile(p)
     setStep('confirmed')
-    fbq('track', 'CompleteRegistration')
+    analytics.track('CompleteRegistration', { userId: p.id, properties: { county: p.county, skillLevel: p.skillLevel, gender: p.gender } })
+    analytics.identify(p.id, { county: p.county, skill_level: p.skillLevel, gender: p.gender })
     setTimeout(() => onRegistered(p), 1500)
   }
 
@@ -609,7 +611,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         // Check if this is a returning user with a full profile on the server
         const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
         if (!restored) {
-          fbq('track', 'Lead')
+          analytics.track('Lead')
           setStep('signup')
         }
       } else {
