@@ -10,6 +10,7 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
         <div className="dgh-nav-inner">
           <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
           <div className="dgh-nav-actions">
+            <a href="/blog/" className="dgh-btn-link">Blog</a>
             <button className="dgh-btn-secondary" onClick={onGetStarted}>Log in</button>
             <button className="dgh-btn-primary" onClick={onGetStarted}>Sign up free</button>
           </div>
@@ -285,6 +286,9 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
           <div className="dgh-footer-brand">
             <img height="28" src="/rally-logo.svg" alt="Rally" />
             <span className="dgh-footer-tagline">Play tennis. Skip the texting.</span>
+          </div>
+          <div className="dgh-footer-links">
+            <a href="/blog/">Blog</a>
           </div>
           <div className="dgh-footer-copy">
             &copy; {new Date().getFullYear()} Rally Tennis

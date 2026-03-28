@@ -11592,6 +11592,18 @@ main {
   border-color: var(--color-text-muted);
 }
 
+.dgh-btn-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  padding: 10px 12px;
+  transition: color 0.15s;
+}
+.dgh-btn-link:hover {
+  color: var(--color-text-primary);
+}
+
 /* Hero */
 .dgh-hero {
   padding: 80px var(--space-xl) 60px;
@@ -12116,6 +12128,21 @@ main {
 .dgh-footer-copy {
   font-size: var(--font-body-sm);
   color: var(--color-text-muted);
+}
+
+.dgh-footer-links {
+  display: flex;
+  gap: var(--space-lg);
+}
+.dgh-footer-links a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.dgh-footer-links a:hover {
+  color: var(--color-text-primary);
 }
 
 /* Desktop homepage responsive — tablet */
