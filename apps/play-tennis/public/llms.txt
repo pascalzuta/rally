@@ -44,6 +44,19 @@ Rally is a web application (play-rally.com) built with React. It works on any mo
 - Communities that want organized tennis without the overhead of league management
 - Players of all ages, genders, and backgrounds
 
+## Blog & Educational Content
+
+Rally publishes expert articles on tennis technique, analytics, and strategy at https://play-rally.com/blog/
+
+Featured articles:
+- **Tennis Analytics: Key Metrics That Predict Match Outcomes** — First-serve %, return points won, winners/UE ratio, win probability models (Barnett-Clarke, Klaassen-Magnus), surface adjustments. https://play-rally.com/blog/tennis-analytics-metrics-win-probability/
+- **New Metrics in Tennis: Sports Science, Tracking Data & Betting Models** — Hawk-Eye spatial data, shot quality index, expected points added, rally tempo, live betting models, fatigue models, academic research frontier. https://play-rally.com/blog/new-metrics-tennis-science-sports-betting/
+- **Understanding ELO and Rally Rating** — How ELO works in tennis, surface-adjusted ELO, Glicko/TrueSkill alternatives, and how Rally Rating tracks recreational players. https://play-rally.com/blog/rally-rating-elo-tennis/
+- **Mastering the Modern Tennis Serve** — Kinetic chain biomechanics, grip variations, trophy position, pronation, kick serve technique, drills by NTRP level. https://play-rally.com/blog/mastering-the-modern-tennis-serve/
+- **The Two-Handed Backhand** — Grip setup, swing path, stance variations, common errors and fixes. https://play-rally.com/blog/two-handed-backhand-technique/
+- **Tennis Footwork & Movement Patterns** — Split step, lateral movement, recovery, open vs closed stance, court position drills. https://play-rally.com/blog/tennis-footwork-movement-patterns/
+- **Return of Serve Strategy** — Reading the server, positioning, block returns, aggressive returns, return patterns. https://play-rally.com/blog/return-of-serve-strategy/
+
 ## URL
 
 https://play-rally.com

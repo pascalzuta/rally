@@ -56,4 +56,52 @@
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
+
+  <!-- Blog Index -->
+  <url>
+    <loc>https://play-rally.com/blog/</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Blog: Tennis Analytics Metrics -->
+  <url>
+    <loc>https://play-rally.com/blog/tennis-analytics-metrics-win-probability/</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog: Modern Tennis Serve -->
+  <url>
+    <loc>https://play-rally.com/blog/mastering-the-modern-tennis-serve/</loc>
+    <lastmod>2026-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog: Two-Handed Backhand -->
+  <url>
+    <loc>https://play-rally.com/blog/two-handed-backhand-technique/</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog: Tennis Footwork -->
+  <url>
+    <loc>https://play-rally.com/blog/tennis-footwork-movement-patterns/</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog: Return of Serve Strategy -->
+  <url>
+    <loc>https://play-rally.com/blog/return-of-serve-strategy/</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
