@@ -143,12 +143,18 @@ body {
 }
 
 .app {
-  max-width: 480px;
   margin: 0 auto;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Mobile: cap width for phone layout */
+@media (max-width: 767px) {
+  .app {
+    max-width: 480px;
+  }
 }
 
 /* ================================================
@@ -11315,10 +11321,6 @@ main {
 
 /* --- Tablet: 768px+ --- */
 @media (min-width: 768px) {
-  .app {
-    max-width: none;
-  }
-
   /* Bottom tabs become a sidebar */
   .bottom-tabs {
     flex-direction: column;
