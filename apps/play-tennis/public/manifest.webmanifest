@@ -1,0 +1,25 @@
+{
+  "name": "Rally — Local Tennis Tournaments",
+  "short_name": "Rally",
+  "description": "Find local tennis players, join round-robin tournaments, and compete in your county. Free for all skill levels.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "orientation": "portrait",
+  "categories": ["sports", "social", "lifestyle"],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

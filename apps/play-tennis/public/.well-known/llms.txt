@@ -1,0 +1,31 @@
+# Rally — play-rally.com
+
+> Rally is a free platform that connects local tennis players for competitive round-robin tournaments, organized by county across all 50 US states.
+
+## What Rally Does
+
+Rally solves the problem of finding local tennis opponents. Instead of posting on forums or messaging strangers, players join their county's lobby on Rally. When 6 or more players have joined, a round-robin tournament is automatically created with matches intelligently scheduled around everyone's availability.
+
+## How It Works
+
+1. **Sign up** — Create a free account with your name, county, skill level (NTRP 2.0–5.0+), and gender.
+2. **Set availability** — Tell Rally when you're free to play (weekday mornings, evenings, weekends, etc.).
+3. **Join your county lobby** — See how many players are waiting in your county. Share your invite link to fill the lobby faster.
+4. **Auto-tournament at 6+ players** — When the lobby fills, Rally auto-creates a round-robin tournament.
+5. **Smart scheduling** — Rally's algorithm finds overlapping 2-hour availability windows between opponents and schedules matches automatically.
+6. **Play matches** — Meet your opponents at local courts, play your match, and report the score.
+7. **Earn Rally Rating** — An ELO-based rating system tracks your performance. Climb your county's leaderboard.
+
+## Key Features
+
+- **County-based matchmaking**: Players are organized by their US county (3,000+ counties supported).
+- **Round-robin format**: Every player plays every other player in their group — no single-elimination surprises.
+- **NTRP skill matching**: Players are grouped by skill level using the standard NTRP scale (2.0 beginner to 5.0+ advanced).
+- **Availability-first scheduling**: Matches scheduled around players' real availability, not arbitrary dates.
+- **Rally Rating**: ELO-based competitive rating that updates after every match.
+- **County leaderboards**: Compete for the top spot in your county.
+- **100% free**: No fees, subscriptions, or paywalls.
+
+## URL
+
+https://play-rally.com
