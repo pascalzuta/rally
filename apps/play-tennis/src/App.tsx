@@ -54,21 +54,9 @@ function clearInviteParam() {
   window.history.replaceState({}, '', url.pathname)
 }
 
-function useIsDesktop(breakpoint = 768) {
-  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= breakpoint)
-  useEffect(() => {
-    const mq = window.matchMedia(`(min-width: ${breakpoint}px)`)
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isDesktop
-}
-
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
-  const isDesktop = useIsDesktop()
   const [forceSignup, setForceSignup] = useState(false)
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
@@ -329,8 +317,7 @@ export default function App() {
   }
 
   if (!profile) {
-    // Desktop guest: show full-width landing page (unless user clicked "Get started")
-    if (isDesktop && !forceSignup) {
+    if (!forceSignup) {
       return (
         <div className="app app-desktop-guest">
           <DesktopGuestHomepage onGetStarted={() => setForceSignup(true)} />

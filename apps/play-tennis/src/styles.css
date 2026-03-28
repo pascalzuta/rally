@@ -12175,6 +12175,198 @@ main {
   }
 }
 
+/* Desktop homepage responsive — mobile */
+@media (max-width: 480px) {
+  .dgh-nav-inner {
+    padding: 0 var(--space-lg);
+    height: 56px;
+  }
+
+  .dgh-nav-inner .rally-logo {
+    height: 30px;
+  }
+
+  .dgh-nav-actions {
+    gap: var(--space-sm);
+  }
+
+  .dgh-btn-secondary {
+    padding: 8px 14px;
+    font-size: var(--font-body-sm);
+  }
+
+  .dgh-btn-primary {
+    padding: 8px 16px;
+    font-size: var(--font-body-sm);
+  }
+
+  .dgh-hero {
+    padding: 40px var(--space-lg) 32px;
+  }
+
+  .dgh-hero-inner {
+    gap: 32px;
+  }
+
+  .dgh-hero-title {
+    font-size: 32px;
+    letter-spacing: -0.02em;
+  }
+
+  .dgh-hero-subtitle {
+    font-size: 16px;
+    margin-bottom: var(--space-xl);
+  }
+
+  .dgh-hero-cta {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .dgh-btn-primary.dgh-btn-large {
+    width: 100%;
+    text-align: center;
+    padding: 14px 24px;
+    font-size: var(--font-body-md);
+  }
+
+  /* Phone mockup scales down */
+  .dgh-phone-mockup {
+    width: 280px;
+    border-radius: 28px;
+    padding: 16px 12px;
+  }
+
+  .dgh-mock-match {
+    padding: 10px;
+  }
+
+  .dgh-mock-opponent {
+    font-size: 11px;
+  }
+
+  .dgh-mock-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .dgh-mock-match-time {
+    font-size: 10px;
+  }
+
+  /* Sections */
+  .dgh-section {
+    padding: 48px var(--space-lg);
+  }
+
+  .dgh-section-title {
+    font-size: 26px;
+  }
+
+  .dgh-section-subtitle {
+    font-size: 15px;
+    margin-bottom: var(--space-xl);
+  }
+
+  /* Problem/Solution */
+  .dgh-problem-card {
+    padding: var(--space-lg);
+  }
+
+  .dgh-problem-stat-number {
+    font-size: 28px;
+  }
+
+  .dgh-chat-bubble {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .dgh-solution-step {
+    font-size: var(--font-body-sm);
+  }
+
+  .dgh-solution-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  /* How it works */
+  .dgh-how-number {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .dgh-how-title {
+    font-size: var(--font-body-lg);
+  }
+
+  .dgh-how-desc {
+    font-size: var(--font-body-sm);
+  }
+
+  /* Features */
+  .dgh-feature-card {
+    padding: var(--space-lg);
+  }
+
+  .dgh-feature-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dgh-feature-title {
+    font-size: var(--font-body-lg);
+  }
+
+  .dgh-feature-desc {
+    font-size: var(--font-body-sm);
+  }
+
+  /* Stats */
+  .dgh-stats {
+    padding: 32px var(--space-lg);
+  }
+
+  .dgh-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+
+  .dgh-stat-number {
+    font-size: 28px;
+  }
+
+  .dgh-stat-label {
+    font-size: 10px;
+  }
+
+  /* Final CTA */
+  .dgh-final-cta {
+    padding: 60px var(--space-lg);
+  }
+
+  .dgh-cta-title {
+    font-size: 28px;
+  }
+
+  .dgh-cta-subtitle {
+    font-size: 16px;
+  }
+
+  /* Footer */
+  .dgh-footer {
+    padding: var(--space-lg);
+  }
+
+  .dgh-footer-brand img {
+    height: 22px;
+  }
+}
+
 /* ================================================
    Analytics Dashboard
    ================================================ */
