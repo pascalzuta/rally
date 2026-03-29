@@ -6,6 +6,7 @@ import { useToast, ConfirmationTone } from './Toast'
 import MessagePanel from './MessagePanel'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
+import InlineScoreEntry from './InlineScoreEntry'
 
 interface Props {
   tournament: Tournament
@@ -174,6 +175,19 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             currentPlayerId={currentPlayerId}
             onUpdated={onUpdated}
             onActionComplete={handleActionComplete}
+          />
+        </div>
+      )}
+
+      {isExpanded && view.expansionKind === 'score-correction' && (
+        <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
+          <InlineScoreEntry
+            tournament={tournament}
+            matchId={match.id}
+            currentPlayerId={currentPlayerId}
+            onSaved={onUpdated}
+            onActionComplete={handleActionComplete}
+            embedded
           />
         </div>
       )}

@@ -15,7 +15,7 @@ const DAY_INDEX: Record<string, number> = {
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 
 export type MatchCardTone = 'confirmed' | 'respond' | 'schedule' | 'confirm-score' | 'escalated' | 'completed'
-export type MatchCardExpansionKind = 'schedule' | 'score-confirmation' | null
+export type MatchCardExpansionKind = 'schedule' | 'score-confirmation' | 'score-correction' | null
 
 export interface MatchCardView {
   key:
@@ -265,8 +265,8 @@ export function getMatchCardView(
       title,
       supporting: scoreSummary ? `Reported ${scoreSummary}. Waiting for opponent confirmation.` : 'Waiting for opponent confirmation.',
       metaLabel: countdownMeta,
-      primaryActionLabel: null,
-      expansionKind: null,
+      primaryActionLabel: 'Correct Score',
+      expansionKind: 'score-correction' as MatchCardExpansionKind,
       priority: 2,
       isMyMatch: mine,
       opponentId,

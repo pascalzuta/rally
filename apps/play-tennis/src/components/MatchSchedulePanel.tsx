@@ -1,6 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState } from 'react'
-import { canEnterScore } from '../matchCapabilities'
+import { canEnterScore, canCorrectScore } from '../matchCapabilities'
 import {
   acceptProposal,
   proposeNewSlots,
@@ -533,7 +533,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <div className="proposal-from">
             This match time is view-only because you are not one of the two players.
           </div>
-        ) : showScoreEntry && isScoreable ? (
+        ) : showScoreEntry && (isScoreable || canCorrectScore(match, currentPlayerId)) ? (
           <>
             <InlineScoreEntry
               tournament={tournament}
@@ -560,6 +560,18 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             {match.completed
               ? 'This match is complete. The confirmed time is now read-only.'
               : 'A score has been reported, so the confirmed time can no longer be changed or canceled.'}
+            {canCorrectScore(match, currentPlayerId) && (
+              <button
+                className="btn-link btn-small"
+                style={{ marginTop: 'var(--space-sm)' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowScoreEntry(true)
+                }}
+              >
+                Correct Score
+              </button>
+            )}
           </div>
         ) : showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? renderCancelForm() : (
           <div className="confirmed-actions-shell">

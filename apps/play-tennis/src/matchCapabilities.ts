@@ -18,6 +18,15 @@ export function canEnterScore(match: Match, currentPlayerId: string): boolean {
   )
 }
 
+export function canCorrectScore(match: Match, currentPlayerId: string): boolean {
+  return Boolean(
+    !match.completed &&
+    match.scoreReportedBy === currentPlayerId &&
+    !match.scoreConfirmedAt &&
+    !match.scoreDispute
+  )
+}
+
 export function canExpandMatch(match: Match, currentPlayerId: string): boolean {
   if (match.completed || !match.schedule || !match.player1Id || !match.player2Id) return false
   if (isMatchParticipant(match, currentPlayerId)) return true
