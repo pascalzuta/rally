@@ -11,6 +11,7 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
           <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
           <div className="dgh-nav-actions">
             <a href="/blog/" className="dgh-btn-link">The Baseline</a>
+            <a href="/support/" className="dgh-btn-link">Help</a>
             <button className="dgh-btn-secondary" onClick={onGetStarted}>Log in</button>
             <button className="dgh-btn-primary" onClick={onGetStarted}>Sign up free</button>
           </div>
