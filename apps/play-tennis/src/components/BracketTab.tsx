@@ -763,8 +763,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* R-17: Match filter toggle — Upcoming | Completed | All */}
-      {tournament.status !== 'completed' && tab === 'matches' && (
+      {/* R-17: Match filter toggle — Upcoming | Completed | All (not for round-robin, which uses My Matches/All Matches) */}
+      {tournament.status !== 'completed' && tournament.format !== 'round-robin' && tab === 'matches' && (
         <div className="match-filter-toggle">
           {(['upcoming', 'completed', 'all'] as MatchFilterMode[]).map(mode => (
             <button
@@ -781,7 +781,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {tournament.status !== 'completed' && tab === 'matches' && (
+      {tournament.status !== 'completed' && tournament.format !== 'round-robin' && tab === 'matches' && (
         <>
           {/* Round progress stepper for single-elimination */}
           {tournament.format === 'single-elimination' && rounds.length > 1 && (
