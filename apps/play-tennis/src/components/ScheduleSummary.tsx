@@ -169,31 +169,44 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
           </div>
         </div>
 
-        {/* Your To-Do */}
-        <div className="schedule-todo-section">
-          <div className="schedule-todo-title">Your To-Do</div>
-          <div className="schedule-todo-rows">
-            <div className="schedule-todo-row">
-              <span className="schedule-todo-dot" style={{ background: 'var(--color-positive-primary)' }} />
-              <span className="schedule-todo-count">{summary.confirmed}</span>
-              <span className="schedule-todo-label">Confirmed</span>
+        {/* Your To-Do — only count current player's matches */}
+        {(() => {
+          let myConfirmed = 0, myNeedsAccept = 0, myNeedsNegotiation = 0
+          for (const m of myMatches) {
+            if (!m.schedule) continue
+            switch (m.schedule.schedulingTier) {
+              case 'auto': myConfirmed++; break
+              case 'needs-accept': myNeedsAccept++; break
+              case 'needs-negotiation': myNeedsNegotiation++; break
+            }
+          }
+          return (
+            <div className="schedule-todo-section">
+              <div className="schedule-todo-title">Your To-Do</div>
+              <div className="schedule-todo-rows">
+                <div className="schedule-todo-row">
+                  <span className="schedule-todo-dot" style={{ background: 'var(--color-positive-primary)' }} />
+                  <span className="schedule-todo-count">{myConfirmed}</span>
+                  <span className="schedule-todo-label">Confirmed</span>
+                </div>
+                {myNeedsAccept > 0 && (
+                  <div className="schedule-todo-row">
+                    <span className="schedule-todo-dot" style={{ background: 'var(--color-accent-primary)' }} />
+                    <span className="schedule-todo-count">{myNeedsAccept}</span>
+                    <span className="schedule-todo-label">Confirm your time</span>
+                  </div>
+                )}
+                {myNeedsNegotiation > 0 && (
+                  <div className="schedule-todo-row">
+                    <span className="schedule-todo-dot" style={{ background: 'var(--color-warning-primary, #F59E0B)' }} />
+                    <span className="schedule-todo-count">{myNeedsNegotiation}</span>
+                    <span className="schedule-todo-label">Need scheduling</span>
+                  </div>
+                )}
+              </div>
             </div>
-            {summary.needsAccept > 0 && (
-              <div className="schedule-todo-row">
-                <span className="schedule-todo-dot" style={{ background: 'var(--color-accent-primary)' }} />
-                <span className="schedule-todo-count">{summary.needsAccept}</span>
-                <span className="schedule-todo-label">Confirm your time</span>
-              </div>
-            )}
-            {summary.needsNegotiation > 0 && (
-              <div className="schedule-todo-row">
-                <span className="schedule-todo-dot" style={{ background: 'var(--color-warning-primary, #F59E0B)' }} />
-                <span className="schedule-todo-count">{summary.needsNegotiation}</span>
-                <span className="schedule-todo-label">Need scheduling</span>
-              </div>
-            )}
-          </div>
-        </div>
+          )
+        })()}
       </div>
 
       {!headerOnly && <>
