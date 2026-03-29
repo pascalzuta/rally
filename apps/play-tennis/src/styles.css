@@ -474,26 +474,6 @@ body {
   margin-bottom: var(--space-sm);
 }
 
-.show-more-matches-btn {
-  display: block;
-  width: 100%;
-  padding: var(--space-md);
-  background: var(--color-neutral-bg);
-  border: none;
-  border-radius: var(--radius-button);
-  font-size: var(--font-body-md);
-  font-weight: var(--weight-medium);
-  color: var(--color-accent-primary);
-  cursor: pointer;
-  text-align: center;
-  margin-top: var(--space-sm);
-  min-height: 44px;
-  font-family: inherit;
-}
-
-.show-more-matches-btn:active {
-  background: var(--color-divider);
-}
 
 .results-section {
   margin-top: var(--space-lg);
