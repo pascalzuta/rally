@@ -11,6 +11,7 @@ interface Props {
   currentPlayerName: string
   onTournamentUpdated: () => void
   filterMyMatches?: boolean
+  hideSummaryStrip?: boolean
 }
 
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -103,7 +104,7 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
   return weeks
 }
 
-export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, filterMyMatches }: Props) {
+export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, filterMyMatches, hideSummaryStrip }: Props) {
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const pendingFeedback = getPendingFeedback()
@@ -124,21 +125,23 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
   return (
     <div className="match-calendar">
       {/* Summary strip */}
-      <div className="schedule-summary-strip">
-        <div className="schedule-summary-stats">
-          <span className="schedule-stat schedule-stat--confirmed">{confirmed} <span className="schedule-stat-label">Scheduled</span></span>
-          <span className="schedule-stat-sep">&middot;</span>
-          <span className="schedule-stat schedule-stat--pending">{pending} <span className="schedule-stat-label">In progress</span></span>
-          <span className="schedule-stat-sep">&middot;</span>
-          <span className="schedule-stat schedule-stat--unscheduled">{unscheduled} <span className="schedule-stat-label">Unscheduled</span></span>
-          {completed > 0 && (
-            <>
-              <span className="schedule-stat-sep">&middot;</span>
-              <span className="schedule-stat">{completed} <span className="schedule-stat-label">Played</span></span>
-            </>
-          )}
+      {!hideSummaryStrip && (
+        <div className="schedule-summary-strip">
+          <div className="schedule-summary-stats">
+            <span className="schedule-stat schedule-stat--confirmed">{confirmed} <span className="schedule-stat-label">Scheduled</span></span>
+            <span className="schedule-stat-sep">&middot;</span>
+            <span className="schedule-stat schedule-stat--pending">{pending} <span className="schedule-stat-label">In progress</span></span>
+            <span className="schedule-stat-sep">&middot;</span>
+            <span className="schedule-stat schedule-stat--unscheduled">{unscheduled} <span className="schedule-stat-label">Unscheduled</span></span>
+            {completed > 0 && (
+              <>
+                <span className="schedule-stat-sep">&middot;</span>
+                <span className="schedule-stat">{completed} <span className="schedule-stat-label">Played</span></span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Week-by-week agenda */}
       {weeks.map((week, weekIdx) => (

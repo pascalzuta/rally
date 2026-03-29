@@ -651,7 +651,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           />
 
           {/* My Matches / All Matches toggle */}
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-md) 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-sm) 0' }}>
             <div className="bracket-view-toggle">
               <button
                 className={`bracket-view-toggle-btn ${viewMode === 'mine' ? 'selected' : ''}`}
@@ -664,26 +664,15 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             </div>
           </div>
 
-          {/* My Matches view — agenda from ScheduleSummary (header hidden) */}
-          {viewMode === 'mine' && (
-            <MatchCalendar
-              tournament={tournament}
-              currentPlayerId={currentPlayerId}
-              currentPlayerName={currentPlayerName}
-              onTournamentUpdated={refreshAndCheckFeedback}
-              filterMyMatches
-            />
-          )}
-
-          {/* All Matches view — full calendar */}
-          {viewMode === 'all' && (
-            <MatchCalendar
-              tournament={tournament}
-              currentPlayerId={currentPlayerId}
-              currentPlayerName={currentPlayerName}
-              onTournamentUpdated={refreshAndCheckFeedback}
-            />
-          )}
+          {/* Match calendar — filtered by toggle */}
+          <MatchCalendar
+            tournament={tournament}
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            onTournamentUpdated={refreshAndCheckFeedback}
+            filterMyMatches={viewMode === 'mine'}
+            hideSummaryStrip
+          />
 
           {/* Standings */}
           <Standings tournament={tournament} />
