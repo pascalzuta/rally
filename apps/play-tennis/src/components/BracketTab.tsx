@@ -104,7 +104,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
-  const [showOverflow, setShowOverflow] = useState(false)
+
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
   const [viewMode, setViewMode] = useState<'mine' | 'all'>('mine') // default to my matches
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
@@ -952,18 +952,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
       )}
 
       {isParticipant && tournament.status !== 'completed' && (
-        <div className="bracket-overflow-section">
-          <button className="bracket-overflow-btn" onClick={() => setShowOverflow(!showOverflow)}>
-            ···
-          </button>
-          {showOverflow && (
-            <div className="bracket-overflow-menu">
-              <button className="bracket-overflow-item bracket-overflow-danger" onClick={() => { setShowOverflow(false); setShowLeaveConfirm(true) }}>
-                Leave tournament
-              </button>
-            </div>
-          )}
-        </div>
+        <button className="btn btn-large logout-btn" onClick={() => setShowLeaveConfirm(true)}>
+          Leave Tournament
+        </button>
       )}
 
       {/* Leave tournament confirmation */}
