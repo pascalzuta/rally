@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
+import { useAuth } from './context/AuthContext'
+import { getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
 import { analytics } from './analytics'
-import { initSupabase, getSession, onAuthStateChange, fetchPlayerProfile } from './supabase'
+import { getSession } from './supabase'
 import Register from './components/Register'
 import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
@@ -60,8 +61,7 @@ export default function App() {
   const location = useLocation()
   const activeTab = tabFromPath(location.pathname)
 
-  const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
-  const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
+  const { user, profile, loading: authLoading, signOut, setProfile } = useAuth()
   const [forceSignup, setForceSignup] = useState(false)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
@@ -108,49 +108,6 @@ export default function App() {
     }
   }, [inviteTournamentCode])
 
-  // On mount: if no localStorage profile, check for existing Supabase session
-  // and try to restore profile from server (returning user on new device/cleared cache)
-  useEffect(() => {
-    if (profile) return // already have a profile, no need to check
-    let cancelled = false
-
-    async function tryRestoreSession() {
-      try {
-        initSupabase()
-        const session = await getSession()
-        if (!session || cancelled) { setAuthLoading(false); return }
-
-        // Session exists — try to fetch profile from Supabase
-        const existing = await fetchPlayerProfile(session.userId)
-        if (cancelled) return
-
-        if (existing) {
-          // Returning user! Restore profile to localStorage
-          const restored: PlayerProfile = {
-            id: session.userId,
-            authId: session.userId,
-            email: session.email,
-            name: existing.name,
-            county: existing.county,
-            skillLevel: (existing.skillLevel as PlayerProfile['skillLevel']) ?? undefined,
-            gender: (existing.gender as PlayerProfile['gender']) ?? undefined,
-            weeklyCap: (existing.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
-            createdAt: existing.createdAt ?? new Date().toISOString(),
-          }
-          localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
-          analytics.identify(restored.id, { county: restored.county })
-          analytics.track('ReturnVisit', { userId: restored.id })
-          setProfile(restored)
-        }
-      } catch {
-        // Network error — fall through to Register
-      }
-      if (!cancelled) setAuthLoading(false)
-    }
-
-    tryRestoreSession()
-    return () => { cancelled = true }
-  }, [])
   const [showInbox, setShowInbox] = useState(false)
   const [showRatingPanel, setShowRatingPanel] = useState(false)
   const notifWrapperRef = useRef<HTMLDivElement>(null)
@@ -365,6 +322,11 @@ export default function App() {
           <div className="top-nav-logo" onClick={() => navigate(ROUTES.HOME)} style={{ cursor: 'pointer' }}>
               <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
             </div>
+          {user?.email && (
+            <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </span>
+          )}
           <div className="top-nav-actions">
             <button className="top-nav-icon" aria-label="Rating & Trophies" onClick={() => { setShowRatingPanel(!showRatingPanel); setShowInbox(false); setShowNotifications(false) }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -506,7 +468,7 @@ export default function App() {
                 onJoinLobby={() => setAutoJoinLobby(true)}
                 onSetAvailability={() => navigate(ROUTES.PROFILE)}
                 onFindMatch={() => navigate(ROUTES.BRACKET)}
-                onLogout={() => setProfile(null)}
+                onLogout={signOut}
               />
             } />
 
@@ -542,7 +504,7 @@ export default function App() {
             <Route path={ROUTES.PROFILE} element={
               <Profile
                 profile={profile}
-                onLogout={() => setProfile(null)}
+                onLogout={signOut}
                 onNavigate={(tab) => {
                   if (tab === 'home') setAutoJoinLobby(true)
                   const path = tab === 'home' ? ROUTES.HOME
