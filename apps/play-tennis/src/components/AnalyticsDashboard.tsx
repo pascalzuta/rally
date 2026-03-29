@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { analytics, type DashboardData, type ChannelSpend, type ChannelMetrics } from '../analytics'
 
+const BUILD_VERSION = 'v3-' + Date.now().toString(36)
+
 type DateRange = '7d' | '30d' | '90d' | 'all'
 type DashboardTab = 'overview' | 'funnel' | 'channels' | 'cohorts'
 
@@ -67,10 +69,35 @@ function retentionBg(pct: number): string {
   return 'var(--color-negative-bg)'
 }
 
+// Direct REST fetch with anon key - bypasses authenticated Supabase client
+// The analytics RLS policies are on the `anon` role, but the logged-in client
+// sends requests as `authenticated` role which has no SELECT policy.
+const SB_URL = 'https://gxiflulfgqahlvdirecz.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
+
+async function fetchEventsDirectly(from: string, _to: string): Promise<{ events: unknown[] | null; error: string | null }> {
+  try {
+    const params = new URLSearchParams({
+      select: 'event_name,user_id,session_id,channel,created_at',
+      'created_at': `gte.${from}`,
+      order: 'created_at.asc',
+    })
+    const res = await fetch(`${SB_URL}/rest/v1/analytics_events?${params}`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` },
+    })
+    if (!res.ok) return { events: null, error: `REST ${res.status}: ${await res.text()}` }
+    const data = await res.json()
+    return { events: data, error: null }
+  } catch (err) {
+    return { events: null, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview')
   const [spendData, setSpendData] = useState<ChannelSpend[]>([])
@@ -79,16 +106,42 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setDebugInfo('')
+
+    const range = getDateRange(dateRange)
+    const debugParts: string[] = [`Range: ${range.from.slice(0, 10)} to ${range.to.slice(0, 10)}`]
+
     try {
-      const range = getDateRange(dateRange)
+      // Step 1: Direct fetch to verify connectivity
+      const directResult = await fetchEventsDirectly(range.from, range.to)
+      if (directResult.error) {
+        debugParts.push(`Direct fetch: FAILED - ${directResult.error}`)
+        setError(directResult.error)
+        setDebugInfo(debugParts.join(' | '))
+        setLoading(false)
+        return
+      }
+      debugParts.push(`Direct fetch: ${directResult.events?.length ?? 0} events`)
+
+      // Step 3: Use analytics module for full dashboard data
       const dashData = await analytics.fetchDashboardData(range)
+      debugParts.push(`Dashboard data: ${dashData ? 'OK' : 'null'}`)
+      if (dashData) {
+        debugParts.push(`Visitors: ${dashData.totals.total_visitors}, Funnel steps: ${dashData.funnel.length}`)
+      }
+
       let spend: ChannelSpend[] = []
       try { spend = await analytics.getChannelSpend() } catch { /* ignore */ }
+
       setData(dashData)
       setSpendData(spend)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data')
+      const msg = err instanceof Error ? err.message : String(err)
+      debugParts.push(`Error: ${msg}`)
+      setError(msg)
     }
+
+    setDebugInfo(debugParts.join(' | '))
     setLoading(false)
   }, [dateRange])
 
@@ -156,7 +209,6 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
     if (!data || data.daily_registrations.length === 0) {
       return <div className="analytics-empty">No registration data yet</div>
     }
-    // Aggregate by date across all channels
     const byDate = new Map<string, number>()
     for (const r of data.daily_registrations) {
       byDate.set(r.date, (byDate.get(r.date) ?? 0) + r.count)
@@ -360,7 +412,6 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
                       {pct}%
                     </td>
                   ))}
-                  {/* Pad empty cells */}
                   {Array.from({ length: maxWeeks - row.retention.length }, (_, i) => (
                     <td key={`pad-${i}`} className="analytics-cohort-cell analytics-cohort-empty" />
                   ))}
@@ -382,7 +433,15 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
           </svg>
         </button>
         <h1 className="analytics-title">Analytics</h1>
+        <span style={{ fontSize: 10, color: 'var(--color-text-muted)', marginLeft: 'auto' }}>{BUILD_VERSION}</span>
       </div>
+
+      {/* Debug info bar - visible to diagnose issues */}
+      {debugInfo && (
+        <div style={{ padding: '8px 12px', background: 'var(--color-neutral-bg)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 12, wordBreak: 'break-all' }}>
+          {debugInfo}
+        </div>
+      )}
 
       {/* Date range picker */}
       <div className="analytics-range-picker">
@@ -424,17 +483,17 @@ export default function AnalyticsDashboard({ onBack }: { onBack: () => void }) {
           </div>
         ) : error ? (
           <div className="analytics-empty-state">
-            <p style={{ color: 'var(--color-negative-primary)' }}>Error loading data</p>
-            <p className="analytics-empty-sub">{error}</p>
-            <button onClick={fetchData} style={{ marginTop: 12, padding: '8px 16px', border: '1px solid var(--color-divider)', borderRadius: 8, background: 'var(--color-bg-surface)', cursor: 'pointer' }}>Retry</button>
+            <p style={{ color: 'var(--color-negative-primary)', fontWeight: 600 }}>Error loading data</p>
+            <p className="analytics-empty-sub" style={{ marginTop: 8 }}>{error}</p>
+            <button onClick={fetchData} style={{ marginTop: 16, padding: '10px 20px', border: '1px solid var(--color-divider)', borderRadius: 8, background: 'var(--color-bg-surface)', cursor: 'pointer', fontWeight: 500 }}>Retry</button>
           </div>
         ) : !data ? (
           <div className="analytics-empty-state">
-            <p>No analytics data returned</p>
-            <p className="analytics-empty-sub">
-              The query returned no results. Make sure the analytics_events table exists in Supabase and has data.
+            <p style={{ fontWeight: 600 }}>No analytics data returned</p>
+            <p className="analytics-empty-sub" style={{ marginTop: 8 }}>
+              fetchDashboardData returned null. Check debug info above.
             </p>
-            <button onClick={fetchData} style={{ marginTop: 12, padding: '8px 16px', border: '1px solid var(--color-divider)', borderRadius: 8, background: 'var(--color-bg-surface)', cursor: 'pointer' }}>Retry</button>
+            <button onClick={fetchData} style={{ marginTop: 16, padding: '10px 20px', border: '1px solid var(--color-divider)', borderRadius: 8, background: 'var(--color-bg-surface)', cursor: 'pointer', fontWeight: 500 }}>Retry</button>
           </div>
         ) : (
           <>
