@@ -49,6 +49,14 @@
     <priority>0.6</priority>
   </url>
 
+  <!-- Help & Support -->
+  <url>
+    <loc>https://play-rally.com/support/</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- Player Availability -->
   <url>
     <loc>https://play-rally.com/#profile</loc>
