@@ -11,6 +11,8 @@ interface Props {
   currentPlayerName: string
   onViewBracket: () => void
   onTournamentUpdated?: () => void
+  /** When true, only render the header card (progress + to-do), not the agenda */
+  headerOnly?: boolean
 }
 
 function getWeekOneMonday(tournament: Tournament): Date {
@@ -65,7 +67,7 @@ function groupMatchesByWeek(matches: Match[], tournament: Tournament): Map<numbe
   return weeks
 }
 
-export default function ScheduleSummary({ tournament, currentPlayerId, currentPlayerName, onViewBracket, onTournamentUpdated }: Props) {
+export default function ScheduleSummary({ tournament, currentPlayerId, currentPlayerName, onViewBracket, onTournamentUpdated, headerOnly = false }: Props) {
   const [visible, setVisible] = useState(false)
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
@@ -194,6 +196,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         </div>
       </div>
 
+      {!headerOnly && <>
       {/* Post-match feedback — takes priority over next match card */}
       {pendingFeedback && (() => {
         const fbMatch = tournament.matches.find(m => m.id === pendingFeedback.matchId)
@@ -301,6 +304,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
       <button className="btn btn-large schedule-view-bracket" onClick={onViewBracket}>
         See All Matchups
       </button>
+      </>}
     </div>
   )
 }
