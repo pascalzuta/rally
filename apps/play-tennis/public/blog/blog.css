@@ -211,6 +211,13 @@ body {
   font-size: 0.85rem; color: var(--color-text-dim);
 }
 .blog-footer a { color: var(--color-accent-light); text-decoration: none; }
+.blog-footer-social {
+  display: flex; justify-content: center; gap: 16px; margin-top: 12px;
+}
+.blog-footer-social a {
+  display: flex; align-items: center; color: var(--color-text-dim); transition: color 0.15s;
+}
+.blog-footer-social a:hover { color: #fff; }
 
 /* Article CTA */
 .article-cta {

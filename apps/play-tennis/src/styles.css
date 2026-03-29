@@ -12144,6 +12144,24 @@ main {
 .dgh-footer-links a:hover {
   color: var(--color-text-primary);
 }
+.dgh-footer-sep {
+  color: var(--color-divider);
+  user-select: none;
+}
+.dgh-footer-social {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dgh-footer-social a {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  transition: color 0.15s;
+}
+.dgh-footer-social a:hover {
+  color: var(--color-text-primary);
+}
 
 /* Blog Teaser Section */
 .dgh-blog-teaser {
