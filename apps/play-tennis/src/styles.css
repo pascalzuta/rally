@@ -8230,6 +8230,23 @@ select:focus {
   position: relative;
 }
 
+.inbox-unread-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--color-negative-primary);
+  color: white;
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .inbox-unread-dot {
   position: absolute;
   top: 2px;
