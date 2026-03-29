@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Help & Support — Rally</title>
+  <meta name="description" content="Get help with Rally — find answers to common questions about tournaments, scheduling, ratings, and your account. Contact our support team if you need more help." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://play-rally.com/support/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://play-rally.com/support/" />
+  <meta property="og:title" content="Help & Support — Rally" />
+  <meta property="og:description" content="Find answers to common questions or contact our support team." />
+  <meta property="og:image" content="https://play-rally.com/og-image.png" />
+  <meta property="og:site_name" content="Rally" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#16a34a" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I join a tournament?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sign up, select your county, and join the lobby. When 6+ players join your county lobby, a round-robin tournament is automatically created." }
+      },
+      {
+        "@type": "Question",
+        "name": "How does scheduling work?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Rally looks at all players' availability and finds overlapping 2-hour windows. Matches are auto-scheduled when overlap exists, or marked as needs-negotiation so players can coordinate directly." }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Rally Rating?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Rally Rating is an ELO-based system that tracks your competitive performance. Your rating updates after each tournament match based on the result and your opponent's rating." }
+      },
+      {
+        "@type": "Question",
+        "name": "Is Rally free?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes, Rally is completely free. No subscription fees, no tournament entry fees, no hidden costs." }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I report a match score?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Go to the Tournament tab, find your match, and tap it to expand. Enter the set scores and submit. Your opponent will be asked to confirm the result." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I change my availability after signing up?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. Go to the Availability tab at any time to update your available time slots. Changes take effect for future tournament scheduling." }
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fafafa; --surface: #fff; --border: #e5e5e5;
+      --text: #1a1a1a; --text-muted: #6b7280; --text-dim: #9ca3af;
+      --accent: #16a34a; --accent-light: #22c55e;
+      --radius: 12px; --max-w: 680px;
+    }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      line-height: 1.6; -webkit-font-smoothing: antialiased;
+    }
+
+    /* Nav */
+    .support-nav {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .support-nav-inner {
+      max-width: 960px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px;
+    }
+    .support-nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .support-nav-logo img { height: 28px; }
+    .support-nav-badge {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      background: var(--bg); padding: 2px 8px; border-radius: 6px;
+    }
+    .support-nav-links { display: flex; gap: 16px; align-items: center; }
+    .support-nav-links a {
+      font-size: 14px; color: var(--text-muted); text-decoration: none; font-weight: 500;
+    }
+    .support-nav-links a:hover { color: var(--text); }
+    .support-nav-cta {
+      background: var(--accent) !important; color: #fff !important;
+      padding: 6px 14px; border-radius: 8px; font-weight: 600 !important;
+    }
+
+    /* Header */
+    .support-header {
+      text-align: center; padding: 48px 24px 40px;
+    }
+    .support-header h1 {
+      font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px;
+    }
+    .support-header p { font-size: 15px; color: var(--text-muted); }
+
+    /* Main */
+    .support-main {
+      max-width: var(--max-w); margin: 0 auto; padding: 0 24px 64px;
+    }
+
+    /* Section */
+    .support-section { margin-bottom: 48px; }
+    .support-section-title {
+      font-size: 18px; font-weight: 700; margin-bottom: 16px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+
+    /* FAQ */
+    .faq-item {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 8px; background: var(--surface); overflow: hidden;
+    }
+    .faq-question {
+      width: 100%; padding: 16px 20px; display: flex; align-items: center;
+      justify-content: space-between; background: none; border: none;
+      font: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+      cursor: pointer; text-align: left; gap: 12px;
+    }
+    .faq-question:hover { background: var(--bg); }
+    .faq-chevron {
+      flex-shrink: 0; width: 20px; height: 20px;
+      transition: transform 0.2s;
+    }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); }
+    .faq-answer {
+      display: none; padding: 0 20px 16px;
+      font-size: 14px; color: var(--text-muted); line-height: 1.65;
+    }
+    .faq-item.open .faq-answer { display: block; }
+
+    /* Contact Form */
+    .contact-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-row { display: flex; gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .form-label {
+      font-size: 13px; font-weight: 600; color: var(--text);
+    }
+    .form-input, .form-select, .form-textarea {
+      padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font: inherit; font-size: 14px; color: var(--text);
+      background: var(--surface); transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .form-textarea { resize: vertical; min-height: 120px; }
+    .form-submit {
+      align-self: flex-start; padding: 10px 24px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; font: inherit; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    .form-submit:hover { background: var(--accent-light); }
+    .form-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-success {
+      display: none; padding: 16px 20px; background: #f0fdf4;
+      border: 1px solid #bbf7d0; border-radius: var(--radius);
+      color: #166534; font-size: 14px; font-weight: 500;
+    }
+    .form-error {
+      display: none; padding: 16px 20px; background: #fef2f2;
+      border: 1px solid #fecaca; border-radius: var(--radius);
+      color: #991b1b; font-size: 14px; font-weight: 500;
+    }
+
+    /* Quick links */
+    .quick-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .quick-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      text-decoration: none; color: var(--text); font-size: 14px; font-weight: 500;
+      transition: border-color 0.15s;
+    }
+    .quick-link:hover { border-color: var(--accent); }
+    .quick-link-icon { color: var(--accent); flex-shrink: 0; }
+
+    /* Footer */
+    .support-footer {
+      border-top: 1px solid var(--border); padding: 24px;
+      text-align: center; font-size: 13px; color: var(--text-dim);
+    }
+    .support-footer a { color: var(--accent); text-decoration: none; }
+
+    /* Response time */
+    .response-note {
+      font-size: 13px; color: var(--text-dim); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .response-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; }
+      .quick-links { grid-template-columns: 1fr; }
+      .support-header h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="support-nav">
+    <div class="support-nav-inner">
+      <a href="/" class="support-nav-logo">
+        <img src="/rally-logo.svg" alt="Rally" />
+        <span class="support-nav-badge">Help</span>
+      </a>
+      <div class="support-nav-links">
+        <a href="/blog/">Blog</a>
+        <a href="/" class="support-nav-cta">Play Rally</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="support-header">
+    <h1>How can we help?</h1>
+    <p>Find answers below or send us a message — we'll get back to you within 24 hours.</p>
+  </header>
+
+  <main class="support-main">
+
+    <!-- Quick Links -->
+    <section class="support-section">
+      <div class="quick-links">
+        <a href="#faq" class="quick-link">
+          <svg class="quick-link-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Common questions
+        </a>
+        <a href="#contact" class="quick-link">
+          <svg class="quick-link-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contact support
+        </a>
+        <a href="https://www.instagram.com/playrally_us/" target="_blank" rel="noopener noreferrer" class="quick-link">
+          <svg class="quick-link-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          DM us on Instagram
+        </a>
+        <a href="https://www.facebook.com/people/Rally-Tournaments/61577494419031/" target="_blank" rel="noopener noreferrer" class="quick-link">
+          <svg class="quick-link-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          Message on Facebook
+        </a>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="support-section" id="faq">
+      <h2 class="support-section-title">Frequently Asked Questions</h2>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          How do I join a tournament?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Sign up and select your county during registration. Then join your county's lobby from the Home tab. When 6 or more players have joined, a round-robin tournament is automatically created and match scheduling begins.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          How does match scheduling work?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Rally analyzes all players' availability and finds overlapping 2-hour windows. Matches are categorized as: <strong>auto-scheduled</strong> (confirmed time both players are free), <strong>needs-accept</strong> (proposed time one player needs to confirm), or <strong>needs-negotiation</strong> (no overlap found — players coordinate directly via in-app messaging).</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          How do I report a match score?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Go to the Tournament tab, find your match, and tap to expand it. Enter the set scores and submit. Your opponent will be notified and asked to confirm the result. Once both players agree, the scores are finalized and ratings are updated.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          What is Rally Rating?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Rally Rating is an ELO-based system that measures your competitive level. After each match, your rating adjusts based on whether you won or lost, and the strength of your opponent. Beating a higher-rated player earns more points than beating a lower-rated one. Your rating appears on your county leaderboard.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          Can I change my availability?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Yes — go to the Availability tab any time to update your free time slots. Changes apply to future tournament scheduling. Already-confirmed matches are not affected.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          Is Rally free?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Yes, 100% free. No subscription fees, no tournament entry fees, no premium tiers. Sign up, join your county lobby, and play.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          How do I invite friends?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">From the Home tab, tap the "Invite" or share button to copy your county's invite link. When friends open it, they land directly in your county's lobby to sign up and join.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          What skill levels are supported?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Rally supports all levels using the NTRP scale: from 2.0 (beginner) through 5.0+ (advanced tournament player). You select your level during registration and are matched with players at a similar level.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          My opponent isn't responding to schedule a match. What do I do?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Try messaging them through the in-app messaging feature. If they remain unresponsive after a few days, contact us using the form below and we'll help resolve the situation.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+          Can I play in multiple counties?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Currently, each account is tied to one county. If you've moved or want to switch, contact us and we can update your county assignment.</div>
+      </div>
+    </section>
+
+    <!-- Contact Form -->
+    <section class="support-section" id="contact">
+      <h2 class="support-section-title">Contact Us</h2>
+      <div class="response-note">
+        <span class="response-dot"></span>
+        Typical response time: within 24 hours
+      </div>
+
+      <div id="form-success" class="form-success">
+        Thanks for reaching out! We've received your message and will get back to you within 24 hours.
+      </div>
+      <div id="form-error" class="form-error">
+        Something went wrong. Please try again, or DM us on <a href="https://www.instagram.com/playrally_us/" target="_blank">Instagram</a> instead.
+      </div>
+
+      <form id="support-form" class="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="name">Name</label>
+            <input class="form-input" type="text" id="name" name="name" required placeholder="Your name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input class="form-input" type="email" id="email" name="email" required placeholder="you@example.com" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="category">Topic</label>
+            <select class="form-select" id="category" name="category">
+              <option value="general">General question</option>
+              <option value="tournament">Tournament issue</option>
+              <option value="scheduling">Scheduling problem</option>
+              <option value="account">Account / profile</option>
+              <option value="score">Score dispute</option>
+              <option value="bug">Bug report</option>
+              <option value="feedback">Feedback / suggestion</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="subject">Subject</label>
+            <input class="form-input" type="text" id="subject" name="subject" required placeholder="Brief summary" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="message">Message</label>
+          <textarea class="form-textarea" id="message" name="message" required placeholder="Describe your issue or question in detail..."></textarea>
+        </div>
+        <button class="form-submit" type="submit" id="submit-btn">Send message</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="support-footer">
+    <p>&copy; 2026 <a href="/">Rally</a> &mdash; <a href="/blog/">The Baseline Blog</a></p>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://gxiflulfgqahlvdirecz.supabase.co'
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4aWZsdWxmZ3FhaGx2ZGlyZWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTE2NjksImV4cCI6MjA4ODkyNzY2OX0.URWQ_FVCB3DqXGKvb-G6eAKUPBmcso6FHl1gxIWLK-I'
+
+    document.getElementById('support-form').addEventListener('submit', async function(e) {
+      e.preventDefault()
+      const btn = document.getElementById('submit-btn')
+      const successEl = document.getElementById('form-success')
+      const errorEl = document.getElementById('form-error')
+      successEl.style.display = 'none'
+      errorEl.style.display = 'none'
+      btn.disabled = true
+      btn.textContent = 'Sending...'
+
+      const data = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        category: document.getElementById('category').value,
+        subject: document.getElementById('subject').value.trim(),
+        message: document.getElementById('message').value.trim()
+      }
+
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/support_requests', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(data)
+        })
+
+        if (res.ok) {
+          successEl.style.display = 'block'
+          this.reset()
+        } else {
+          throw new Error('Submit failed')
+        }
+      } catch (err) {
+        errorEl.style.display = 'block'
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Send message'
+      }
+    })
+  </script>
+</body>
+</html>

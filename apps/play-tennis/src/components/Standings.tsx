@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Tournament } from '../types'
 
 interface Props {
@@ -17,16 +16,6 @@ interface PlayerStats {
 }
 
 export default function Standings({ tournament }: Props) {
-  const [showDetails, setShowDetails] = useState(() => {
-    try { return localStorage.getItem('rally_standings_view') === 'detailed' } catch { return false }
-  })
-
-  const toggleDetails = () => {
-    const next = !showDetails
-    setShowDetails(next)
-    try { localStorage.setItem('rally_standings_view', next ? 'detailed' : 'simple') } catch {}
-  }
-
   const stats: PlayerStats[] = tournament.players.map(p => ({
     id: p.id, name: p.name, wins: 0, losses: 0,
     setsWon: 0, setsLost: 0, gamesWon: 0, gamesLost: 0,
@@ -64,20 +53,16 @@ export default function Standings({ tournament }: Props) {
 
   return (
     <div className="standings">
-      <div className="standings-header">
-        <button className="btn btn-small standings-toggle" onClick={toggleDetails}>
-          {showDetails ? 'Hide Details' : 'Show Details'}
-        </button>
-      </div>
+      <div className="schedule-week-header">Standings</div>
       <table>
         <thead>
           <tr>
             <th>Rank</th>
             <th>Player</th>
             <th>W-L</th>
-            {showDetails && <th>Win %</th>}
-            {showDetails && <th>Sets</th>}
-            {showDetails && <th>+/-</th>}
+            <th>Win %</th>
+            <th>Sets</th>
+            <th>+/-</th>
           </tr>
         </thead>
         <tbody>
@@ -86,20 +71,16 @@ export default function Standings({ tournament }: Props) {
               <td className="rank">{i + 1}</td>
               <td className="player-cell">{s.name}</td>
               <td className="stat-cell">{s.wins}-{s.losses}</td>
-              {showDetails && (
-                <td className="stat-cell">
-                  <div className="standings-win-bar-container">
-                    <div className="standings-win-bar" style={{ width: `${winPct(s)}%` }} />
-                    <span className="standings-win-pct">{winPct(s)}%</span>
-                  </div>
-                </td>
-              )}
-              {showDetails && <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>}
-              {showDetails && (
-                <td className={`stat-cell ${(s.setsWon - s.setsLost) >= 0 ? 'stat-positive' : 'stat-negative'}`}>
-                  {(s.setsWon - s.setsLost) >= 0 ? '+' : ''}{s.setsWon - s.setsLost}
-                </td>
-              )}
+              <td className="stat-cell">
+                <div className="standings-win-bar-container">
+                  <div className="standings-win-bar" style={{ width: `${winPct(s)}%` }} />
+                  <span className="standings-win-pct">{winPct(s)}%</span>
+                </div>
+              </td>
+              <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>
+              <td className={`stat-cell ${(s.setsWon - s.setsLost) >= 0 ? 'stat-positive' : 'stat-negative'}`}>
+                {(s.setsWon - s.setsLost) >= 0 ? '+' : ''}{s.setsWon - s.setsLost}
+              </td>
             </tr>
           ))}
         </tbody>

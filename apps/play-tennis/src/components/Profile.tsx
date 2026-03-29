@@ -1,6 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState, useRef, useMemo } from 'react'
-import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty } from '../store'
+import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
 
@@ -59,15 +59,26 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   const [editing, setEditing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoUrl, setPhotoUrl] = useState<string>(profile.photoUrl ?? '')
-  const [bio, setBio] = useState<string>(profile.bio ?? '')
-  const [playingStyle, setPlayingStyle] = useState<string[]>(profile.playingStyle ?? [])
-  const [preferredCourts, setPreferredCourts] = useState<string[]>(profile.preferredCourts ?? [])
-  const [newCourt, setNewCourt] = useState('')
   const [slots, setSlots] = useState<AvailabilitySlot[]>(() => getAvailability(profile.id))
   const [availMode, setAvailMode] = useState<'quick' | 'custom'>('quick')
   const [detailDay, setDetailDay] = useState<DayOfWeek>('monday')
   const [detailStart, setDetailStart] = useState(9)
   const [detailEnd, setDetailEnd] = useState(12)
+
+  const playerRating = getPlayerRating(profile.id, profile.name)
+  const tournamentsPlayed = getPlayerTournaments(profile.id).length
+
+  const { wins, losses } = useMemo(() => {
+    const leaderboard = getCountyLeaderboard(profile.county)
+    const entry = leaderboard.find(e => e.name.toLowerCase() === profile.name.toLowerCase())
+    return { wins: entry?.wins ?? 0, losses: entry?.losses ?? 0 }
+  }, [profile.county, profile.name])
+
+  const joinDate = useMemo(() => {
+    if (!profile.createdAt) return ''
+    const d = new Date(profile.createdAt)
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  }, [profile.createdAt])
 
   async function handleLogout() {
     if (confirm('Sign out? You can sign back in with your email.')) {
@@ -182,8 +193,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     return bestSlot
   }, [slots, profile.county, profile.id])
 
-  const STYLE_OPTIONS = ['Singles', 'Doubles', 'Competitive', 'Casual'] as const
-
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -197,77 +206,51 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     reader.readAsDataURL(file)
   }
 
-  function handleBioChange(value: string) {
-    if (value.length <= 150) {
-      setBio(value)
-      const updated = { ...profile, bio: value }
-      switchProfile(updated)
-    }
-  }
-
-  function togglePlayingStyle(style: string) {
-    const next = playingStyle.includes(style)
-      ? playingStyle.filter(s => s !== style)
-      : [...playingStyle, style]
-    setPlayingStyle(next)
-    const updated = { ...profile, playingStyle: next }
-    switchProfile(updated)
-  }
-
-  function addCourt() {
-    const name = newCourt.trim()
-    if (!name || preferredCourts.length >= 3 || preferredCourts.includes(name)) return
-    const next = [...preferredCourts, name]
-    setPreferredCourts(next)
-    setNewCourt('')
-    const updated = { ...profile, preferredCourts: next }
-    switchProfile(updated)
-  }
-
-  function removeCourt(court: string) {
-    const next = preferredCourts.filter(c => c !== court)
-    setPreferredCourts(next)
-    const updated = { ...profile, preferredCourts: next }
-    switchProfile(updated)
-  }
-
   return (
     <div className="profile-content">
-      {/* Player Identity */}
-      <div className="card profile-identity-card">
-        <div className="profile-identity-header">
-          <div className="profile-photo-section" onClick={() => fileInputRef.current?.click()}>
-            {photoUrl ? (
-              <img src={photoUrl} alt={profile.name} className="profile-avatar-img" />
-            ) : (
-              <div className="profile-avatar">{profile.name[0].toUpperCase()}</div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handlePhotoUpload}
-            />
-            <div className="profile-photo-hint">Tap to change</div>
-          </div>
-          <div className="profile-identity-info">
-            <h2 className="profile-name">{profile.name}</h2>
-            {profile.email && <p className="profile-email">{profile.email}</p>}
-            <p className="profile-county">{profile.county}</p>
-          </div>
-        </div>
-        <div className="profile-identity-meta">
-          {profile.skillLevel && (
-            <span className="profile-meta-chip">
-              {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)} &middot; {profile.skillLevel === 'beginner' ? 'NTRP 2.0\u20132.5' : profile.skillLevel === 'intermediate' ? 'NTRP 3.0\u20133.5' : profile.skillLevel === 'advanced' ? 'NTRP 4.0+' : ''}
-            </span>
+      {/* Hero Profile Card */}
+      <div className="profile-hero-card">
+        <div className="profile-hero-banner" />
+        <div className="profile-hero-photo" onClick={() => fileInputRef.current?.click()}>
+          {photoUrl ? (
+            <img src={photoUrl} alt={profile.name} className="profile-hero-photo-img" />
+          ) : (
+            <div className="profile-hero-avatar">{profile.name[0].toUpperCase()}</div>
           )}
-          {playingStyle.length > 0 && playingStyle.map(s => (
-            <span key={s} className="profile-meta-chip profile-meta-chip--accent">{s}</span>
-          ))}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handlePhotoUpload}
+          />
         </div>
-        {bio && <p className="profile-bio-display">{bio}</p>}
+        <div className="profile-hero-info">
+          <h2 className="profile-hero-name">{profile.name}</h2>
+          <p className="profile-hero-county">{profile.county}</p>
+          <div className="profile-hero-tags">
+            {profile.skillLevel && (
+              <span className="profile-hero-level">
+                {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}
+              </span>
+            )}
+            {joinDate && <span className="profile-hero-joined">Joined {joinDate}</span>}
+          </div>
+        </div>
+        <div className="profile-hero-stats">
+          <div className="profile-hero-stat">
+            <span className="profile-hero-stat-value">{Math.round(playerRating.rating)}</span>
+            <span className="profile-hero-stat-label">Rating</span>
+          </div>
+          <div className="profile-hero-stat">
+            <span className="profile-hero-stat-value">{wins}<span className="profile-hero-stat-sep">–</span>{losses}</span>
+            <span className="profile-hero-stat-label">W – L</span>
+          </div>
+          <div className="profile-hero-stat">
+            <span className="profile-hero-stat-value">{tournamentsPlayed}</span>
+            <span className="profile-hero-stat-label">Tournaments</span>
+          </div>
+        </div>
       </div>
 
       {/* Availability Section */}
@@ -385,66 +368,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             </div>
           </>
         )}
-      </div>
-
-      {/* Bio & Playing Style */}
-      <div className="card profile-edit-card">
-        <h3 className="profile-edit-title">Edit Profile</h3>
-
-        <div className="profile-edit-field">
-          <label className="profile-edit-label">Bio</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Introduce yourself to opponents..."
-            value={bio}
-            maxLength={150}
-            onChange={e => handleBioChange(e.target.value)}
-          />
-          <div className="profile-edit-hint">{150 - bio.length} characters remaining</div>
-        </div>
-
-        <div className="profile-edit-field">
-          <label className="profile-edit-label">Playing Style</label>
-          <div className="profile-style-options">
-            {STYLE_OPTIONS.map(style => (
-              <button
-                key={style}
-                className={`profile-style-pill ${playingStyle.includes(style) ? 'active' : ''}`}
-                onClick={() => togglePlayingStyle(style)}
-              >
-                {style}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="profile-edit-field">
-          <label className="profile-edit-label">Home Courts (max 3)</label>
-          {preferredCourts.length > 0 && (
-            <div className="profile-courts-list">
-              {preferredCourts.map(court => (
-                <span key={court} className="profile-court-chip">
-                  {court}
-                  <button className="profile-court-remove" onClick={() => removeCourt(court)}>✕</button>
-                </span>
-              ))}
-            </div>
-          )}
-          {preferredCourts.length < 3 && (
-            <div className="profile-court-add">
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Where do you usually play?"
-                value={newCourt}
-                onChange={e => setNewCourt(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addCourt() }}
-              />
-              <button className="btn btn-small" onClick={addCourt}>Add</button>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Help & How Rally Works */}

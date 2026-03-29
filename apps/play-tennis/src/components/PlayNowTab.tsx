@@ -185,8 +185,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="empty-state-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
           </div>
-          <div className="empty-state-title">No active tournament</div>
-          <div className="empty-state-message">Join an active tournament to find matches and play</div>
+          <div className="empty-state-title">No tournament yet</div>
+          <div className="empty-state-message">Join one from the Home tab to find matches and play</div>
         </div>
       </div>
     )
@@ -283,7 +283,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="pn-info-tooltip">
             <strong>Tournament Matches</strong> are part of your tournament bracket and count toward standings.
             <br /><strong>Casual Play</strong> lets you find pickup games with other players in your tournament.
-            <br />Use &quot;Send Match Request&quot; below to propose a casual game.
+            <br />Use &quot;Request Match&quot; below to propose a casual game.
           </div>
         )}
       </div>
@@ -297,7 +297,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
                 <div className="offer-card-status-row">
-                  <span className="card-status-label card-status-label--purple">Awaiting Response</span>
+                  <span className="card-status-label card-status-label--purple">NEEDS RESPONSE</span>
                   <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
@@ -438,8 +438,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         <div className="section-header">Who's Free</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
-            <div className="pn-empty-title">No players available right now</div>
-            <div className="pn-empty-desc">Post your availability and we'll notify tournament players</div>
+            <div className="pn-empty-title">No one's free right now</div>
+            <div className="pn-empty-desc">Post your availability — we'll notify players when you do</div>
             {!myBroadcast && !showForm && <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>Play Now</button>}
           </div>
         ) : dateGroups.map(group => (
@@ -526,7 +526,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                             {hasPendingRequest && matchingOutgoingOffer ? (
                               <button className="btn" onClick={() => handleCancelOffer(matchingOutgoingOffer)}>Withdraw Request</button>
                             ) : (
-                              <button className="btn btn-primary" onClick={() => handleAskToPlay(row)}>Send Request</button>
+                              <button className="btn btn-primary" onClick={() => handleAskToPlay(row)}>Request Match</button>
                             )}
                           </div>
                         </div>

@@ -104,13 +104,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
-  const [showOverflow, setShowOverflow] = useState(false)
+
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
-  const [showScheduleSummary, setShowScheduleSummary] = useState(true) // show aha moment first
-  const [viewMode, setViewMode] = useState<'calendar' | 'bracket'>('calendar') // default calendar for round-robin
+  const [viewMode, setViewMode] = useState<'mine' | 'all'>('mine') // default to my matches
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
-  const [showAllMatches, setShowAllMatches] = useState(false) // R-28
   const pendingFeedback = getPendingFeedback()
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const pendingScrollId = useRef<string | null>(null)
@@ -156,8 +154,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     }
 
     setExpandedMatchId(focusMatchId)
-    setShowScheduleSummary(false)
-    setViewMode('bracket')
+    setViewMode('all')
     pendingScrollId.current = focusMatchId
     setHighlightedMatchId(focusMatchId)
     onFocusConsumed?.()
@@ -188,8 +185,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           <div className="empty-state-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8m-4-4v4m-4.5-8a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 0 4.5 4.5M6.5 13A4.5 4.5 0 0 1 2 8.5" /><path d="M12 2v1m-7 3H4m16 0h-1m-2.64-3.36-.7.7M8.64 3.64l-.7-.7" /></svg>
           </div>
-          <div className="empty-state-title">No active tournament</div>
-          <div className="empty-state-message">Join a tournament from the Home tab to see the bracket</div>
+          <div className="empty-state-title">No tournament yet</div>
+          <div className="empty-state-message">Join one from the Home tab — your bracket will appear here</div>
         </div>
       </div>
     )
@@ -640,46 +637,46 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* Schedule Summary — "Aha Moment" (first view for round-robin) */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && showScheduleSummary && isParticipant && (
-        <ScheduleSummary
-          tournament={tournament}
-          currentPlayerId={currentPlayerId}
-          currentPlayerName={currentPlayerName}
-          onViewBracket={() => setShowScheduleSummary(false)}
-          onTournamentUpdated={refreshAndCheckFeedback}
-        />
-      )}
+      {/* Summary card + My Matches / All Matches for round-robin */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && isParticipant && (
+        <>
+          {/* Summary header card — always visible */}
+          <ScheduleSummary
+            tournament={tournament}
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            onViewBracket={() => setViewMode('all')}
+            onTournamentUpdated={refreshAndCheckFeedback}
+            headerOnly
+          />
 
-      {/* Calendar/Bracket toggle for round-robin */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0 var(--space-md) 0' }}>
-          <div className="bracket-view-toggle">
-            <button
-              className={`bracket-view-toggle-btn ${viewMode === 'calendar' ? 'selected' : ''}`}
-              onClick={() => setViewMode('calendar')}
-            >Calendar</button>
-            <button
-              className={`bracket-view-toggle-btn ${viewMode === 'bracket' ? 'selected' : ''}`}
-              onClick={() => setViewMode('bracket')}
-            >Bracket</button>
+          {/* My Matches / All Matches toggle */}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-sm) 0' }}>
+            <div className="bracket-view-toggle">
+              <button
+                className={`bracket-view-toggle-btn ${viewMode === 'mine' ? 'selected' : ''}`}
+                onClick={() => setViewMode('mine')}
+              >My Matches</button>
+              <button
+                className={`bracket-view-toggle-btn ${viewMode === 'all' ? 'selected' : ''}`}
+                onClick={() => setViewMode('all')}
+              >All Matches</button>
+            </div>
           </div>
-          {tournament.schedulingSummary && (
-            <button className="btn-link" onClick={() => setShowScheduleSummary(true)} style={{ fontSize: 'var(--font-body-sm, 13px)' }}>
-              View summary
-            </button>
-          )}
-        </div>
-      )}
 
-      {/* Calendar view for round-robin */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && viewMode === 'calendar' && (
-        <MatchCalendar
-          tournament={tournament}
-          currentPlayerId={currentPlayerId}
-          currentPlayerName={currentPlayerName}
-          onTournamentUpdated={refreshAndCheckFeedback}
-        />
+          {/* Match calendar — filtered by toggle */}
+          <MatchCalendar
+            tournament={tournament}
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            onTournamentUpdated={refreshAndCheckFeedback}
+            filterMyMatches={viewMode === 'mine'}
+            hideSummaryStrip
+          />
+
+          {/* Standings */}
+          <Standings tournament={tournament} />
+        </>
       )}
 
       {winner && (
@@ -748,15 +745,15 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         )
       })()}
 
-      {tournament.status !== 'completed' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
+      {tournament.status !== 'completed' && tournament.format === 'group-knockout' && (
         <div className="tab-bar">
           <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
           <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
         </div>
       )}
 
-      {/* R-17: Match filter toggle — Upcoming | Completed | All */}
-      {tournament.status !== 'completed' && tab === 'matches' && (
+      {/* R-17: Match filter toggle — Upcoming | Completed | All (not for round-robin, which uses My Matches/All Matches) */}
+      {tournament.status !== 'completed' && tournament.format !== 'round-robin' && tab === 'matches' && (
         <div className="match-filter-toggle">
           {(['upcoming', 'completed', 'all'] as MatchFilterMode[]).map(mode => (
             <button
@@ -773,7 +770,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {tournament.status !== 'completed' && tab === 'matches' && (
+      {tournament.status !== 'completed' && tournament.format !== 'round-robin' && tab === 'matches' && (
         <>
           {/* Round progress stepper for single-elimination */}
           {tournament.format === 'single-elimination' && rounds.length > 1 && (
@@ -889,23 +886,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                     return (
                       <>
                         {nextMatch && renderMatchCard(nextMatch)}
-                        {remainingUpcoming.length > 0 && (
-                          showAllMatches || !nextMatch ? (
-                            <>
-                              {remainingUpcoming.map(m => renderMatchCard(m))}
-                            </>
-                          ) : (
-                            <button className="show-more-matches-btn" onClick={() => setShowAllMatches(true)}>
-                              {remainingUpcoming.length} more matches to play
-                            </button>
-                          )
-                        )}
+                        {remainingUpcoming.map(m => renderMatchCard(m))}
                         {completedMatches.length > 0 && completedMatches.map(m => renderMatchCard(m))}
-                        {showAllMatches && nextMatch && (
-                          <button className="show-more-matches-btn" onClick={() => setShowAllMatches(false)}>
-                            Show less
-                          </button>
-                        )}
                       </>
                     )
                   })()}
@@ -965,23 +947,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </>
       )}
 
-      {tournament.status !== 'completed' && tab === 'standings' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
+      {tournament.status !== 'completed' && tab === 'standings' && tournament.format === 'group-knockout' && (
         <Standings tournament={tournament} />
       )}
 
       {isParticipant && tournament.status !== 'completed' && (
-        <div className="bracket-overflow-section">
-          <button className="bracket-overflow-btn" onClick={() => setShowOverflow(!showOverflow)}>
-            ···
-          </button>
-          {showOverflow && (
-            <div className="bracket-overflow-menu">
-              <button className="bracket-overflow-item bracket-overflow-danger" onClick={() => { setShowOverflow(false); setShowLeaveConfirm(true) }}>
-                Leave tournament
-              </button>
-            </div>
-          )}
-        </div>
+        <button className="btn btn-large logout-btn" onClick={() => setShowLeaveConfirm(true)}>
+          Leave Tournament
+        </button>
       )}
 
       {/* Leave tournament confirmation */}

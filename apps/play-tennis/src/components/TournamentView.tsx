@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament, getRescheduleUiState } from '../store'
+import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament, getRescheduleUiState, hasUnreadFrom } from '../store'
 import { Tournament, Match } from '../types'
 import Standings from './Standings'
 import BroadcastPanel from './BroadcastPanel'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
+import MessagePanel from './MessagePanel'
+import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import { canEnterScore, canExpandMatch } from '../matchCapabilities'
+import { getMatchCardView, MatchCardView } from '../matchCardModel'
 
 interface Props {
   tournamentId: string
@@ -52,48 +55,22 @@ function matchSortPriority(match: Match, currentPlayerId: string): number {
   return 3
 }
 
-function getMatchEyebrow(match: Match, isMyMatch: boolean, canScore: boolean, currentPlayerId: string): { label: string } | null {
-  const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
-  if (match.completed) return { label: 'Completed' }
-  if (match.resolution) {
-    if (match.resolution.type === 'walkover') return { label: 'Walkover' }
-    if (match.resolution.type === 'double-loss') return { label: 'Canceled' }
-    return { label: 'Resolved' }
+// Status labels and actions now derived from getMatchCardView() (matchCardModel.ts)
+// for consistency across all views (Home, Bracket, Tournament)
+
+function toneToClass(tone: MatchCardView['tone']): string {
+  switch (tone) {
+    case 'confirmed': return 'sched-confirmed'
+    case 'respond': return 'sched-proposed'
+    case 'schedule': return 'sched-unscheduled'
+    case 'escalated': return 'sched-escalated'
+    case 'confirm-score': return 'sched-proposed'
+    case 'completed': return ''
+    default: return ''
   }
-  if (match.schedule?.activeRescheduleRequest) {
-    if (rescheduleUiState === 'soft_request_sent') return { label: 'Reschedule Requested' }
-    if (rescheduleUiState === 'soft_request_received') return { label: 'Change Requested' }
-    return { label: 'Needs New Time' }
-  }
-  if (canScore) return { label: 'Confirmed' }
-  if (!match.schedule) return { label: 'Waiting on players' }
-  if (match.schedule.status === 'confirmed') return { label: 'Confirmed' }
-  if (match.schedule.status === 'escalated') return { label: 'Escalated' }
-  if (match.schedule.status === 'proposed' && isMyMatch) return { label: 'Rally Suggested' }
-  if (match.schedule.status === 'unscheduled' && isMyMatch) return { label: 'Schedule' }
-  return { label: 'Waiting on players' }
 }
 
-function getMatchActionLabel(match: Match, isMyMatch: boolean, canScore: boolean, currentPlayerId: string): string | null {
-  if (match.completed) return null
-  if (canScore) return 'View Match'
-  if (!match.schedule) return null
-  const request = match.schedule.activeRescheduleRequest
-  if (request) {
-    if (!isMyMatch) return 'View Time'
-    if (request.intent === 'soft') {
-      return request.requestedBy === currentPlayerId ? null : 'Respond'
-    }
-    return 'Find a time'
-  }
-  if (match.schedule.status === 'confirmed') return isMyMatch ? 'Change Time' : 'View Time'
-  if (!isMyMatch) return null
-  if (match.schedule.status === 'proposed') return 'Confirm Time'
-  if (match.schedule.status === 'escalated') return 'Confirm Time'
-  if (match.schedule.status === 'unscheduled') return 'Schedule Match'
-  return null
-}
-
+// scheduleStatusClass preserved for resolution-type styling on match cards
 function scheduleStatusClass(match: Match): string {
   if (match.resolution) {
     switch (match.resolution.type) {
@@ -102,14 +79,7 @@ function scheduleStatusClass(match: Match): string {
       case 'double-loss': return 'sched-double-loss'
     }
   }
-  if (!match.schedule || match.completed) return ''
-  switch (match.schedule.status) {
-    case 'confirmed': return 'sched-confirmed'
-    case 'proposed': return 'sched-proposed'
-    case 'escalated': return 'sched-escalated'
-    case 'resolved': return 'sched-resolved'
-    default: return 'sched-unscheduled'
-  }
+  return ''
 }
 
 type MatchFilterMode = 'upcoming' | 'completed' | 'all'
@@ -117,6 +87,7 @@ type MatchFilterMode = 'upcoming' | 'completed' | 'all'
 export default function TournamentView({ tournamentId, currentPlayerId, onBack }: Props) {
   const [tournament, setTournament] = useState<Tournament | undefined>()
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
+  const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming')
@@ -226,13 +197,19 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
     const r2 = match.player2Id ? getPlayerRating(match.player2Id, p2) : null
     const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
     const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
-    const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
-    const hasSchedule = match.schedule && match.player1Id && match.player2Id
-    const isConfirmed = match.schedule?.status === 'confirmed'
-    const canScore = canEnterScore(match, currentPlayerId)
     const isBye = (!match.player1Id || !match.player2Id) && match.completed
     const isExpanded = expandedMatchId === match.id
+    const isMessaging = messagingMatchId === match.id
     const onWinnerPath = winnerPath.has(match.id)
+    const canScore = canEnterScore(match, currentPlayerId)
+
+    // Use the canonical card model for all status labels, actions, and tones
+    const view = getMatchCardView(tournament!, match, currentPlayerId)
+    const toneClass = view.tone === 'completed' ? 'slate'
+      : view.tone === 'confirm-score' ? 'blue'
+      : view.tone === 'confirmed' ? 'green'
+      : view.tone === 'escalated' ? 'red'
+      : 'purple'
 
     // Win probability for unplayed matches with both players
     const showWinProb = !match.completed && match.player1Id && match.player2Id && r1 && r2
@@ -243,13 +220,14 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
       ? formatMatchScores(match.score1, match.score2)
       : null
 
-    const eyebrow = getMatchEyebrow(match, isMyMatch, !!canScore, currentPlayerId)
-    const actionLabel = getMatchActionLabel(match, isMyMatch, !!canScore, currentPlayerId)
+    const hasUnread = view.opponentId ? hasUnreadFrom(currentPlayerId, view.opponentId) : false
+    const currentPlayerName = getPlayerName(tournament!, currentPlayerId)
+    const isConfirmed = match.schedule?.status === 'confirmed'
 
     return (
       <div
         key={match.id}
-        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)}`}
+        className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${view.isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${toneToClass(view.tone)} ${scheduleStatusClass(match)}`}
         onClick={() => {
           if (isBye) return
           handleMatchClick(match, !!canScore)
@@ -259,37 +237,56 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
           <div className="bye-label">BYE</div>
         ) : (
           <>
-            {/* Eyebrow label */}
-            {eyebrow && <div className="match-card-eyebrow">{eyebrow.label}</div>}
-
-            <div className="match-players-row">
-              <div className="match-players-names">
-                <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
-                  <span className="match-player-name">
-                    {p1}{showDetails && seed1 && <span className="seed-label"> ({seed1})</span>}
-                  </span>
-                  {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
-                  {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
-                </div>
-                <div className="match-vs">vs</div>
-                <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
-                  <span className="match-player-name">
-                    {p2}{showDetails && seed2 && <span className="seed-label"> ({seed2})</span>}
-                  </span>
-                  {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
-                  {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
-                </div>
+            {/* Status eyebrow — uses canonical ALL CAPS labels from matchCardModel */}
+            <div className="match-card-eyebrow-row">
+              <div className={`card-status-label card-status-label--${toneClass}`}>
+                {view.statusLabel}
               </div>
-              {!match.completed && isConfirmed && match.schedule?.confirmedSlot && (() => {
-                const st = formatStartTime(match.schedule!.confirmedSlot!)
-                return (
-                  <div className="match-time-slot">
-                    <span className="match-time-day">{st.day}</span>
-                    <span className="match-time-hour">{st.time}</span>
-                  </div>
-                )
-              })()}
+              {view.metaLabel && (
+                <div className={`card-meta-chip card-meta-chip--${toneClass}`}>{view.metaLabel}</div>
+              )}
             </div>
+
+            {/* Opponent name prominent for my matches, equal for others */}
+            {view.isMyMatch ? (
+              <div className="match-card-title-block">
+                <div className="match-card-title">{view.title}</div>
+                {view.supporting && (
+                  <div className={`match-card-supporting ${view.supportingTone === 'danger' ? 'match-card-supporting--danger' : ''}`}>
+                    {view.supporting}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="match-players-row">
+                <div className="match-players-names">
+                  <div className={`match-player ${match.winnerId === match.player1Id ? 'winner' : ''}`}>
+                    <span className="match-player-name">
+                      {p1}{showDetails && seed1 && <span className="seed-label"> ({seed1})</span>}
+                    </span>
+                    {formattedScores && <span className="match-score">{formattedScores.p1}</span>}
+                    {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player1Id && <span className="match-score">W/O</span>}
+                  </div>
+                  <div className="match-vs">vs</div>
+                  <div className={`match-player ${match.winnerId === match.player2Id ? 'winner' : ''}`}>
+                    <span className="match-player-name">
+                      {p2}{showDetails && seed2 && <span className="seed-label"> ({seed2})</span>}
+                    </span>
+                    {formattedScores && <span className="match-score">{formattedScores.p2}</span>}
+                    {match.completed && match.resolution?.type === 'walkover' && match.winnerId === match.player2Id && <span className="match-score">W/O</span>}
+                  </div>
+                </div>
+                {!match.completed && isConfirmed && match.schedule?.confirmedSlot && (() => {
+                  const st = formatStartTime(match.schedule!.confirmedSlot!)
+                  return (
+                    <div className="match-time-slot">
+                      <span className="match-time-day">{st.day}</span>
+                      <span className="match-time-hour">{st.time}</span>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
 
             {/* Completed match summary */}
             {match.completed && match.winnerId && (
@@ -299,6 +296,38 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
                   <span className="match-completed-date">
                     {formatStartTime(match.schedule.confirmedSlot).day}
                   </span>
+                )}
+              </div>
+            )}
+
+            {/* Action buttons — consistent with Home and BracketTab */}
+            {(view.primaryActionLabel || (view.isMyMatch && view.opponentId)) && (
+              <div className="match-card-actions-row">
+                {view.primaryActionLabel && (
+                  <button
+                    className="match-card-action-btn"
+                    onClick={e => {
+                      e.stopPropagation()
+                      setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
+                    }}
+                  >
+                    {view.primaryActionLabel}
+                  </button>
+                )}
+                {view.isMyMatch && view.opponentId && (
+                  <button
+                    className={`match-card-msg-btn ${isMessaging ? 'active' : ''}`}
+                    onClick={e => {
+                      e.stopPropagation()
+                      setMessagingMatchId(messagingMatchId === match.id ? null : match.id)
+                    }}
+                    aria-label="Message opponent"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    </svg>
+                    {hasUnread && <span className="msg-unread-dot" />}
+                  </button>
                 )}
               </div>
             )}
@@ -323,33 +352,43 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
               </div>
             )}
 
-            {/* Action button */}
-            {actionLabel && (
-              <button
-                className="match-card-action-btn"
-                onClick={e => {
-                  e.stopPropagation()
-                  setExpandedMatchId(expandedMatchId === match.id ? null : match.id)
-                }}
-              >
-                {actionLabel}
-              </button>
+            {/* Inline messaging */}
+            {isMessaging && view.opponentId && view.opponentName && (
+              <div className="match-card-expansion" onClick={e => e.stopPropagation()}>
+                <MessagePanel
+                  currentPlayerId={currentPlayerId}
+                  currentPlayerName={currentPlayerName}
+                  otherPlayerId={view.opponentId}
+                  otherPlayerName={view.opponentName}
+                  onClose={() => setMessagingMatchId(null)}
+                />
+              </div>
             )}
 
-            {/* Expanded inline scoring or scheduling panel */}
-            {isExpanded && !match.completed && (
-              <div onClick={e => e.stopPropagation()}>
-                {match.schedule ? (
-                  <UpcomingMatchPanel
-                    tournament={tournament!}
-                    match={match}
-                    currentPlayerId={currentPlayerId}
-                    onUpdated={() => {
-                      setExpandedMatchId(null)
-                      refresh()
-                    }}
-                  />
-                ) : null}
+            {/* Expanded inline score confirmation */}
+            {isExpanded && view.expansionKind === 'score-confirmation' && (
+              <div className="match-card-expansion" onClick={e => e.stopPropagation()}>
+                <ScoreConfirmationPanel
+                  tournament={tournament!}
+                  match={match}
+                  currentPlayerId={currentPlayerId}
+                  onUpdated={() => { setExpandedMatchId(null); refresh() }}
+                />
+              </div>
+            )}
+
+            {/* Expanded inline scheduling panel */}
+            {isExpanded && view.expansionKind === 'schedule' && match.schedule && (
+              <div className="match-card-expansion" onClick={e => e.stopPropagation()}>
+                <UpcomingMatchPanel
+                  tournament={tournament!}
+                  match={match}
+                  currentPlayerId={currentPlayerId}
+                  onUpdated={() => {
+                    setExpandedMatchId(null)
+                    refresh()
+                  }}
+                />
               </div>
             )}
           </>

@@ -4,6 +4,7 @@ import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } fr
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
 import { sendOtp, verifyOtp, getSession, onAuthStateChange, fetchPlayerProfile, savePlayerProfile } from '../supabase'
+import { analytics } from '../analytics'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -394,6 +395,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
 
     setCreatedProfile(p)
     setStep('confirmed')
+    analytics.track('CompleteRegistration', { userId: p.id, properties: { county: p.county, skillLevel: p.skillLevel, gender: p.gender } })
+    analytics.identify(p.id, { county: p.county, skill_level: p.skillLevel, gender: p.gender })
     setTimeout(() => onRegistered(p), 1500)
   }
 
@@ -409,6 +412,19 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   // --- Onboarding Screens ---
   const isOnboarding = step === 'onboard-1' || step === 'onboard-2' || step === 'onboard-3'
   const onboardIdx = step === 'onboard-1' ? 0 : step === 'onboard-2' ? 1 : step === 'onboard-3' ? 2 : -1
+
+  // Auto-rotate onboarding screens every 4 seconds
+  useEffect(() => {
+    if (!isOnboarding) return
+    const timer = setInterval(() => {
+      setStepRaw(prev => {
+        if (prev === 'onboard-1') return 'onboard-2'
+        if (prev === 'onboard-2') return 'onboard-3'
+        return 'onboard-1'
+      })
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [step])
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX
@@ -594,7 +610,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         setAuthUserId(result.userId)
         // Check if this is a returning user with a full profile on the server
         const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
-        if (!restored) setStep('signup')
+        if (!restored) {
+          analytics.track('Lead')
+          setStep('signup')
+        }
       } else {
         setOtpError('Invalid or expired code. Please try again.')
         setOtpCode('')

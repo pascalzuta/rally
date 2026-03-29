@@ -4,8 +4,10 @@ import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
+import { analytics } from './analytics'
 import { initSupabase, getSession, onAuthStateChange, fetchPlayerProfile } from './supabase'
 import Register from './components/Register'
+import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
 import PlayNowTab from './components/PlayNowTab'
@@ -14,13 +16,14 @@ import RatingPanel from './components/RatingPanel'
 import Leaderboard from './components/Leaderboard'
 import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
+import AnalyticsDashboard from './components/AnalyticsDashboard'
 import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import './styles.css'
 
-type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
+type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help' | 'analytics'
 
-const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard', 'help']
+const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard', 'help', 'analytics']
 
 function getTabFromHash(): Tab {
   const hash = window.location.hash.replace('#', '')
@@ -54,6 +57,7 @@ function clearInviteParam() {
 export default function App() {
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
+  const [forceSignup, setForceSignup] = useState(false)
   const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
@@ -64,6 +68,23 @@ export default function App() {
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Capture UTM attribution on mount
+  useEffect(() => {
+    analytics.captureAttribution()
+  }, [])
+
+  // Fire ViewContent when unauthenticated landing page is shown
+  // Identify returning user when profile exists from localStorage
+  useEffect(() => {
+    if (!authLoading && !profile) {
+      analytics.track('ViewContent')
+    }
+    if (profile) {
+      sessionStorage.setItem('rally-analytics-uid', profile.id)
+      analytics.track('PageView', { userId: profile.id, skipMeta: true })
+    }
+  }, [authLoading, profile])
 
   // Resolve tournament invite county for pre-filling registration
   useEffect(() => {
@@ -104,6 +125,8 @@ export default function App() {
             createdAt: existing.createdAt ?? new Date().toISOString(),
           }
           localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
+          analytics.identify(restored.id, { county: restored.county })
+          analytics.track('ReturnVisit', { userId: restored.id })
           setProfile(restored)
         }
       } catch {
@@ -120,25 +143,33 @@ export default function App() {
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
+  const ADMIN_EMAIL = 'pascal.zuta@gmail.com'
+
   // Navigate tabs via hash so browser back/forward buttons work
   const setActiveTab = useCallback((tab: Tab) => {
+    // Gate analytics to admin only
+    if (tab === 'analytics' && profile?.email !== ADMIN_EMAIL) tab = 'home'
     setActiveTabRaw(tab)
     const currentHash = window.location.hash.replace('#', '')
     if (currentHash !== tab) {
       window.history.pushState({ tab }, '', `#${tab}`)
     }
-  }, [])
+  }, [profile?.email])
 
   useEffect(() => {
     // Set initial hash if not present
     if (!window.location.hash) {
       window.history.replaceState({ tab: 'home' }, '', '#home')
     }
-    const onPopState = () => {
+    const onHashChange = () => {
       setActiveTabRaw(getTabFromHash())
     }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
+    window.addEventListener('popstate', onHashChange)
+    window.addEventListener('hashchange', onHashChange)
+    return () => {
+      window.removeEventListener('popstate', onHashChange)
+      window.removeEventListener('hashchange', onHashChange)
+    }
   }, [])
 
   // Dismiss notification panel / inbox on outside click or Escape key
@@ -301,12 +332,32 @@ export default function App() {
   }
 
   if (!profile) {
+    if (!forceSignup) {
+      return (
+        <div className="app app-desktop-guest">
+          <DesktopGuestHomepage onGetStarted={() => setForceSignup(true)} />
+          <DevTools
+            onProfileSwitch={p => setProfile(p)}
+            activeTournamentId={null}
+            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+            onTournamentCreated={id => {
+              refreshTournaments()
+              setActiveTab('home')
+            }}
+          />
+        </div>
+      )
+    }
+
     return (
       <div className="app">
-        <nav className="top-nav top-nav-register">
+        <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
           <div className="top-nav-logo top-nav-logo-large">
               <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
             </div>
+          <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
+            Blog
+          </a>
         </nav>
         <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} />
         <DevTools
@@ -517,6 +568,10 @@ export default function App() {
 
           {activeTab === 'help' && (
             <Help onBack={() => setActiveTab('profile')} />
+          )}
+
+          {activeTab === 'analytics' && profile.email === 'pascal.zuta@gmail.com' && (
+            <AnalyticsDashboard onBack={() => setActiveTab('home')} />
           )}
         </main>
       </div>

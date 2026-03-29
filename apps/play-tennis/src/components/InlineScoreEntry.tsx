@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { saveMatchScore, getPlayerName, getSeeds, clearPendingFeedback } from '../store'
 import { Tournament } from '../types'
 import { useToast, ConfirmationTone } from './Toast'
+import { analytics } from '../analytics'
 import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 function isValidSet(s1: number, s2: number): boolean {
@@ -142,6 +143,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     setSaveState('saving')
     try {
       await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId, currentPlayerId)
+      analytics.track('ScoreSubmitted', { userId: currentPlayerId, properties: { tournamentId: tournament.id, matchId } })
       setSaveState('success')
       showSuccess('Score reported — waiting for opponent to confirm')
     } catch {
