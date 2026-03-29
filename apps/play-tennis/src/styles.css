@@ -4496,10 +4496,11 @@ select:focus {
   width: 100%;
 }
 
-.confirmed-score-btn {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
-  border-color: rgba(217, 119, 6, 0.18);
+.cancel-match-link {
+  color: var(--color-negative-primary);
+  font-weight: var(--weight-medium);
+  font-size: 0.875rem;
+  justify-content: center;
 }
 
 .schedule-score-entry {

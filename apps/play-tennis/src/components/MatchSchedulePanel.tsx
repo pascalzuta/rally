@@ -590,7 +590,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               )}
               {rescheduleUiState === 'none' && isScoreable && (
                 <button
-                  className="btn btn-primary btn-small confirmed-score-btn"
+                  className="btn btn-primary btn-small"
                   onClick={(e) => {
                     e.stopPropagation()
                     setShowCancel(false)
@@ -612,7 +612,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             </div>
             <div className="confirmed-actions-danger">
               <button
-                className="btn btn-danger btn-small"
+                className="btn-link btn-small cancel-match-link"
                 onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
               >
                 Cancel Match
@@ -680,7 +680,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               Suggest Another
             </button>
             <button
-              className="btn btn-danger btn-small"
+              className="btn-link btn-small cancel-match-link"
               onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
             >
               Cancel Match
