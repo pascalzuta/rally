@@ -10,6 +10,7 @@ interface Props {
   currentPlayerId: string
   currentPlayerName: string
   onTournamentUpdated: () => void
+  filterMyMatches?: boolean
 }
 
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -102,20 +103,23 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
   return weeks
 }
 
-export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated }: Props) {
+export default function MatchCalendar({ tournament, currentPlayerId, currentPlayerName, onTournamentUpdated, filterMyMatches }: Props) {
   const [messagingMatchId, setMessagingMatchId] = useState<string | null>(null)
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null)
   const pendingFeedback = getPendingFeedback()
   const allMatches = tournament.matches.filter(m => m.player1Id && m.player2Id)
-  const sorted = sortMatchesForCalendar(allMatches, currentPlayerId)
+  const filteredMatches = filterMyMatches
+    ? allMatches.filter(m => m.player1Id === currentPlayerId || m.player2Id === currentPlayerId)
+    : allMatches
+  const sorted = sortMatchesForCalendar(filteredMatches, currentPlayerId)
   const stableSorted = useStableOrder(sorted, m => m.id)
   const weeks = groupByWeek(stableSorted)
 
   // Summary stats
-  const confirmed = allMatches.filter(m => m.schedule?.schedulingTier === 'auto').length
-  const pending = allMatches.filter(m => m.schedule?.schedulingTier === 'needs-accept').length
-  const unscheduled = allMatches.filter(m => m.schedule?.schedulingTier === 'needs-negotiation').length
-  const completed = allMatches.filter(m => m.completed).length
+  const confirmed = filteredMatches.filter(m => m.schedule?.schedulingTier === 'auto').length
+  const pending = filteredMatches.filter(m => m.schedule?.schedulingTier === 'needs-accept').length
+  const unscheduled = filteredMatches.filter(m => m.schedule?.schedulingTier === 'needs-negotiation').length
+  const completed = filteredMatches.filter(m => m.completed).length
 
   return (
     <div className="match-calendar">
