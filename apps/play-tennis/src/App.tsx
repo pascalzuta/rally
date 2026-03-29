@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { getProfile, getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, getTournament, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
 import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
@@ -16,16 +17,8 @@ import VictoryAnimation from './components/VictoryAnimation'
 import Help from './components/Help'
 import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
+import { ROUTES, getLegacyHashRedirect } from './routes'
 import './styles.css'
-
-type Tab = 'home' | 'bracket' | 'playnow' | 'profile' | 'leaderboard' | 'help'
-
-const VALID_TABS: Tab[] = ['home', 'bracket', 'playnow', 'profile', 'leaderboard', 'help']
-
-function getTabFromHash(): Tab {
-  const hash = window.location.hash.replace('#', '')
-  return VALID_TABS.includes(hash as Tab) ? (hash as Tab) : 'home'
-}
 
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
@@ -51,10 +44,19 @@ function clearInviteParam() {
   window.history.replaceState({}, '', url.pathname)
 }
 
+/** Derive active tab name from current pathname for bottom-tab highlighting */
+function tabFromPath(pathname: string): string {
+  if (pathname === '/') return 'home'
+  return pathname.replace('/', '')
+}
+
 export default function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const activeTab = tabFromPath(location.pathname)
+
   const [profile, setProfile] = useState<PlayerProfile | null>(getProfile())
   const [authLoading, setAuthLoading] = useState(!getProfile()) // only loading if no localStorage profile
-  const [activeTab, setActiveTabRaw] = useState<Tab>(getTabFromHash)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
@@ -64,6 +66,15 @@ export default function App() {
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Redirect legacy hash URLs (e.g. /#bracket -> /bracket) on first load
+  useEffect(() => {
+    const redirect = getLegacyHashRedirect()
+    if (redirect) {
+      window.location.hash = ''
+      navigate(redirect, { replace: true })
+    }
+  }, [])
 
   // Fire ViewContent when unauthenticated landing page is shown
   useEffect(() => {
@@ -126,27 +137,6 @@ export default function App() {
   const [showRatingPanel, setShowRatingPanel] = useState(false)
   const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
-
-  // Navigate tabs via hash so browser back/forward buttons work
-  const setActiveTab = useCallback((tab: Tab) => {
-    setActiveTabRaw(tab)
-    const currentHash = window.location.hash.replace('#', '')
-    if (currentHash !== tab) {
-      window.history.pushState({ tab }, '', `#${tab}`)
-    }
-  }, [])
-
-  useEffect(() => {
-    // Set initial hash if not present
-    if (!window.location.hash) {
-      window.history.replaceState({ tab: 'home' }, '', '#home')
-    }
-    const onPopState = () => {
-      setActiveTabRaw(getTabFromHash())
-    }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [])
 
   // Dismiss notification panel / inbox on outside click or Escape key
   useEffect(() => {
@@ -218,7 +208,7 @@ export default function App() {
   const currentStatus = activeTournament?.status ?? null
   if (currentStatus && currentStatus !== lastTournamentStatus) {
     if (lastTournamentStatus === 'setup' && currentStatus === 'in-progress') {
-      setActiveTab('bracket')
+      navigate(ROUTES.BRACKET)
     }
     setLastTournamentStatus(currentStatus)
   }
@@ -247,19 +237,19 @@ export default function App() {
     if (profile && inviteTournamentCode) {
       joinFriendTournament(inviteTournamentCode, profile).then(() => {
         clearInviteParam()
-        setActiveTab('home')
+        navigate(ROUTES.HOME)
         setRefreshKey(r => r + 1)
       })
     } else if (profile && inviteCounty) {
       joinLobby({ ...profile, county: inviteCounty })
       clearInviteParam()
-      setActiveTab('home')
+      navigate(ROUTES.HOME)
     }
   }, [profile, inviteCounty, inviteTournamentCode])
 
   useEffect(() => {
     if (profile) refreshTournaments()
-  }, [profile, activeTab, refreshKey])
+  }, [profile, location.pathname, refreshKey])
 
   function refreshTournaments() {
     if (!profile) return
@@ -293,7 +283,7 @@ export default function App() {
     }
     sendWelcomeMessage(p.id)
     setProfile(p)
-    setActiveTab('home')
+    navigate(ROUTES.HOME)
   }
 
   // Show a brief loading state while checking for existing session
@@ -322,7 +312,7 @@ export default function App() {
           onTournamentUpdated={() => setRefreshKey(r => r + 1)}
           onTournamentCreated={id => {
             refreshTournaments()
-            setActiveTab('home')
+            navigate(ROUTES.HOME)
           }}
         />
       </div>
@@ -334,7 +324,7 @@ export default function App() {
     <div className="app">
       <div className="screen">
         <nav className="top-nav">
-          <div className="top-nav-logo" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
+          <div className="top-nav-logo" onClick={() => navigate(ROUTES.HOME)} style={{ cursor: 'pointer' }}>
               <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
             </div>
           <div className="top-nav-actions">
@@ -389,7 +379,7 @@ export default function App() {
                               className={`notif-item ${!n.read ? 'notif-unread' : ''}`}
                               onClick={() => {
                                 if (n.type === 'match_offer') {
-                                  setActiveTab('playnow')
+                                  navigate(ROUTES.PLAYNOW)
                                 } else if (n.type === 'offer_accepted') {
                                   if (n.relatedOfferId) {
                                     const offer = getMatchOffer(n.relatedOfferId)
@@ -397,7 +387,7 @@ export default function App() {
                                       setFocusMatchId(offer.matchId)
                                     }
                                   }
-                                  setActiveTab('bracket')
+                                  navigate(ROUTES.BRACKET)
                                 }
                                 setShowNotifications(false)
                               }}
@@ -432,7 +422,7 @@ export default function App() {
                                 className={`notif-item ${urgency}`}
                                 onClick={() => {
                                   setFocusMatchId(m.id)
-                                  setActiveTab('bracket')
+                                  navigate(ROUTES.BRACKET)
                                   setShowNotifications(false)
                                 }}
                               >
@@ -456,100 +446,109 @@ export default function App() {
         </nav>
 
         <main className="content tab-content">
-          {activeTab === 'home' && (
-            <Home
-              profile={profile}
-              tournaments={tournaments}
-              autoJoin={autoJoinLobby}
-              onAutoJoinConsumed={() => setAutoJoinLobby(false)}
-              onTournamentCreated={id => {
-                refreshTournaments()
-                setActiveTab('bracket')
-              }}
-              onViewTournament={() => setActiveTab('bracket')}
-              onViewMatch={(tournamentId, matchId) => {
-                setFocusMatchId(matchId)
-                setActiveTab('bracket')
-              }}
-              onViewLeaderboard={() => setActiveTab('leaderboard')}
-              onViewOffers={() => setActiveTab('playnow')}
-              onDataChanged={() => setRefreshKey(r => r + 1)}
-              onJoinLobby={() => setAutoJoinLobby(true)}
-              onSetAvailability={() => setActiveTab('profile')}
-              onFindMatch={() => setActiveTab('bracket')}
-              onLogout={() => setProfile(null)}
-            />
-          )}
+          <Routes>
+            <Route path={ROUTES.HOME} element={
+              <Home
+                profile={profile}
+                tournaments={tournaments}
+                autoJoin={autoJoinLobby}
+                onAutoJoinConsumed={() => setAutoJoinLobby(false)}
+                onTournamentCreated={id => {
+                  refreshTournaments()
+                  navigate(ROUTES.BRACKET)
+                }}
+                onViewTournament={() => navigate(ROUTES.BRACKET)}
+                onViewMatch={(tournamentId, matchId) => {
+                  setFocusMatchId(matchId)
+                  navigate(ROUTES.BRACKET)
+                }}
+                onViewLeaderboard={() => navigate(ROUTES.LEADERBOARD)}
+                onViewOffers={() => navigate(ROUTES.PLAYNOW)}
+                onDataChanged={() => setRefreshKey(r => r + 1)}
+                onJoinLobby={() => setAutoJoinLobby(true)}
+                onSetAvailability={() => navigate(ROUTES.PROFILE)}
+                onFindMatch={() => navigate(ROUTES.BRACKET)}
+                onLogout={() => setProfile(null)}
+              />
+            } />
 
-          {activeTab === 'bracket' && (
-            <BracketTab
-              tournament={activeTournament}
-              currentPlayerId={profile.id}
-              currentPlayerName={profile.name}
-              onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-              focusMatchId={focusMatchId}
-              onFocusConsumed={() => setFocusMatchId(null)}
-            />
-          )}
+            <Route path={ROUTES.BRACKET} element={
+              <BracketTab
+                tournament={activeTournament}
+                currentPlayerId={profile.id}
+                currentPlayerName={profile.name}
+                onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+                focusMatchId={focusMatchId}
+                onFocusConsumed={() => setFocusMatchId(null)}
+              />
+            } />
 
-          {activeTab === 'playnow' && (
-            <PlayNowTab
-              tournament={activeTournament}
-              currentPlayerId={profile.id}
-              currentPlayerName={profile.name}
-              onMatchConfirmed={() => setRefreshKey(r => r + 1)}
-            />
-          )}
+            <Route path={ROUTES.PLAYNOW} element={
+              <PlayNowTab
+                tournament={activeTournament}
+                currentPlayerId={profile.id}
+                currentPlayerName={profile.name}
+                onMatchConfirmed={() => setRefreshKey(r => r + 1)}
+              />
+            } />
 
-          {activeTab === 'leaderboard' && (
-            <Leaderboard
-              county={profile.county}
-              currentPlayerId={profile.id}
-              currentPlayerName={profile.name}
-              onBack={() => setActiveTab('home')}
-            />
-          )}
+            <Route path={ROUTES.LEADERBOARD} element={
+              <Leaderboard
+                county={profile.county}
+                currentPlayerId={profile.id}
+                currentPlayerName={profile.name}
+                onBack={() => navigate(ROUTES.HOME)}
+              />
+            } />
 
-          {activeTab === 'profile' && (
-            <Profile
-              profile={profile}
-              onLogout={() => setProfile(null)}
-              onNavigate={(tab) => {
-                if (tab === 'home') setAutoJoinLobby(true)
-                setActiveTab(tab)
-              }}
-              onViewHelp={() => setActiveTab('help')}
-            />
-          )}
+            <Route path={ROUTES.PROFILE} element={
+              <Profile
+                profile={profile}
+                onLogout={() => setProfile(null)}
+                onNavigate={(tab) => {
+                  if (tab === 'home') setAutoJoinLobby(true)
+                  const path = tab === 'home' ? ROUTES.HOME
+                    : tab === 'bracket' ? ROUTES.BRACKET
+                    : tab === 'playnow' ? ROUTES.PLAYNOW
+                    : ROUTES.HOME
+                  navigate(path)
+                }}
+                onViewHelp={() => navigate(ROUTES.HELP)}
+              />
+            } />
 
-          {activeTab === 'help' && (
-            <Help onBack={() => setActiveTab('profile')} />
-          )}
+            <Route path={ROUTES.HELP} element={
+              <Help onBack={() => navigate(ROUTES.PROFILE)} />
+            } />
+
+            {/* Catch-all: redirect unknown paths to home */}
+            <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+          </Routes>
         </main>
       </div>
 
         <nav className="bottom-tabs">
-          <button className={`bottom-tab ${activeTab === 'home' || activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+          <button className={`bottom-tab ${activeTab === 'home' || activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => navigate(ROUTES.HOME)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
             <span className="tab-text">Home</span>
           </button>
-          <button className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`} onClick={() => setActiveTab('bracket')}>
+          <button className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`} onClick={() => navigate(ROUTES.BRACKET)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="8" r="7"/>
               <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
             </svg>
             <span className="tab-text">Tournament</span>
           </button>
-          <button className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`} onClick={() => setActiveTab('playnow')}>
+          <button className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`} onClick={() => navigate(ROUTES.PLAYNOW)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
             <span className="tab-text">Quick Play</span>
           </button>
-          <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+          <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigate(ROUTES.PROFILE)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
@@ -574,16 +573,16 @@ export default function App() {
         <RatingPanel
           profile={profile}
           onClose={() => setShowRatingPanel(false)}
-          onViewLeaderboard={() => { setShowRatingPanel(false); setActiveTab('leaderboard') }}
+          onViewLeaderboard={() => { setShowRatingPanel(false); navigate(ROUTES.LEADERBOARD) }}
         />
       )}
       <DevTools
-        onProfileSwitch={p => { setProfile(p); setActiveTab('home') }}
+        onProfileSwitch={p => { setProfile(p); navigate(ROUTES.HOME) }}
         activeTournamentId={activeTournament?.id ?? null}
         onTournamentUpdated={() => setRefreshKey(r => r + 1)}
         onTournamentCreated={id => {
           refreshTournaments()
-          setActiveTab('bracket')
+          navigate(ROUTES.BRACKET)
         }}
       />
       {victoryAnim && (
