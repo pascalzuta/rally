@@ -106,7 +106,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [showOverflow, setShowOverflow] = useState(false)
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
-  const [showScheduleSummary, setShowScheduleSummary] = useState(true) // show aha moment first
   const [viewMode, setViewMode] = useState<'mine' | 'all'>('mine') // default to my matches
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
@@ -156,7 +155,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     }
 
     setExpandedMatchId(focusMatchId)
-    setShowScheduleSummary(false)
     setViewMode('all')
     pendingScrollId.current = focusMatchId
     setHighlightedMatchId(focusMatchId)
@@ -640,52 +638,57 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* Schedule Summary — "Aha Moment" (first view for round-robin) */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && showScheduleSummary && isParticipant && (
-        <ScheduleSummary
-          tournament={tournament}
-          currentPlayerId={currentPlayerId}
-          currentPlayerName={currentPlayerName}
-          onViewBracket={() => setShowScheduleSummary(false)}
-          onTournamentUpdated={refreshAndCheckFeedback}
-        />
-      )}
+      {/* Summary card + My Matches / All Matches for round-robin */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && isParticipant && (
+        <>
+          {/* Summary header card — always visible */}
+          <ScheduleSummary
+            tournament={tournament}
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            onViewBracket={() => setViewMode('all')}
+            onTournamentUpdated={refreshAndCheckFeedback}
+            headerOnly
+          />
 
-      {/* My Matches / All Matches toggle for round-robin */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0 var(--space-md) 0' }}>
-          <div className="bracket-view-toggle">
-            <button
-              className={`bracket-view-toggle-btn ${viewMode === 'mine' ? 'selected' : ''}`}
-              onClick={() => setViewMode('mine')}
-            >My Matches</button>
-            <button
-              className={`bracket-view-toggle-btn ${viewMode === 'all' ? 'selected' : ''}`}
-              onClick={() => setViewMode('all')}
-            >All Matches</button>
+          {/* My Matches / All Matches toggle */}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-md) 0' }}>
+            <div className="bracket-view-toggle">
+              <button
+                className={`bracket-view-toggle-btn ${viewMode === 'mine' ? 'selected' : ''}`}
+                onClick={() => setViewMode('mine')}
+              >My Matches</button>
+              <button
+                className={`bracket-view-toggle-btn ${viewMode === 'all' ? 'selected' : ''}`}
+                onClick={() => setViewMode('all')}
+              >All Matches</button>
+            </div>
           </div>
-          {tournament.schedulingSummary && (
-            <button className="btn-link" onClick={() => setShowScheduleSummary(true)} style={{ fontSize: 'var(--font-body-sm, 13px)' }}>
-              View summary
-            </button>
+
+          {/* My Matches view — agenda from ScheduleSummary (header hidden) */}
+          {viewMode === 'mine' && (
+            <MatchCalendar
+              tournament={tournament}
+              currentPlayerId={currentPlayerId}
+              currentPlayerName={currentPlayerName}
+              onTournamentUpdated={refreshAndCheckFeedback}
+              filterMyMatches
+            />
           )}
-        </div>
-      )}
 
-      {/* Calendar view for round-robin — filtered by toggle */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
-        <MatchCalendar
-          tournament={tournament}
-          currentPlayerId={currentPlayerId}
-          currentPlayerName={currentPlayerName}
-          onTournamentUpdated={refreshAndCheckFeedback}
-          filterMyMatches={viewMode === 'mine'}
-        />
-      )}
+          {/* All Matches view — full calendar */}
+          {viewMode === 'all' && (
+            <MatchCalendar
+              tournament={tournament}
+              currentPlayerId={currentPlayerId}
+              currentPlayerName={currentPlayerName}
+              onTournamentUpdated={refreshAndCheckFeedback}
+            />
+          )}
 
-      {/* Standings underneath calendar for round-robin */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
-        <Standings tournament={tournament} />
+          {/* Standings */}
+          <Standings tournament={tournament} />
+        </>
       )}
 
       {winner && (
