@@ -1,6 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState, useRef, useMemo } from 'react'
-import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments } from '../store'
+import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
 
@@ -67,6 +67,12 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
 
   const playerRating = getPlayerRating(profile.id, profile.name)
   const tournamentsPlayed = getPlayerTournaments(profile.id).length
+
+  const { wins, losses } = useMemo(() => {
+    const leaderboard = getCountyLeaderboard(profile.county)
+    const entry = leaderboard.find(e => e.name.toLowerCase() === profile.name.toLowerCase())
+    return { wins: entry?.wins ?? 0, losses: entry?.losses ?? 0 }
+  }, [profile.county, profile.name])
 
   const joinDate = useMemo(() => {
     if (!profile.createdAt) return ''
@@ -204,7 +210,8 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     <div className="profile-content">
       {/* Hero Profile Card */}
       <div className="profile-hero-card">
-        <div className="profile-hero-top">
+        <div className="profile-hero-banner" />
+        <div className="profile-hero-body">
           <div className="profile-hero-photo" onClick={() => fileInputRef.current?.click()}>
             {photoUrl ? (
               <img src={photoUrl} alt={profile.name} className="profile-hero-photo-img" />
@@ -219,33 +226,31 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
               onChange={handlePhotoUpload}
             />
           </div>
-          <h2 className="profile-hero-name">{profile.name}</h2>
-          <p className="profile-hero-county">{profile.county}</p>
-          {profile.skillLevel && (
-            <span className="profile-hero-level">
-              {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}
-            </span>
-          )}
+          <div className="profile-hero-info">
+            <h2 className="profile-hero-name">{profile.name}</h2>
+            <div className="profile-hero-meta">
+              <span className="profile-hero-county">{profile.county}</span>
+              {joinDate && <span className="profile-hero-joined">Joined {joinDate}</span>}
+            </div>
+            {profile.skillLevel && (
+              <span className="profile-hero-level">
+                {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="profile-hero-stats">
           <div className="profile-hero-stat">
-            <span className="profile-hero-stat-value">{playerRating.rating}</span>
+            <span className="profile-hero-stat-value">{Math.round(playerRating.rating)}</span>
             <span className="profile-hero-stat-label">Rating</span>
           </div>
-          <div className="profile-hero-stat-divider" />
+          <div className="profile-hero-stat">
+            <span className="profile-hero-stat-value">{wins}–{losses}</span>
+            <span className="profile-hero-stat-label">W–L</span>
+          </div>
           <div className="profile-hero-stat">
             <span className="profile-hero-stat-value">{tournamentsPlayed}</span>
             <span className="profile-hero-stat-label">Tournaments</span>
-          </div>
-          <div className="profile-hero-stat-divider" />
-          <div className="profile-hero-stat">
-            <span className="profile-hero-stat-value">{playerRating.matchesPlayed}</span>
-            <span className="profile-hero-stat-label">Matches</span>
-          </div>
-          <div className="profile-hero-stat-divider" />
-          <div className="profile-hero-stat">
-            <span className="profile-hero-stat-value">{joinDate || '—'}</span>
-            <span className="profile-hero-stat-label">Joined</span>
           </div>
         </div>
       </div>
