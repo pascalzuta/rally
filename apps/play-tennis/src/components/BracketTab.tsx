@@ -107,7 +107,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [showOverflow, setShowOverflow] = useState(false)
   const [advancementPrompt, setAdvancementPrompt] = useState<{ opponentName: string; round: number } | null>(null)
   const [showScheduleSummary, setShowScheduleSummary] = useState(true) // show aha moment first
-  const [viewMode, setViewMode] = useState<'calendar' | 'bracket'>('calendar') // default calendar for round-robin
+  const [viewMode, setViewMode] = useState<'mine' | 'all'>('mine') // default to my matches
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
   const [showAllMatches, setShowAllMatches] = useState(false) // R-28
@@ -157,7 +157,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
     setExpandedMatchId(focusMatchId)
     setShowScheduleSummary(false)
-    setViewMode('bracket')
+    setViewMode('all')
     pendingScrollId.current = focusMatchId
     setHighlightedMatchId(focusMatchId)
     onFocusConsumed?.()
@@ -651,18 +651,18 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         />
       )}
 
-      {/* Calendar/Bracket toggle for round-robin */}
+      {/* My Matches / All Matches toggle for round-robin */}
       {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0 var(--space-md) 0' }}>
           <div className="bracket-view-toggle">
             <button
-              className={`bracket-view-toggle-btn ${viewMode === 'calendar' ? 'selected' : ''}`}
-              onClick={() => setViewMode('calendar')}
-            >Calendar</button>
+              className={`bracket-view-toggle-btn ${viewMode === 'mine' ? 'selected' : ''}`}
+              onClick={() => setViewMode('mine')}
+            >My Matches</button>
             <button
-              className={`bracket-view-toggle-btn ${viewMode === 'bracket' ? 'selected' : ''}`}
-              onClick={() => setViewMode('bracket')}
-            >Bracket</button>
+              className={`bracket-view-toggle-btn ${viewMode === 'all' ? 'selected' : ''}`}
+              onClick={() => setViewMode('all')}
+            >All Matches</button>
           </div>
           {tournament.schedulingSummary && (
             <button className="btn-link" onClick={() => setShowScheduleSummary(true)} style={{ fontSize: 'var(--font-body-sm, 13px)' }}>
@@ -672,14 +672,20 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {/* Calendar view for round-robin */}
-      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && viewMode === 'calendar' && (
+      {/* Calendar view for round-robin — filtered by toggle */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
         <MatchCalendar
           tournament={tournament}
           currentPlayerId={currentPlayerId}
           currentPlayerName={currentPlayerName}
           onTournamentUpdated={refreshAndCheckFeedback}
+          filterMyMatches={viewMode === 'mine'}
         />
+      )}
+
+      {/* Standings underneath calendar for round-robin */}
+      {tournament.status === 'in-progress' && tournament.format === 'round-robin' && !showScheduleSummary && (
+        <Standings tournament={tournament} />
       )}
 
       {winner && (
@@ -748,7 +754,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         )
       })()}
 
-      {tournament.status !== 'completed' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
+      {tournament.status !== 'completed' && tournament.format === 'group-knockout' && (
         <div className="tab-bar">
           <button className={`tab ${tab === 'matches' ? 'active' : ''}`} onClick={() => setTab('matches')}>Matches</button>
           <button className={`tab ${tab === 'standings' ? 'active' : ''}`} onClick={() => setTab('standings')}>Standings</button>
@@ -965,7 +971,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         </>
       )}
 
-      {tournament.status !== 'completed' && tab === 'standings' && (tournament.format === 'round-robin' || tournament.format === 'group-knockout') && (
+      {tournament.status !== 'completed' && tab === 'standings' && tournament.format === 'group-knockout' && (
         <Standings tournament={tournament} />
       )}
 
