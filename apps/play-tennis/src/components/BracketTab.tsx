@@ -110,7 +110,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   const [viewMode, setViewMode] = useState<'calendar' | 'bracket'>('calendar') // default calendar for round-robin
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming') // R-17
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(null) // R-15
-  const [showAllMatches, setShowAllMatches] = useState(false) // R-28
   const pendingFeedback = getPendingFeedback()
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const pendingScrollId = useRef<string | null>(null)
@@ -889,23 +888,8 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                     return (
                       <>
                         {nextMatch && renderMatchCard(nextMatch)}
-                        {remainingUpcoming.length > 0 && (
-                          showAllMatches || !nextMatch ? (
-                            <>
-                              {remainingUpcoming.map(m => renderMatchCard(m))}
-                            </>
-                          ) : (
-                            <button className="show-more-matches-btn" onClick={() => setShowAllMatches(true)}>
-                              {remainingUpcoming.length} more matches to play
-                            </button>
-                          )
-                        )}
+                        {remainingUpcoming.map(m => renderMatchCard(m))}
                         {completedMatches.length > 0 && completedMatches.map(m => renderMatchCard(m))}
-                        {showAllMatches && nextMatch && (
-                          <button className="show-more-matches-btn" onClick={() => setShowAllMatches(false)}>
-                            Show less
-                          </button>
-                        )}
                       </>
                     )
                   })()}
