@@ -48,23 +48,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const client = getClient()
     if (!client) { setLoading(false); return }
 
-    // Resolve initial session once, then rely on onAuthStateChange for all updates
-    client.auth.getSession().then(async ({ data }) => {
-      const sessionUser = data.session?.user ?? null
-      if (sessionUser) {
-        const profileData = await fetchPlayerProfile(sessionUser.id)
-        const restored = buildProfile(sessionUser.id, sessionUser.email ?? '', profileData)
-        if (restored) {
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
-          setProfileState(restored)
-        }
-        setUser(sessionUser)
-      }
-      setLoading(false)
-    })
-
+    // Use onAuthStateChange exclusively — INITIAL_SESSION fires on every page load
+    // (with session if one exists, null if not) and is the correct Supabase v2 pattern.
+    // This avoids the getSession() + onAuthStateChange race condition that caused
+    // infinite loading on refresh.
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'INITIAL_SESSION') {
+        // Fires once on mount. Resolves loading regardless of outcome.
+        try {
+          if (session?.user) {
+            const u = session.user
+            setUser(u)
+            const profileData = await fetchPlayerProfile(u.id)
+            const restored = buildProfile(u.id, u.email ?? '', profileData)
+            if (restored) {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
+              setProfileState(restored)
+            }
+          }
+        } finally {
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        // Fires after OTP verify, magic link redirect, or token refresh that upgrades
+        // an anonymous session. NOT fired on page refresh (that's INITIAL_SESSION).
         const u = session.user
         setUser(u)
         const profileData = await fetchPlayerProfile(u.id)
@@ -73,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
         } else {
-          // New user — authenticated but not yet registered
+          // New user — authenticated but no profile in DB yet
           setProfileState(null)
         }
       } else if (event === 'SIGNED_OUT') {

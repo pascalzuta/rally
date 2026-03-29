@@ -463,7 +463,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   if (step === 'verify') {
     async function handleVerifyOtp(e: React.FormEvent) {
       e.preventDefault()
-      if (otpCode.length !== 6 || otpVerifying) return
+      if (otpCode.length < 6 || otpVerifying) return
       setOtpError(null)
       setOtpVerifying(true)
       const result = await verifyOtp(email.trim().toLowerCase(), otpCode)
@@ -497,7 +497,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <div className="signup-header">
             <h1 className="signup-title">Check your email</h1>
             <p className="signup-desc">
-              Enter the 6-digit code sent to <strong>{email}</strong>
+              Enter the verification code sent to <strong>{email}</strong>
             </p>
           </div>
 
@@ -518,7 +518,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   autoFocus
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  maxLength={6}
+                  maxLength={8}
                 />
               </label>
 
@@ -529,7 +529,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               <button
                 type="submit"
                 className="btn btn-primary btn-large signup-cta auth-cta"
-                disabled={otpCode.length !== 6 || otpVerifying}
+                disabled={otpCode.length < 6 || otpVerifying}
               >
                 {otpVerifying ? 'Verifying...' : 'Verify'}
               </button>
