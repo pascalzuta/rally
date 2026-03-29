@@ -53,7 +53,7 @@ export default function Standings({ tournament }: Props) {
 
   return (
     <div className="standings">
-      <div className="section-header">Standings</div>
+      <div className="schedule-week-header">Standings</div>
       <table>
         <thead>
           <tr>
