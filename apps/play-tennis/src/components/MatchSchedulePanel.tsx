@@ -169,7 +169,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
     await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
     if (onActionComplete && proposal) {
       const label = proposalLabel(proposal)
-      onActionComplete(`Time confirmed \u2014 ${label}. Find this match in your bracket.`, 'green')
+      onActionComplete(`Time confirmed \u2014 ${label}.`, 'green')
     } else {
       onUpdated()
     }
