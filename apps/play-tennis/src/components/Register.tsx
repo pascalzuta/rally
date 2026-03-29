@@ -106,20 +106,37 @@ const STATE_ABBREVS: Record<string, string> = {
   'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
 }
 
-type Step = 'onboard-1' | 'onboard-2' | 'onboard-3' | 'email' | 'verify' | 'welcome-back' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
+type Step = 'email' | 'verify' | 'welcome-back' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
+
+// Persist auth flow progress so the step survives page reloads / component remounts
+const AUTH_FLOW_KEY = 'rally-auth-flow'
+
+function saveAuthFlow(data: { step: string; email?: string; authUserId?: string }) {
+  try { sessionStorage.setItem(AUTH_FLOW_KEY, JSON.stringify(data)) } catch { /* ignore */ }
+}
+
+function loadAuthFlow(): { step: string; email?: string; authUserId?: string } | null {
+  try {
+    const raw = sessionStorage.getItem(AUTH_FLOW_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function clearAuthFlow() {
+  try { sessionStorage.removeItem(AUTH_FLOW_KEY) } catch { /* ignore */ }
+}
 
 export default function Register({ onRegistered, inviteCounty }: Props) {
-  // R-12: Auto-skip onboarding for returning users
+  // Start directly at email — no onboarding funnel
   const [step, setStepRaw] = useState<Step>(() => {
-    if (inviteCounty) return 'email'
-    try {
-      const saved = localStorage.getItem('play-tennis-profile')
-      if (saved) {
-        const prev = JSON.parse(saved)
-        if (prev.name && prev.county) return 'email'
+    // Recover auth flow state after page reload / component remount
+    const flow = loadAuthFlow()
+    if (flow) {
+      if (flow.step === 'signup' || flow.step === 'verify' || flow.step === 'email') {
+        return flow.step as Step
       }
-    } catch { /* ignore */ }
-    return 'onboard-1'
+    }
+    return 'email'
   })
 
   // Wrap setStep to push browser history so the back button works
@@ -142,14 +159,15 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     return () => window.removeEventListener('popstate', onPopState)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auth state
-  const [email, setEmail] = useState('')
+  // Auth state — restore email/authUserId from sessionStorage if recovering from remount
+  const savedFlow = loadAuthFlow()
+  const [email, setEmail] = useState(savedFlow?.email ?? '')
   const [otpCode, setOtpCode] = useState('')
   const [otpSending, setOtpSending] = useState(false)
   const [otpVerifying, setOtpVerifying] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [resendCountdown, setResendCountdown] = useState(0)
-  const [authUserId, setAuthUserId] = useState<string | null>(null)
+  const [authUserId, setAuthUserId] = useState<string | null>(savedFlow?.authUserId ?? null)
 
   // Shared helper: try to restore a returning user's profile from Supabase
   const tryRestoreProfile = async (userId: string, userEmail: string) => {
@@ -169,6 +187,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         }
         localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
         setCreatedProfile(restored)
+        clearAuthFlow()
         setStep('welcome-back')
         setTimeout(() => onRegistered(restored), 1500)
         return true
@@ -191,7 +210,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         setAuthUserId(session.userId)
         setEmail(session.email)
         const restored = await tryRestoreProfile(session.userId, session.email)
-        if (!restored) setStep('signup')
+        if (!restored) {
+          saveAuthFlow({ step: 'signup', email: session.email, authUserId: session.userId })
+          setStep('signup')
+        }
       }
     })
 
@@ -202,7 +224,10 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         setAuthUserId(userId)
         if (userEmail) setEmail(userEmail)
         const restored = await tryRestoreProfile(userId, userEmail ?? '')
-        if (!restored) setStep('signup')
+        if (!restored) {
+          saveAuthFlow({ step: 'signup', email: userEmail ?? '', authUserId: userId })
+          setStep('signup')
+        }
       }
     })
     return unsub
@@ -224,8 +249,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [suggestedCounty, setSuggestedCounty] = useState<string | null>(null)
   const [detectingLocation, setDetectingLocation] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
-  const touchStartX = useRef(0)
-  const touchStartY = useRef(0)
 
   const [skillLevel, setSkillLevel] = useState<SkillLevel | ''>('')
   const [gender, setGender] = useState<Gender | ''>('')
@@ -394,6 +417,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     }
 
     setCreatedProfile(p)
+    clearAuthFlow()
     setStep('confirmed')
     analytics.track('CompleteRegistration', { userId: p.id, properties: { county: p.county, skillLevel: p.skillLevel, gender: p.gender } })
     analytics.identify(p.id, { county: p.county, skill_level: p.skillLevel, gender: p.gender })
@@ -409,123 +433,6 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   }
 
 
-  // --- Onboarding Screens ---
-  const isOnboarding = step === 'onboard-1' || step === 'onboard-2' || step === 'onboard-3'
-  const onboardIdx = step === 'onboard-1' ? 0 : step === 'onboard-2' ? 1 : step === 'onboard-3' ? 2 : -1
-
-  // Auto-rotate onboarding screens every 4 seconds
-  useEffect(() => {
-    if (!isOnboarding) return
-    const timer = setInterval(() => {
-      setStepRaw(prev => {
-        if (prev === 'onboard-1') return 'onboard-2'
-        if (prev === 'onboard-2') return 'onboard-3'
-        return 'onboard-1'
-      })
-    }, 4000)
-    return () => clearInterval(timer)
-  }, [step])
-
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = e.changedTouches[0].clientY - touchStartY.current
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      const screens: Step[] = ['onboard-1', 'onboard-2', 'onboard-3']
-      if (dx < 0 && onboardIdx < 2) setStep(screens[onboardIdx + 1])
-      else if (dx > 0 && onboardIdx > 0) setStep(screens[onboardIdx - 1])
-    }
-  }
-
-  if (isOnboarding) {
-    const titles = [
-      'Scheduling tennis shouldn\'t take 20 messages',
-      'Matches are scheduled automatically',
-      'Every match, a fair fight',
-    ]
-    const subtitles = [
-      'Rally handles the back-and-forth for you.',
-      'Set your availability. Rally does the rest.',
-      'Rally rates your real game — so every opponent is a genuine challenge.',
-    ]
-
-    const visuals = [
-      <div key="chat" className="onboard-chat onboard-chat-chaotic">
-        <div className="onboard-chat-bubble onboard-chat-out">Can you play Tuesday?</div>
-        <div className="onboard-chat-bubble onboard-chat-in">Maybe Wednesday?</div>
-        <div className="onboard-chat-bubble onboard-chat-out">Next week?</div>
-        <div className="onboard-chat-bubble onboard-chat-in">Let me check...</div>
-      </div>,
-      <div key="match" className="onboard-match-visual">
-        <div className="onboard-match-row">
-          <span className="onboard-match-player">You</span>
-          <span className="onboard-match-time">Sat 9am</span>
-        </div>
-        <div className="onboard-match-row">
-          <span className="onboard-match-player">Opponent</span>
-          <span className="onboard-match-time">Sat 9am</span>
-        </div>
-        <div className="onboard-match-confirmed">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-            <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span>Match scheduled</span>
-        </div>
-      </div>,
-      <div key="matchup" className="onboard-matchup">
-        <div className="onboard-matchup-player">
-          <div className="onboard-matchup-avatar">You</div>
-          <div className="onboard-matchup-rating">1520</div>
-        </div>
-        <div className="onboard-matchup-vs">
-          <span className="onboard-matchup-vs-label">vs</span>
-          <div className="onboard-matchup-badge">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M6 1L7.5 4.5L11 5L8.5 7.5L9 11L6 9.5L3 11L3.5 7.5L1 5L4.5 4.5L6 1Z" fill="currentColor" />
-            </svg>
-            Close match
-          </div>
-        </div>
-        <div className="onboard-matchup-player">
-          <div className="onboard-matchup-avatar">SP</div>
-          <div className="onboard-matchup-rating">1545</div>
-        </div>
-      </div>,
-    ]
-
-    return (
-      <div
-        className="onboard-screen"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div className="onboard-content">
-          <div className="onboard-visual" key={step}>
-            {visuals[onboardIdx]}
-          </div>
-          <h1 className="onboard-title">{titles[onboardIdx]}</h1>
-          <p className="onboard-subtitle">{subtitles[onboardIdx]}</p>
-        </div>
-
-        <div className="onboard-actions">
-          <div className="onboard-dots">
-            {[0, 1, 2].map(i => (
-              <span key={i} className={`onboard-dot ${i === onboardIdx ? 'active' : ''}`} />
-            ))}
-          </div>
-          <button className="btn btn-join-free btn-large onboard-btn" onClick={() => setStep('email')}>
-            Join for free
-          </button>
-          <button className="btn-link onboard-login" onClick={() => setStep('email')}>Log in</button>
-        </div>
-      </div>
-    )
-  }
 
       // --- Email Screen ---
   if (step === 'email') {
@@ -538,6 +445,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       setOtpSending(false)
       if (result.ok) {
         setResendCountdown(60)
+        saveAuthFlow({ step: 'verify', email: email.trim().toLowerCase() })
         setStep('verify')
       } else {
         const err = (result.error ?? '').toLowerCase()
@@ -612,6 +520,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
         const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
         if (!restored) {
           analytics.track('Lead')
+          saveAuthFlow({ step: 'signup', email: email.trim().toLowerCase(), authUserId: result.userId })
           setStep('signup')
         }
       } else {
