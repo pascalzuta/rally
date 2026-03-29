@@ -211,32 +211,30 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
       {/* Hero Profile Card */}
       <div className="profile-hero-card">
         <div className="profile-hero-banner" />
-        <div className="profile-hero-body">
-          <div className="profile-hero-photo" onClick={() => fileInputRef.current?.click()}>
-            {photoUrl ? (
-              <img src={photoUrl} alt={profile.name} className="profile-hero-photo-img" />
-            ) : (
-              <div className="profile-hero-avatar">{profile.name[0].toUpperCase()}</div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handlePhotoUpload}
-            />
-          </div>
-          <div className="profile-hero-info">
-            <h2 className="profile-hero-name">{profile.name}</h2>
-            <div className="profile-hero-meta">
-              <span className="profile-hero-county">{profile.county}</span>
-              {joinDate && <span className="profile-hero-joined">Joined {joinDate}</span>}
-            </div>
+        <div className="profile-hero-photo" onClick={() => fileInputRef.current?.click()}>
+          {photoUrl ? (
+            <img src={photoUrl} alt={profile.name} className="profile-hero-photo-img" />
+          ) : (
+            <div className="profile-hero-avatar">{profile.name[0].toUpperCase()}</div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handlePhotoUpload}
+          />
+        </div>
+        <div className="profile-hero-info">
+          <h2 className="profile-hero-name">{profile.name}</h2>
+          <p className="profile-hero-county">{profile.county}</p>
+          <div className="profile-hero-tags">
             {profile.skillLevel && (
               <span className="profile-hero-level">
                 {profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1)}
               </span>
             )}
+            {joinDate && <span className="profile-hero-joined">Joined {joinDate}</span>}
           </div>
         </div>
         <div className="profile-hero-stats">
@@ -245,8 +243,8 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             <span className="profile-hero-stat-label">Rating</span>
           </div>
           <div className="profile-hero-stat">
-            <span className="profile-hero-stat-value">{wins}–{losses}</span>
-            <span className="profile-hero-stat-label">W–L</span>
+            <span className="profile-hero-stat-value">{wins}<span className="profile-hero-stat-sep">–</span>{losses}</span>
+            <span className="profile-hero-stat-label">W – L</span>
           </div>
           <div className="profile-hero-stat">
             <span className="profile-hero-stat-value">{tournamentsPlayed}</span>
