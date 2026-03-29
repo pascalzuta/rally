@@ -95,22 +95,9 @@ export function createProfile(
 }
 
 export async function logout(): Promise<void> {
-  // Sign out of Supabase
+  // Sign out of Supabase — AuthContext's SIGNED_OUT handler clears localStorage
   const { signOut } = await import('./supabase')
   await signOut()
-
-  localStorage.removeItem(PROFILE_KEY)
-  // Remove all play-tennis-* keys from localStorage
-  const keysToRemove: string[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith('play-tennis-')) {
-      keysToRemove.push(key)
-    }
-  }
-  for (const key of keysToRemove) {
-    localStorage.removeItem(key)
-  }
 }
 
 // --- Lobby ---

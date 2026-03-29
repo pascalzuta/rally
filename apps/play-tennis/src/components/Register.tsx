@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, getSession, onAuthStateChange, fetchPlayerProfile, savePlayerProfile } from '../supabase'
+import { sendOtp, verifyOtp, savePlayerProfile } from '../supabase'
+import { useAuth } from '../context/AuthContext'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -150,62 +151,21 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   const [resendCountdown, setResendCountdown] = useState(0)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
 
-  // Shared helper: try to restore a returning user's profile from Supabase
-  const tryRestoreProfile = async (userId: string, userEmail: string) => {
-    try {
-      const existing = await fetchPlayerProfile(userId)
-      if (existing) {
-        const restored: PlayerProfile = {
-          id: userId,
-          authId: userId,
-          email: userEmail || existing.email,
-          name: existing.name,
-          county: existing.county,
-          skillLevel: (existing.skillLevel as SkillLevel) ?? undefined,
-          gender: (existing.gender as Gender) ?? undefined,
-          weeklyCap: (existing.weeklyCap as PlayerProfile['weeklyCap']) ?? 2,
-          createdAt: existing.createdAt ?? new Date().toISOString(),
-        }
-        localStorage.setItem('play-tennis-profile', JSON.stringify(restored))
-        setCreatedProfile(restored)
-        setStep('welcome-back')
-        setTimeout(() => onRegistered(restored), 1500)
-        return true
-      }
-    } catch {
-      // Supabase unreachable — fall through to signup form
-    }
-    return false
-  }
-
-  // Track whether profile restore has already been attempted (avoid duplicate calls)
-  const restoreAttempted = useRef(false)
-
-  // Check for existing session on mount + listen for magic link auth
+  // React to auth state from AuthContext — handles magic link, OTP verify, and page refresh
+  const { user: authUser, profile: authProfile } = useAuth()
   useEffect(() => {
-    // Check if already authenticated (e.g. page refresh with valid session)
-    getSession().then(async session => {
-      if (session && !restoreAttempted.current) {
-        restoreAttempted.current = true
-        setAuthUserId(session.userId)
-        setEmail(session.email)
-        const restored = await tryRestoreProfile(session.userId, session.email)
-        if (!restored) setStep('signup')
-      }
-    })
-
-    // Listen for magic link redirect (tokens arrive via URL hash)
-    const unsub = onAuthStateChange(async (event, userId, userEmail) => {
-      if (event === 'SIGNED_IN' && userId && !restoreAttempted.current) {
-        restoreAttempted.current = true
-        setAuthUserId(userId)
-        if (userEmail) setEmail(userEmail)
-        const restored = await tryRestoreProfile(userId, userEmail ?? '')
-        if (!restored) setStep('signup')
-      }
-    })
-    return unsub
-  }, [])
+    if (!authUser) return
+    if (authProfile) {
+      // Returning user — AuthContext already restored profile, App will navigate away
+      return
+    }
+    // Authenticated but no profile in DB — advance to signup form
+    if (step === 'email' || step === 'verify') {
+      setAuthUserId(authUser.id)
+      setEmail(prev => prev || (authUser.email ?? ''))
+      setStep('signup')
+    }
+  }, [authUser?.id, authProfile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resend countdown timer
   useEffect(() => {
@@ -590,11 +550,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       const result = await verifyOtp(email.trim().toLowerCase(), otpCode)
       setOtpVerifying(false)
       if (result.ok && result.userId) {
-        restoreAttempted.current = true
         setAuthUserId(result.userId)
-        // Check if this is a returning user with a full profile on the server
-        const restored = await tryRestoreProfile(result.userId, email.trim().toLowerCase())
-        if (!restored) setStep('signup')
+        // AuthContext's onAuthStateChange (SIGNED_IN) will fetch the profile and
+        // update state — the useEffect above advances the step accordingly
       } else {
         setOtpError('Invalid or expired code. Please try again.')
         setOtpCode('')
