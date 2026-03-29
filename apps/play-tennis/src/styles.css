@@ -170,16 +170,17 @@ body {
    Top Navigation (Polymarket style)
    ================================================ */
 .top-nav {
-  height: 56px;
+  min-height: 56px;
   background: var(--color-bg-surface);
   border-bottom: 1px solid var(--color-divider);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-lg);
+  padding: max(12px, env(safe-area-inset-top, 12px)) var(--space-lg) 8px;
   position: sticky;
   top: 0;
   z-index: 10;
+  overflow: visible;
 }
 
 .top-nav-logo {
