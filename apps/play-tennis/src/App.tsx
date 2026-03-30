@@ -17,6 +17,7 @@ import Login from './components/Login'
 import JoinLanding from './components/JoinLanding'
 import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
+import Footer from './components/Footer'
 
 // Lazy-loaded: only fetched when user navigates to these tabs
 const BracketTab = lazy(() => import('./components/BracketTab'))
@@ -320,6 +321,7 @@ export default function App() {
             </a>
           </nav>
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
+          <Footer />
           {devTools}
         </div>
       )
@@ -330,6 +332,7 @@ export default function App() {
       return (
         <div className="app app-desktop-guest">
           <Login onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          <Footer />
           {devTools}
         </div>
       )
@@ -340,6 +343,7 @@ export default function App() {
       return (
         <div className="app app-desktop-guest">
           <JoinLanding onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          <Footer />
           {devTools}
         </div>
       )
@@ -576,6 +580,7 @@ export default function App() {
           </Routes>
           </Suspense>
         </main>
+        <Footer />
       </div>
 
         <nav className="bottom-tabs">
