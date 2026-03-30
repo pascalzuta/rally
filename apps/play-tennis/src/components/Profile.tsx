@@ -81,11 +81,8 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   }, [profile.createdAt])
 
   async function handleLogout() {
-    if (confirm('Sign out? You can sign back in with your email.')) {
-      await logout()
-      onLogout()
-      window.location.hash = '#home'
-    }
+    await logout()
+    onLogout()
   }
 
   function toggleQuickSlot(quickSlot: { label: string; slots: AvailabilitySlot[] }) {

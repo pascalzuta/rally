@@ -154,10 +154,8 @@ export default function Home({
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
 
   async function handleLogout() {
-    if (confirm('Sign out? You can sign back in with your email.')) {
-      await logout()
-      onLogout?.()
-    }
+    await logout()
+    onLogout?.()
   }
 
   const activeTournaments = useMemo(
