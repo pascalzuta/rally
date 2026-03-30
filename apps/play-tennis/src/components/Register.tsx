@@ -497,25 +497,27 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <div className="signup-header">
             <h1 className="signup-title">Check your email</h1>
             <p className="signup-desc">
-              Enter the verification code sent to <strong>{email}</strong>
+              We sent a sign-in link to <strong>{email}</strong>. Click it to continue.
+            </p>
+            <p className="signup-desc" style={{ marginTop: 8, opacity: 0.7, fontSize: '0.9em' }}>
+              If you received a numeric code instead, enter it below.
             </p>
           </div>
 
           <div className="auth-card">
             <form onSubmit={handleVerifyOtp} className="signup-form">
               <label className="field auth-field">
-                <span className="field-label">Verification code</span>
+                <span className="field-label">Code (optional)</span>
                 <input
                   className="auth-input auth-input--otp"
                   type="text"
                   value={otpCode}
                   onChange={e => {
-                    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 8)
                     setOtpCode(val)
                     setOtpError(null)
                   }}
-                  placeholder="000000"
-                  autoFocus
+                  placeholder="12345678"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={8}
