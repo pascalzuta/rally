@@ -12003,6 +12003,451 @@ main {
   margin-bottom: 48px;
 }
 
+/* Desktop Guest Homepage — Base */
+.dgh {
+  background: var(--color-bg-surface);
+}
+
+.dgh-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.dgh-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dgh-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.dgh-btn-primary {
+  background: var(--color-text-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 10px 24px;
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  font-family: inherit;
+}
+
+.dgh-btn-primary:hover {
+  background: #333;
+  transform: translateY(-1px);
+}
+
+.dgh-btn-primary.dgh-btn-large {
+  padding: 14px 36px;
+  font-size: var(--font-body-lg);
+  border-radius: 12px;
+}
+
+.dgh-btn-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-button);
+  padding: 10px 24px;
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  font-family: inherit;
+}
+
+.dgh-btn-secondary:hover {
+  background: var(--color-bg-primary);
+  border-color: var(--color-text-muted);
+}
+
+.dgh-btn-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  padding: 10px 12px;
+  transition: color 0.15s;
+}
+.dgh-btn-link:hover {
+  color: var(--color-text-primary);
+}
+
+.dgh-hero {
+  padding: 80px var(--space-xl) 60px;
+  background: linear-gradient(180deg, #F8FAF8 0%, var(--color-bg-surface) 100%);
+}
+
+.dgh-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dgh-hero-title {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-xl) 0;
+}
+
+.dgh-hero-subtitle {
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xxl) 0;
+  max-width: 560px;
+}
+
+.dgh-hero-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.dgh-section {
+  padding: 80px var(--space-xl);
+}
+
+.dgh-section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dgh-section-title {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0 0 var(--space-md) 0;
+}
+
+/* Final CTA */
+.dgh-final-cta {
+  background: linear-gradient(180deg, var(--color-bg-surface) 0%, #F8FAF8 100%);
+  text-align: center;
+}
+
+.dgh-cta-title {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-md) 0;
+}
+
+.dgh-cta-subtitle {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xl) 0;
+}
+
+/* Blog Teaser */
+.dgh-blog-teaser {
+  padding: 60px var(--space-xl) 80px;
+  background: var(--color-bg-surface);
+}
+
+.dgh-blog-teaser-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dgh-blog-teaser-header {
+  text-align: center;
+}
+
+.dgh-blog-teaser-label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+
+.dgh-blog-teaser-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.dgh-blog-teaser-subtitle {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xl) 0;
+}
+
+.dgh-blog-teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: var(--space-xl);
+}
+
+.dgh-blog-teaser-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: 20px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-divider);
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.dgh-blog-teaser-card:hover {
+  border-color: var(--color-text-muted);
+  box-shadow: var(--shadow);
+}
+
+.dgh-blog-teaser-cat {
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-accent-primary);
+}
+
+.dgh-blog-teaser-card-title {
+  font-size: 15px;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.dgh-blog-teaser-read {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.dgh-blog-teaser-all {
+  display: block;
+  text-align: center;
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-primary);
+  text-decoration: none;
+}
+
+.dgh-blog-teaser-all:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+.dgh-footer {
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-divider);
+  padding: var(--space-xl);
+}
+
+.dgh-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.dgh-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.dgh-footer-tagline {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
+.dgh-footer-copy {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+}
+
+.dgh-footer-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.dgh-footer-links a {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.dgh-footer-links a:hover {
+  color: var(--color-text-primary);
+}
+
+.dgh-footer-sep {
+  color: var(--color-text-muted);
+}
+
+.dgh-footer-social {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.dgh-footer-social a {
+  color: var(--color-text-muted);
+  transition: color 0.15s;
+}
+
+.dgh-footer-social a:hover {
+  color: var(--color-text-primary);
+}
+
+/* Desktop homepage responsive — tablet */
+@media (max-width: 768px) {
+  .dgh-nav-inner {
+    padding: 0 var(--space-lg);
+  }
+
+  .dgh-hero {
+    padding: 60px var(--space-lg) 48px;
+  }
+
+  .dgh-hero-title {
+    font-size: 40px;
+  }
+
+  .dgh-section {
+    padding: 60px var(--space-lg);
+  }
+
+  .dgh-section-title {
+    font-size: 32px;
+  }
+
+  .dgh-cta-title {
+    font-size: 36px;
+  }
+
+  .dgh-footer-inner {
+    flex-direction: column;
+    gap: var(--space-md);
+    text-align: center;
+  }
+
+  .dgh-blog-teaser-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Desktop homepage responsive — mobile */
+@media (max-width: 480px) {
+  .dgh-nav-inner {
+    padding: 0 var(--space-lg);
+    height: 56px;
+  }
+
+  .dgh-nav-inner .rally-logo {
+    height: 30px;
+  }
+
+  .dgh-nav-actions {
+    gap: var(--space-xs);
+  }
+
+  .dgh-nav-actions .dgh-btn-link {
+    display: none;
+  }
+
+  .dgh-btn-secondary {
+    padding: 8px 16px;
+    font-size: var(--font-body-sm);
+  }
+
+  .dgh-btn-primary {
+    padding: 8px 16px;
+    font-size: var(--font-body-sm);
+    white-space: nowrap;
+  }
+
+  .dgh-hero {
+    padding: 40px var(--space-lg) 32px;
+  }
+
+  .dgh-hero-title {
+    font-size: 32px;
+    letter-spacing: -0.02em;
+  }
+
+  .dgh-hero-subtitle {
+    font-size: 16px;
+    margin-bottom: var(--space-xl);
+  }
+
+  .dgh-section {
+    padding: 48px var(--space-lg);
+  }
+
+  .dgh-section-title {
+    font-size: 26px;
+  }
+
+  .dgh-final-cta {
+    padding: 60px var(--space-lg);
+  }
+
+  .dgh-cta-title {
+    font-size: 28px;
+  }
+
+  .dgh-cta-subtitle {
+    font-size: 16px;
+  }
+
+  .dgh-footer {
+    padding: var(--space-lg);
+  }
+
+  .dgh-footer-brand img {
+    height: 22px;
+  }
+
+  .dgh-blog-teaser {
+    padding: 40px var(--space-lg) 48px;
+  }
+
+  .dgh-blog-teaser-title {
+    font-size: 22px;
+  }
+
+  .dgh-blog-teaser-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dgh-blog-teaser-card {
+    padding: 16px;
+  }
+}
+
 /* Centered hero variant */
 .dgh-hero-inner.dgh-hero-centered {
   display: flex;
