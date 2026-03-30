@@ -17,6 +17,7 @@ import Login from './components/Login'
 import JoinLanding from './components/JoinLanding'
 import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
+import Footer from './components/Footer'
 
 // Lazy-loaded: only fetched when user navigates to these tabs
 const BracketTab = lazy(() => import('./components/BracketTab'))
@@ -29,8 +30,9 @@ const Inbox = lazy(() => import('./components/Inbox'))
 const RatingPanel = lazy(() => import('./components/RatingPanel'))
 const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 
-// DevTools: only loaded in development
-const DevTools = import.meta.env.DEV
+// DevTools: loaded in development and on staging
+const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
+const DevTools = (import.meta.env.DEV || isStaging)
   ? lazy(() => import('./components/DevTools'))
   : () => null
 
@@ -320,6 +322,7 @@ export default function App() {
             </a>
           </nav>
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
+          <Footer />
           {devTools}
         </div>
       )
@@ -330,6 +333,7 @@ export default function App() {
       return (
         <div className="app app-desktop-guest">
           <Login onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          <Footer />
           {devTools}
         </div>
       )
@@ -340,6 +344,7 @@ export default function App() {
       return (
         <div className="app app-desktop-guest">
           <JoinLanding onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          <Footer />
           {devTools}
         </div>
       )
@@ -576,6 +581,7 @@ export default function App() {
           </Routes>
           </Suspense>
         </main>
+        <Footer />
       </div>
 
         <nav className="bottom-tabs">
