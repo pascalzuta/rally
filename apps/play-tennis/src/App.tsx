@@ -72,7 +72,7 @@ export default function App() {
   const activeTab = tabFromPath(location.pathname)
 
   const { user, profile, loading: authLoading, signOut, setProfile } = useAuth()
-  const [forceSignup, setForceSignup] = useState(false)
+  // forceSignup removed — signup lives at /signup (a real URL, not a state toggle)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
@@ -109,17 +109,16 @@ export default function App() {
     }
   }, [authLoading, profile])
 
-  // Authenticated but no profile → new user coming from magic link or OTP verify.
-  // Skip the landing page and go straight to the signup form.
-  // No user → signed out; reset forceSignup so home page shows (not the register form).
+  // Authenticated but no profile → new user arriving from magic link.
+  // Send them to /signup so they can complete registration.
+  // Signed out → if on a protected route, redirect to landing page.
   useEffect(() => {
     if (!authLoading && user && !profile) {
-      setForceSignup(true)
+      navigate(ROUTES.SIGNUP, { replace: true })
     }
     if (!authLoading && !user) {
-      setForceSignup(false)
-      // If sitting on a protected/auth route, redirect to the landing page
-      if (location.pathname !== '/' && location.pathname !== ROUTES.LOGIN && location.pathname !== ROUTES.JOIN) {
+      const publicPaths = ['/', ROUTES.LOGIN, ROUTES.JOIN, ROUTES.SIGNUP]
+      if (!publicPaths.includes(location.pathname)) {
         navigate('/', { replace: true })
       }
     }
@@ -299,82 +298,61 @@ export default function App() {
   }
 
   if (!profile) {
-    // /login route — dedicated login page (Strava-style dual column)
+    const devTools = (
+      <DevTools
+        onProfileSwitch={p => setProfile(p)}
+        activeTournamentId={null}
+        onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+        onTournamentCreated={() => { refreshTournaments(); navigate(ROUTES.HOME) }}
+      />
+    )
+
+    // /signup — registration flow
+    if (location.pathname === ROUTES.SIGNUP) {
+      return (
+        <div className="app">
+          <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
+            <div className="top-nav-logo top-nav-logo-large">
+              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
+            </div>
+            <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
+              Blog
+            </a>
+          </nav>
+          <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
+          {devTools}
+        </div>
+      )
+    }
+
+    // /login — dedicated login page (Strava-style dual column)
     if (location.pathname === ROUTES.LOGIN) {
       return (
         <div className="app app-desktop-guest">
-          <Login onSignUp={() => { setForceSignup(true); navigate(ROUTES.HOME) }} />
-          <DevTools
-            onProfileSwitch={p => setProfile(p)}
-            activeTournamentId={null}
-            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-            onTournamentCreated={id => {
-              refreshTournaments()
-              navigate(ROUTES.HOME)
-            }}
-          />
+          <Login onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          {devTools}
         </div>
       )
     }
 
-    // /join route — ad-optimized landing page (minimal, no nav)
+    // /join — ad-optimised landing page (minimal, no nav)
     if (location.pathname === ROUTES.JOIN) {
       return (
         <div className="app app-desktop-guest">
-          <JoinLanding onSignUp={() => { setForceSignup(true); navigate(ROUTES.HOME) }} />
-          <DevTools
-            onProfileSwitch={p => setProfile(p)}
-            activeTournamentId={null}
-            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-            onTournamentCreated={id => {
-              refreshTournaments()
-              navigate(ROUTES.HOME)
-            }}
-          />
+          <JoinLanding onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          {devTools}
         </div>
       )
     }
 
-    if (!forceSignup) {
-      return (
-        <div className="app app-desktop-guest">
-          <DesktopGuestHomepage
-            onGetStarted={() => setForceSignup(true)}
-            onLogin={() => navigate(ROUTES.LOGIN)}
-          />
-          <DevTools
-            onProfileSwitch={p => setProfile(p)}
-            activeTournamentId={null}
-            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-            onTournamentCreated={id => {
-              refreshTournaments()
-              navigate(ROUTES.HOME)
-            }}
-          />
-        </div>
-      )
-    }
-
+    // / — marketing home page (default for unauthenticated visitors)
     return (
-      <div className="app">
-        <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-          <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-            </div>
-          <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
-            Blog
-          </a>
-        </nav>
-        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => setForceSignup(false)} />
-        <DevTools
-          onProfileSwitch={p => setProfile(p)}
-          activeTournamentId={null}
-          onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-          onTournamentCreated={id => {
-            refreshTournaments()
-            navigate(ROUTES.HOME)
-          }}
+      <div className="app app-desktop-guest">
+        <DesktopGuestHomepage
+          onGetStarted={() => navigate(ROUTES.SIGNUP)}
+          onLogin={() => navigate(ROUTES.LOGIN)}
         />
+        {devTools}
       </div>
     )
   }
