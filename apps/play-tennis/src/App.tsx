@@ -118,7 +118,7 @@ export default function App() {
     if (!authLoading && user && !profile) {
       navigate(ROUTES.SIGNUP, { replace: true })
     }
-    if (!authLoading && !user) {
+    if (!authLoading && !user && !profile) {
       const publicPaths = ['/', ROUTES.LOGIN, ROUTES.JOIN, ROUTES.SIGNUP]
       if (!publicPaths.includes(location.pathname)) {
         navigate('/', { replace: true })
