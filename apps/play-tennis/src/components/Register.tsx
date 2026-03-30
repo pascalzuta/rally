@@ -420,6 +420,9 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
     return (
       <div className="onboard-screen signup-screen">
         <div className="signup-content">
+          <div className="signup-logo">
+            <img height="38" src="/rally-logo.svg" alt="Rally" />
+          </div>
           <div className="signup-header">
             <h1 className="signup-title">Join Rally</h1>
             <p className="signup-desc">Find local opponents and let us handle the scheduling. Join 2,400+ active players on Rally for free.</p>
