@@ -82,6 +82,27 @@ export async function getSession(): Promise<{ userId: string; email: string } | 
 }
 
 /**
+ * Sign in with Google OAuth.
+ * Redirects the user to Google's consent screen, then back to the app.
+ */
+export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string }> {
+  if (!client) return { ok: false, error: 'supabase_not_initialized' }
+
+  const { error } = await client.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+    },
+  })
+
+  if (error) {
+    console.warn('[Rally] Google sign-in failed:', error.message)
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
+}
+
+/**
  * Sign out and clear the Supabase session.
  */
 export async function signOut(): Promise<void> {

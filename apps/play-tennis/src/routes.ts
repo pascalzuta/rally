@@ -7,6 +7,8 @@ export const ROUTES = {
   LEADERBOARD: '/leaderboard',
   HELP: '/help',
   ANALYTICS: '/analytics',
+  LOGIN: '/login',
+  JOIN: '/join',
 } as const
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]
