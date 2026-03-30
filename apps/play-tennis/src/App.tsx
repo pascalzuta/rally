@@ -111,9 +111,17 @@ export default function App() {
 
   // Authenticated but no profile → new user coming from magic link or OTP verify.
   // Skip the landing page and go straight to the signup form.
+  // No user → signed out; reset forceSignup so home page shows (not the register form).
   useEffect(() => {
     if (!authLoading && user && !profile) {
       setForceSignup(true)
+    }
+    if (!authLoading && !user) {
+      setForceSignup(false)
+      // If sitting on a protected/auth route, redirect to the landing page
+      if (location.pathname !== '/' && location.pathname !== ROUTES.LOGIN && location.pathname !== ROUTES.JOIN) {
+        navigate('/', { replace: true })
+      }
     }
   }, [authLoading, user?.id, profile?.id])
 
