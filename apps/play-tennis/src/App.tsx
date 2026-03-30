@@ -1,28 +1,36 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
-import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
 import { analytics } from './analytics'
 import { getSession } from './supabase'
-import Register from './components/Register'
-import DesktopGuestHomepage from './components/DesktopGuestHomepage'
-import Home from './components/Home'
-import BracketTab from './components/BracketTab'
-import PlayNowTab from './components/PlayNowTab'
-import Profile from './components/Profile'
-import RatingPanel from './components/RatingPanel'
-import Leaderboard from './components/Leaderboard'
-import VictoryAnimation from './components/VictoryAnimation'
-import Help from './components/Help'
-import AnalyticsDashboard from './components/AnalyticsDashboard'
-import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import './styles.css'
+
+// Critical path: loaded eagerly (landing page + home)
+import Register from './components/Register'
+import DesktopGuestHomepage from './components/DesktopGuestHomepage'
+import Home from './components/Home'
+
+// Lazy-loaded: only fetched when user navigates to these tabs
+const BracketTab = lazy(() => import('./components/BracketTab'))
+const PlayNowTab = lazy(() => import('./components/PlayNowTab'))
+const Profile = lazy(() => import('./components/Profile'))
+const Leaderboard = lazy(() => import('./components/Leaderboard'))
+const Help = lazy(() => import('./components/Help'))
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'))
+const Inbox = lazy(() => import('./components/Inbox'))
+const RatingPanel = lazy(() => import('./components/RatingPanel'))
+const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
+
+// DevTools: only loaded in development
+const DevTools = import.meta.env.DEV
+  ? lazy(() => import('./components/DevTools'))
+  : () => null
 
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
@@ -446,6 +454,7 @@ export default function App() {
         </nav>
 
         <main className="content tab-content">
+          <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', opacity: 0.5, fontSize: 14 }}>Loading...</div>}>
           <Routes>
             <Route path={ROUTES.HOME} element={
               <Home
@@ -530,6 +539,7 @@ export default function App() {
             {/* Catch-all: redirect unknown paths to home */}
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
+          </Suspense>
         </main>
       </div>
 
@@ -565,6 +575,7 @@ export default function App() {
           </button>
         </nav>
       {showInbox && (
+        <Suspense fallback={null}>
         <div ref={inboxWrapperRef}>
         <Inbox
           currentPlayerId={profile.id}
@@ -574,13 +585,16 @@ export default function App() {
           onClose={() => setShowInbox(false)}
         />
         </div>
+        </Suspense>
       )}
       {showRatingPanel && (
+        <Suspense fallback={null}>
         <RatingPanel
           profile={profile}
           onClose={() => setShowRatingPanel(false)}
           onViewLeaderboard={() => { setShowRatingPanel(false); navigate(ROUTES.LEADERBOARD) }}
         />
+        </Suspense>
       )}
       <DevTools
         onProfileSwitch={p => { setProfile(p); navigate(ROUTES.HOME) }}
@@ -592,11 +606,13 @@ export default function App() {
         }}
       />
       {victoryAnim && (
+        <Suspense fallback={null}>
         <VictoryAnimation
           tier={victoryAnim.tier}
           tournamentName={victoryAnim.name}
           onDismiss={() => setVictoryAnim(null)}
         />
+        </Suspense>
       )}
     </div>
     </ToastProvider>

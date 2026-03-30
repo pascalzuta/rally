@@ -40,25 +40,38 @@ function buildProfile(userId: string, email: string, data: Awaited<ReturnType<ty
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Instantly restore cached profile from localStorage (no network wait)
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfileState] = useState<PlayerProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfileState] = useState<PlayerProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem(PROFILE_KEY)
+      return cached ? JSON.parse(cached) : null
+    } catch { return null }
+  })
+  // Skip the loading spinner if we already have a cached profile
+  const [loading, setLoading] = useState(!profile)
 
   useEffect(() => {
     const client = getClient()
     if (!client) { setLoading(false); return }
 
-    // Resolve initial session once, then rely on onAuthStateChange for all updates
+    // Validate session in background — UI already shows cached profile
     client.auth.getSession().then(async ({ data }) => {
       const sessionUser = data.session?.user ?? null
       if (sessionUser) {
-        const profileData = await fetchPlayerProfile(sessionUser.id)
-        const restored = buildProfile(sessionUser.id, sessionUser.email ?? '', profileData)
-        if (restored) {
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
-          setProfileState(restored)
-        }
         setUser(sessionUser)
+        // Refresh profile from server in background (don't block render)
+        fetchPlayerProfile(sessionUser.id).then(profileData => {
+          const fresh = buildProfile(sessionUser.id, sessionUser.email ?? '', profileData)
+          if (fresh) {
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(fresh))
+            setProfileState(fresh)
+          }
+        })
+      } else if (profile) {
+        // Cached profile but no valid session — clear stale data
+        localStorage.removeItem(PROFILE_KEY)
+        setProfileState(null)
       }
       setLoading(false)
     })
