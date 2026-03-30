@@ -109,6 +109,14 @@ export default function App() {
     }
   }, [authLoading, profile])
 
+  // Authenticated but no profile → new user coming from magic link or OTP verify.
+  // Skip the landing page and go straight to the signup form.
+  useEffect(() => {
+    if (!authLoading && user && !profile) {
+      setForceSignup(true)
+    }
+  }, [authLoading, user?.id, profile?.id])
+
   // Resolve tournament invite county for pre-filling registration
   useEffect(() => {
     if (inviteTournamentCode && !inviteTournamentCounty) {
