@@ -20,249 +20,108 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
 
       {/* Hero */}
       <section className="dgh-hero">
-        <div className="dgh-hero-inner">
-          <div className="dgh-hero-text">
-            <h1 className="dgh-hero-title">
+        <div className="dgh-hero-inner dgh-hero-centered">
+          <div className="dgh-hero-text dgh-hero-text-centered">
+            <h1 className="dgh-hero-title dgh-hero-title-centered">
               Stop texting.<br />Start playing.
             </h1>
-            <p className="dgh-hero-subtitle">
+            <p className="dgh-hero-subtitle dgh-hero-subtitle-centered">
               Rally auto-schedules local tennis matches based on your availability.
               No group chats, no back-and-forth — just show up and play.
             </p>
-            <div className="dgh-hero-cta">
+            <div className="dgh-hero-cta dgh-hero-cta-centered">
               <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted}>
-                Get started — it's free
+                Sign up free
               </button>
-              <span className="dgh-hero-hint">Join 2,400+ players across the US</span>
+              <button className="dgh-btn-secondary dgh-btn-large" onClick={onGetStarted}>
+                Log in
+              </button>
             </div>
           </div>
-          <div className="dgh-hero-visual">
-            <div className="dgh-phone-mockup">
-              <div className="dgh-phone-screen">
-                <div className="dgh-mock-header">
-                  <div className="dgh-mock-status">
-                    <span className="dgh-mock-dot dgh-mock-dot-green" />
-                    Auto-scheduled
-                  </div>
-                  <span className="dgh-mock-count">12 of 15 matches</span>
-                </div>
-                <div className="dgh-mock-matches">
-                  <div className="dgh-mock-match dgh-mock-match-confirmed">
-                    <div className="dgh-mock-match-top">
-                      <span className="dgh-mock-opponent">vs Sarah P.</span>
-                      <span className="dgh-mock-badge dgh-mock-badge-green">Confirmed</span>
-                    </div>
-                    <div className="dgh-mock-match-time">Sat, Apr 5 · 9:00 AM</div>
-                  </div>
-                  <div className="dgh-mock-match dgh-mock-match-confirmed">
-                    <div className="dgh-mock-match-top">
-                      <span className="dgh-mock-opponent">vs James K.</span>
-                      <span className="dgh-mock-badge dgh-mock-badge-green">Confirmed</span>
-                    </div>
-                    <div className="dgh-mock-match-time">Sun, Apr 6 · 10:30 AM</div>
-                  </div>
-                  <div className="dgh-mock-match dgh-mock-match-proposed">
-                    <div className="dgh-mock-match-top">
-                      <span className="dgh-mock-opponent">vs Mike R.</span>
-                      <span className="dgh-mock-badge dgh-mock-badge-blue">Proposed</span>
-                    </div>
-                    <div className="dgh-mock-match-time">Tue, Apr 8 · 6:00 PM</div>
-                  </div>
-                  <div className="dgh-mock-match dgh-mock-match-confirmed">
-                    <div className="dgh-mock-match-top">
-                      <span className="dgh-mock-opponent">vs Dana L.</span>
-                      <span className="dgh-mock-badge dgh-mock-badge-green">Confirmed</span>
-                    </div>
-                    <div className="dgh-mock-match-time">Thu, Apr 10 · 7:00 PM</div>
-                  </div>
-                </div>
+        </div>
+      </section>
+
+      {/* Story 1: The Problem */}
+      <section className="dgh-section dgh-story">
+        <div className="dgh-section-inner">
+          <div className="dgh-story-block">
+            <div className="dgh-story-text">
+              <h2 className="dgh-story-heading">Scheduling tennis shouldn't take 20 messages</h2>
+              <p className="dgh-story-desc">Rally handles the back-and-forth for you.</p>
+            </div>
+            <div className="dgh-story-visual">
+              <div className="dgh-story-chat">
+                <div className="dgh-story-bubble dgh-story-bubble-out">Can you play Tuesday?</div>
+                <div className="dgh-story-bubble dgh-story-bubble-in">Maybe Wednesday?</div>
+                <div className="dgh-story-bubble dgh-story-bubble-out">What about Saturday morning?</div>
+                <div className="dgh-story-bubble dgh-story-bubble-in">Let me check with my wife...</div>
+                <div className="dgh-story-bubble dgh-story-bubble-out">OK how about next week?</div>
+                <div className="dgh-story-bubble dgh-story-bubble-in">I'll get back to you</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Problem/Solution */}
-      <section className="dgh-section dgh-problem">
+      {/* Story 2: The Solution */}
+      <section className="dgh-section dgh-story dgh-story-alt">
         <div className="dgh-section-inner">
-          <div className="dgh-problem-grid">
-            <div className="dgh-problem-card dgh-problem-before">
-              <div className="dgh-problem-label">Without Rally</div>
-              <div className="dgh-chat-demo">
-                <div className="dgh-chat-bubble dgh-chat-out">Can you play Tuesday?</div>
-                <div className="dgh-chat-bubble dgh-chat-in">Maybe Wednesday?</div>
-                <div className="dgh-chat-bubble dgh-chat-out">What about Saturday morning?</div>
-                <div className="dgh-chat-bubble dgh-chat-in">Let me check with my wife...</div>
-                <div className="dgh-chat-bubble dgh-chat-out">OK how about next week?</div>
-                <div className="dgh-chat-bubble dgh-chat-in">I'll get back to you</div>
-              </div>
-              <div className="dgh-problem-stat">
-                <span className="dgh-problem-stat-number">20+</span>
-                <span className="dgh-problem-stat-label">messages to schedule one match</span>
-              </div>
+          <div className="dgh-story-block dgh-story-block-reverse">
+            <div className="dgh-story-text">
+              <h2 className="dgh-story-heading">Matches are scheduled automatically</h2>
+              <p className="dgh-story-desc">Set your availability once. Rally finds overlapping times and confirms matches for you.</p>
             </div>
-            <div className="dgh-problem-card dgh-problem-after">
-              <div className="dgh-problem-label dgh-problem-label-positive">With Rally</div>
-              <div className="dgh-solution-demo">
-                <div className="dgh-solution-step">
-                  <div className="dgh-solution-icon">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                      <line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" strokeWidth="1.5"/>
-                      <line x1="7" y1="3" x2="7" y2="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <line x1="13" y1="3" x2="13" y2="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                  <span>Set your availability once</span>
+            <div className="dgh-story-visual">
+              <div className="dgh-story-schedule">
+                <div className="dgh-story-schedule-row">
+                  <span className="dgh-story-schedule-player">You</span>
+                  <span className="dgh-story-schedule-time">Sat 9am</span>
                 </div>
-                <div className="dgh-solution-arrow">
+                <div className="dgh-story-schedule-row">
+                  <span className="dgh-story-schedule-player">Opponent</span>
+                  <span className="dgh-story-schedule-time">Sat 9am</span>
+                </div>
+                <div className="dgh-story-schedule-confirmed">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 3v10M8 13l3-3M8 13l-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                    <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
+                  <span>Match scheduled</span>
                 </div>
-                <div className="dgh-solution-step">
-                  <div className="dgh-solution-icon dgh-solution-icon-accent">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M13 2L3 14h9l-1 4 10-12h-9l1-4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Story 3: Fair Matchmaking */}
+      <section className="dgh-section dgh-story">
+        <div className="dgh-section-inner">
+          <div className="dgh-story-block">
+            <div className="dgh-story-text">
+              <h2 className="dgh-story-heading">Every match, a fair fight</h2>
+              <p className="dgh-story-desc">Rally rates your real game — so every opponent is a genuine challenge.</p>
+            </div>
+            <div className="dgh-story-visual">
+              <div className="dgh-story-matchup">
+                <div className="dgh-story-matchup-player">
+                  <div className="dgh-story-matchup-avatar">You</div>
+                  <div className="dgh-story-matchup-rating">1520</div>
+                </div>
+                <div className="dgh-story-matchup-vs">
+                  <span className="dgh-story-matchup-vs-label">vs</span>
+                  <div className="dgh-story-matchup-badge">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1L7.5 4.5L11 5L8.5 7.5L9 11L6 9.5L3 11L3.5 7.5L1 5L4.5 4.5L6 1Z" fill="currentColor" />
                     </svg>
+                    Close match
                   </div>
-                  <span>Rally finds overlapping times</span>
                 </div>
-                <div className="dgh-solution-arrow">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 3v10M8 13l3-3M8 13l-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <div className="dgh-solution-step">
-                  <div className="dgh-solution-icon dgh-solution-icon-positive">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M6 10l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <span>Matches are auto-confirmed</span>
+                <div className="dgh-story-matchup-player">
+                  <div className="dgh-story-matchup-avatar">SP</div>
+                  <div className="dgh-story-matchup-rating">1545</div>
                 </div>
               </div>
-              <div className="dgh-problem-stat dgh-problem-stat-positive">
-                <span className="dgh-problem-stat-number">0</span>
-                <span className="dgh-problem-stat-label">messages needed</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="dgh-section dgh-how">
-        <div className="dgh-section-inner">
-          <h2 className="dgh-section-title">How Rally works</h2>
-          <p className="dgh-section-subtitle">Three steps. Zero scheduling headaches.</p>
-          <div className="dgh-how-grid">
-            <div className="dgh-how-step">
-              <div className="dgh-how-number">1</div>
-              <h3 className="dgh-how-title">Join your county</h3>
-              <p className="dgh-how-desc">
-                Sign up and join the tennis community in your county. When enough players join, a tournament kicks off automatically.
-              </p>
-            </div>
-            <div className="dgh-how-step">
-              <div className="dgh-how-number">2</div>
-              <h3 className="dgh-how-title">Set your availability</h3>
-              <p className="dgh-how-desc">
-                Tell Rally when you're free — weekday evenings, weekend mornings, whatever works. We match you with players who share your windows.
-              </p>
-            </div>
-            <div className="dgh-how-step">
-              <div className="dgh-how-number">3</div>
-              <h3 className="dgh-how-title">Show up and play</h3>
-              <p className="dgh-how-desc">
-                Rally auto-schedules your matches, tracks scores, and adjusts your rating after every game. Fair opponents, every time.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="dgh-section dgh-features">
-        <div className="dgh-section-inner">
-          <h2 className="dgh-section-title">Built for players who'd rather play than plan</h2>
-          <div className="dgh-features-grid">
-            <div className="dgh-feature-card">
-              <div className="dgh-feature-icon dgh-feature-icon-green">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                  <path d="M9 16l2 2 4-4"/>
-                </svg>
-              </div>
-              <h3 className="dgh-feature-title">Auto-scheduling</h3>
-              <p className="dgh-feature-desc">
-                Matches scheduled instantly based on overlapping availability. 80% of matches are confirmed without a single message.
-              </p>
-            </div>
-            <div className="dgh-feature-card">
-              <div className="dgh-feature-icon dgh-feature-icon-blue">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18.5L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/>
-                </svg>
-              </div>
-              <h3 className="dgh-feature-title">Fair matchmaking</h3>
-              <p className="dgh-feature-desc">
-                Rally rates your real game — not your self-assessment. Every opponent is a genuine challenge, matched by skill.
-              </p>
-            </div>
-            <div className="dgh-feature-card">
-              <div className="dgh-feature-icon dgh-feature-icon-purple">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <h3 className="dgh-feature-title">Local community</h3>
-              <p className="dgh-feature-desc">
-                Play people near you. Rally organizes round-robin tournaments by county — real competition with neighbors, not strangers.
-              </p>
-            </div>
-            <div className="dgh-feature-card">
-              <div className="dgh-feature-icon dgh-feature-icon-orange">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="8" r="7"/>
-                  <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
-                </svg>
-              </div>
-              <h3 className="dgh-feature-title">Earn your rating</h3>
-              <p className="dgh-feature-desc">
-                Your Rally Rating adjusts after every match. Climb the leaderboard, earn trophies, and track your progress over time.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="dgh-section dgh-stats">
-        <div className="dgh-section-inner">
-          <div className="dgh-stats-grid">
-            <div className="dgh-stat">
-              <span className="dgh-stat-number">2,400+</span>
-              <span className="dgh-stat-label">Active players</span>
-            </div>
-            <div className="dgh-stat">
-              <span className="dgh-stat-number">180+</span>
-              <span className="dgh-stat-label">Counties</span>
-            </div>
-            <div className="dgh-stat">
-              <span className="dgh-stat-number">12,000+</span>
-              <span className="dgh-stat-label">Matches played</span>
-            </div>
-            <div className="dgh-stat">
-              <span className="dgh-stat-number">80%</span>
-              <span className="dgh-stat-label">Auto-scheduled</span>
             </div>
           </div>
         </div>
