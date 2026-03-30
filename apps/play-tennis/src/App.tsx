@@ -9,6 +9,8 @@ import { flushQueue } from './offline-queue'
 import { analytics } from './analytics'
 import { getSession } from './supabase'
 import Register from './components/Register'
+import Login from './components/Login'
+import JoinLanding from './components/JoinLanding'
 import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
 import BracketTab from './components/BracketTab'
@@ -273,10 +275,49 @@ export default function App() {
   }
 
   if (!profile) {
+    // /login route — dedicated login page (Strava-style dual column)
+    if (location.pathname === ROUTES.LOGIN) {
+      return (
+        <div className="app app-desktop-guest">
+          <Login onSignUp={() => { setForceSignup(true); navigate(ROUTES.HOME) }} />
+          <DevTools
+            onProfileSwitch={p => setProfile(p)}
+            activeTournamentId={null}
+            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+            onTournamentCreated={id => {
+              refreshTournaments()
+              navigate(ROUTES.HOME)
+            }}
+          />
+        </div>
+      )
+    }
+
+    // /join route — ad-optimized landing page (minimal, no nav)
+    if (location.pathname === ROUTES.JOIN) {
+      return (
+        <div className="app app-desktop-guest">
+          <JoinLanding onSignUp={() => { setForceSignup(true); navigate(ROUTES.HOME) }} />
+          <DevTools
+            onProfileSwitch={p => setProfile(p)}
+            activeTournamentId={null}
+            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+            onTournamentCreated={id => {
+              refreshTournaments()
+              navigate(ROUTES.HOME)
+            }}
+          />
+        </div>
+      )
+    }
+
     if (!forceSignup) {
       return (
         <div className="app app-desktop-guest">
-          <DesktopGuestHomepage onGetStarted={() => setForceSignup(true)} />
+          <DesktopGuestHomepage
+            onGetStarted={() => setForceSignup(true)}
+            onLogin={() => navigate(ROUTES.LOGIN)}
+          />
           <DevTools
             onProfileSwitch={p => setProfile(p)}
             activeTournamentId={null}
