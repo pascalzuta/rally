@@ -40,9 +40,16 @@ function buildProfile(userId: string, email: string, data: Awaited<ReturnType<ty
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Instantly restore cached profile from localStorage (no network wait)
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfileState] = useState<PlayerProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfileState] = useState<PlayerProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem(PROFILE_KEY)
+      return cached ? JSON.parse(cached) : null
+    } catch { return null }
+  })
+  // Skip the loading spinner if we already have a cached profile
+  const [loading, setLoading] = useState(!profile)
 
   useEffect(() => {
     const client = getClient()
@@ -65,6 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
               setProfileState(restored)
             }
+          } else if (profile) {
+            // No valid session but we have a cached profile — clear stale data
+            localStorage.removeItem(PROFILE_KEY)
+            setProfileState(null)
           }
         } finally {
           setLoading(false)
