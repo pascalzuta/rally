@@ -3069,7 +3069,7 @@ select:focus {
 
 .avail-feedback-count {
   font-variant-numeric: tabular-nums;
-  font-size: var(--font-title-sm, 20px);
+  font-size: var(--font-body-md);
   font-weight: 700;
   color: var(--color-positive-primary);
 }
@@ -4231,7 +4231,7 @@ select:focus {
 
 .avail-social-proof-count {
   font-variant-numeric: tabular-nums;
-  font-size: var(--font-title-sm, 20px);
+  font-size: var(--font-body-md);
   font-weight: 700;
   color: var(--color-positive-primary);
 }
