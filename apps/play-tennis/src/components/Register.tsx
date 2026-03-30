@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext'
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
   inviteCounty?: string | null
+  onCancel?: () => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -127,7 +128,7 @@ function clearAuthFlow() {
   try { sessionStorage.removeItem(AUTH_FLOW_KEY) } catch { /* ignore */ }
 }
 
-export default function Register({ onRegistered, inviteCounty }: Props) {
+export default function Register({ onRegistered, inviteCounty, onCancel }: Props) {
   // Start directly at email — no onboarding funnel
   const [step, setStepRaw] = useState<Step>(() => {
     // Recover auth flow state after page reload / component remount
@@ -154,6 +155,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     function onPopState(e: PopStateEvent) {
       if (e.state?.step) {
         setStepRaw(e.state.step)
+      } else {
+        // Backed past Register's history — return to home page
+        onCancel?.()
       }
     }
     window.addEventListener('popstate', onPopState)

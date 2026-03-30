@@ -349,7 +349,7 @@ export default function App() {
             Blog
           </a>
         </nav>
-        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} />
+        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => setForceSignup(false)} />
         <DevTools
           onProfileSwitch={p => setProfile(p)}
           activeTournamentId={null}
