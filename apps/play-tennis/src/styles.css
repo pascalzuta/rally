@@ -6096,8 +6096,8 @@ select:focus {
    ================================================ */
 .devbar-pill {
   position: fixed;
-  top: 10px;
-  right: 10px;
+  top: 14px;
+  right: calc(50% - 230px);
   z-index: var(--z-overlay);
   width: 32px;
   height: 32px;
@@ -6112,7 +6112,7 @@ select:focus {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: opacity 0.15s;
-  opacity: 0.4;
+  opacity: 0.7;
 }
 
 .devbar-pill:hover {
@@ -6120,10 +6120,19 @@ select:focus {
   color: white;
 }
 
+@media (max-width: 767px) {
+  .devbar-pill {
+    right: 10px;
+  }
+  .devbar {
+    right: 8px;
+  }
+}
+
 .devbar {
   position: fixed;
   top: 8px;
-  right: 8px;
+  right: calc(50% - 240px);
   z-index: var(--z-overlay);
   width: 240px;
   background: rgba(18, 18, 22, 0.92);

@@ -29,8 +29,9 @@ const Inbox = lazy(() => import('./components/Inbox'))
 const RatingPanel = lazy(() => import('./components/RatingPanel'))
 const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 
-// DevTools: only loaded in development
-const DevTools = import.meta.env.DEV
+// DevTools: loaded in development and on staging
+const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
+const DevTools = (import.meta.env.DEV || isStaging)
   ? lazy(() => import('./components/DevTools'))
   : () => null
 
