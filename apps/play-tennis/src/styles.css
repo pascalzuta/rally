@@ -12170,8 +12170,10 @@ main {
 
 /* Blog Teaser */
 .dgh-blog-teaser {
-  padding: 60px var(--space-xl) 80px;
-  background: var(--color-bg-surface);
+  padding: 80px var(--space-xl) 80px;
+  background: var(--color-bg-primary);
+  border-top: 1px solid var(--color-divider);
+  margin-top: 40px;
 }
 
 .dgh-blog-teaser-inner {
@@ -12706,7 +12708,6 @@ main {
 }
 
 .dgh-story-schedule-time {
-  font-family: var(--font-mono);
   font-size: 14px;
   color: var(--color-positive-primary);
   font-weight: var(--weight-semibold);
@@ -12754,11 +12755,9 @@ main {
 }
 
 .dgh-story-matchup-rating {
-  font-family: var(--font-mono);
   font-size: 24px;
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  font-variant-numeric: tabular-nums;
 }
 
 .dgh-story-matchup-vs {
