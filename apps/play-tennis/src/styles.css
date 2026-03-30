@@ -12537,19 +12537,121 @@ main {
   font-size: 14px;
   line-height: 1.4;
   max-width: 80%;
-  animation: dgh-bubble-in 0.4s ease both;
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
 }
 
-.dgh-story-bubble:nth-child(1) { animation-delay: 0.1s; }
-.dgh-story-bubble:nth-child(2) { animation-delay: 0.3s; }
-.dgh-story-bubble:nth-child(3) { animation-delay: 0.5s; }
-.dgh-story-bubble:nth-child(4) { animation-delay: 0.7s; }
-.dgh-story-bubble:nth-child(5) { animation-delay: 0.9s; }
-.dgh-story-bubble:nth-child(6) { animation-delay: 1.1s; }
+/* Chat bubbles: staggered pop-in on scroll */
+.dgh-anim-chat.dgh-visible .dgh-story-bubble {
+  animation: dgh-bubble-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.dgh-anim-chat.dgh-visible .dgh-story-bubble:nth-child(1) { animation-delay: 0.1s; }
+.dgh-anim-chat.dgh-visible .dgh-story-bubble:nth-child(2) { animation-delay: 0.35s; }
+.dgh-anim-chat.dgh-visible .dgh-story-bubble:nth-child(3) { animation-delay: 0.6s; }
+.dgh-anim-chat.dgh-visible .dgh-story-bubble:nth-child(4) { animation-delay: 0.85s; }
+.dgh-anim-chat.dgh-visible .dgh-story-bubble:nth-child(5) { animation-delay: 1.1s; }
+.dgh-anim-chat.dgh-visible .dgh-story-bubble:nth-child(6) { animation-delay: 1.35s; }
 
-@keyframes dgh-bubble-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes dgh-bubble-pop {
+  0% { opacity: 0; transform: translateY(12px) scale(0.92); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Schedule rows: slide in from left, then confirmed badge pops */
+.dgh-anim-row {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.dgh-anim-confirmed {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.dgh-anim-schedule.dgh-visible .dgh-anim-row-1 {
+  animation: dgh-row-slide 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+.dgh-anim-schedule.dgh-visible .dgh-anim-row-2 {
+  animation: dgh-row-slide 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+}
+.dgh-anim-schedule.dgh-visible .dgh-anim-confirmed {
+  animation: dgh-confirm-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both;
+}
+
+/* Pulse glow on the confirmed badge after it appears */
+.dgh-anim-schedule.dgh-visible .dgh-anim-confirmed svg circle {
+  animation: dgh-check-pulse 1.2s ease 1.5s both;
+}
+
+@keyframes dgh-row-slide {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dgh-confirm-pop {
+  0% { opacity: 0; transform: scale(0.8); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dgh-check-pulse {
+  0% { filter: drop-shadow(0 0 0px var(--color-positive-primary)); }
+  50% { filter: drop-shadow(0 0 8px var(--color-positive-primary)); }
+  100% { filter: drop-shadow(0 0 0px var(--color-positive-primary)); }
+}
+
+/* Matchup: players slide in from sides, vs pops center */
+.dgh-anim-player-left {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.dgh-anim-player-right {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.dgh-anim-vs {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.dgh-anim-matchup.dgh-visible .dgh-anim-player-left {
+  animation: dgh-slide-left 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+.dgh-anim-matchup.dgh-visible .dgh-anim-player-right {
+  animation: dgh-slide-right 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+.dgh-anim-matchup.dgh-visible .dgh-anim-vs {
+  animation: dgh-vs-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+}
+
+@keyframes dgh-slide-left {
+  0% { opacity: 0; transform: translateX(-30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dgh-slide-right {
+  0% { opacity: 0; transform: translateX(30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dgh-vs-pop {
+  0% { opacity: 0; transform: scale(0.5); }
+  70% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .dgh-story-bubble,
+  .dgh-anim-row,
+  .dgh-anim-confirmed,
+  .dgh-anim-player-left,
+  .dgh-anim-player-right,
+  .dgh-anim-vs {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
 }
 
 .dgh-story-bubble-out {

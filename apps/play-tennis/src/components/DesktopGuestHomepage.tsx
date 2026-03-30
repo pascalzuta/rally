@@ -1,9 +1,36 @@
+import { useEffect, useRef } from 'react'
+
 interface Props {
   onGetStarted: () => void
   onLogin?: () => void
 }
 
+/** Adds 'dgh-visible' class when element scrolls into view */
+function useScrollReveal() {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('dgh-visible')
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.3 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return ref
+}
+
 export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
+  const chatRef = useScrollReveal()
+  const scheduleRef = useScrollReveal()
+  const matchupRef = useScrollReveal()
+
   function handleLogin() {
     if (onLogin) onLogin()
     else onGetStarted()
@@ -56,7 +83,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
               <p className="dgh-story-desc">Rally handles the back-and-forth for you.</p>
             </div>
             <div className="dgh-story-visual">
-              <div className="dgh-story-chat">
+              <div className="dgh-story-chat dgh-anim-chat" ref={chatRef}>
                 <div className="dgh-story-bubble dgh-story-bubble-out">Can you play Tuesday?</div>
                 <div className="dgh-story-bubble dgh-story-bubble-in">Maybe Wednesday?</div>
                 <div className="dgh-story-bubble dgh-story-bubble-out">What about Saturday morning?</div>
@@ -78,16 +105,16 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
               <p className="dgh-story-desc">Set your availability once. Rally finds overlapping times and confirms matches for you.</p>
             </div>
             <div className="dgh-story-visual">
-              <div className="dgh-story-schedule">
-                <div className="dgh-story-schedule-row">
+              <div className="dgh-story-schedule dgh-anim-schedule" ref={scheduleRef}>
+                <div className="dgh-story-schedule-row dgh-anim-row dgh-anim-row-1">
                   <span className="dgh-story-schedule-player">You</span>
                   <span className="dgh-story-schedule-time">Sat 9am</span>
                 </div>
-                <div className="dgh-story-schedule-row">
+                <div className="dgh-story-schedule-row dgh-anim-row dgh-anim-row-2">
                   <span className="dgh-story-schedule-player">Opponent</span>
                   <span className="dgh-story-schedule-time">Sat 9am</span>
                 </div>
-                <div className="dgh-story-schedule-confirmed">
+                <div className="dgh-story-schedule-confirmed dgh-anim-confirmed">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
                     <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -109,12 +136,12 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
               <p className="dgh-story-desc">Rally rates your real game — so every opponent is a genuine challenge.</p>
             </div>
             <div className="dgh-story-visual">
-              <div className="dgh-story-matchup">
-                <div className="dgh-story-matchup-player">
+              <div className="dgh-story-matchup dgh-anim-matchup" ref={matchupRef}>
+                <div className="dgh-story-matchup-player dgh-anim-player-left">
                   <div className="dgh-story-matchup-avatar">You</div>
                   <div className="dgh-story-matchup-rating">1520</div>
                 </div>
-                <div className="dgh-story-matchup-vs">
+                <div className="dgh-story-matchup-vs dgh-anim-vs">
                   <span className="dgh-story-matchup-vs-label">vs</span>
                   <div className="dgh-story-matchup-badge">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -123,7 +150,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
                     Close match
                   </div>
                 </div>
-                <div className="dgh-story-matchup-player">
+                <div className="dgh-story-matchup-player dgh-anim-player-right">
                   <div className="dgh-story-matchup-avatar">SP</div>
                   <div className="dgh-story-matchup-rating">1545</div>
                 </div>
