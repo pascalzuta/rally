@@ -236,6 +236,10 @@ function sendToGoogle(event: string, properties?: Record<string, unknown>) {
     if (typeof gtag === 'undefined') return
     const googleEvent = GOOGLE_EVENT_MAP[event] ?? event.toLowerCase()
     gtag('event', googleEvent, properties)
+    // Fire Google Ads conversion event on registration
+    if (event === 'CompleteRegistration') {
+      gtag('event', 'conversion', { send_to: 'AW-18049668578', value: 1.0, currency: 'USD' })
+    }
   } catch { /* noop */ }
 }
 

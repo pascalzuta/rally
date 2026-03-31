@@ -289,8 +289,15 @@
         gt.async = true;
         gt.src = 'https://www.googletagmanager.com/gtag/js?id=AW-18049668578';
         document.head.appendChild(gt);
-        gtag('js', new Date());
-        gtag('config', 'AW-18049668578');
+        gt.onload = function() {
+          gtag('js', new Date());
+          gtag('config', 'AW-18049668578');
+          gtag('event', 'conversion', {
+            'send_to': 'AW-18049668578',
+            'value': 1.0,
+            'currency': 'USD'
+          });
+        };
       }, { timeout: 3000 });
     </script>
     <!-- End deferred analytics -->
