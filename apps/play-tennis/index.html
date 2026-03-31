@@ -274,30 +274,29 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
 
-      // Load actual scripts after first paint
+      // Google Ads gtag — loaded immediately (async) so Google's verification crawler can detect it
+      var gt = document.createElement('script');
+      gt.async = true;
+      gt.src = 'https://www.googletagmanager.com/gtag/js?id=AW-18049668578';
+      document.head.appendChild(gt);
+      gt.onload = function() {
+        gtag('js', new Date());
+        gtag('config', 'AW-18049668578');
+        gtag('event', 'conversion', {
+          'send_to': 'AW-18049668578',
+          'value': 1.0,
+          'currency': 'USD'
+        });
+      };
+
+      // Load Meta Pixel after first paint
       requestIdleCallback(function() {
-        // Meta Pixel
         var fb = document.createElement('script');
         fb.async = true;
         fb.src = 'https://connect.facebook.net/en_US/fbevents.js';
         document.head.appendChild(fb);
         fbq('init', '840050529907859');
         fbq('track', 'PageView');
-
-        // Google Ads gtag
-        var gt = document.createElement('script');
-        gt.async = true;
-        gt.src = 'https://www.googletagmanager.com/gtag/js?id=AW-18049668578';
-        document.head.appendChild(gt);
-        gt.onload = function() {
-          gtag('js', new Date());
-          gtag('config', 'AW-18049668578');
-          gtag('event', 'conversion', {
-            'send_to': 'AW-18049668578',
-            'value': 1.0,
-            'currency': 'USD'
-          });
-        };
       }, { timeout: 3000 });
     </script>
     <!-- End deferred analytics -->
