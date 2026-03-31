@@ -5691,6 +5691,35 @@ select:focus {
   white-space: nowrap;
 }
 
+.pn-opponent-asking {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pn-confirm-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 12px 20px;
+  background: var(--color-bg-surface);
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.pn-confirm-note {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+
+.pn-confirm-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
 /* Empty state */
 .pn-empty-state {
   text-align: center;
