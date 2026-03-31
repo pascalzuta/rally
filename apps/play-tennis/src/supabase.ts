@@ -102,13 +102,6 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
   return { ok: true }
 }
 
-/**
- * Sign out and clear the Supabase session.
- */
-export async function signOut(): Promise<void> {
-  if (!client) return
-  await client.auth.signOut()
-}
 
 /**
  * Get the current auth user ID, or null if not authenticated.

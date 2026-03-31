@@ -1,6 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState, useRef, useMemo } from 'react'
-import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
+import { getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
 
@@ -81,7 +81,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   }, [profile.createdAt])
 
   async function handleLogout() {
-    await logout()
     onLogout()
   }
 

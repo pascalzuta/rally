@@ -94,11 +94,6 @@ export function createProfile(
   return profile
 }
 
-export async function logout(): Promise<void> {
-  // Sign out of Supabase — AuthContext's SIGNED_OUT handler clears localStorage
-  const { signOut } = await import('./supabase')
-  await signOut()
-}
 
 // --- Lobby ---
 
