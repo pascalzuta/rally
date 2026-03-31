@@ -107,9 +107,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signOut() {
-    const client = getClient()
-    if (client) await client.auth.signOut()
-    // SIGNED_OUT event handler above clears state and localStorage
+    // Clear local state immediately so the UI updates even if the network call fails
+    setUser(null)
+    setProfileState(null)
+    clearAuthLocalStorage()
+    // Then tell Supabase to revoke the session server-side (best-effort)
+    try {
+      const client = getClient()
+      if (client) await client.auth.signOut()
+    } catch {
+      // Network failure is fine — local state is already cleared
+    }
   }
 
   function setProfile(p: PlayerProfile | null) {
