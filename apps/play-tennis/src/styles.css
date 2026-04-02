@@ -11641,10 +11641,12 @@ main {
 .rating-panel-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
+  justify-content: center;
+  padding: 56px 24px 16px;
   border-bottom: 1px solid var(--border-warm);
   background: var(--cream);
+  flex-shrink: 0;
+  position: relative;
 }
 
 .rating-panel-title {
@@ -11656,17 +11658,22 @@ main {
 }
 
 .rating-panel-close {
+  position: absolute;
+  right: 24px;
+  top: 56px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   background: rgba(138,127,115,0.1);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
   padding: 0;
-  transition: background var(--duration-fast) ease;
+  transition: background 0.2s;
 }
 
 .rating-panel-close:hover {
@@ -11681,10 +11688,356 @@ main {
 .rating-panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px 80px;
+  padding: 16px 20px 32px;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Rating Panel: Hero Card ── */
+.rating-hero .status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.rating-hero .status-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted-dark);
+}
+
+.rating-hero .rank-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(43,94,167,0.1);
+  color: #2B5EA7;
+}
+
+.rating-hero .hero-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+
+.rating-hero .hero-supporting {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.rating-hero .hero-number {
+  font-family: 'DM Serif Display', serif;
+  font-size: 48px;
+  color: var(--navy);
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.rating-hero .hero-number .trend {
+  font-size: 24px;
+  vertical-align: middle;
+}
+
+.rating-hero .hero-number .trend.positive {
+  color: var(--color-positive-primary);
+}
+
+.rating-hero .hero-number .trend.negative {
+  color: var(--color-negative-primary);
+}
+
+.rating-hero .hero-label {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.rating-hero .level-bar {
+  height: 8px;
+  background: var(--border-warm);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.rating-hero .level-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--gold), #D4AF37);
+}
+
+.rating-hero .details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.rating-hero .details-rank {
+  color: var(--muted-dark);
+}
+
+.rating-hero .details-change {
+  font-weight: 600;
+}
+
+.rating-hero .details-change.positive {
+  color: var(--color-positive-primary);
+}
+
+.rating-hero .details-change.negative {
+  color: var(--color-negative-primary);
+}
+
+.rating-hero .hero-explanation {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.rating-hero .hero-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+.rating-hero .hero-link:hover {
+  opacity: 0.8;
+}
+
+/* ── Rating Panel: Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* ── Rating Panel: Chart ── */
+.chart-container {
+  margin-bottom: 8px;
+}
+
+.chart-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── Rating Panel: Match History ── */
+.rating-panel-body .match-row {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.rating-panel-body .match-row:not(:last-child) {
+  border-bottom: 1px solid var(--border-warm);
+}
+
+.result-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.result-badge.win {
+  background: var(--color-positive-primary);
+}
+
+.result-badge.loss {
+  background: var(--color-negative-primary);
+}
+
+.rating-panel-body .match-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rating-panel-body .match-opponent {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.rating-panel-body .match-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rating-panel-body .match-score {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.show-all-link {
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  margin-top: 12px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 100%;
+  font-family: inherit;
+}
+
+.show-all-link:hover {
+  opacity: 0.8;
+}
+
+/* ── Rating Panel: Explainer ── */
+.explainer-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  font-family: inherit;
+}
+
+.explainer-chevron {
+  font-size: 18px;
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.2s;
+}
+
+.explainer-content {
+  margin-top: 16px;
+}
+
+.explainer-content p {
+  font-size: 13px;
+  color: var(--muted-dark);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.explainer-content strong {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.tier-table {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.tier-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-warm);
+}
+
+.tier-row:last-child {
+  border-bottom: none;
+}
+
+.tier-range {
+  color: var(--navy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tier-label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── Notifications Panel: Section Labels ── */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  padding: 20px 24px 8px;
+}
+
+/* ── Notifications: unread tints ── */
+.notif-item.notif-unread-gold {
+  background: rgba(196,151,59,0.06);
+}
+
+.notif-item.notif-unread-blue {
+  background: rgba(43,94,167,0.05);
+}
+
+.notif-item.notif-unread-red {
+  background: rgba(200,50,50,0.06);
+}
+
+/* ── Notifications: body/detail ── */
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-detail {
+  font-size: 13px;
+  color: var(--muted-dark);
+  line-height: 1.3;
+}
+
+.notif-time {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 /* Respect reduced motion */
