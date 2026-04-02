@@ -431,9 +431,9 @@ body {
 .btn-large {
   width: 100%;
   height: 54px;
-  font-size: var(--font-body-lg);
+  font-size: 15px;
   font-weight: 600;
-  border-radius: var(--radius-chip);
+  border-radius: 12px;
 }
 
 .btn-icon {
@@ -759,11 +759,10 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 24px;
-  padding: 0 var(--space-sm);
-  border-radius: var(--radius-chip);
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-medium);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--color-text-secondary);
   background: var(--color-neutral-bg);
   font-variant-numeric: tabular-nums;
@@ -846,11 +845,11 @@ body {
 }
 
 .card-status-label {
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-semibold);
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 
 .card-status-label--slate { color: var(--color-text-secondary); }
@@ -897,9 +896,10 @@ body {
 
 /* --- Unified Card Title --- */
 .card-title {
-  font-size: var(--font-title-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-primary);
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--navy);
 }
 
 /* --- Unified Card Secondary Text --- */
@@ -3484,18 +3484,22 @@ select:focus {
 }
 
 .formation-choice-options .btn.btn-primary {
-  font-size: 1.05rem;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  font-size: 15px;
 }
 
 .formation-choice-options .formation-cta-secondary {
-  background: var(--color-neutral-bg);
-  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1.5px solid var(--navy);
+  color: var(--navy);
+}
+
+.formation-choice-options .formation-cta-secondary:hover {
+  background: rgba(27,45,91,0.04);
 }
 
 .formation-choice-options .formation-cta-secondary .formation-choice-label {
-  color: var(--color-text-primary);
-  font-weight: var(--weight-medium);
+  color: var(--navy);
+  font-weight: var(--weight-semibold);
 }
 
 .formation-choice-label {
@@ -3858,12 +3862,13 @@ select:focus {
 }
 
 .profile-section-title {
-  font-size: var(--font-body-md);
-  font-weight: var(--weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-md);
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--navy);
+  margin-bottom: var(--space-lg);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -9492,16 +9497,39 @@ select:focus {
   padding-bottom: var(--space-xxl);
 }
 
+.score-fs-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(138,127,115,0.1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+  transition: background 0.2s;
+}
+
+.score-fs-close:hover {
+  background: rgba(138,127,115,0.18);
+}
+
 .help-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-md);
   padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-warm);
 }
 
 .help-header h2 {
-  font-size: var(--font-title-sm);
-  font-weight: var(--weight-bold);
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--navy);
 }
 
 .help-tabs {
@@ -9516,20 +9544,22 @@ select:focus {
 .help-tabs::-webkit-scrollbar { display: none; }
 
 .help-tab {
-  padding: var(--space-sm) var(--space-md);
-  border: none;
-  background: var(--color-neutral-bg);
-  color: var(--color-text-secondary);
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-medium);
-  border-radius: var(--radius-chip);
+  padding: 6px 14px;
+  border: 1.5px solid var(--border-warm);
+  background: var(--card-bg);
+  color: var(--muted-dark);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
 .help-tab--active {
-  background: var(--color-text-primary);
-  color: var(--color-bg-surface);
+  background: var(--navy);
+  color: var(--cream);
+  border-color: var(--navy);
 }
 
 .help-body {
@@ -9575,9 +9605,9 @@ select:focus {
   flex-shrink: 0;
 }
 
-.help-phase--lobby .help-phase-bar { background: var(--color-accent-primary); }
+.help-phase--lobby .help-phase-bar { background: var(--navy); }
 .help-phase--form .help-phase-bar { background: var(--color-positive-primary); }
-.help-phase--play .help-phase-bar { background: var(--color-warning-primary); }
+.help-phase--play .help-phase-bar { background: var(--gold); }
 .help-phase--finals .help-phase-bar { background: var(--color-negative-primary); }
 
 .help-phase-content {
@@ -9640,27 +9670,27 @@ select:focus {
 }
 
 .help-tier-badge {
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-button);
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-bold);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
+  color: var(--cream);
 }
 
 .help-tier-badge--auto {
-  background: var(--color-positive-bg);
-  color: var(--color-positive-primary);
+  background: var(--color-positive-primary);
 }
 
 .help-tier-badge--flex {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-primary);
+  background: var(--color-accent-blue);
 }
 
 .help-tier-badge--manual {
-  background: var(--color-neutral-bg);
-  color: var(--color-text-secondary);
+  background: var(--color-warning-orange);
 }
 
 .help-tier strong {
@@ -9677,13 +9707,13 @@ select:focus {
 }
 
 .help-tip {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-primary);
-  padding: var(--space-md);
-  border-radius: var(--radius-button);
-  font-size: var(--font-body-sm);
-  font-weight: var(--weight-medium);
-  line-height: 1.4;
+  background: rgba(196,151,59,0.08);
+  color: var(--color-warning-orange);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 /* Scoring steps */
@@ -12523,9 +12553,10 @@ main {
   margin-bottom: 6px;
 }
 
-.dgh-blog-teaser-cat.analytics { color: var(--color-accent-blue); }
-.dgh-blog-teaser-cat.technique { color: var(--color-positive-primary); }
-.dgh-blog-teaser-cat.strategy { color: var(--gold); }
+/* Category colors via nth-child (Analytics, Technique, Strategy order) */
+.dgh-blog-teaser-card:nth-child(1) .dgh-blog-teaser-cat { color: var(--color-accent-blue); }
+.dgh-blog-teaser-card:nth-child(2) .dgh-blog-teaser-cat { color: var(--color-positive-primary); }
+.dgh-blog-teaser-card:nth-child(3) .dgh-blog-teaser-cat { color: var(--gold); }
 
 .dgh-blog-teaser-card-title {
   font-size: 14px;

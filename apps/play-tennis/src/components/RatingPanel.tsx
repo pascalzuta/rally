@@ -70,9 +70,9 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
           {i === 0 ? 'Start' : `Match ${i}`}
         </text>
       ))}
-      <path d={d} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {pathPoints.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={i === pathPoints.length - 1 ? 3.5 : 2} fill="var(--color-accent-primary)" opacity={i === pathPoints.length - 1 ? 1 : 0.5} />
+        <circle key={i} cx={p.x} cy={p.y} r={i === pathPoints.length - 1 ? 3.5 : 2} fill="var(--gold)" opacity={i === pathPoints.length - 1 ? 1 : 0.5} />
       ))}
     </svg>
   )
