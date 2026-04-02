@@ -4285,9 +4285,10 @@ select:focus {
 /* Social proof + nudge in Profile availability */
 .avail-social-proof {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   margin-top: var(--space-md);
+  color: var(--color-positive-primary);
 }
 
 .avail-social-proof-count {
@@ -8219,8 +8220,10 @@ select:focus {
   align-items: center;
   justify-content: center;
   font-weight: var(--weight-bold);
-  font-size: var(--font-body-lg);
+  font-size: 13px;
+  letter-spacing: 0.5px;
   color: white;
+  flex-shrink: 0;
 }
 
 .chat-card-avatar--system {

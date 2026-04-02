@@ -278,6 +278,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
                 })}
                 {matchableCount > 0 && (
                   <div className="avail-social-proof">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="#2D7A4F"/><path d="M4 7l2 2 4-4" stroke="#FFF8F0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     <span className="avail-social-proof-count">{matchableCount}</span>
                     <span className="avail-social-proof-label">player{matchableCount !== 1 ? 's' : ''} share your times</span>
                   </div>
