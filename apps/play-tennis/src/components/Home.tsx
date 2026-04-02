@@ -320,6 +320,8 @@ export default function Home({
 
       {/* Action Cards */}
       {(actionCards.length > 0 || messageCards.length > 0) && (
+        <>
+        <div className="section-label">Your Matches</div>
         <div className="action-cards">
           {actionCards.map(card => {
             const cardKey = `${card.tournament.id}-${card.match.id}`
@@ -396,6 +398,7 @@ export default function Home({
             )
           })}
         </div>
+        </>
       )}
 
       {/* Up Next Card */}

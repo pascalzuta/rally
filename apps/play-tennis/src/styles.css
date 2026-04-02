@@ -6008,9 +6008,10 @@ select:focus {
 
 .action-card-opponent {
   font-family: 'DM Serif Display', serif;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 400;
   color: var(--navy);
+  margin-bottom: 4px;
 }
 
 .action-card-detail,
@@ -11694,6 +11695,14 @@ main {
   gap: 16px;
 }
 
+/* Rating panel card titles are 17px (not 20px like home page) */
+.rating-panel-body .card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  color: var(--navy);
+  margin-bottom: 16px;
+}
+
 /* ── Rating Panel: Hero Card ── */
 .rating-hero .status-row {
   display: flex;
@@ -11999,13 +12008,19 @@ main {
   font-weight: 500;
 }
 
-/* ── Notifications Panel: Section Labels ── */
+/* ── Section Labels ── */
 .section-label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.08em;
   color: var(--muted);
+}
+
+/* Inside notifications panel: more padding */
+.rating-panel-body .section-label {
+  font-weight: 700;
+  letter-spacing: 0.8px;
   padding: 20px 24px 8px;
 }
 
