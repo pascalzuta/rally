@@ -70,9 +70,9 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
           {i === 0 ? 'Start' : `Match ${i}`}
         </text>
       ))}
-      <path d={d} fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke="var(--color-accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {pathPoints.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={i === pathPoints.length - 1 ? 3.5 : 2} fill="var(--gold)" opacity={i === pathPoints.length - 1 ? 1 : 0.5} />
+        <circle key={i} cx={p.x} cy={p.y} r={i === pathPoints.length - 1 ? 3.5 : 2} fill="var(--color-accent-primary)" opacity={i === pathPoints.length - 1 ? 1 : 0.5} />
       ))}
     </svg>
   )
@@ -228,91 +228,102 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
       <div className="rating-panel">
         <div className="rating-panel-header">
           <h2 className="rating-panel-title">Rating & Trophies</h2>
-          <button className="rating-panel-close" onClick={onClose} aria-label="Close">&#10005;</button>
+          <button className="btn-icon rating-panel-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         <div className="rating-panel-body">
           {/* Rally Rating Hero Card */}
           <div className="card rating-hero">
-            <div className="status-row">
-              <span className="status-label">Rally Rating</span>
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Rally Rating</div>
               {rankInfo.total > 1 && (
-                <span className="rank-chip">Rank #{rankInfo.rank}</span>
+                <div className="card-meta-chip card-meta-chip--blue">Rank #{rankInfo.rank}</div>
               )}
             </div>
-            <div className="hero-title">Your current rating</div>
-            <div className="hero-supporting">Ratings adjust after each match and help keep matchups fair.</div>
-            <div className="hero-number">
-              {Math.round(rating.rating)}
-              {weeklyTrend !== 0 && (
-                <span className={`trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
-                  {weeklyTrend > 0 ? ' \u25B2' : ' \u25BC'}
-                </span>
-              )}
+            <div className="card-summary-main rating-hero-summary">
+              <div className="card-title">Your current rating</div>
+              <div className="card-supporting">Ratings adjust after each match and help keep matchups fair.</div>
             </div>
-            <div className="hero-label">Your Rally Rating</div>
-            <div className="level-bar">
-              <div className="level-fill" style={{ width: `${Math.min(100, Math.max(5, ((rating.rating - 800) / 1600) * 100))}%` }} />
+            <div className="rating-hero-top">
+              <div className="rating-hero-number">
+                {Math.round(rating.rating)}
+                {weeklyTrend !== 0 && (
+                  <span className={`rating-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
+                    {weeklyTrend > 0 ? ' ▲' : ' ▼'}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="details-row">
+            <div className="rating-hero-label">Your Rally Rating</div>
+            <div className="rating-level-bar">
+              <div className="rating-level-fill" style={{ width: `${Math.min(100, Math.max(5, ((rating.rating - 800) / 1600) * 100))}%` }} />
+            </div>
+            <div className="rating-hero-details">
               {rankInfo.total > 1 && (
-                <span className="details-rank">Rank #{rankInfo.rank} in {profile.county}</span>
+                <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
               )}
               {lastRatingChange !== 0 && (
-                <span className={`details-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
+                <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
                   {lastRatingChange > 0 ? '+' : ''}{lastRatingChange} last match
                 </span>
               )}
+              {weeklyTrend !== 0 && (
+                <span className={`rating-hero-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
+                  {weeklyTrend > 0 ? '+' : ''}{weeklyTrend} this week
+                </span>
+              )}
             </div>
-            <div className="hero-explanation">
+            <div className="rating-hero-explanation" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>
               Ratings adjust after each match — win against stronger players for a bigger boost
             </div>
             {engagementPrompt && (
               <div className="engagement-prompt">{engagementPrompt}</div>
             )}
-            {onViewLeaderboard && rankInfo.total > 1 && (
-              <button className="hero-link" onClick={onViewLeaderboard}>View full leaderboard</button>
-            )}
+            <div className="rating-hero-actions">
+              {onViewLeaderboard && rankInfo.total > 1 && (
+                <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View full leaderboard</button>
+              )}
+            </div>
           </div>
 
           {/* Your Record */}
-          <div className="card">
-            <div className="card-title">Your Record</div>
-            <div className="stats-grid">
-              <div className="stat-item">
-                <div className="stat-value">{totalMatches}</div>
-                <div className="stat-label">Matches</div>
+          <div className="card profile-section">
+            <h3 className="profile-section-title"><span>Your Record</span></h3>
+            <div className="performance-grid">
+              <div className="performance-item">
+                <div className="performance-value">{totalMatches}</div>
+                <div className="performance-label">Matches</div>
               </div>
-              <div className="stat-item">
-                <div className="stat-value">{wins}</div>
-                <div className="stat-label">Wins</div>
+              <div className="performance-item">
+                <div className="performance-value">{wins}</div>
+                <div className="performance-label">Wins</div>
               </div>
-              <div className="stat-item">
-                <div className="stat-value">{losses}</div>
-                <div className="stat-label">Losses</div>
+              <div className="performance-item">
+                <div className="performance-value">{losses}</div>
+                <div className="performance-label">Losses</div>
               </div>
-              <div className="stat-item">
-                <div className="stat-value">{winRate}%</div>
-                <div className="stat-label">Win Rate</div>
+              <div className="performance-item">
+                <div className="performance-value">{winRate}%</div>
+                <div className="performance-label">Win Rate</div>
               </div>
             </div>
           </div>
 
           {/* Trophy Cabinet */}
-          <div className="card">
-            <div className="card-title">Trophies</div>
+          <div className="card profile-section">
+            <h3 className="profile-section-title"><span>Trophies</span></h3>
             {trophies.length > 0 ? (
               <div className="trophy-grid">
                 {trophies.map(trophy => (
                   <button key={trophy.id} className="trophy-cell" onClick={() => setSelectedTrophy(trophy)}>
                     <TrophyIcon tier={trophy.tier} size={40} />
-                    <div className="trophy-label">{TROPHY_LABEL[trophy.tier]}</div>
+                    <div className="trophy-cell-label">{TROPHY_LABEL[trophy.tier]}</div>
                   </button>
                 ))}
               </div>
             ) : (
               <div className="trophy-empty">
-                <div className="trophy-empty-icon">&#127942;</div>
+                <div className="trophy-empty-icon">🏆</div>
                 <p className="trophy-empty-title">Your trophy case is empty — for now</p>
                 <p className="trophy-empty-desc">Win matches to earn tournament trophies and badges</p>
               </div>
@@ -321,8 +332,8 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
 
           {/* Badges */}
           {badges.length > 0 && (
-            <div className="card">
-              <div className="card-title">Badges</div>
+            <div className="card profile-section">
+              <h3 className="profile-section-title"><span>Badges</span></h3>
               <div className="badge-grid">
                 {badges.map(badge => (
                   <div key={badge.id} className="badge-cell" title={badge.description}>
@@ -335,12 +346,10 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           )}
 
           {/* Rating Over Time */}
-          <div className="card">
-            <div className="card-title">Your Rating Over Time</div>
-            <div className="chart-container">
-              <RatingChart history={ratingHistory} currentRating={rating.rating} />
-            </div>
-            <div className="chart-note">Each match result adjusts your rating. Decisive wins earn bigger jumps.</div>
+          <div className="card profile-section">
+            <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
+            <RatingChart history={ratingHistory} currentRating={rating.rating} />
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
             {completedTournaments.length > 0 && (
               <div className="tournament-history">
                 {completedTournaments.map(t => {
@@ -361,8 +370,8 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
 
           {/* Match History */}
           {matchHistory.length > 0 && (
-            <div className="card">
-              <div className="card-title">Match History</div>
+            <div className="card profile-section">
+              <h3 className="profile-section-title"><span>Match History</span></h3>
 
               {h2hOpponent && (() => {
                 const h2h = getHeadToHead(profile.id, h2hOpponent)
@@ -371,7 +380,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                   <div className="h2h-card">
                     <div className="h2h-header">
                       <span className="h2h-title">vs {oppName}</span>
-                      <button className="btn-icon" onClick={() => setH2hOpponent(null)}>&#10005;</button>
+                      <button className="btn-icon" onClick={() => setH2hOpponent(null)}>✕</button>
                     </div>
                     <div className="h2h-record">
                       <span className="h2h-wins">{h2h.wins}W</span>
@@ -391,24 +400,28 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                 )
               })()}
 
-              {visibleMatches.map(match => (
-                <div
-                  key={match.matchId}
-                  className="match-row"
-                  onClick={() => setH2hOpponent(match.opponentId === h2hOpponent ? null : match.opponentId)}
-                >
-                  <div className={`result-badge ${match.won ? 'win' : 'loss'}`}>
-                    {match.won ? 'W' : 'L'}
+              <div className="match-history-list">
+                {visibleMatches.map(match => (
+                  <div
+                    key={match.matchId}
+                    className={`match-history-item ${match.won ? 'won' : 'lost'}`}
+                    onClick={() => setH2hOpponent(match.opponentId === h2hOpponent ? null : match.opponentId)}
+                  >
+                    <div className="match-history-result">
+                      <span className={`match-result-badge ${match.won ? 'win' : 'loss'}`}>
+                        {match.won ? 'W' : 'L'}
+                      </span>
+                    </div>
+                    <div className="match-history-info">
+                      <div className="match-history-opponent">vs {match.opponentName}</div>
+                      <div className="match-history-meta">{match.tournamentName} · R{match.round}</div>
+                    </div>
+                    <div className="match-history-score">{match.score}</div>
                   </div>
-                  <div className="match-info">
-                    <div className="match-opponent">vs {match.opponentName}</div>
-                    <div className="match-meta">{match.tournamentName} · R{match.round}</div>
-                  </div>
-                  <div className="match-score">{match.score}</div>
-                </div>
-              ))}
+                ))}
+              </div>
               {matchHistory.length > 5 && (
-                <button className="show-all-link" onClick={() => setShowAllMatches(!showAllMatches)}>
+                <button className="btn-link match-history-toggle" onClick={() => setShowAllMatches(!showAllMatches)}>
                   {showAllMatches ? 'Show less' : `Show all ${matchHistory.length} matches`}
                 </button>
               )}
@@ -416,24 +429,25 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           )}
 
           {/* Rating Explanation */}
-          <div className="card">
-            <button className="explainer-toggle" aria-expanded={showRatingInfo} onClick={() => setShowRatingInfo(!showRatingInfo)}>
-              <span>How ratings work</span>
-              <span className="explainer-chevron">&#8250;</span>
+          <div className="card profile-section">
+            <button className="rating-explainer-toggle" aria-expanded={showRatingInfo} onClick={() => setShowRatingInfo(!showRatingInfo)}>
+              <span className="rating-explainer-toggle-text">How ratings work</span>
+              <span className="rating-explainer-toggle-chevron">›</span>
             </button>
             {showRatingInfo && (
-              <div className="explainer-content">
+              <div className="rating-explainer">
                 <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1500</strong>.</p>
                 <p>Beat a stronger opponent for a bigger boost. Lose to a weaker one and you drop more. The system finds your true level over time.</p>
-                <div className="tier-table">
-                  <div className="tier-row"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
-                  <div className="tier-row"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
-                  <div className="tier-row"><span className="tier-range">1800–1999</span><span className="tier-label">Elite</span></div>
-                  <div className="tier-row"><span className="tier-range">1600–1799</span><span className="tier-label">Strong</span></div>
-                  <div className="tier-row"><span className="tier-range">1400–1599</span><span className="tier-label">Club</span></div>
-                  <div className="tier-row"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
-                  <div className="tier-row"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
+                <div className="rating-tiers">
+                  <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
+                  <div className="rating-tier"><span className="tier-range">2000–2199</span><span className="tier-label">Semi-pro</span></div>
+                  <div className="rating-tier"><span className="tier-range">1800–1999</span><span className="tier-label">Elite</span></div>
+                  <div className="rating-tier"><span className="tier-range">1600–1799</span><span className="tier-label">Strong</span></div>
+                  <div className="rating-tier"><span className="tier-range">1400–1599</span><span className="tier-label">Club</span></div>
+                  <div className="rating-tier"><span className="tier-range">1200–1399</span><span className="tier-label">Beginner</span></div>
+                  <div className="rating-tier"><span className="tier-range">&lt;1200</span><span className="tier-label">Newcomer</span></div>
                 </div>
+                <p className="rating-explainer-footnote">Ratings shift more in your first few matches, then stabilise.</p>
               </div>
             )}
           </div>

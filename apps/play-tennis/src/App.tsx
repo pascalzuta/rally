@@ -28,7 +28,6 @@ const Help = lazy(() => import('./components/Help'))
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'))
 const Inbox = lazy(() => import('./components/Inbox'))
 const RatingPanel = lazy(() => import('./components/RatingPanel'))
-const NotificationsPanel = lazy(() => import('./components/NotificationsPanel'))
 const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 
 // DevTools: loaded in development and on staging
@@ -138,11 +137,19 @@ export default function App() {
 
   const [showInbox, setShowInbox] = useState(false)
   const [showRatingPanel, setShowRatingPanel] = useState(false)
+  const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
-  // Dismiss inbox on outside click or Escape key
+  // Dismiss notification panel / inbox on outside click or Escape key
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
+      if (
+        showNotifications &&
+        notifWrapperRef.current &&
+        !notifWrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowNotifications(false)
+      }
       if (
         showInbox &&
         inboxWrapperRef.current &&
@@ -163,7 +170,7 @@ export default function App() {
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [showInbox])
+  }, [showNotifications, showInbox])
 
   // Count pending actions for notification badge
   const matchActionCount = tournaments.reduce((count, t) => {
@@ -387,7 +394,7 @@ export default function App() {
               </svg>
               {unreadMsgCount > 0 && <span className="inbox-unread-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
-            <div className="notif-wrapper">
+            <div className="notif-wrapper" ref={notifWrapperRef}>
               <button className="top-nav-icon" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); setShowRatingPanel(false) }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -397,6 +404,91 @@ export default function App() {
                   <span className="notif-badge">{pendingActionCount}</span>
                 )}
               </button>
+              {showNotifications && (() => {
+                const rallyNotifs = profile ? getNotifications(profile.id).slice(0, 10) : []
+                if (profile) markNotificationsRead(profile.id)
+                return (
+                  <div className="notif-dropdown">
+                    <div className="notif-header">Notifications</div>
+                    {pendingActionCount === 0 && rallyNotifs.length === 0 ? (
+                      <div className="notif-empty">All caught up!</div>
+                    ) : (
+                      <div className="notif-list">
+                        {/* Rally notifications (offers, acceptances, etc.) */}
+                        {rallyNotifs.map(n => {
+                          const icon = n.type === 'match_offer' ? '📩'
+                            : n.type === 'offer_accepted' ? '✅'
+                            : n.type === 'offer_declined' ? '✗'
+                            : n.type === 'offer_expired' ? '⏱'
+                            : '🎾'
+                          return (
+                            <button
+                              key={n.id}
+                              className={`notif-item ${!n.read ? 'notif-unread' : ''}`}
+                              onClick={() => {
+                                if (n.type === 'match_offer') {
+                                  navigate(ROUTES.PLAYNOW)
+                                } else if (n.type === 'offer_accepted') {
+                                  if (n.relatedOfferId) {
+                                    const offer = getMatchOffer(n.relatedOfferId)
+                                    if (offer?.matchId) {
+                                      setFocusMatchId(offer.matchId)
+                                    }
+                                  }
+                                  navigate(ROUTES.BRACKET)
+                                }
+                                setShowNotifications(false)
+                              }}
+                            >
+                              <span className="notif-icon">{icon}</span>
+                              <div className="notif-content">
+                                <div className="notif-action">{n.message}</div>
+                                {n.detail && <div className="notif-opponent">{n.detail}</div>}
+                              </div>
+                            </button>
+                          )
+                        })}
+                        {/* Match action notifications */}
+                        {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
+                          t.matches.filter(m =>
+                            !m.completed &&
+                            (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
+                            m.player1Id && m.player2Id
+                          ).map(m => {
+                            const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
+                            const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+                            let action = ''
+                            let icon = ''
+                            let urgency = ''
+                            if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️'; urgency = 'notif-urgent' }
+                            else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾'; urgency = 'notif-ready' }
+                            else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = `${opponentName} proposed a time — tap to confirm`; icon = '📩'; urgency = 'notif-pending' }
+                            else { action = 'Needs scheduling'; icon = '📅'; urgency = '' }
+                            return (
+                              <button
+                                key={`${t.id}-${m.id}`}
+                                className={`notif-item ${urgency}`}
+                                onClick={() => {
+                                  setFocusMatchId(m.id)
+                                  navigate(ROUTES.BRACKET)
+                                  setShowNotifications(false)
+                                }}
+                              >
+                                <span className="notif-icon">{icon}</span>
+                                <div className="notif-content">
+                                  <div className="notif-action">{action}</div>
+                                  <div className="notif-opponent">vs {opponentName}</div>
+                                  <div className="notif-time">{t.name}</div>
+                                </div>
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </nav>
@@ -542,20 +634,6 @@ export default function App() {
           profile={profile}
           onClose={() => setShowRatingPanel(false)}
           onViewLeaderboard={() => { setShowRatingPanel(false); navigate(ROUTES.LEADERBOARD) }}
-        />
-        </Suspense>
-      )}
-      {showNotifications && profile && (
-        <Suspense fallback={null}>
-        <NotificationsPanel
-          profile={profile}
-          tournaments={tournaments}
-          onClose={() => setShowNotifications(false)}
-          onNavigate={(route, matchId) => {
-            if (matchId) setFocusMatchId(matchId)
-            navigate(route === 'bracket' ? ROUTES.BRACKET : route === 'playnow' ? ROUTES.PLAYNOW : ROUTES.HOME)
-            setShowNotifications(false)
-          }}
         />
         </Suspense>
       )}
