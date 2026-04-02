@@ -169,7 +169,6 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const [feedback, setFeedback] = useState('')
   const [askingRow, setAskingRow] = useState<OpponentRow | null>(null)
   const [messagingPlayerId, setMessagingPlayerId] = useState<string | null>(null)
-  const [showInfoTooltip, setShowInfoTooltip] = useState(false)
   const { showSuccess } = useToast()
   const [, setTick] = useState(0)
 
@@ -273,19 +272,10 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     <div className="playnow-tab">
       {feedback && <div className="broadcast-feedback">{feedback}</div>}
 
-      {/* === INFO BANNER: Clarify Tournament vs Casual === */}
-      <div className="pn-info-banner">
-        <div className="pn-info-banner-content">
-          <span className="pn-info-banner-icon" onClick={() => setShowInfoTooltip(!showInfoTooltip)} role="button" tabIndex={0} aria-label="More info">&#9432;</span>
-          <span className="pn-info-banner-text">See who's available and start a match — Rally handles the scheduling</span>
-        </div>
-        {showInfoTooltip && (
-          <div className="pn-info-tooltip">
-            <strong>Tournament Matches</strong> are part of your tournament bracket and count toward standings.
-            <br /><strong>Casual Play</strong> lets you find pickup games with other players in your tournament.
-            <br />Use &quot;Request Match&quot; below to propose a casual game.
-          </div>
-        )}
+      {/* === PAGE HEADER === */}
+      <div className="pn-page-header">
+        <h1 className="pn-page-title">Find a Match</h1>
+        <div className="pn-page-subtitle">Challenge available players or browse upcoming availability</div>
       </div>
 
       {/* Tournament matches removed — they belong on the Tournament tab */}

@@ -6149,43 +6149,23 @@ select:focus {
   margin-bottom: var(--space-sm);
 }
 
-/* Quick Play info banner */
-.pn-info-banner {
-  margin-bottom: var(--space-xs);
+/* Quick Play page header */
+.pn-page-header {
+  margin-bottom: var(--space-lg);
 }
 
-.pn-info-banner-content {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  background: var(--color-neutral-bg);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  color: var(--color-text-secondary);
+.pn-page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--navy);
+  margin: 0 0 6px;
+}
+
+.pn-page-subtitle {
+  font-size: 14px;
+  color: var(--muted);
   line-height: 1.4;
-}
-
-.pn-info-banner-icon {
-  flex-shrink: 0;
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--color-accent-primary);
-}
-
-.pn-info-banner-text {
-  flex: 1;
-}
-
-.pn-info-tooltip {
-  margin-top: var(--space-sm);
-  padding: var(--space-md);
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
 }
 
 /* ================================================
