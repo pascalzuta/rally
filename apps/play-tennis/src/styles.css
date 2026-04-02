@@ -1,5 +1,5 @@
 /* ================================================
-   Polymarket-Inspired Design System for Rally
+   V3 Navy & Gold Retro Tennis Club Design System
    ================================================ */
 
 * {
@@ -11,41 +11,51 @@
 :root {
   color-scheme: light;
 
-  /* Backgrounds */
-  --color-bg-primary: #F6F7F9;
-  --color-bg-surface: #FFFFFF;
+  /* V3 Core Palette */
+  --navy: #1B2D5B;
+  --gold: #C4973B;
+  --cream: #FFF8F0;
+  --outer-bg: #E8E0D4;
+  --card-bg: #FFFCF7;
+  --muted: #8A7F73;
+  --muted-dark: #6B6156;
+  --border-warm: #E8DFD0;
 
-  /* Text */
-  --color-text-primary: #111111;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  /* Backgrounds — mapped to V3 */
+  --color-bg-primary: var(--cream);
+  --color-bg-surface: var(--card-bg);
+
+  /* Text — mapped to V3 */
+  --color-text-primary: var(--navy);
+  --color-text-secondary: var(--muted-dark);
+  --color-text-muted: var(--muted);
 
   /* Dividers */
-  --color-divider: #E5E7EB;
+  --color-divider: var(--border-warm);
 
   /* Positive (accept, confirm, success) */
-  --color-positive-bg: #E6F6EC;
-  --color-positive-primary: #1F9D55;
+  --color-positive-bg: #E6F2EB;
+  --color-positive-primary: #2D7A4F;
 
   /* Negative (cancel, decline, danger) */
   --color-negative-bg: #FDECEC;
-  --color-negative-primary: #D64545;
+  --color-negative-primary: #C0392B;
 
   /* Neutral */
-  --color-neutral-bg: #F1F3F5;
-  --color-neutral-primary: #374151;
+  --color-neutral-bg: #F0EBE4;
+  --color-neutral-primary: var(--navy);
 
   /* Accent (blue - for info, proposals) */
-  --color-accent-bg: #DCE7FF;
-  --color-accent-primary: #2A5BD7;
+  --color-accent-bg: #E0E8F5;
+  --color-accent-primary: var(--navy);
 
   /* Warning */
   --color-warning-bg: #FEF3C7;
-  --color-warning-primary: #D97706;
+  --color-warning-primary: var(--gold);
 
   /* Purple (attention/pending) */
-  --color-purple-bg: #F0EAFF;
-  --color-purple-primary: #7C3AED;
+  --color-purple-bg: #E8E0F5;
+  --color-purple-primary: #5B3D8F;
 
   /* Typography */
   --font-title-lg: 28px;
@@ -86,13 +96,13 @@
   --font-hero: 40px;
   --font-hero-sm: 36px;
 
-  /* Shadow */
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-  --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
-  --shadow-focus: 0 0 0 3px rgba(42, 91, 215, 0.12);
+  /* Shadow — warm tones */
+  --shadow: 0 1px 3px rgba(27,45,91,0.06), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-sm: 0 1px 2px rgba(27,45,91,0.06);
+  --shadow-md: 0 4px 12px rgba(27,45,91,0.08);
+  --shadow-lg: 0 8px 32px rgba(27,45,91,0.12);
+  --shadow-hover: 0 4px 16px rgba(27,45,91,0.12);
+  --shadow-focus: 0 0 0 3px rgba(196,151,59,0.25);
 
   /* Z-index scale */
   --z-base: 1;
@@ -104,14 +114,14 @@
 
   /* Additional color aliases */
   --color-surface: var(--color-bg-surface);
-  --color-surface-alt: #F0F0F0;
+  --color-surface-alt: var(--cream);
   --color-bg: var(--color-bg-primary);
   --color-bg-secondary: var(--color-neutral-bg);
   --color-surface-primary: var(--color-bg-surface);
   --color-surface-raised: var(--color-bg-surface);
   --color-border-secondary: var(--color-divider);
-  --color-accent-blue: #2563EB;
-  --color-primary: var(--color-accent-primary);
+  --color-accent-blue: #2B5EA7;
+  --color-primary: var(--navy);
 
   /* Weight alias */
   --weight-normal: var(--weight-regular);
@@ -133,7 +143,7 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--color-bg-primary);
+  background: var(--cream);
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -160,8 +170,8 @@ body {
 /* ================================================
    Typography Utility Classes
    ================================================ */
-.text-title-lg { font-size: var(--font-title-lg); font-weight: var(--weight-bold); line-height: 1.2; }
-.text-title-md { font-size: var(--font-title-md); font-weight: var(--weight-semibold); line-height: 1.3; }
+.text-title-lg { font-family: 'DM Serif Display', serif; font-size: var(--font-title-lg); font-weight: 400; line-height: 1.2; color: var(--navy); }
+.text-title-md { font-family: 'DM Serif Display', serif; font-size: var(--font-title-md); font-weight: 400; line-height: 1.3; color: var(--navy); }
 .text-title-sm { font-size: var(--font-title-sm); font-weight: var(--weight-semibold); line-height: 1.3; }
 .text-body-lg { font-size: var(--font-body-lg); font-weight: var(--weight-regular); line-height: 1.5; }
 .text-body-md { font-size: var(--font-body-md); font-weight: var(--weight-regular); line-height: 1.5; }
@@ -190,13 +200,13 @@ body {
 }
 
 .header {
-  background: var(--color-bg-surface);
-  color: var(--color-text-primary);
+  background: var(--cream);
+  color: var(--navy);
   padding: var(--space-lg) 20px;
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--border-warm);
 }
 
 .header h1 {
@@ -226,8 +236,8 @@ body {
    ================================================ */
 .top-nav {
   min-height: 56px;
-  background: var(--color-bg-surface);
-  border-bottom: 1px solid var(--color-divider);
+  background: var(--cream);
+  border-bottom: 1px solid var(--border-warm);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -260,9 +270,10 @@ body {
 }
 
 .rally-wordmark {
+  font-family: 'Outfit', sans-serif;
   font-size: var(--font-title-md);
   font-weight: 800;
-  color: var(--color-text-primary);
+  color: var(--navy);
   letter-spacing: -0.5px;
 }
 
@@ -299,8 +310,9 @@ body {
   width: 100%;
   height: 50px;
   display: flex;
-  background: var(--color-bg-surface);
-  box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
+  background: var(--cream);
+  border-top: 1px solid var(--border-warm);
+  box-shadow: 0 -1px 4px rgba(27,45,91,0.04);
   z-index: var(--z-dropdown);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -323,7 +335,7 @@ body {
 }
 
 .bottom-tab.active {
-  color: var(--color-accent-primary);
+  color: var(--gold);
   font-weight: var(--weight-semibold);
 }
 
@@ -335,7 +347,7 @@ body {
   transform: translateX(-50%);
   width: 24px;
   height: 2px;
-  background: var(--color-accent-primary);
+  background: var(--gold);
   border-radius: 0 0 2px 2px;
 }
 
@@ -392,18 +404,18 @@ body {
 }
 
 .btn-primary {
-  background: var(--color-positive-bg);
-  color: var(--color-positive-primary);
+  background: var(--navy);
+  color: var(--cream);
   border-color: transparent;
   font-weight: var(--weight-semibold);
 }
 
 .btn-primary:hover {
-  background: var(--color-positive-bg);
+  background: #243A6E;
 }
 
 .btn-primary:active {
-  background: var(--color-positive-bg);
+  background: #152448;
 }
 
 .btn-primary:disabled {
@@ -447,7 +459,7 @@ body {
 .btn-link {
   background: none;
   border: none;
-  color: var(--color-accent-primary);
+  color: var(--gold);
   font-size: var(--font-caption);
   cursor: pointer;
   padding: var(--space-xs) 0;
@@ -2543,7 +2555,7 @@ select:focus {
   justify-content: flex-start;
   padding-top: 32px;
   padding-bottom: 40px;
-  background: linear-gradient(170deg, #f0faf0 0%, var(--color-bg-surface) 40%, var(--color-bg-surface) 100%);
+  background: linear-gradient(170deg, rgba(196,151,59,0.05) 0%, var(--cream) 40%, var(--cream) 100%);
   position: relative;
 }
 
@@ -2554,7 +2566,7 @@ select:focus {
   left: 0;
   right: 0;
   height: 4px;
-  background: var(--color-positive-primary);
+  background: var(--navy);
 }
 
 .signup-logo {
@@ -2574,11 +2586,12 @@ select:focus {
 }
 
 .signup-title {
+  font-family: 'DM Serif Display', serif;
   font-size: var(--font-heading-lg);
-  font-weight: 700;
-  letter-spacing: -0.3px;
+  font-weight: 400;
+  letter-spacing: -0.2px;
   line-height: 1.15;
-  color: var(--color-text-primary);
+  color: var(--navy);
 }
 
 .signup-subtitle {
@@ -2615,10 +2628,10 @@ select:focus {
 .auth-card {
   padding: var(--space-xl);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(17, 17, 17, 0.08);
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-warm);
+  background: rgba(255, 252, 247, 0.92);
   backdrop-filter: blur(12px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 3px rgba(27, 45, 91, 0.04), 0 8px 32px rgba(27, 45, 91, 0.06);
 }
 
 .auth-field {
@@ -2656,14 +2669,14 @@ select:focus {
   height: 52px;
   font-size: 15px;
   font-weight: 600;
-  background: var(--color-text-primary);
-  color: #fff;
+  background: var(--navy);
+  color: var(--cream);
   border: none;
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .auth-cta:hover:not(:disabled) {
-  background: #333;
+  background: #243A6E;
   transform: translateY(-1px);
 }
 
@@ -2690,7 +2703,7 @@ select:focus {
 .otp-actions .btn-link {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-positive-primary);
+  color: var(--gold);
 }
 
 .signup-social-proof {
@@ -3871,7 +3884,7 @@ select:focus {
 
 .profile-hero-banner {
   height: 80px;
-  background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, #2B4080 100%);
 }
 
 .profile-hero-photo {
@@ -3894,14 +3907,15 @@ select:focus {
 .profile-hero-avatar {
   width: 88px;
   height: 88px;
-  background: linear-gradient(135deg, #4361ee, #7209b7);
-  color: white;
+  background: linear-gradient(135deg, var(--navy), #2B4080);
+  color: var(--cream);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 34px;
   font-weight: var(--weight-bold);
+  font-family: 'DM Serif Display', serif;
   border: 4px solid var(--color-bg-surface);
 }
 
@@ -3911,9 +3925,10 @@ select:focus {
 }
 
 .profile-hero-name {
+  font-family: 'DM Serif Display', serif;
   font-size: 22px;
-  font-weight: 800;
-  color: var(--color-text-primary);
+  font-weight: 400;
+  color: var(--navy);
   margin: 0;
   line-height: 1.2;
 }
@@ -3936,8 +3951,8 @@ select:focus {
 .profile-hero-level {
   padding: 3px 12px;
   border-radius: 100px;
-  background: rgba(67, 97, 238, 0.1);
-  color: #4361ee;
+  background: rgba(196,151,59,0.12);
+  color: var(--gold);
   font-size: 12px;
   font-weight: var(--weight-semibold);
 }
@@ -6413,8 +6428,10 @@ select:focus {
 }
 
 .onboarding-title {
+  font-family: 'DM Serif Display', serif;
   font-size: var(--font-title-md);
-  font-weight: var(--weight-bold);
+  font-weight: 400;
+  color: var(--navy);
   margin-bottom: var(--space-xs);
 }
 
@@ -11416,13 +11433,15 @@ main {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-divider);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--border-warm);
+  background: var(--cream);
 }
 
 .rating-panel-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 400;
+  color: var(--navy);
   margin: 0;
 }
 
@@ -11452,15 +11471,15 @@ main {
 
 /* Join for free CTA button */
 .btn-join-free {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  color: #fff;
+  background: var(--navy);
+  color: var(--cream);
   font-weight: 700;
   font-size: 18px;
   letter-spacing: 0.01em;
   border: none;
   border-radius: var(--radius-chip);
   height: 56px;
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+  box-shadow: 0 4px 14px rgba(27, 45, 91, 0.3);
   transition: transform var(--duration-fast) var(--ease-out-expo),
               box-shadow var(--duration-normal) var(--ease-out-quart),
               background var(--duration-normal) ease;
@@ -11469,13 +11488,13 @@ main {
 
 .btn-join-free:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  box-shadow: 0 6px 20px rgba(27, 45, 91, 0.4);
+  background: #243A6E;
 }
 
 .btn-join-free:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  box-shadow: 0 2px 8px rgba(27, 45, 91, 0.3);
 }
 
 .btn-join-free:disabled {
@@ -11687,7 +11706,7 @@ main {
 
 .strava-home {
   min-height: 100dvh;
-  background: var(--color-bg-surface);
+  background: var(--cream);
   overflow-y: auto;
 }
 
@@ -11696,8 +11715,8 @@ main {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--color-bg-surface);
-  border-bottom: 1px solid var(--color-divider);
+  background: var(--cream);
+  border-bottom: 1px solid var(--border-warm);
 }
 
 .sh-nav-inner {
@@ -11755,8 +11774,8 @@ main {
 }
 
 .sh-btn-cta {
-  background: var(--color-positive-primary);
-  color: white;
+  background: var(--navy);
+  color: var(--cream);
   border: none;
   font-size: 14px;
   font-weight: 600;
@@ -11779,7 +11798,7 @@ main {
 
 /* ---- Hero ---- */
 .sh-hero {
-  background: var(--color-bg-surface);
+  background: var(--cream);
   padding: 80px 24px 60px;
 }
 
@@ -11797,11 +11816,12 @@ main {
 }
 
 .sh-hero-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 48px;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.1;
-  letter-spacing: -1px;
-  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+  color: var(--navy);
   margin-bottom: 16px;
 }
 
@@ -11851,15 +11871,15 @@ main {
 }
 
 .sh-btn-email {
-  background: var(--color-positive-primary);
-  color: white;
-  border-color: var(--color-positive-primary);
+  background: var(--navy);
+  color: var(--cream);
+  border-color: var(--navy);
 }
 
 .sh-btn-email:hover {
   opacity: 0.9;
-  background: var(--color-positive-primary);
-  border-color: var(--color-positive-primary);
+  background: var(--navy);
+  border-color: var(--navy);
 }
 
 .sh-btn-email svg {
@@ -11873,7 +11893,7 @@ main {
 }
 
 .sh-link {
-  color: var(--color-positive-primary);
+  color: var(--gold);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -12024,11 +12044,13 @@ main {
 }
 
 .sh-section-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 400;
   text-align: center;
   margin-bottom: 12px;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
+  color: var(--navy);
 }
 
 .sh-section-subtitle {
@@ -12040,16 +12062,16 @@ main {
 
 /* Desktop Guest Homepage — Base */
 .dgh {
-  background: var(--color-bg-surface);
+  background: var(--cream);
 }
 
 .dgh-nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 248, 240, 0.95);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--border-warm);
 }
 
 .dgh-nav-inner {
@@ -12069,10 +12091,10 @@ main {
 }
 
 .dgh-btn-primary {
-  background: var(--color-text-primary);
-  color: #fff;
+  background: var(--navy);
+  color: var(--cream);
   border: none;
-  border-radius: var(--radius-button);
+  border-radius: 999px;
   padding: 10px 24px;
   font-size: var(--font-body-md);
   font-weight: var(--weight-semibold);
@@ -12082,7 +12104,7 @@ main {
 }
 
 .dgh-btn-primary:hover {
-  background: #333;
+  background: #243A6E;
   transform: translateY(-1px);
 }
 
@@ -12094,9 +12116,9 @@ main {
 
 .dgh-btn-secondary {
   background: transparent;
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-button);
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+  border-radius: 999px;
   padding: 10px 24px;
   font-size: var(--font-body-md);
   font-weight: var(--weight-medium);
@@ -12124,7 +12146,7 @@ main {
 
 .dgh-hero {
   padding: 80px var(--space-xl) 60px;
-  background: linear-gradient(180deg, #F8FAF8 0%, var(--color-bg-surface) 100%);
+  background: var(--cream);
 }
 
 .dgh-hero-inner {
@@ -12133,11 +12155,12 @@ main {
 }
 
 .dgh-hero-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 56px;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  color: var(--navy);
   margin: 0 0 var(--space-xl) 0;
 }
 
@@ -12166,25 +12189,27 @@ main {
 }
 
 .dgh-section-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 40px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--color-text-primary);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--navy);
   text-align: center;
   margin: 0 0 var(--space-md) 0;
 }
 
 /* Final CTA */
 .dgh-final-cta {
-  background: linear-gradient(180deg, var(--color-bg-surface) 0%, #F8FAF8 100%);
+  background: var(--cream);
   text-align: center;
 }
 
 .dgh-cta-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 48px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--color-text-primary);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--navy);
   margin: 0 0 var(--space-md) 0;
 }
 
@@ -12197,8 +12222,8 @@ main {
 /* Blog Teaser */
 .dgh-blog-teaser {
   padding: 80px var(--space-xl) 80px;
-  background: var(--color-bg-primary);
-  border-top: 1px solid var(--color-divider);
+  background: var(--cream);
+  border-top: 1px solid var(--border-warm);
   margin-top: 40px;
 }
 
@@ -12222,9 +12247,10 @@ main {
 }
 
 .dgh-blog-teaser-title {
+  font-family: 'DM Serif Display', serif;
   font-size: 32px;
-  font-weight: 800;
-  color: var(--color-text-primary);
+  font-weight: 400;
+  color: var(--navy);
   margin: 0 0 var(--space-xs) 0;
 }
 
@@ -12263,7 +12289,7 @@ main {
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-accent-primary);
+  color: var(--gold);
 }
 
 .dgh-blog-teaser-card-title {
@@ -12293,9 +12319,10 @@ main {
 
 /* Footer */
 .dgh-footer {
-  background: var(--color-bg-primary);
-  border-top: 1px solid var(--color-divider);
+  background: var(--navy);
+  border-top: none;
   padding: var(--space-xl);
+  color: var(--cream);
 }
 
 .dgh-footer-inner {
@@ -12316,12 +12343,12 @@ main {
 
 .dgh-footer-tagline {
   font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
+  color: rgba(255,248,240,0.6);
 }
 
 .dgh-footer-copy {
   font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
+  color: rgba(255,248,240,0.6);
 }
 
 .dgh-footer-links {
@@ -12332,16 +12359,16 @@ main {
 
 .dgh-footer-links a {
   font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
+  color: rgba(255,248,240,0.7);
   text-decoration: none;
 }
 
 .dgh-footer-links a:hover {
-  color: var(--color-text-primary);
+  color: var(--cream);
 }
 
 .dgh-footer-sep {
-  color: var(--color-text-muted);
+  color: rgba(255,248,240,0.3);
 }
 
 .dgh-footer-social {
@@ -12350,12 +12377,12 @@ main {
 }
 
 .dgh-footer-social a {
-  color: var(--color-text-muted);
+  color: rgba(255,248,240,0.6);
   transition: color 0.15s;
 }
 
 .dgh-footer-social a:hover {
-  color: var(--color-text-primary);
+  color: var(--cream);
 }
 
 /* Desktop homepage responsive — tablet */
