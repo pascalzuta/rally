@@ -4004,8 +4004,12 @@ select:focus {
 }
 
 .profile-hero-joined {
-  font-size: 12px;
-  color: var(--color-text-muted);
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #F0EBE3;
+  color: var(--muted-dark);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .profile-hero-stats {
@@ -8053,8 +8057,9 @@ select:focus {
 .chat-list-header-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  justify-content: center;
+  padding: 56px 24px 16px;
+  position: relative;
 }
 
 .chat-list-title {
@@ -8094,6 +8099,12 @@ select:focus {
   cursor: pointer;
   color: var(--color-text-secondary);
   transition: background 0.15s;
+}
+
+.chat-list-header-top .chat-close-btn {
+  position: absolute;
+  right: 24px;
+  top: 56px;
 }
 
 .chat-close-btn:hover {
@@ -8204,7 +8215,7 @@ select:focus {
 }
 
 .chat-card-unread {
-  background: var(--color-accent-bg);
+  background: transparent;
 }
 
 .chat-card-avatar-wrap {
@@ -8274,8 +8285,7 @@ select:focus {
 }
 
 .chat-card-unread .chat-card-time {
-  color: var(--color-accent-primary);
-  font-weight: var(--weight-semibold);
+  color: var(--muted);
 }
 
 .chat-card-context {
@@ -8320,6 +8330,21 @@ select:focus {
   align-items: center;
   justify-content: center;
   padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.chat-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.chat-card-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
   flex-shrink: 0;
 }
 

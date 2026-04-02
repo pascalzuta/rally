@@ -48,6 +48,15 @@ function avatarColor(name: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
+/** Get two-letter initials from a player name (e.g. "Sarah K." → "SK") */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return (name[0] ?? '?').toUpperCase()
+}
+
 export default function Inbox({ currentPlayerId, currentPlayerName, county, tournaments, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<'current' | 'past'>('current')
   const [openConversation, setOpenConversation] = useState<{ playerId: string; playerName: string } | null>(null)
@@ -112,7 +121,7 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
             className="chat-conv-avatar"
             style={{ background: avatarColor(openConversation.playerName) }}
           >
-            {openConversation.playerName[0]?.toUpperCase() ?? '?'}
+            {getInitials(openConversation.playerName)}
           </div>
           <div className="chat-conv-header-info">
             <span className="chat-conv-header-name">{openConversation.playerName}</span>
@@ -167,13 +176,13 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
             className={`chat-tab ${activeTab === 'current' ? 'active' : ''}`}
             onClick={() => setActiveTab('current')}
           >
-            Current Tournament
+            Current
           </button>
           <button
             className={`chat-tab ${activeTab === 'past' ? 'active' : ''}`}
             onClick={() => setActiveTab('past')}
           >
-            Past Tournaments
+            Past
           </button>
         </div>
       </div>
@@ -223,14 +232,17 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
                       className="chat-card-avatar"
                       style={{ background: avatarColor(conv.otherPlayerName) }}
                     >
-                      {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
+                      {getInitials(conv.otherPlayerName)}
                     </div>
                   )}
                 </div>
                 <div className="chat-card-body">
                   <div className="chat-card-row">
                     <span className="chat-card-name">{conv.otherPlayerName}</span>
-                    <span className="chat-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
+                    <span className="chat-card-meta">
+                      <span className="chat-card-time">{formatTime(conv.lastMessage.createdAt)}</span>
+                      {isUnread && <span className="chat-card-dot" />}
+                    </span>
                   </div>
                   {isSystem && (
                     <div className="chat-card-context">How does Rally work?</div>
@@ -248,9 +260,6 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
                       : conv.lastMessage.text}
                   </div>
                 </div>
-                {isUnread && (
-                  <span className="chat-card-badge">{conv.unreadCount}</span>
-                )}
               </button>
             )
           })
