@@ -2543,18 +2543,12 @@ select:focus {
   justify-content: flex-start;
   padding-top: 32px;
   padding-bottom: 40px;
-  background: linear-gradient(170deg, #f0faf0 0%, var(--color-bg-surface) 40%, var(--color-bg-surface) 100%);
+  background: var(--color-bg-surface);
   position: relative;
 }
 
 .signup-screen::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--color-positive-primary);
+  display: none;
 }
 
 .signup-logo {
@@ -7716,6 +7710,7 @@ select:focus {
 .notif-icon {
   font-size: 18px;
   flex-shrink: 0;
+  display: none;
 }
 
 .notif-content {
@@ -7751,6 +7746,82 @@ select:focus {
 @keyframes notifSlide {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* -- Notification Full-Screen Panel -- */
+
+.notif-fullscreen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--color-bg-surface);
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notif-fullscreen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--color-divider);
+  flex-shrink: 0;
+}
+
+.notif-fullscreen-title {
+  font-size: var(--font-title-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.notif-fullscreen-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.notif-empty-full {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: var(--font-body-lg);
+}
+
+.notif-icon-svg {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.notif-urgent .notif-icon-svg {
+  background: var(--color-negative-bg);
+  color: var(--color-negative-primary);
+}
+
+.notif-ready .notif-icon-svg {
+  background: var(--color-positive-bg);
+  color: var(--color-positive-primary);
+}
+
+.notif-pending .notif-icon-svg {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+}
+
+.notif-unread .notif-icon-svg {
+  background: var(--color-info-bg);
+  color: var(--color-info-primary);
 }
 
 /* ================================================
@@ -11452,7 +11523,7 @@ main {
 
 /* Join for free CTA button */
 .btn-join-free {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: var(--color-positive-primary);
   color: #fff;
   font-weight: 700;
   font-size: 18px;
@@ -11460,7 +11531,7 @@ main {
   border: none;
   border-radius: var(--radius-chip);
   height: 56px;
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+  box-shadow: none;
   transition: transform var(--duration-fast) var(--ease-out-expo),
               box-shadow var(--duration-normal) var(--ease-out-quart),
               background var(--duration-normal) ease;
@@ -11469,8 +11540,8 @@ main {
 
 .btn-join-free:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  box-shadow: none;
+  background: #257a4a;
 }
 
 .btn-join-free:active:not(:disabled) {
@@ -12124,7 +12195,7 @@ main {
 
 .dgh-hero {
   padding: 80px var(--space-xl) 60px;
-  background: linear-gradient(180deg, #F8FAF8 0%, var(--color-bg-surface) 100%);
+  background: var(--color-bg-surface);
 }
 
 .dgh-hero-inner {
@@ -12176,7 +12247,7 @@ main {
 
 /* Final CTA */
 .dgh-final-cta {
-  background: linear-gradient(180deg, var(--color-bg-surface) 0%, #F8FAF8 100%);
+  background: var(--color-bg-surface);
   text-align: center;
 }
 
@@ -12293,7 +12364,7 @@ main {
 
 /* Footer */
 .dgh-footer {
-  background: var(--color-bg-primary);
+  background: #F0EBE3;
   border-top: 1px solid var(--color-divider);
   padding: var(--space-xl);
 }
@@ -13407,18 +13478,12 @@ main {
 /* ---- Login page ---- */
 .login-page {
   min-height: 100dvh;
-  background: linear-gradient(170deg, #f0faf0 0%, var(--color-bg-surface) 40%, var(--color-bg-surface) 100%);
+  background: var(--color-bg-surface);
   position: relative;
 }
 
 .login-page::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--color-positive-primary);
+  display: none;
 }
 
 .login-layout {
