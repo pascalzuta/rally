@@ -254,10 +254,10 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       {feedback && <div className="broadcast-feedback">{feedback}</div>}
 
       {/* === INFO BANNER: Clarify Tournament vs Casual === */}
-      <div className="pn-info-banner">
+      <div className="pn-info-banner" style={{ background: '#1B2B4B', color: '#fff', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)' }}>
         <div className="pn-info-banner-content">
-          <span className="pn-info-banner-icon" onClick={() => setShowInfoTooltip(!showInfoTooltip)} role="button" tabIndex={0} aria-label="More info">&#9432;</span>
-          <span className="pn-info-banner-text">See who's available and start a match — Rally handles the scheduling</span>
+          <span className="pn-info-banner-icon" style={{ color: 'rgba(255,255,255,0.7)' }} onClick={() => setShowInfoTooltip(!showInfoTooltip)} role="button" tabIndex={0} aria-label="More info">&#9432;</span>
+          <span className="pn-info-banner-text" style={{ color: '#fff' }}>See who's available and start a match — Rally handles the scheduling</span>
         </div>
         {showInfoTooltip && (
           <div className="pn-info-tooltip">
@@ -272,7 +272,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {incomingOffers.length > 0 && (
         <div className="pn-section">
-          <div className="section-header">Incoming Requests</div>
+          <div className="section-header" style={{ fontFamily: "'DM Serif Display', serif" }}>Incoming Requests</div>
           <div className="offer-list">
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
@@ -291,7 +291,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {outgoingOffers.length > 0 && (
         <div className="pn-section">
-          <div className="section-header">Sent Requests</div>
+          <div className="section-header" style={{ fontFamily: "'DM Serif Display', serif" }}>Sent Requests</div>
           <div className="offer-list">
             {outgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
@@ -323,7 +323,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Cancel Broadcast</button>
         </div>
       ) : !showForm ? (
-        <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
+        <button className="broadcast-play-now-btn btn-primary" onClick={() => setShowForm(true)}>
           <span className="play-now-text">I'm Free to Play</span>
           <span className="play-now-sub">Broadcast your availability — get matched nearby</span>
         </button>
@@ -343,7 +343,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* === CASUAL PLAY SECTION === */}
       <div className="pn-section">
-        <div className="section-header">Who's Free</div>
+        <div className="section-header" style={{ fontFamily: "'DM Serif Display', serif" }}>Who's Free</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
             <div className="pn-empty-title">No players available right now</div>

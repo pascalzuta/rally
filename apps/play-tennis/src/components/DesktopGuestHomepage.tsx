@@ -39,49 +39,63 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
   }
 
   return (
-    <div className="dgh">
+    <div className="dgh" style={{ background: '#FAF5ED' }}>
       {/* Nav */}
-      <nav className="dgh-nav">
+      <nav className="dgh-nav" style={{ background: '#FAF5ED', borderBottom: '1px solid rgba(27,43,75,0.08)' }}>
         <div className="dgh-nav-inner">
-          <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
+          <span style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 700, color: '#1B2B4B', letterSpacing: '-0.01em' }}>rally.</span>
           <div className="dgh-nav-actions">
-            <a href="/blog/" className="dgh-btn-link">The Baseline</a>
-            <a href="/support/" className="dgh-btn-link">Help</a>
-            <button className="dgh-btn-secondary" onClick={handleLogin}>Log in</button>
-            <button className="dgh-btn-primary" onClick={onGetStarted}>Sign up free</button>
+            <a href="/blog/" className="dgh-btn-link" style={{ color: '#1B2B4B' }}>The Baseline</a>
+            <a href="/support/" className="dgh-btn-link" style={{ color: '#1B2B4B' }}>Help</a>
+            <button className="dgh-btn-secondary" onClick={handleLogin} style={{ background: 'transparent', color: '#1B2B4B', border: '1.5px solid #1B2B4B', borderRadius: 999 }}>Log in</button>
+            <button className="dgh-btn-primary" onClick={onGetStarted} style={{ background: '#1B2B4B', color: '#fff', border: 'none', borderRadius: 999 }}>Sign up free</button>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="dgh-hero">
+      <section className="dgh-hero" style={{ background: '#FAF5ED' }}>
         <div className="dgh-hero-inner dgh-hero-centered">
           <div className="dgh-hero-text dgh-hero-text-centered">
-            <h1 className="dgh-hero-title dgh-hero-title-centered">
+            <div style={{ display: 'inline-block', border: '1.5px solid #C9A84C', borderRadius: 999, padding: '4px 16px', fontSize: 12, fontWeight: 600, color: '#C9A84C', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>EST. 2025</div>
+            <h1 className="dgh-hero-title dgh-hero-title-centered" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#1B2B4B' }}>
               Stop texting.<br />Start playing.
             </h1>
-            <p className="dgh-hero-subtitle dgh-hero-subtitle-centered">
+            <p className="dgh-hero-subtitle dgh-hero-subtitle-centered" style={{ color: '#4A5568' }}>
               Rally auto-schedules local tennis matches based on your availability.
               No group chats, no back-and-forth — just show up and play.
             </p>
             <div className="dgh-hero-cta dgh-hero-cta-centered">
-              <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted}>
+              <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted} style={{ background: '#C9A84C', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 600 }}>
                 Sign up free
               </button>
-              <button className="dgh-btn-secondary dgh-btn-large" onClick={handleLogin}>
+              <button className="dgh-btn-secondary dgh-btn-large" onClick={handleLogin} style={{ background: 'transparent', color: '#1B2B4B', border: '1.5px solid #1B2B4B', borderRadius: 999 }}>
                 Log in
               </button>
+            </div>
+            {/* Stat counter row */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 0, marginTop: 40, borderRadius: 12, overflow: 'hidden', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
+              {[
+                { num: '2,400+', label: 'Players' },
+                { num: '180+', label: 'Counties' },
+                { num: '80%', label: 'Auto-Sched' },
+              ].map((s, i) => (
+                <div key={i} style={{ flex: 1, background: '#1B2B4B', padding: '18px 0', textAlign: 'center' as const, borderRight: i < 2 ? '1px solid rgba(255,255,255,0.12)' : 'none' }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums', fontFamily: 'monospace' }}>{s.num}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* Story 1: The Problem */}
-      <section className="dgh-section dgh-story">
+      <section className="dgh-section dgh-story" style={{ background: '#FAF5ED' }}>
         <div className="dgh-section-inner">
           <div className="dgh-story-block">
             <div className="dgh-story-text">
-              <h2 className="dgh-story-heading">Scheduling tennis shouldn't take 20 messages</h2>
+              <h2 className="dgh-story-heading" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#1B2B4B' }}>Scheduling tennis shouldn't take 20 messages</h2>
               <p className="dgh-story-desc">Rally handles the back-and-forth for you.</p>
             </div>
             <div className="dgh-story-visual">
@@ -99,11 +113,11 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
       </section>
 
       {/* Story 2: The Solution */}
-      <section className="dgh-section dgh-story dgh-story-alt">
+      <section className="dgh-section dgh-story dgh-story-alt" style={{ background: '#F5EFE3' }}>
         <div className="dgh-section-inner">
           <div className="dgh-story-block dgh-story-block-reverse">
             <div className="dgh-story-text">
-              <h2 className="dgh-story-heading">Matches are scheduled automatically</h2>
+              <h2 className="dgh-story-heading" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#1B2B4B' }}>Matches are scheduled automatically</h2>
               <p className="dgh-story-desc">Set your availability once. Rally finds overlapping times and confirms matches for you.</p>
             </div>
             <div className="dgh-story-visual">
@@ -130,11 +144,11 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
       </section>
 
       {/* Story 3: Fair Matchmaking */}
-      <section className="dgh-section dgh-story">
+      <section className="dgh-section dgh-story" style={{ background: '#FAF5ED' }}>
         <div className="dgh-section-inner">
           <div className="dgh-story-block">
             <div className="dgh-story-text">
-              <h2 className="dgh-story-heading">Every match, a fair fight</h2>
+              <h2 className="dgh-story-heading" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#1B2B4B' }}>Every match, a fair fight</h2>
               <p className="dgh-story-desc">Rally rates your real game — so every opponent is a genuine challenge.</p>
             </div>
             <div className="dgh-story-visual">
@@ -163,17 +177,17 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
       </section>
 
       {/* Final CTA */}
-      <section className="dgh-section dgh-final-cta">
+      <section className="dgh-section dgh-final-cta" style={{ background: '#1B2B4B' }}>
         <div className="dgh-section-inner">
-          <h2 className="dgh-cta-title">Ready to play?</h2>
-          <p className="dgh-cta-subtitle">
+          <h2 className="dgh-cta-title" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#fff' }}>Ready to play?</h2>
+          <p className="dgh-cta-subtitle" style={{ color: 'rgba(255,255,255,0.7)' }}>
             Join Rally today and never waste time scheduling again.
           </p>
           <div className="dgh-hero-cta dgh-hero-cta-centered">
-            <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted}>
+            <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted} style={{ background: '#C9A84C', color: '#fff', border: 'none', borderRadius: 999, fontWeight: 600 }}>
               Sign up free
             </button>
-            <button className="dgh-btn-secondary dgh-btn-large" onClick={handleLogin}>
+            <button className="dgh-btn-secondary dgh-btn-large" onClick={handleLogin} style={{ background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: 999 }}>
               Log in
             </button>
           </div>
@@ -181,11 +195,11 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
       </section>
 
       {/* Blog Teaser */}
-      <section className="dgh-blog-teaser">
+      <section className="dgh-blog-teaser" style={{ background: '#F5EFE3' }}>
         <div className="dgh-blog-teaser-inner">
           <div className="dgh-blog-teaser-header">
             <span className="dgh-blog-teaser-label">From the blog</span>
-            <h2 className="dgh-blog-teaser-title">The Baseline</h2>
+            <h2 className="dgh-blog-teaser-title" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#1B2B4B' }}>The Baseline</h2>
             <p className="dgh-blog-teaser-subtitle">Technique breakdowns, match analytics, and the science of winning.</p>
           </div>
           <div className="dgh-blog-teaser-grid">

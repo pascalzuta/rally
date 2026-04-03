@@ -60,13 +60,13 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
         const y = PAD_Y + chartH - ((v - minR) / range) * chartH
         return (
           <g key={v}>
-            <line x1={PAD_X} y1={y} x2={W - 10} y2={y} stroke="var(--color-divider)" strokeWidth="0.5" />
-            <text x={PAD_X - 4} y={y + 3} textAnchor="end" fontSize="8" fill="var(--color-text-secondary)">{v}</text>
+            <line x1={PAD_X} y1={y} x2={W - 10} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+            <text x={PAD_X - 4} y={y + 3} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.6)">{v}</text>
           </g>
         )
       })}
       {xLabelIndices.map(i => (
-        <text key={i} x={pathPoints[i].x} y={H - 6} textAnchor="middle" fontSize="7" fill="var(--color-text-secondary)">
+        <text key={i} x={pathPoints[i].x} y={H - 6} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.6)">
           {i === 0 ? 'Start' : `Match ${i}`}
         </text>
       ))}
@@ -248,7 +248,10 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
               <div className="rating-hero-number">
                 {Math.round(rating.rating)}
                 {weeklyTrend !== 0 && (
-                  <span className={`rating-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
+                  <span
+                    className={`rating-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}
+                    style={weeklyTrend > 0 ? { background: 'rgba(46, 139, 87, 0.12)', padding: '2px 6px', borderRadius: 6 } : undefined}
+                  >
                     {weeklyTrend > 0 ? ' ▲' : ' ▼'}
                   </span>
                 )}
@@ -268,7 +271,10 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                 </span>
               )}
               {weeklyTrend !== 0 && (
-                <span className={`rating-hero-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
+                <span
+                  className={`rating-hero-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}
+                  style={weeklyTrend > 0 ? { background: 'rgba(46, 139, 87, 0.12)', padding: '2px 8px', borderRadius: 8, display: 'inline-block' } : undefined}
+                >
                   {weeklyTrend > 0 ? '+' : ''}{weeklyTrend} this week
                 </span>
               )}
@@ -289,22 +295,22 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           {/* Your Record */}
           <div className="card profile-section">
             <h3 className="profile-section-title"><span>Your Record</span></h3>
-            <div className="performance-grid">
-              <div className="performance-item">
-                <div className="performance-value">{totalMatches}</div>
-                <div className="performance-label">Matches</div>
+            <div className="performance-grid" style={{ background: 'var(--color-navy, #1B2A4A)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)' }}>
+              <div className="performance-item" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div className="performance-value" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>{totalMatches}</div>
+                <div className="performance-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Matches</div>
               </div>
-              <div className="performance-item">
-                <div className="performance-value">{wins}</div>
-                <div className="performance-label">Wins</div>
+              <div className="performance-item" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div className="performance-value" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: 'var(--color-positive-primary)' }}>{wins}</div>
+                <div className="performance-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Wins</div>
               </div>
-              <div className="performance-item">
-                <div className="performance-value">{losses}</div>
-                <div className="performance-label">Losses</div>
+              <div className="performance-item" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div className="performance-value" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: 'var(--color-negative-primary, #e74c3c)' }}>{losses}</div>
+                <div className="performance-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Losses</div>
               </div>
-              <div className="performance-item">
-                <div className="performance-value">{winRate}%</div>
-                <div className="performance-label">Win Rate</div>
+              <div className="performance-item" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div className="performance-value" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", color: '#fff' }}>{winRate}%</div>
+                <div className="performance-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Win Rate</div>
               </div>
             </div>
           </div>
@@ -315,7 +321,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             {trophies.length > 0 ? (
               <div className="trophy-grid">
                 {trophies.map(trophy => (
-                  <button key={trophy.id} className="trophy-cell" onClick={() => setSelectedTrophy(trophy)}>
+                  <button key={trophy.id} className="trophy-cell earned" onClick={() => setSelectedTrophy(trophy)} style={{ borderColor: '#C5993E' }}>
                     <TrophyIcon tier={trophy.tier} size={40} />
                     <div className="trophy-cell-label">{TROPHY_LABEL[trophy.tier]}</div>
                   </button>
@@ -348,7 +354,9 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           {/* Rating Over Time */}
           <div className="card profile-section">
             <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
-            <RatingChart history={ratingHistory} currentRating={rating.rating} />
+            <div style={{ background: 'var(--color-navy, #1B2A4A)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md) var(--space-sm)' }}>
+              <RatingChart history={ratingHistory} currentRating={rating.rating} />
+            </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
             {completedTournaments.length > 0 && (
               <div className="tournament-history">

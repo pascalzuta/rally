@@ -368,7 +368,7 @@ export default function App() {
       <div className="screen">
         <nav className="top-nav">
           <div className="top-nav-logo" onClick={() => navigate(ROUTES.HOME)} style={{ cursor: 'pointer' }}>
-              <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
+              <span className="rally-wordmark">rally.</span>
             </div>
           {isStaging && user?.email && (
             <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -603,7 +603,7 @@ export default function App() {
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
-            <span className="tab-text">Quick Play</span>
+            <span className="tab-text">Play Now</span>
           </button>
           <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigate(ROUTES.PROFILE)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

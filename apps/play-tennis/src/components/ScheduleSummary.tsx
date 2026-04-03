@@ -161,10 +161,10 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         {/* Progress bar */}
         <div className="schedule-progress-section">
           <div className="schedule-progress-bar-track">
-            <div className="schedule-progress-bar-fill" style={{ width: `${Math.max(playedPct, 2)}%` }} />
+            <div className="schedule-progress-bar-fill" style={{ width: `${Math.max(playedPct, 2)}%`, background: '#C5993E' }} />
           </div>
           <div className="schedule-progress-meta">
-            <span className="schedule-progress-count">{completedMatchCount} of {totalMatches} played</span>
+            <span className="schedule-progress-count" style={{ fontFamily: "'DM Serif Display', serif" }}>{completedMatchCount} of {totalMatches} played</span>
             {estimatedEndDate && <span className="schedule-progress-est">Est. finish {estimatedEndDate}</span>}
           </div>
         </div>
@@ -186,20 +186,20 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
               <div className="schedule-todo-rows">
                 <div className="schedule-todo-row">
                   <span className="schedule-todo-dot" style={{ background: 'var(--color-positive-primary)' }} />
-                  <span className="schedule-todo-count">{myConfirmed}</span>
+                  <span className="schedule-todo-count" style={{ fontFamily: "'DM Serif Display', serif" }}>{myConfirmed}</span>
                   <span className="schedule-todo-label">Confirmed</span>
                 </div>
                 {myNeedsAccept > 0 && (
                   <div className="schedule-todo-row">
-                    <span className="schedule-todo-dot" style={{ background: 'var(--color-accent-primary)' }} />
-                    <span className="schedule-todo-count">{myNeedsAccept}</span>
+                    <span className="schedule-todo-dot" style={{ background: '#3B82F6' }} />
+                    <span className="schedule-todo-count" style={{ fontFamily: "'DM Serif Display', serif" }}>{myNeedsAccept}</span>
                     <span className="schedule-todo-label">Confirm your time</span>
                   </div>
                 )}
                 {myNeedsNegotiation > 0 && (
                   <div className="schedule-todo-row">
-                    <span className="schedule-todo-dot" style={{ background: 'var(--color-warning-primary, #F59E0B)' }} />
-                    <span className="schedule-todo-count">{myNeedsNegotiation}</span>
+                    <span className="schedule-todo-dot" style={{ background: '#C5993E' }} />
+                    <span className="schedule-todo-count" style={{ fontFamily: "'DM Serif Display', serif" }}>{myNeedsNegotiation}</span>
                     <span className="schedule-todo-label">Need scheduling</span>
                   </div>
                 )}
@@ -274,7 +274,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
       {/* Week-by-week agenda */}
       {weekGroups.size > 0 && (
         <div className="schedule-agenda">
-          <div className="section-header">Schedule</div>
+          <div className="section-header" style={{ fontFamily: "'DM Serif Display', serif" }}>Schedule</div>
           {[...weekGroups.entries()].map(([week, { matches, weekStart }]) => (
             <div key={week} className="schedule-week">
               <div className="schedule-week-header">

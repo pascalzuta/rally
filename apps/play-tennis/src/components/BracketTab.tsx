@@ -195,9 +195,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   if (tournament.status === 'setup' || tournament.status === 'scheduling') {
     return (
       <div className="bracket-tab">
-        <div className="bracket-tab-header">
-          <h2>{tournament.name}</h2>
-          <div className="bracket-tab-meta">
+        <div className="bracket-tab-header" style={{ background: '#1B2B4B', color: '#fff', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)', marginBottom: 'var(--space-sm)' }}>
+          <h2 style={{ color: '#fff', fontFamily: "'DM Serif Display', serif" }}>{tournament.name}</h2>
+          <div className="bracket-tab-meta" style={{ color: 'rgba(255,255,255,0.7)' }}>
             {tournament.status === 'scheduling' ? 'Generating your schedule...' : `Setting up · ${tournament.players.length} players`}
           </div>
         </div>
@@ -422,6 +422,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         key={match.id}
         ref={el => { if (el) matchRefs.current.set(match.id, el); else matchRefs.current.delete(match.id) }}
         className={`match-card ${match.completed ? 'completed' : ''} ${canScore ? 'scoreable' : ''} ${isMyMatch && !match.completed ? 'my-match' : ''} ${isFinal ? 'match-card-final' : ''} ${onWinnerPath ? 'winner-path' : ''} ${scheduleStatusClass(match)} ${highlightedMatchId === match.id ? 'match-card-highlighted' : ''}`}
+        style={{ borderLeft: `3px solid ${match.schedule?.schedulingTier === 'auto' || match.schedule?.status === 'confirmed' ? '#22C55E' : match.schedule?.schedulingTier === 'needs-accept' || match.schedule?.status === 'proposed' ? '#C5993E' : '#C5993E'}` }}
         onClick={() => handleMatchClick(match, !!canScore)}
       >
         <>
@@ -620,9 +621,9 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   return (
     <div className="bracket-tab">
-      <div className="bracket-tab-header">
-        <h2>{tournament.name}</h2>
-        <div className="bracket-tab-meta">
+      <div className="bracket-tab-header" style={{ background: '#1B2B4B', color: '#fff', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)', marginBottom: 'var(--space-sm)' }}>
+        <h2 style={{ color: '#fff', fontFamily: "'DM Serif Display', serif" }}>{tournament.name}</h2>
+        <div className="bracket-tab-meta" style={{ color: 'rgba(255,255,255,0.7)' }}>
           {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}
         </div>
       </div>
@@ -733,11 +734,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             )}
             <div className="completed-stats">
               <div className="completed-stat">
-                <div className="completed-stat-value">{tournament.players.length}</div>
+                <div className="completed-stat-value" style={{ fontFamily: "'DM Serif Display', serif" }}>{tournament.players.length}</div>
                 <div className="completed-stat-label">Players</div>
               </div>
               <div className="completed-stat">
-                <div className="completed-stat-value">{tournament.matches.filter(m => m.completed).length}</div>
+                <div className="completed-stat-value" style={{ fontFamily: "'DM Serif Display', serif" }}>{tournament.matches.filter(m => m.completed).length}</div>
                 <div className="completed-stat-label">Matches</div>
               </div>
             </div>
@@ -802,7 +803,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   .sort((a, b) => getStablePriority(a) - getStablePriority(b))
                 return (
                   <div key={round} className={`round ${isFinalRound ? 'round-final' : ''}`}>
-                    <h3 className="round-label">{roundLabel(round, rounds.length)}</h3>
+                    <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>{roundLabel(round, rounds.length)}</h3>
                     {roundMatches.map(m => renderMatchCard(m, isFinalRound))}
                     {roundIdx < rounds.length - 1 && (
                       <div className="bracket-connector">
@@ -816,14 +817,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               <>
                 {/* Group phase matches */}
                 <div className="round">
-                  <h3 className="round-label">Group Stage</h3>
+                  <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Group Stage</h3>
                   {groupMatches.filter(filterMatch).map(m => renderMatchCard(m))}
                 </div>
 
                 {/* Group standings inline */}
                 {groupMatches.some(m => m.completed) && (
                   <div className="group-standings-inline">
-                    <h3 className="round-label">Standings</h3>
+                    <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Standings</h3>
                     <table className="group-standings-table">
                       <thead>
                         <tr>
@@ -858,14 +859,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {groupComplete && knockoutMatches.length > 0 && (
                   <>
                     <div className="round">
-                      <h3 className="round-label">Semifinals</h3>
+                      <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Semifinals</h3>
                       {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => getStablePriority(a) - getStablePriority(b)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
                     </div>
                     <div className="round round-final">
-                      <h3 className="round-label">Final</h3>
+                      <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Final</h3>
                       {knockoutMatches.filter(m => m.round === 3).filter(filterMatch).map(m => renderMatchCard(m, true))}
                     </div>
                   </>
@@ -895,7 +896,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
                 {groupMatches.some(m => m.completed) && (
                   <div className="group-standings-inline">
-                    <h3 className="round-label">Standings</h3>
+                    <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Standings</h3>
                     <table className="group-standings-table">
                       <thead>
                         <tr>
@@ -929,14 +930,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 {groupComplete && knockoutMatches.length > 0 && (
                   <>
                     <div className="round">
-                      <h3 className="round-label">Semifinals</h3>
+                      <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Semifinals</h3>
                       {knockoutMatches.filter(m => m.round === 2).filter(filterMatch).sort((a, b) => getStablePriority(a) - getStablePriority(b)).map(m => renderMatchCard(m))}
                     </div>
                     <div className="bracket-connector">
                       <div className="bracket-connector-line" />
                     </div>
                     <div className="round round-final">
-                      <h3 className="round-label">Final</h3>
+                      <h3 className="round-label" style={{ color: '#C5993E', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.75rem', fontWeight: 600 }}>Final</h3>
                       {knockoutMatches.filter(m => m.round === 3).filter(filterMatch).map(m => renderMatchCard(m, true))}
                     </div>
                   </>

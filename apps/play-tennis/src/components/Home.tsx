@@ -234,18 +234,18 @@ export default function Home({
         <div className="leaderboard-teaser-list">
           {topPlayers.map(entry => (
             <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
-              <span className="leaderboard-rank">#{entry.rank}</span>
+              <span className="leaderboard-rank" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>#{entry.rank}</span>
               <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
-              <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
+              <span className="leaderboard-rating" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>{Math.round(entry.rating)}</span>
             </div>
           ))}
           {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
             <>
               <div className="leaderboard-teaser-divider" />
               <div className="leaderboard-teaser-row is-me">
-                <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
+                <span className="leaderboard-rank" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>#{myLeaderboardEntry.rank}</span>
                 <span className="leaderboard-name">You</span>
-                <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
+                <span className="leaderboard-rating" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>{Math.round(myLeaderboardEntry.rating)}</span>
               </div>
             </>
           )}
@@ -253,9 +253,9 @@ export default function Home({
             <>
               <div className="leaderboard-teaser-divider" />
               <div className="leaderboard-teaser-row is-me">
-                <span className="leaderboard-rank">—</span>
+                <span className="leaderboard-rank" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>—</span>
                 <span className="leaderboard-name">You</span>
-                <span className="leaderboard-rating">{Math.round(myRating.rating)}</span>
+                <span className="leaderboard-rating" style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}>{Math.round(myRating.rating)}</span>
               </div>
             </>
           )}
