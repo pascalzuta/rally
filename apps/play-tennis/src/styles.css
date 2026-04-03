@@ -12187,7 +12187,7 @@ main {
 }
 
 .dgh-btn-primary.dgh-btn-large {
-  padding: 14px 36px;
+  padding: 16px 40px;
   font-size: var(--font-body-lg);
   border-radius: 12px;
 }
@@ -12223,7 +12223,7 @@ main {
 }
 
 .dgh-hero {
-  padding: 80px var(--space-xl) 60px;
+  padding: 100px var(--space-xl) 80px;
   background: var(--color-bg-surface);
 }
 
@@ -12233,10 +12233,10 @@ main {
 }
 
 .dgh-hero-title {
-  font-size: 3.5rem;
+  font-size: 4.5rem;
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   color: var(--color-text-primary);
   margin: 0 0 var(--space-xl) 0;
 }
@@ -12245,8 +12245,8 @@ main {
   font-size: 1.25rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
-  margin: 0 0 var(--space-xxl) 0;
-  max-width: 560px;
+  margin: 0 0 40px 0;
+  max-width: 520px;
 }
 
 .dgh-hero-cta {
@@ -12257,7 +12257,7 @@ main {
 }
 
 .dgh-section {
-  padding: 80px var(--space-xl);
+  padding: 100px var(--space-xl);
 }
 
 .dgh-section-inner {
@@ -12281,9 +12281,9 @@ main {
 }
 
 .dgh-cta-title {
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   color: var(--color-text-primary);
   margin: 0 0 var(--space-md) 0;
 }
@@ -12296,10 +12296,10 @@ main {
 
 /* Blog Teaser */
 .dgh-blog-teaser {
-  padding: 80px var(--space-xl) 80px;
+  padding: 100px var(--space-xl) 100px;
   background: var(--color-bg-primary);
   border-top: 1px solid var(--color-divider);
-  margin-top: 40px;
+  margin-top: 60px;
 }
 
 .dgh-blog-teaser-inner {
@@ -12465,23 +12465,23 @@ main {
   }
 
   .dgh-hero {
-    padding: 60px var(--space-lg) 48px;
+    padding: 72px var(--space-lg) 56px;
   }
 
   .dgh-hero-title {
-    font-size: 2.5rem;
+    font-size: 3rem;
   }
 
   .dgh-section {
-    padding: 60px var(--space-lg);
+    padding: 72px var(--space-lg);
   }
 
   .dgh-section-title {
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
 
   .dgh-cta-title {
-    font-size: 2.25rem;
+    font-size: 2.5rem;
   }
 
   .dgh-footer-inner {
@@ -12526,12 +12526,12 @@ main {
   }
 
   .dgh-hero {
-    padding: 40px var(--space-lg) 32px;
+    padding: 48px var(--space-lg) 40px;
   }
 
   .dgh-hero-title {
-    font-size: 2rem;
-    letter-spacing: -0.02em;
+    font-size: 2.5rem;
+    letter-spacing: -0.03em;
   }
 
   .dgh-hero-subtitle {
@@ -12540,19 +12540,19 @@ main {
   }
 
   .dgh-section {
-    padding: 48px var(--space-lg);
+    padding: 56px var(--space-lg);
   }
 
   .dgh-section-title {
-    font-size: 1.625rem;
+    font-size: 1.75rem;
   }
 
   .dgh-final-cta {
-    padding: 60px var(--space-lg);
+    padding: 64px var(--space-lg);
   }
 
   .dgh-cta-title {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
   .dgh-cta-subtitle {
@@ -12613,14 +12613,14 @@ main {
 }
 
 .dgh-btn-secondary.dgh-btn-large {
-  padding: 14px 36px;
+  padding: 16px 40px;
   font-size: var(--font-body-lg);
   border-radius: 12px;
 }
 
 /* Story Sections */
 .dgh-story {
-  padding: 60px var(--space-xl);
+  padding: 80px var(--space-xl);
 }
 
 .dgh-story-alt {
@@ -12645,12 +12645,12 @@ main {
 }
 
 .dgh-story-heading {
-  font-size: 2.25rem;
+  font-size: 2.75rem;
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
   color: var(--color-text-primary);
-  margin: 0 0 var(--space-md) 0;
+  margin: 0 0 var(--space-lg) 0;
 }
 
 .dgh-story-desc {
@@ -12925,7 +12925,7 @@ main {
   }
 
   .dgh-story-heading {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
   .dgh-story-chat {
@@ -12944,7 +12944,7 @@ main {
 /* Story sections responsive — mobile */
 @media (max-width: 480px) {
   .dgh-story-heading {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 
   .dgh-story-desc {
