@@ -136,7 +136,7 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
-    county: profile.county.toLowerCase(),
+    county: profile.county,
     joinedAt: new Date().toISOString(),
   }
   lobby.push(entry)
@@ -1368,7 +1368,7 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
     if (client) {
       const rows = tournaments.map(t => ({
         id: t.id,
-        county: t.county.toLowerCase(),
+        county: t.county,
         data: t,
       }))
       const { error } = await client.from('tournaments').upsert(rows, { onConflict: 'id' })
@@ -3061,7 +3061,7 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
   for (const name of toAdd) {
     const id = generateId()
     const playerIdx = TEST_PLAYERS.indexOf(name)
-    const entry: LobbyEntry = { playerId: id, playerName: name, county: normalizedCounty, joinedAt: new Date().toISOString() }
+    const entry: LobbyEntry = { playerId: id, playerName: name, county, joinedAt: new Date().toISOString() }
     lobby.push(entry)
 
     // Set up their rating (keyed by player ID)

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { titleCase } from '../dateUtils'
 import { Tournament, Match, MatchReaction } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, checkAutoAcceptScores, getPendingFeedback, clearPendingFeedback, getPlayerFeedbackForMatch } from '../store'
 import { getMatchCardView } from '../matchCardModel'
@@ -196,7 +197,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     return (
       <div className="bracket-tab">
         <div className="bracket-tab-header">
-          <h2>{tournament.name}</h2>
+          <h2>{titleCase(tournament.name)}</h2>
           <div className="bracket-tab-meta">
             {tournament.status === 'scheduling' ? 'Generating your schedule...' : `Setting up · ${tournament.players.length} players`}
           </div>
@@ -621,7 +622,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   return (
     <div className="bracket-tab">
       <div className="bracket-tab-header">
-        <h2>{tournament.name}</h2>
+        <h2>{titleCase(tournament.name)}</h2>
         <div className="bracket-tab-meta">
           {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}
         </div>
