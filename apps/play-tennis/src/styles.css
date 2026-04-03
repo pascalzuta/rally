@@ -1,5 +1,7 @@
 /* ================================================
-   Polymarket-Inspired Design System for Rally
+   Rally Design System — Athletic Clarity
+   Friendly, Effortless, Precise
+   Strava warmth × Robinhood confidence
    ================================================ */
 
 * {
@@ -11,43 +13,48 @@
 :root {
   color-scheme: light;
 
-  /* Backgrounds */
-  --color-bg-primary: #F6F7F9;
+  /* ── Brand ── */
+  --color-brand: #16a34a;
+  --color-brand-dark: #15803d;
+  --color-brand-light: #22c55e;
+
+  /* ── Backgrounds — warm, not clinical ── */
+  --color-bg-primary: #F8F7F4;
   --color-bg-surface: #FFFFFF;
 
-  /* Text */
-  --color-text-primary: #111111;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  /* ── Text — green-tinted darks for warmth ── */
+  --color-text-primary: #1A1D1F;
+  --color-text-secondary: #6F7577;
+  --color-text-muted: #A3A8AB;
 
-  /* Dividers */
-  --color-divider: #E5E7EB;
+  /* ── Dividers — barely there ── */
+  --color-divider: #EAECEA;
 
-  /* Positive (accept, confirm, success) */
-  --color-positive-bg: #E6F6EC;
-  --color-positive-primary: #1F9D55;
+  /* ── Positive (accept, confirm, success) ── */
+  --color-positive-bg: #ECFDF3;
+  --color-positive-primary: #16a34a;
 
-  /* Negative (cancel, decline, danger) */
-  --color-negative-bg: #FDECEC;
-  --color-negative-primary: #D64545;
+  /* ── Negative (cancel, decline, danger) ── */
+  --color-negative-bg: #FEF2F2;
+  --color-negative-primary: #DC2626;
 
-  /* Neutral */
-  --color-neutral-bg: #F1F3F5;
-  --color-neutral-primary: #374151;
+  /* ── Neutral ── */
+  --color-neutral-bg: #F3F2EF;
+  --color-neutral-primary: #3D4043;
 
-  /* Accent (blue - for info, proposals) */
-  --color-accent-bg: #DCE7FF;
-  --color-accent-primary: #2A5BD7;
+  /* ── Accent (blue — proposals, info) ── */
+  --color-accent-bg: #EFF6FF;
+  --color-accent-primary: #2563EB;
 
-  /* Warning */
-  --color-warning-bg: #FEF3C7;
+  /* ── Warning ── */
+  --color-warning-bg: #FFFBEB;
   --color-warning-primary: #D97706;
 
-  /* Purple (attention/pending) */
-  --color-purple-bg: #F0EAFF;
+  /* ── Purple (attention/pending) ── */
+  --color-purple-bg: #F5F3FF;
   --color-purple-primary: #7C3AED;
 
-  /* Typography */
+  /* ── Typography — Plus Jakarta Sans + Space Grotesk ── */
   --font-title-lg: 28px;
   --font-title-md: 22px;
   --font-title-sm: 18px;
@@ -60,7 +67,7 @@
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* Spacing */
+  /* ── Spacing — generous, breathable ── */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 12px;
@@ -68,33 +75,33 @@
   --space-xl: 24px;
   --space-xxl: 32px;
 
-  /* Border Radius */
-  --radius-card: 16px;
-  --radius-button: 10px;
+  /* ── Border Radius — softer, more organic ── */
+  --radius-card: 20px;
+  --radius-button: 12px;
   --radius-chip: 999px;
-  --radius-sm: 4px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  --radius-sm: 6px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
 
-  /* Additional spacing */
+  /* ── Additional spacing ── */
   --space-3xl: 48px;
 
-  /* Additional typography */
+  /* ── Additional typography ── */
   --font-caption: 13px;
   --font-micro: 11px;
   --font-heading-lg: 24px;
   --font-hero: 40px;
   --font-hero-sm: 36px;
 
-  /* Shadow */
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-  --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
-  --shadow-focus: 0 0 0 3px rgba(42, 91, 215, 0.12);
+  /* ── Shadows — warm, green-tinted for brand cohesion ── */
+  --shadow: 0 1px 3px rgba(22, 163, 74, 0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(22, 163, 74, 0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 40px rgba(22, 163, 74, 0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-hover: 0 8px 24px rgba(22, 163, 74, 0.10), 0 2px 6px rgba(0,0,0,0.04);
+  --shadow-focus: 0 0 0 3px rgba(22, 163, 74, 0.16);
 
-  /* Z-index scale */
+  /* ── Z-index scale ── */
   --z-base: 1;
   --z-sticky: 10;
   --z-dropdown: 100;
@@ -102,29 +109,29 @@
   --z-modal: 1000;
   --z-toast: 2000;
 
-  /* Additional color aliases */
+  /* ── Color aliases ── */
   --color-surface: var(--color-bg-surface);
-  --color-surface-alt: #F0F0F0;
+  --color-surface-alt: #F0EFEC;
   --color-bg: var(--color-bg-primary);
   --color-bg-secondary: var(--color-neutral-bg);
   --color-surface-primary: var(--color-bg-surface);
   --color-surface-raised: var(--color-bg-surface);
   --color-border-secondary: var(--color-divider);
   --color-accent-blue: #2563EB;
-  --color-primary: var(--color-accent-primary);
+  --color-primary: var(--color-brand);
 
-  /* Weight alias */
+  /* ── Weight alias ── */
   --weight-normal: var(--weight-regular);
 
-  /* Font aliases */
+  /* ── Font aliases ── */
   --font-body-xs: var(--font-micro);
   --font-body: var(--font-body-md);
-  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  --font-mono: 'Space Grotesk', 'SF Mono', 'Fira Code', monospace;
 
-  /* Motion – unified timing tokens */
+  /* ── Motion — smooth, confident, never bouncy ── */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-instant: 100ms;
   --duration-fast: 150ms;
   --duration-normal: 250ms;
@@ -132,14 +139,15 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100dvh;
   font-size: var(--font-body-md);
-  line-height: 1.5;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
 }
 
 .app {
@@ -160,9 +168,9 @@ body {
 /* ================================================
    Typography Utility Classes
    ================================================ */
-.text-title-lg { font-size: var(--font-title-lg); font-weight: var(--weight-bold); line-height: 1.2; }
-.text-title-md { font-size: var(--font-title-md); font-weight: var(--weight-semibold); line-height: 1.3; }
-.text-title-sm { font-size: var(--font-title-sm); font-weight: var(--weight-semibold); line-height: 1.3; }
+.text-title-lg { font-size: var(--font-title-lg); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: -0.025em; }
+.text-title-md { font-size: var(--font-title-md); font-weight: var(--weight-semibold); line-height: 1.25; letter-spacing: -0.02em; }
+.text-title-sm { font-size: var(--font-title-sm); font-weight: var(--weight-semibold); line-height: 1.3; letter-spacing: -0.015em; }
 .text-body-lg { font-size: var(--font-body-lg); font-weight: var(--weight-regular); line-height: 1.5; }
 .text-body-md { font-size: var(--font-body-md); font-weight: var(--weight-regular); line-height: 1.5; }
 .text-body-sm { font-size: var(--font-body-sm); font-weight: var(--weight-medium); line-height: 1.4; }
@@ -202,6 +210,7 @@ body {
 .header h1 {
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
 }
 
 .header-row {
@@ -227,7 +236,8 @@ body {
 .top-nav {
   min-height: 56px;
   background: var(--color-bg-surface);
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid transparent;
+  box-shadow: 0 1px 0 var(--color-divider);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -263,7 +273,7 @@ body {
   font-size: var(--font-title-md);
   font-weight: 800;
   color: var(--color-text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.04em;
 }
 
 .top-nav-actions {
@@ -297,10 +307,10 @@ body {
 .bottom-tabs {
   flex-shrink: 0;
   width: 100%;
-  height: 50px;
+  height: 52px;
   display: flex;
   background: var(--color-bg-surface);
-  box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
+  border-top: 1px solid var(--color-divider);
   z-index: var(--z-dropdown);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -323,7 +333,7 @@ body {
 }
 
 .bottom-tab.active {
-  color: var(--color-accent-primary);
+  color: var(--color-brand);
   font-weight: var(--weight-semibold);
 }
 
@@ -334,9 +344,9 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 24px;
-  height: 2px;
-  background: var(--color-accent-primary);
-  border-radius: 0 0 2px 2px;
+  height: 2.5px;
+  background: var(--color-brand);
+  border-radius: 0 0 3px 3px;
 }
 
 .tab-icon {
@@ -392,22 +402,23 @@ body {
 }
 
 .btn-primary {
-  background: var(--color-positive-bg);
-  color: var(--color-positive-primary);
+  background: var(--color-brand);
+  color: #FFFFFF;
   border-color: transparent;
   font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
 }
 
 .btn-primary:hover {
-  background: var(--color-positive-bg);
+  background: var(--color-brand-dark);
 }
 
 .btn-primary:active {
-  background: var(--color-positive-bg);
+  background: var(--color-brand-dark);
 }
 
 .btn-primary:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
 }
@@ -447,7 +458,7 @@ body {
 .btn-link {
   background: none;
   border: none;
-  color: var(--color-accent-primary);
+  color: var(--color-brand);
   font-size: var(--font-caption);
   cursor: pointer;
   padding: var(--space-xs) 0;
@@ -498,12 +509,12 @@ body {
 .btn-ghost {
   background: none;
   border: none;
-  color: var(--color-accent-primary);
+  color: var(--color-brand);
   padding: 0 var(--space-sm);
 }
 
 .btn-ghost:hover {
-  background: var(--color-accent-bg);
+  background: var(--color-positive-bg);
 }
 
 .btn-loading {
@@ -649,10 +660,11 @@ body {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: 20px;
-  box-shadow: var(--shadow);
+  border: 1px solid var(--color-divider);
   cursor: pointer;
   position: relative;
   transition: transform var(--duration-fast) var(--ease-out-expo),
+              border-color var(--duration-normal) var(--ease-out-quart),
               box-shadow var(--duration-normal) var(--ease-out-quart);
   will-change: transform;
   border: none;
@@ -1008,7 +1020,7 @@ input:hover:not(:focus):not(:disabled) {
 }
 
 input:focus {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-brand);
   box-shadow: var(--shadow-focus);
 }
 
@@ -1041,7 +1053,7 @@ select:hover:not(:focus):not(:disabled) {
 }
 
 select:focus {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-brand);
   box-shadow: var(--shadow-focus);
 }
 
@@ -1085,13 +1097,13 @@ select:focus {
 }
 
 .radio-card:focus-within {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-brand);
   box-shadow: var(--shadow-focus);
 }
 
 .radio-card.selected {
-  border-color: var(--color-accent-primary);
-  background: var(--color-accent-bg);
+  border-color: var(--color-brand);
+  background: var(--color-positive-bg);
 }
 
 /* ================================================
@@ -2005,7 +2017,7 @@ select:focus {
 }
 
 .score-input:focus {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-brand);
   box-shadow: var(--shadow-focus);
 }
 
@@ -3446,7 +3458,7 @@ select:focus {
 
 .formation-choice-options .btn.btn-primary {
   font-size: 1.05rem;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
 }
 
 .formation-choice-options .formation-cta-secondary {
@@ -14255,5 +14267,71 @@ main {
   font-size: var(--font-body-sm);
 }
 
+
+/* ================================================
+   Athletic Clarity — Redesign Enhancements
+   ================================================ */
+
+/* Space Grotesk for all numeric/tabular content */
+[style*="tabular-nums"],
+.stat-value,
+.rating-value,
+.rating-number,
+.count,
+.timer,
+.score,
+.match-time,
+.lobby-count,
+.formation-count,
+.scheduling-confidence-percent,
+.trophy-date {
+  font-family: 'Space Grotesk', var(--font-mono);
+}
+
+/* Tighter heading typography globally */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+}
+
+/* Warmer card hover — lift with brand shadow */
+.card:hover {
+  border-color: rgba(22, 163, 74, 0.2);
+  box-shadow: var(--shadow-md);
+}
+
+/* Smoother bottom tab transitions */
+.bottom-tab {
+  transition: color var(--duration-fast) var(--ease-out-quart);
+}
+
+/* Badge refinement — slightly rounder, brand-tinted */
+.badge, .status-badge, .count-badge {
+  font-family: 'Space Grotesk', var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
+/* Primary action glow on hover */
+.btn-primary:hover {
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.2);
+}
+
+/* Large CTA button — full brand treatment */
+.btn-large.btn-primary {
+  background: var(--color-brand);
+  color: #FFFFFF;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
+}
+
+.btn-large.btn-primary:hover {
+  background: var(--color-brand-dark);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.25);
+}
+
+.btn-large.btn-primary:active {
+  background: var(--color-brand-dark);
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.15);
+}
 
 /* deploy trigger 1774332130 */
