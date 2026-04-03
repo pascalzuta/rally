@@ -1,3 +1,4 @@
+import { formatHourCompact } from '../dateUtils'
 import { useState, useEffect } from 'react'
 import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom } from '../store'
 import { Tournament, Match, MatchBroadcast, MatchOffer } from '../types'
@@ -33,14 +34,9 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
 }
 
-function formatHour(h: number): string {
-  if (h === 0 || h === 24) return '12 AM'
-  if (h === 12) return '12 PM'
-  return h < 12 ? `${h} AM` : `${h - 12} PM`
-}
 
 function formatHourRange(start: number, end: number): string {
-  return `${formatHour(start)} – ${formatHour(end)}`
+  return `${formatHourCompact(start)} – ${formatHourCompact(end)}`
 }
 
 function defaultEndTime(start: string): string {
@@ -128,6 +124,10 @@ function groupRowsByDate(rows: OpponentRow[]): { date: string; dateLabel: string
   return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, { dateLabel, entries }]) => ({ date, dateLabel, entries }))
 }
 
+function offerKey(playerId: string, date: string, startHour: number, endHour: number): string {
+  return `${playerId}:${date}:${startHour}:${endHour}`
+}
+
 function getPlayerTournamentMatches(t: Tournament, playerId: string): (Match & { opponentName: string })[] {
   const playerMap = new Map(t.players.map(p => [p.id, p.name]))
   return t.matches
@@ -147,16 +147,16 @@ function getPlayerTournamentMatches(t: Tournament, playerId: string): (Match & {
 
 function schedulingTierLabel(match: Match): { label: string; className: string; border: string } {
   const tier = match.schedule?.schedulingTier
-  if (tier === 'auto') return { label: 'Confirmed', className: 'pn-tier-confirmed', border: 'score' }
-  if (tier === 'needs-accept') return { label: 'Proposed', className: 'pn-tier-proposed', border: 'respond' }
-  if (tier === 'needs-negotiation') return { label: 'Needs Scheduling', className: 'pn-tier-unscheduled', border: 'schedule' }
-  return { label: 'Unscheduled', className: 'pn-tier-unscheduled', border: 'schedule' }
+  if (tier === 'auto') return { label: 'CONFIRMED', className: 'pn-tier-confirmed', border: 'score' }
+  if (tier === 'needs-accept') return { label: 'PROPOSED', className: 'pn-tier-proposed', border: 'respond' }
+  if (tier === 'needs-negotiation') return { label: 'NEEDS SCHEDULING', className: 'pn-tier-unscheduled', border: 'schedule' }
+  return { label: 'UNSCHEDULED', className: 'pn-tier-unscheduled', border: 'schedule' }
 }
 
 function formatSlotTime(match: Match): string {
   const slot = match.schedule?.confirmedSlot
   if (!slot) return 'Time TBD'
-  return `${formatHour(slot.startHour)} – ${formatHour(slot.endHour)}`
+  return `${formatHourCompact(slot.startHour)} – ${formatHourCompact(slot.endHour)}`
 }
 
 export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerName, onMatchConfirmed }: Props) {
@@ -185,8 +185,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="empty-state-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
           </div>
-          <div className="empty-state-title">No active tournament</div>
-          <div className="empty-state-message">Join an active tournament to find matches and play</div>
+          <div className="empty-state-title">No tournament yet</div>
+          <div className="empty-state-message">Join one from the Home tab to find matches and play</div>
         </div>
       </div>
     )
@@ -200,6 +200,18 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   const outgoingOffers = getOutgoingOffers(currentPlayerId)
   const opponentRows = buildOpponentRows(upcomingSlots, availableBroadcasts)
   const dateGroups = groupRowsByDate(opponentRows)
+  const outgoingOfferByKey = new Map(
+    outgoingOffers.map(offer => [
+      offerKey(offer.recipientId, offer.proposedDate, offer.proposedStartHour, offer.proposedEndHour),
+      offer,
+    ])
+  )
+  const matchedOutgoingOfferIds = new Set(
+    opponentRows
+      .map(row => outgoingOfferByKey.get(offerKey(row.playerId, row.date, row.startHour, row.endHour))?.offerId)
+      .filter((offerId): offerId is string => Boolean(offerId))
+  )
+  const standaloneOutgoingOffers = outgoingOffers.filter(offer => !matchedOutgoingOfferIds.has(offer.offerId))
 
   function playerSeedLabel(playerId: string): string {
     const seed = seeds.get(playerId)
@@ -219,9 +231,17 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleAskToPlay(row: OpponentRow) {
-    const result = createMatchOffer({ id: currentPlayerId, name: currentPlayerName }, { id: row.playerId, name: row.playerName }, tournament!.id, row.date, `${formatHour(row.startHour)}`, row.day, row.startHour, row.endHour)
-    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Match offer sent') }
-    setAskingRow(null); setTimeout(() => setFeedback(''), 2500); setTick(t => t + 1)
+    const result = createMatchOffer({ id: currentPlayerId, name: currentPlayerName }, { id: row.playerId, name: row.playerName }, tournament!.id, row.date, `${formatHourCompact(row.startHour)}`, row.day, row.startHour, row.endHour)
+    if ('error' in result) {
+      setFeedback(result.error)
+      setTimeout(() => setFeedback(''), 2500)
+      return
+    }
+    setFeedback(`Match request sent to ${row.playerName}`)
+    showSuccess(`Match request sent to ${row.playerName}`)
+    setAskingRow(row)
+    setTimeout(() => setFeedback(''), 2500)
+    setTick(t => t + 1)
   }
 
   async function handleAcceptOffer(offer: MatchOffer) {
@@ -263,7 +283,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="pn-info-tooltip">
             <strong>Tournament Matches</strong> are part of your tournament bracket and count toward standings.
             <br /><strong>Casual Play</strong> lets you find pickup games with other players in your tournament.
-            <br />Use &quot;Send Match Request&quot; below to propose a casual game.
+            <br />Use &quot;Request Match&quot; below to propose a casual game.
           </div>
         )}
       </div>
@@ -276,9 +296,14 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="offer-list">
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
-                <div className="offer-card-header"><span className="offer-card-label">Respond</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
-                <div className="card-title">{offer.senderName}</div>
-                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                <div className="offer-card-status-row">
+                  <span className="card-status-label card-status-label--purple">NEEDS RESPONSE</span>
+                  <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
+                </div>
+                <div className="offer-card-main">
+                  <div className="card-title">{offer.senderName}</div>
+                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                </div>
                 <div className="offer-card-actions">
                   <button className="btn btn-primary offer-accept-btn" onClick={() => handleAcceptOffer(offer)}>Accept</button>
                   <button className="btn offer-decline-btn" onClick={() => handleDeclineOffer(offer)}>Decline</button>
@@ -289,15 +314,20 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         </div>
       )}
 
-      {outgoingOffers.length > 0 && (
+      {standaloneOutgoingOffers.length > 0 && (
         <div className="pn-section">
           <div className="section-header">Sent Requests</div>
           <div className="offer-list">
-            {outgoingOffers.map(offer => (
+            {standaloneOutgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
-                <div className="offer-card-header"><span className="offer-card-label">Pending</span><span className="offer-card-expires">Expires in {timeRemaining(offer.expiresAt)}</span></div>
-                <div className="card-title">to {offer.recipientName}</div>
-                <div className="card-secondary">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                <div className="offer-card-status-row">
+                  <span className="card-status-label card-status-label--slate">Pending</span>
+                  <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
+                </div>
+                <div className="offer-card-main">
+                  <div className="card-title">to {offer.recipientName}</div>
+                  <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
+                </div>
                 <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
               </div>
             ))}
@@ -307,12 +337,16 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {myBroadcast ? (
         <div className="card pn-my-broadcast pn-my-broadcast-active">
-          <div className="broadcast-card-header">
-            <span className="broadcast-player-name">
+          <div className="card-status-row">
+            <div className="broadcast-player-name">
               <span className="pn-active-indicator" />
-              You're Available
-            </span>
-            <span className="badge badge-live">Active</span>
+              <span className="card-status-label card-status-label--green">Available Now</span>
+            </div>
+            <div className="card-meta-chip card-meta-chip--green">Active</div>
+          </div>
+          <div className="card-summary-main">
+            <div className="card-title">You&apos;re available to play</div>
+            <div className="card-supporting">Players in your tournament can request this time slot.</div>
           </div>
           <div className="broadcast-card-details">
             <span className="broadcast-detail">{formatDate(myBroadcast.date)}</span>
@@ -323,21 +357,79 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Cancel Broadcast</button>
         </div>
       ) : !showForm ? (
-        <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
-          <span className="play-now-text">I'm Free to Play</span>
-          <span className="play-now-sub">Broadcast your availability — get matched nearby</span>
+        <button className="card action-card action-confirmed broadcast-play-now-btn" onClick={() => setShowForm(true)}>
+          <span className="action-card-status-row">
+            <span className="card-status-label card-status-label--green">Quick Play</span>
+          </span>
+          <span className="action-card-main">
+            <span className="action-card-opponent">I&apos;m Free to Play</span>
+            <span className="action-card-supporting">Broadcast your availability so nearby tournament players can send a request.</span>
+          </span>
         </button>
       ) : (
-        <div className="card broadcast-form">
-          <h3 className="broadcast-form-title">I Want To Play</h3>
-          <div className="field"><label className="field-label">Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} /></div>
-          <div className="broadcast-time-row">
-            <div className="field field-half"><label className="field-label">From</label><input type="time" value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="select-input" /></div>
-            <div className="field field-half"><label className="field-label">To</label><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="select-input" /></div>
+        <div className="card action-card action-respond broadcast-create-card">
+          <div className="action-card-status-row">
+            <div className="card-status-label card-status-label--blue">Create Broadcast</div>
           </div>
-          <div className="field"><label className="field-label">Location</label><input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Marin Tennis Club" /></div>
-          <div className="field"><label className="field-label">Message (optional)</label><input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Anyone free?" /></div>
-          <div className="broadcast-form-actions"><button className="btn" onClick={() => setShowForm(false)}>Cancel</button><button className="btn btn-primary" onClick={handleCreate}>Broadcast</button></div>
+          <div className="action-card-main">
+            <div className="action-card-opponent">I want to play</div>
+            <div className="action-card-supporting">Share one time and place so nearby players can send a match request.</div>
+          </div>
+          <div className="action-card-expansion">
+            <div className="broadcast-form-fields">
+              <div className="field">
+                <label className="field-label">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="broadcast-time-row">
+                <div className="field field-half">
+                  <label className="field-label">From</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={e => handleStartTimeChange(e.target.value)}
+                    className="select-input"
+                  />
+                </div>
+                <div className="field field-half">
+                  <label className="field-label">To</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={e => setEndTime(e.target.value)}
+                    className="select-input"
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label className="field-label">Location</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  placeholder="e.g. Marin Tennis Club"
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Message (optional)</label>
+                <input
+                  type="text"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  placeholder="Anyone free?"
+                />
+              </div>
+            </div>
+            <div className="broadcast-form-actions">
+              <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreate}>Broadcast</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -346,8 +438,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         <div className="section-header">Who's Free</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
-            <div className="pn-empty-title">No players available right now</div>
-            <div className="pn-empty-desc">Post your availability and we'll notify tournament players</div>
+            <div className="pn-empty-title">No one's free right now</div>
+            <div className="pn-empty-desc">Post your availability — we'll notify players when you do</div>
             {!myBroadcast && !showForm && <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>Play Now</button>}
           </div>
         ) : dateGroups.map(group => (
@@ -355,54 +447,104 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <div className="pn-date-header">{group.dateLabel}</div>
             <div className="pn-opponent-list">
               {group.entries.map((row, i) => {
-                const isAsking = askingRow?.playerId === row.playerId && askingRow?.date === row.date
+                const isAsking = askingRow?.playerId === row.playerId &&
+                  askingRow?.date === row.date &&
+                  askingRow?.startHour === row.startHour
+                const matchingOutgoingOffer = outgoingOfferByKey.get(
+                  offerKey(row.playerId, row.date, row.startHour, row.endHour)
+                )
+                const hasPendingRequest = Boolean(matchingOutgoingOffer)
+
                 return (
-                  <div key={`${row.playerId}-${row.date}-${i}`}>
-                    <div className={`pn-opponent-row${isAsking ? ' pn-opponent-asking' : ' pn-opponent-actionable'}`} onClick={() => !isAsking && setAskingRow(row)}>
-                      <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
-                      <div className="pn-opponent-info">
-                        <div className="pn-opponent-name">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
-                        <div className="pn-opponent-meta">
-                          {row.isNow && <span className="pn-available-now">Available now</span>}
-                          <span>{row.dateLabel} · {row.timeLabel}</span>
-                          {row.location && <span> · {row.location}</span>}
-                        </div>
-                        {row.message && <div className="pn-opponent-message">"{row.message}"</div>}
+                <div key={`${row.playerId}-${row.date}-${i}`}>
+                  <div
+                    className={`card action-card ${(row.isNow && !hasPendingRequest) ? 'action-confirmed' : 'action-respond'} pn-opponent-row pn-opponent-actionable`}
+                    onClick={() => {
+                      setMessagingPlayerId(null)
+                      setAskingRow(isAsking ? null : row)
+                    }}
+                  >
+                    <div className="action-card-status-row">
+                      <div className={`card-status-label ${hasPendingRequest ? 'card-status-label--purple' : (row.isNow ? 'card-status-label--green' : 'card-status-label--slate')}`}>
+                        {hasPendingRequest ? 'Request Sent' : row.isNow ? 'Available Now' : 'Available'}
                       </div>
-                      <div className="pn-opponent-actions">
-                        {!isAsking && (
-                          <>
-                            <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
-                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
-                              {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
-                            </button>
-                            <button className="btn btn-primary btn-small pn-ask-btn" onClick={e => { e.stopPropagation(); setAskingRow(row) }}>Request Match</button>
-                          </>
-                        )}
+                      <div className="card-meta-chip">
+                        {hasPendingRequest && matchingOutgoingOffer
+                          ? `Expires in ${timeRemaining(matchingOutgoingOffer.expiresAt)}`
+                          : `${row.dateLabel} ${row.timeLabel}`}
                       </div>
                     </div>
+                    <div className="pn-opponent-card-main">
+                      <div className="pn-opponent-avatar">{row.playerName[0]?.toUpperCase() ?? '?'}</div>
+                      <div className="pn-opponent-info">
+                        <div className="action-card-opponent">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
+                        <div className="action-card-supporting">
+                          {hasPendingRequest
+                            ? 'Waiting on a response to your proposed match.'
+                            : row.location ? row.location : 'Tournament player available for a casual match.'}
+                        </div>
+                        {row.message && <div className="pn-opponent-message">&quot;{row.message}&quot;</div>}
+                      </div>
+                    </div>
+                    <div className="action-card-buttons">
+                      <button
+                        className={`btn ${hasPendingRequest ? '' : 'btn-primary'} btn-small pn-ask-btn`}
+                        onClick={e => { e.stopPropagation(); setMessagingPlayerId(null); setAskingRow(isAsking ? null : row) }}
+                      >
+                        {hasPendingRequest ? 'View Request' : 'Request Match'}
+                      </button>
+                      <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setAskingRow(null); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
+                        {hasUnreadFrom(currentPlayerId, row.playerId) && <span className="msg-unread-dot" />}
+                      </button>
+                    </div>
                     {isAsking && (
-                      <div className="pn-confirm-inline" onClick={e => e.stopPropagation()}>
-                        <span className="pn-confirm-note">They have 2 hours to accept or decline.</span>
-                        <div className="pn-confirm-actions">
-                          <button className="btn btn-small" onClick={() => setAskingRow(null)}>Close</button>
-                          <button className="btn btn-primary btn-small" onClick={() => handleAskToPlay(askingRow)}>Send Request</button>
+                      <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
+                        <div className="workflow-module quickplay-request-panel">
+                          <div className="quickplay-request-header">
+                            <div className="workflow-status workflow-status--blue">{hasPendingRequest ? 'Request Sent' : 'Match Request'}</div>
+                            <div className="quickplay-request-copy">
+                              {hasPendingRequest && matchingOutgoingOffer
+                                ? `${row.playerName} has ${timeRemaining(matchingOutgoingOffer.expiresAt)} left to accept or decline.`
+                                : 'Confirm the proposed time below before sending your request.'}
+                            </div>
+                          </div>
+                          <div className="quickplay-request-summary">
+                            <div className="quickplay-request-detail">
+                              <div className="quickplay-request-detail-label">Time</div>
+                              <div className="quickplay-request-detail-value">{row.dateLabel} · {row.timeLabel}</div>
+                            </div>
+                            {row.location && (
+                              <div className="quickplay-request-detail">
+                                <div className="quickplay-request-detail-label">Location</div>
+                                <div className="quickplay-request-detail-value">{row.location}</div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="workflow-actions">
+                            <button className="btn" onClick={() => setAskingRow(null)}>Close</button>
+                            {hasPendingRequest && matchingOutgoingOffer ? (
+                              <button className="btn" onClick={() => handleCancelOffer(matchingOutgoingOffer)}>Withdraw Request</button>
+                            ) : (
+                              <button className="btn btn-primary" onClick={() => handleAskToPlay(row)}>Request Match</button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
                     {messagingPlayerId === row.playerId && (
-                      <div className="pn-message-panel-wrapper" onClick={e => e.stopPropagation()}>
+                      <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                         <MessagePanel currentPlayerId={currentPlayerId} currentPlayerName={currentPlayerName} otherPlayerId={row.playerId} otherPlayerName={row.playerName} onClose={() => setMessagingPlayerId(null)} />
                       </div>
                     )}
                   </div>
+                </div>
                 )
               })}
             </div>
           </div>
         ))}
       </div>
-
     </div>
   )
 }
