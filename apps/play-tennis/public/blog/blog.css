@@ -20,12 +20,13 @@
   --max-width: 720px;
 }
 
-html { font-size: 16px; scroll-behavior: smooth; }
+html { font-size: 1rem; scroll-behavior: smooth; }
 body {
-  font-family: var(--font-sans);
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.7;
+  font-kerning: normal;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -71,8 +72,8 @@ body {
   color: var(--color-text-muted); margin-bottom: 12px;
 }
 .article-title {
-  font-size: 2.4rem; font-weight: 800; line-height: 1.2;
-  color: var(--color-text); margin-bottom: 16px; letter-spacing: -0.02em;
+  font-size: 2.5rem; font-weight: 800; line-height: 1.15;
+  color: var(--color-text); margin-bottom: 16px; letter-spacing: -0.025em;
 }
 .article-subtitle {
   font-size: 1.15rem; color: var(--color-text-muted);
@@ -88,8 +89,8 @@ body {
 
 /* Content Styles */
 .blog-content h2 {
-  font-size: 1.55rem; font-weight: 700; color: var(--color-text);
-  margin: 48px 0 16px; letter-spacing: -0.01em;
+  font-size: 1.5rem; font-weight: 700; color: var(--color-text);
+  margin: 48px 0 16px; letter-spacing: -0.015em;
 }
 .blog-content h3 {
   font-size: 1.2rem; font-weight: 650; color: var(--color-text);
