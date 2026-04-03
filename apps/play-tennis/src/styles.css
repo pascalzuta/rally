@@ -12229,7 +12229,7 @@ main {
 
 /* --- Hero — left-aligned, asymmetric --- */
 .dgh-hero {
-  padding: clamp(64px, 10vw, 120px) var(--space-xl) clamp(48px, 7vw, 80px);
+  padding: clamp(48px, 6vw, 72px) var(--space-xl) clamp(32px, 4vw, 48px);
 }
 
 .dgh-hero-inner {
@@ -12403,6 +12403,7 @@ main {
   transform: translateY(12px) scale(0.95);
 }
 
+.dgh-visible .dgh-anim-chat .dgh-story-bubble,
 .dgh-anim-chat.dgh-visible .dgh-story-bubble {
   animation: dgh-bubble-pop 0.45s var(--ease-out-expo) calc(var(--i, 0) * 0.2s + 0.1s) both;
 }
@@ -12533,8 +12534,11 @@ main {
 .dgh-anim-row { opacity: 0; transform: translateX(-20px); }
 .dgh-anim-confirmed { opacity: 0; transform: scale(0.8); }
 
+.dgh-visible .dgh-anim-schedule .dgh-anim-row-1,
 .dgh-anim-schedule.dgh-visible .dgh-anim-row-1 { animation: dgh-row-slide 0.5s var(--ease-out-expo) 0.15s both; }
+.dgh-visible .dgh-anim-schedule .dgh-anim-row-2,
 .dgh-anim-schedule.dgh-visible .dgh-anim-row-2 { animation: dgh-row-slide 0.5s var(--ease-out-expo) 0.4s both; }
+.dgh-visible .dgh-anim-schedule .dgh-anim-confirmed,
 .dgh-anim-schedule.dgh-visible .dgh-anim-confirmed { animation: dgh-confirm-pop 0.5s var(--ease-out-expo) 0.8s both; }
 
 @keyframes dgh-row-slide {
@@ -12576,8 +12580,11 @@ main {
 .dgh-anim-player-right { opacity: 0; transform: translateX(30px); }
 .dgh-anim-vs { opacity: 0; transform: scale(0.5); }
 
+.dgh-visible .dgh-anim-matchup .dgh-anim-player-left,
 .dgh-anim-matchup.dgh-visible .dgh-anim-player-left { animation: dgh-slide-left 0.6s var(--ease-out-expo) 0.15s both; }
+.dgh-visible .dgh-anim-matchup .dgh-anim-player-right,
 .dgh-anim-matchup.dgh-visible .dgh-anim-player-right { animation: dgh-slide-right 0.6s var(--ease-out-expo) 0.3s both; }
+.dgh-visible .dgh-anim-matchup .dgh-anim-vs,
 .dgh-anim-matchup.dgh-visible .dgh-anim-vs { animation: dgh-vs-pop 0.5s var(--ease-out-expo) 0.55s both; }
 
 @keyframes dgh-slide-left { 0% { opacity: 0; transform: translateX(-30px); } 100% { opacity: 1; transform: translateX(0); } }
