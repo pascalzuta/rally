@@ -57,14 +57,16 @@ function getTierTone(tier: SchedulingTier | null, isCompleted: boolean): 'green'
   return 'purple'
 }
 
-function sortMatchesForCalendar(matches: Match[], currentPlayerId: string): Match[] {
+function sortMatchesForCalendar(matches: Match[], currentPlayerId: string, prioritizeMine: boolean): Match[] {
   return [...matches].sort((a, b) => {
     // Completed matches last
     if (a.completed !== b.completed) return a.completed ? 1 : -1
-    // My matches first
-    const aIsMine = a.player1Id === currentPlayerId || a.player2Id === currentPlayerId
-    const bIsMine = b.player1Id === currentPlayerId || b.player2Id === currentPlayerId
-    if (aIsMine !== bIsMine) return aIsMine ? -1 : 1
+    // My matches first — only when viewing "My Matches"
+    if (prioritizeMine) {
+      const aIsMine = a.player1Id === currentPlayerId || a.player2Id === currentPlayerId
+      const bIsMine = b.player1Id === currentPlayerId || b.player2Id === currentPlayerId
+      if (aIsMine !== bIsMine) return aIsMine ? -1 : 1
+    }
     // By tier: auto first, then needs-accept, then needs-negotiation
     const tierOrder: Record<string, number> = { auto: 0, 'needs-accept': 1, 'needs-negotiation': 2 }
     const tierA = tierOrder[a.schedule?.schedulingTier ?? 'needs-negotiation'] ?? 2
@@ -80,8 +82,7 @@ function sortMatchesForCalendar(matches: Match[], currentPlayerId: string): Matc
   })
 }
 
-function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolean; matches: Match[]; weekStart: Date }> {
-  // Simple week grouping: distribute matches into weeks of ~3 each
+function groupByWeek(matches: Match[], perWeek = 3): Array<{ label: string; isCurrent: boolean; matches: Match[]; weekStart: Date }> {
   const weeks: Array<{ label: string; isCurrent: boolean; matches: Match[]; weekStart: Date }> = []
   const today = new Date()
   // Align to Monday of current week
@@ -89,7 +90,6 @@ function groupByWeek(matches: Match[]): Array<{ label: string; isCurrent: boolea
   const thisMonday = new Date(today)
   thisMonday.setDate(today.getDate() - mondayOffset)
   thisMonday.setHours(0, 0, 0, 0)
-  const perWeek = 3
   let weekIdx = 0
 
   for (let i = 0; i < matches.length; i += perWeek) {
@@ -112,9 +112,10 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
   const filteredMatches = filterMyMatches
     ? allMatches.filter(m => m.player1Id === currentPlayerId || m.player2Id === currentPlayerId)
     : allMatches
-  const sorted = sortMatchesForCalendar(filteredMatches, currentPlayerId)
+  const sorted = sortMatchesForCalendar(filteredMatches, currentPlayerId, !!filterMyMatches)
   const stableSorted = useStableOrder(sorted, m => m.id)
-  const weeks = groupByWeek(stableSorted)
+  const matchesPerWeek = filterMyMatches ? 3 : Math.max(3, Math.ceil(stableSorted.length / 3))
+  const weeks = groupByWeek(stableSorted, matchesPerWeek)
 
   // Summary stats
   const confirmed = filteredMatches.filter(m => m.schedule?.schedulingTier === 'auto').length
