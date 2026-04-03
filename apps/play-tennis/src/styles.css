@@ -3874,7 +3874,7 @@ select:focus {
 
 .profile-hero-banner {
   height: 80px;
-  background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+  background: linear-gradient(135deg, var(--color-accent-primary) 0%, #1a5c47 100%);
 }
 
 .profile-hero-photo {
@@ -3897,7 +3897,7 @@ select:focus {
 .profile-hero-avatar {
   width: 88px;
   height: 88px;
-  background: linear-gradient(135deg, #4361ee, #7209b7);
+  background: linear-gradient(135deg, var(--color-accent-primary), #1a5c47);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -3939,8 +3939,8 @@ select:focus {
 .profile-hero-level {
   padding: 3px 12px;
   border-radius: 100px;
-  background: rgba(67, 97, 238, 0.1);
-  color: #4361ee;
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
   font-size: 0.75rem;
   font-weight: var(--weight-semibold);
 }
