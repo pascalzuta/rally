@@ -12169,7 +12169,7 @@ main {
 }
 
 .dgh-btn-primary {
-  background: var(--color-text-primary);
+  background: var(--color-accent-primary);
   color: #fff;
   border: none;
   border-radius: var(--radius-button);
@@ -12182,7 +12182,7 @@ main {
 }
 
 .dgh-btn-primary:hover {
-  background: #333;
+  background: #236B51;
   transform: translateY(-1px);
 }
 
@@ -12276,7 +12276,7 @@ main {
 
 /* Final CTA */
 .dgh-final-cta {
-  background: var(--color-bg-surface);
+  background: var(--color-accent-bg);
   text-align: center;
 }
 
@@ -12870,8 +12870,8 @@ main {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--color-bg-primary);
-  border: 2px solid var(--color-divider);
+  background: var(--color-accent-bg);
+  border: 2px solid rgba(43, 122, 95, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
