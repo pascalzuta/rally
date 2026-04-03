@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
+import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
 import { useStableOrder } from '../useStableOrder'
@@ -154,7 +154,6 @@ export default function Home({
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
 
   async function handleLogout() {
-    await logout()
     onLogout?.()
   }
 
