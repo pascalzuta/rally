@@ -72,6 +72,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
                 Log in
               </button>
             </div>
+            <p className="dgh-hero-proof">Join 2,400+ players already on Rally</p>
           </div>
         </div>
       </section>
@@ -108,20 +109,32 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
             </div>
             <div className="dgh-story-visual">
               <div className="dgh-story-schedule dgh-anim-schedule" ref={scheduleRef}>
-                <div className="dgh-story-schedule-row dgh-anim-row dgh-anim-row-1">
-                  <span className="dgh-story-schedule-player">You</span>
-                  <span className="dgh-story-schedule-time">Sat 9am</span>
+                <div className="dgh-story-schedule-header dgh-anim-row dgh-anim-row-1">
+                  <span className="dgh-story-schedule-label">Your availability</span>
                 </div>
-                <div className="dgh-story-schedule-row dgh-anim-row dgh-anim-row-2">
-                  <span className="dgh-story-schedule-player">Opponent</span>
-                  <span className="dgh-story-schedule-time">Sat 9am</span>
+                <div className="dgh-story-schedule-slots">
+                  <div className="dgh-story-schedule-slot dgh-anim-row dgh-anim-row-1">
+                    <span className="dgh-story-schedule-day">Sat</span>
+                    <span className="dgh-story-schedule-window">9am – 11am</span>
+                  </div>
+                  <div className="dgh-story-schedule-slot dgh-anim-row dgh-anim-row-2">
+                    <span className="dgh-story-schedule-day">Sun</span>
+                    <span className="dgh-story-schedule-window">10am – 12pm</span>
+                  </div>
                 </div>
-                <div className="dgh-story-schedule-confirmed dgh-anim-confirmed">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                    <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span>Match scheduled</span>
+                <div className="dgh-story-schedule-divider dgh-anim-row dgh-anim-row-2"></div>
+                <div className="dgh-story-schedule-match dgh-anim-confirmed">
+                  <div className="dgh-story-schedule-match-header">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
+                      <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span>Match confirmed</span>
+                  </div>
+                  <div className="dgh-story-schedule-match-detail">
+                    <span className="dgh-story-schedule-match-vs">You vs. Sarah P.</span>
+                    <span className="dgh-story-schedule-match-time">Sat 9am · Memorial Park</span>
+                  </div>
                 </div>
               </div>
             </div>
