@@ -71,6 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (restored) {
               localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
               setProfileState(restored)
+            } else if (profile && (profile.id === u.id || profile.authId === u.id)) {
+              // DB fetch returned null but localStorage has a profile for this user.
+              // Trust localStorage — the DB save may not have completed yet.
+              setProfileState(profile)
             }
           } else if (profile) {
             // No valid session but we have a cached profile — clear stale data
@@ -91,7 +95,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
         } else {
-          // New user — authenticated but no profile in DB yet
+          // No profile in DB — check if localStorage has one for this user
+          const cached = localStorage.getItem(PROFILE_KEY)
+          if (cached) {
+            try {
+              const cachedProfile = JSON.parse(cached) as PlayerProfile
+              if (cachedProfile.id === u.id || cachedProfile.authId === u.id) {
+                setProfileState(cachedProfile)
+                return
+              }
+            } catch { /* ignore parse errors */ }
+          }
+          // Truly new user — no profile anywhere
           setProfileState(null)
         }
       } else if (event === 'SIGNED_OUT') {

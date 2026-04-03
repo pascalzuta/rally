@@ -1,4 +1,4 @@
-import { formatHourCompact } from '../dateUtils'
+import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
@@ -87,7 +87,7 @@ async function reverseGeocodeCounty(lat: number, lon: number): Promise<string | 
     // Ensure "County" suffix
     const countyName = county.includes('County') || county.includes('Parish') || county.includes('Borough')
       ? county
-      : `${county} County`
+      : `${titleCase(county)} County`
     return `${countyName}, ${abbr}`
   } catch {
     return null
@@ -621,7 +621,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
             <div className="field" ref={suggestionsRef}>
               <span className="field-label">Where do you play?</span>
               {inviteCounty ? (
-                <input type="text" value={county} readOnly />
+                <input type="text" value={titleCase(county)} readOnly />
               ) : (
                 <>
                   <input

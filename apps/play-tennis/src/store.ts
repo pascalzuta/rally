@@ -8,6 +8,7 @@ import {
   syncRatingSnapshot, syncTrophiesToRemote, syncBadgesToRemote,
   SyncResult,
 } from './sync'
+import { titleCase } from './dateUtils'
 import { getClient } from './supabase'
 import { enqueue } from './offline-queue'
 import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
@@ -228,7 +229,7 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
   const num = getNextTournamentNumber(county, extraTournaments)
   return {
     id: generateId(),
-    name: `${county} Open #${num}`,
+    name: `${titleCase(county)} Open #${num}`,
     date: new Date().toISOString().split('T')[0],
     county,
     format: 'round-robin',
@@ -289,7 +290,7 @@ export async function createDoublesTournament(
 
   const tournament: Tournament = {
     id: generateId(),
-    name: `${county} Doubles #${num}`,
+    name: `${titleCase(county)} Doubles #${num}`,
     date: new Date().toISOString().split('T')[0],
     county,
     format: 'round-robin',
