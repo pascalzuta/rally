@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { titleCase } from '../dateUtils'
 import {
   getLobbyByCounty, joinLobby, leaveLobby, isInLobby,
   startTournamentFromLobby, getSetupTournamentForCounty,
@@ -59,7 +60,7 @@ function getActivationSteps(
 
   return [
     { label: 'Set up your profile', completed: true },
-    { label: `Join the ${profile.county} lobby`, completed: inTournament || hasPlayedMatch },
+    { label: `Join the ${titleCase(profile.county)} lobby`, completed: inTournament || hasPlayedMatch },
     { label: 'Set your availability', completed: hasAvailability },
     { label: 'Play your first match', completed: hasPlayedMatch },
   ]
@@ -175,7 +176,7 @@ export default function HomeHeroCard({
 
   function handleShareInvite() {
     const link = getInviteLink(profile.county)
-    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    const message = `I just started a Rally tennis tournament in ${titleCase(profile.county)}.\nJoin and compete: ${link}`
     if (navigator.share) {
       navigator.share({ title: 'Rally Tennis', text: message, url: link }).catch(() => {
         setShowShareSheet(true)
@@ -195,14 +196,14 @@ export default function HomeHeroCard({
 
   function handleSMS() {
     const link = getInviteLink(profile.county)
-    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    const message = `I just started a Rally tennis tournament in ${titleCase(profile.county)}.\nJoin and compete: ${link}`
     window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
     setShowShareSheet(false)
   }
 
   function handleWhatsApp() {
     const link = getInviteLink(profile.county)
-    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    const message = `I just started a Rally tennis tournament in ${titleCase(profile.county)}.\nJoin and compete: ${link}`
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
     setShowShareSheet(false)
   }
@@ -355,7 +356,7 @@ export default function HomeHeroCard({
           <div className="card-meta-chip">{badge.chip}</div>
         </div>
         <div className="card-summary-main">
-          <div className="card-title">{profile.county} Tournament{tournamentReady ? ' Starting' : ' Forming'}</div>
+          <div className="card-title">{titleCase(profile.county)} Tournament{tournamentReady ? ' Starting' : ' Forming'}</div>
           <div className="card-supporting">
             {heroState === 'new' && '6\u20138 players compete in a local round-robin tournament.'}
             {heroState === 'returning' && 'Join the next season.'}

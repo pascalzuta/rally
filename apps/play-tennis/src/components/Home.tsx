@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { titleCase } from '../dateUtils'
 import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
@@ -225,7 +226,7 @@ export default function Home({
       <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
         <div className="card-status-row">
           <div className="card-status-label card-status-label--blue">Leaderboard</div>
-          <div className="card-meta-chip">{profile.county}</div>
+          <div className="card-meta-chip">{titleCase(profile.county)}</div>
         </div>
         <div className="card-summary-main">
           <div className="card-title">{title}</div>
@@ -289,7 +290,7 @@ export default function Home({
 
       {/* Leaderboard (pre-tournament states) */}
       {activeTournaments.length === 0 && renderLeaderboardTeaser(
-        `Top players in ${profile.county}`,
+        `Top players in ${titleCase(profile.county)}`,
         setupTournaments.length > 0
           ? 'Ratings update after each result, even while the bracket is forming.'
           : 'See where you stand before your next tournament.'
@@ -429,7 +430,7 @@ export default function Home({
       })()}
 
       {/* Leaderboard Teaser */}
-      {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each match.')}
+      {renderLeaderboardTeaser(`Top players in ${titleCase(profile.county)}`, 'Ratings update after each match.')}
 
       {/* View All */}
       <div className="home-view-all">

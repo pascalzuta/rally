@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { titleCase } from '../dateUtils'
 import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getSchedulingConfidence } from '../store'
 import { SYNC_EVENT } from '../sync'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
@@ -147,7 +148,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
 
   function handleShareInvite() {
     const link = getInviteLink(profile.county)
-    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    const message = `I just started a Rally tennis tournament in ${titleCase(profile.county)}.\nJoin and compete: ${link}`
     if (navigator.share) {
       navigator.share({ title: 'Rally Tennis', text: message, url: link }).catch(() => {
         setShowShareSheet(true)
@@ -167,14 +168,14 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
 
   function handleSMS() {
     const link = getInviteLink(profile.county)
-    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    const message = `I just started a Rally tennis tournament in ${titleCase(profile.county)}.\nJoin and compete: ${link}`
     window.open(`sms:?body=${encodeURIComponent(message)}`, '_self')
     setShowShareSheet(false)
   }
 
   function handleWhatsApp() {
     const link = getInviteLink(profile.county)
-    const message = `I just started a Rally tennis tournament in ${profile.county}.\nJoin and compete: ${link}`
+    const message = `I just started a Rally tennis tournament in ${titleCase(profile.county)}.\nJoin and compete: ${link}`
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
     setShowShareSheet(false)
   }
@@ -211,7 +212,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
             <div className="card-meta-chip">{tournamentReady ? `${setupPlayers.length}/${maxPlayers}` : `${totalJoined}/${targetPlayers}`}</div>
           </div>
           <div className="card-summary-main">
-            <div className="card-title">{profile.county} Tournament {tournamentReady ? 'Starting' : 'Forming'}</div>
+            <div className="card-title">{titleCase(profile.county)} Tournament {tournamentReady ? 'Starting' : 'Forming'}</div>
             <div className="card-supporting">
               {tournamentReady
                 ? 'Bracket is filling up. Tournament begins when the countdown ends.'

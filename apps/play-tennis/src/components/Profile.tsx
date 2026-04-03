@@ -1,4 +1,4 @@
-import { formatHourCompact } from '../dateUtils'
+import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useRef, useMemo } from 'react'
 import { getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
@@ -223,7 +223,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
         </div>
         <div className="profile-hero-info">
           <h2 className="profile-hero-name">{profile.name}</h2>
-          <p className="profile-hero-county">{profile.county}</p>
+          <p className="profile-hero-county">{titleCase(profile.county)}</p>
           <div className="profile-hero-tags">
             {profile.skillLevel && (
               <span className="profile-hero-level">

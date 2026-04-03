@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { titleCase } from '../dateUtils'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead } from '../store'
 import type { MatchHistoryEntry } from '../store'
 import type { RatingSnapshot } from '../types'
@@ -260,7 +261,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             </div>
             <div className="rating-hero-details">
               {rankInfo.total > 1 && (
-                <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
+                <span className="rating-hero-rank">Rank #{rankInfo.rank} in {titleCase(profile.county)}</span>
               )}
               {lastRatingChange !== 0 && (
                 <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
