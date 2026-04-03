@@ -11,26 +11,17 @@
 :root {
   color-scheme: light;
 
-  /* Rally palette */
-  --navy: #1B2D5B;
-  --gold: #C4973B;
-  --cream: #FFF8F0;
-  --card-bg: #FFFCF7;
-  --muted: #8A7F73;
-  --muted-dark: #6B6156;
-  --border-warm: #E8DFD0;
-
   /* Backgrounds */
-  --color-bg-primary: #F5F0E8;
-  --color-bg-surface: var(--card-bg);
+  --color-bg-primary: #F6F7F9;
+  --color-bg-surface: #FFFFFF;
 
   /* Text */
-  --color-text-primary: var(--navy);
-  --color-text-secondary: var(--muted);
-  --color-text-muted: var(--muted);
+  --color-text-primary: #111111;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
 
   /* Dividers */
-  --color-divider: var(--border-warm);
+  --color-divider: #E5E7EB;
 
   /* Positive (accept, confirm, success) */
   --color-positive-bg: #E6F6EC;
@@ -44,9 +35,9 @@
   --color-neutral-bg: #F1F3F5;
   --color-neutral-primary: #374151;
 
-  /* Accent (gold - for primary actions) */
-  --color-accent-bg: rgba(196,151,59,0.1);
-  --color-accent-primary: var(--gold);
+  /* Accent (blue - for info, proposals) */
+  --color-accent-bg: #DCE7FF;
+  --color-accent-primary: #2A5BD7;
 
   /* Warning */
   --color-warning-bg: #FEF3C7;
@@ -151,46 +142,6 @@ body {
   line-height: 1.5;
 }
 
-/* DM Serif Display for key headings */
-h1, h2, .card-title, .text-title-lg, .text-title-md {
-  font-family: 'DM Serif Display', serif;
-  font-weight: 400;
-}
-
-/* Navy stats bar — used for key metric rows */
-.navy-stats-bar {
-  background: var(--navy);
-  border-radius: var(--radius-md);
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-around;
-  gap: 12px;
-}
-
-.navy-stats-bar .stat-value {
-  font-family: 'DM Serif Display', serif;
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--cream);
-  text-align: center;
-}
-
-.navy-stats-bar .stat-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: rgba(255,248,240,0.6);
-  text-align: center;
-}
-
-.navy-stats-bar .stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
 .app {
   margin: 0 auto;
   height: 100dvh;
@@ -239,13 +190,13 @@ h1, h2, .card-title, .text-title-lg, .text-title-md {
 }
 
 .header {
-  background: var(--cream);
-  color: var(--navy);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
   padding: var(--space-lg) 20px;
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  border-bottom: 1px solid var(--border-warm);
+  border-bottom: 1px solid var(--color-divider);
 }
 
 .header h1 {
@@ -348,8 +299,8 @@ h1, h2, .card-title, .text-title-lg, .text-title-md {
   width: 100%;
   height: 50px;
   display: flex;
-  background: var(--cream);
-  border-top: 1px solid var(--border-warm);
+  background: var(--color-bg-surface);
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
   z-index: var(--z-dropdown);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -372,20 +323,20 @@ h1, h2, .card-title, .text-title-lg, .text-title-md {
 }
 
 .bottom-tab.active {
-  color: var(--navy);
+  color: var(--color-accent-primary);
   font-weight: var(--weight-semibold);
 }
 
-.bottom-tab.active::after {
+.bottom-tab.active::before {
   content: '';
   position: absolute;
-  bottom: 2px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  background: var(--gold);
-  border-radius: 50%;
+  width: 24px;
+  height: 2px;
+  background: var(--color-accent-primary);
+  border-radius: 0 0 2px 2px;
 }
 
 .tab-icon {
@@ -695,11 +646,10 @@ h1, h2, .card-title, .text-title-lg, .text-title-md {
 }
 
 .card {
-  background: var(--card-bg);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: 20px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-warm);
+  box-shadow: var(--shadow);
   cursor: pointer;
   position: relative;
   transition: transform var(--duration-fast) var(--ease-out-expo),
@@ -3376,40 +3326,6 @@ select:focus {
   transform: none;
 }
 
-/* Navy variant for active tournament hero card */
-.formation-hero.formation-hero--navy {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: var(--cream);
-}
-
-.formation-hero--navy .card-status-label {
-  color: var(--gold);
-  background: rgba(196,151,59,0.15);
-}
-
-.formation-hero--navy .card-meta-chip {
-  background: rgba(255,248,240,0.12);
-  color: var(--cream);
-}
-
-.formation-hero--navy .card-title,
-.formation-hero--navy .formation-title {
-  color: var(--cream);
-}
-
-.formation-hero--navy .card-supporting {
-  color: rgba(255,248,240,0.7);
-}
-
-.formation-hero--navy .tournament-progress-bar {
-  background: rgba(255,248,240,0.15);
-}
-
-.formation-hero--navy .tournament-progress-fill {
-  background: var(--gold);
-}
-
 .formation-title {
   font-size: var(--font-title-md);
   font-weight: var(--weight-bold);
@@ -3504,21 +3420,13 @@ select:focus {
 }
 
 .formation-cta-primary {
-  background: var(--gold);
-  color: var(--cream);
-  border-color: var(--gold);
   font-weight: var(--weight-semibold);
   letter-spacing: 0.01em;
 }
 
-.formation-cta-primary:hover {
-  background: #b8892f;
-}
-
 .formation-cta-secondary {
-  background: transparent;
-  color: var(--navy);
-  border-color: var(--navy);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
   font-weight: var(--weight-medium);
 }
 
@@ -5781,35 +5689,6 @@ select:focus {
 .pn-ask-btn {
   flex-shrink: 0;
   white-space: nowrap;
-}
-
-.pn-opponent-asking {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  box-shadow: none;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.pn-confirm-inline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding: 12px 20px;
-  background: var(--color-bg-surface);
-  border-radius: 0 0 var(--radius-card) var(--radius-card);
-  box-shadow: var(--shadow);
-}
-
-.pn-confirm-note {
-  font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
-}
-
-.pn-confirm-actions {
-  display: flex;
-  gap: var(--space-sm);
-  flex-shrink: 0;
 }
 
 /* Empty state */

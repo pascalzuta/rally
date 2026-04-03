@@ -275,10 +275,10 @@ export default function HomeHeroCard({
     const progressPctActive = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
 
     return (
-      <div className="card formation-hero formation-hero--navy">
+      <div className="card formation-hero">
         <div className="card-status-row">
-          <div className="card-status-label">Round Robin</div>
-          <div className="card-meta-chip">In Progress</div>
+          <div className="card-status-label card-status-label--slate">Your Tournament</div>
+          <div className="card-meta-chip">{progressPctActive}% complete</div>
         </div>
         <div className="card-summary-main">
           <div className="card-title">{activeTournament.name}</div>
