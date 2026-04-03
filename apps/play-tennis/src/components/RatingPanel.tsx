@@ -273,7 +273,6 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
               {weeklyTrend !== 0 && (
                 <span
                   className={`rating-hero-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}
-                  style={weeklyTrend > 0 ? { background: 'rgba(46, 139, 87, 0.12)', padding: '2px 8px', borderRadius: 8, display: 'inline-block' } : undefined}
                 >
                   {weeklyTrend > 0 ? '+' : ''}{weeklyTrend} this week
                 </span>
@@ -354,7 +353,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           {/* Rating Over Time */}
           <div className="card profile-section">
             <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
-            <div style={{ background: 'var(--color-navy, #1B2A4A)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md) var(--space-sm)' }}>
+            <div className="rating-chart-container">
               <RatingChart history={ratingHistory} currentRating={rating.rating} />
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
