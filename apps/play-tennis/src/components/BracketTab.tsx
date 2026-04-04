@@ -194,6 +194,12 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   if (tournament.status === 'setup' || tournament.status === 'scheduling') {
+    const setupIsParticipant = tournament.players.some(p => p.id === currentPlayerId)
+    const handleSetupLeave = async () => {
+      await leaveTournament(tournament!.id, currentPlayerId)
+      setShowLeaveConfirm(false)
+      onTournamentUpdated()
+    }
     return (
       <div className="bracket-tab">
         <div className="bracket-tab-header">
@@ -210,6 +216,27 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             ))}
           </ul>
         </div>
+
+        {setupIsParticipant && (
+          <button className="btn btn-large logout-btn" onClick={() => setShowLeaveConfirm(true)}>
+            Leave Tournament
+          </button>
+        )}
+
+        {showLeaveConfirm && (
+          <div className="leave-overlay" onClick={() => setShowLeaveConfirm(false)}>
+            <div className="leave-modal" onClick={e => e.stopPropagation()}>
+              <h3 className="leave-title">Leave Tournament?</h3>
+              <p className="leave-message">
+                You will be removed from this tournament. This cannot be undone.
+              </p>
+              <div className="leave-actions">
+                <button className="btn" onClick={() => setShowLeaveConfirm(false)}>Cancel</button>
+                <button className="btn btn-danger" onClick={handleSetupLeave}>Leave Tournament</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
