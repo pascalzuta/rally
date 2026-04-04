@@ -322,7 +322,7 @@ export default function Home({
       {/* Action Cards */}
       {(actionCards.length > 0 || messageCards.length > 0) && (
         <div className="action-cards">
-          {actionCards.map(card => {
+          {actionCards.map((card, i) => {
             const cardKey = `${card.tournament.id}-${card.match.id}`
             const isExpanded = expandedCardKey === cardKey
             const isMessaging = messagingCardKey === cardKey
@@ -336,6 +336,7 @@ export default function Home({
                 currentPlayerName={profile.name}
                 isExpanded={isExpanded}
                 isMessaging={isMessaging}
+                style={{'--i': i} as React.CSSProperties}
                 onToggleExpanded={() => {
                   setMessagingCardKey(null)
                   setExpandedCardKey(isExpanded ? null : cardKey)
@@ -351,13 +352,14 @@ export default function Home({
               />
             )
           })}
-          {messageCards.map(card => {
+          {messageCards.map((card, i) => {
             const cardKey = `message-${card.opponentId}`
             const isMessaging = messagingCardKey === cardKey
             return (
               <div
                 key={cardKey}
                 className="action-card action-message"
+                style={{'--i': actionCards.length + i} as React.CSSProperties}
                 onClick={() => {
                   setExpandedCardKey(null)
                   setMessagingCardKey(isMessaging ? null : cardKey)
