@@ -3920,7 +3920,7 @@ select:focus {
 
 /* Profile Sections */
 .profile-section {
-  background: oklch(97% 0.022 165);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: var(--space-xl);
   border-left: 4px solid var(--color-accent-primary);
@@ -5971,7 +5971,7 @@ select:focus {
 }
 
 .action-card {
-  background: oklch(97.5% 0.018 165);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: 20px 24px 20px 28px;
   box-shadow: 0 1px 2px rgba(60,50,40,0.04), 0 8px 24px -12px rgba(43, 122, 95, 0.12);
@@ -6019,21 +6019,13 @@ select:focus {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.action-card.action-score { background: oklch(96.5% 0.035 305); }
 .action-card.action-score::before { background: var(--color-purple-primary); }
-.action-card.action-respond { background: oklch(96.5% 0.035 305); }
 .action-card.action-respond::before { background: var(--color-purple-primary); }
-.action-card.action-confirmed { background: oklch(96% 0.04 155); }
 .action-card.action-confirmed::before { background: var(--color-positive-primary); }
-.action-card.action-schedule { background: oklch(96.5% 0.035 305); }
 .action-card.action-schedule::before { background: var(--color-purple-primary); }
-.action-card.action-escalated { background: oklch(96% 0.035 25); }
 .action-card.action-escalated::before { background: var(--color-negative-primary); }
-.action-card.action-completed { background: oklch(96% 0.008 80); }
 .action-card.action-completed::before { background: var(--color-text-muted); }
-.action-card.action-confirm-score { background: oklch(96.5% 0.04 235); }
 .action-card.action-confirm-score::before { background: oklch(55% 0.15 235); }
-.action-card.action-message { background: oklch(96.5% 0.04 165); }
 .action-card.action-message::before { background: var(--color-accent-primary); }
 
 .action-card .action-card-status-row {
@@ -6150,11 +6142,10 @@ select:focus {
 
 /* Up Next card */
 .upnext-card {
-  background: linear-gradient(180deg, oklch(95% 0.055 165) 0%, oklch(97% 0.03 165) 100%);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: 28px 24px 24px;
   border-left: 8px solid var(--color-accent-primary);
-  border-top: 1px solid oklch(88% 0.06 165);
   box-shadow: 0 2px 6px rgba(60,50,40,0.06), 0 18px 48px -20px rgba(43, 122, 95, 0.35);
   transition: box-shadow var(--duration-normal) var(--ease-out-quart), transform var(--duration-fast) var(--ease-out-expo);
   animation: cardSlideIn 520ms var(--ease-out-expo) both;
@@ -6980,7 +6971,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  background: linear-gradient(165deg, oklch(95% 0.055 165) 0%, oklch(97% 0.025 80) 100%);
+  background: var(--color-bg-surface);
   border-top: 3px solid var(--color-accent-primary);
   box-shadow: 0 2px 6px rgba(60,50,40,0.05), 0 16px 40px -22px rgba(43, 122, 95, 0.28);
   transition: transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-normal) var(--ease-out-quart);
@@ -7057,7 +7048,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  background: oklch(96.5% 0.03 80);
+  background: var(--color-bg-surface);
   border-left: 5px solid var(--color-accent-primary);
   box-shadow: 0 2px 6px rgba(60,50,40,0.05), 0 14px 36px -22px rgba(43, 122, 95, 0.22);
   transition: transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-normal) var(--ease-out-quart);
