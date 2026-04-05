@@ -198,7 +198,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                 )}
                 {myNeedsNegotiation > 0 && (
                   <div className="schedule-todo-row">
-                    <span className="schedule-todo-dot" style={{ background: 'var(--color-warning-primary, #F59E0B)' }} />
+                    <span className="schedule-todo-dot" style={{ background: 'var(--color-warning-primary)' }} />
                     <span className="schedule-todo-count">{myNeedsNegotiation}</span>
                     <span className="schedule-todo-label">Need scheduling</span>
                   </div>

@@ -216,7 +216,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
             <div className="card-supporting">
               {tournamentReady
                 ? 'Bracket is filling up. Tournament begins when the countdown ends.'
-                : '6-8 players compete in a local elimination tournament.'}
+                : '6–8 local players. Round-robin format. Rally handles the scheduling.'}
             </div>
           </div>
           {tournamentReady ? (
@@ -305,8 +305,8 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
             </div>
             <div className="confidence-value" style={{
               color: confidence.label === 'high' ? 'var(--color-positive-primary)' :
-                     confidence.label === 'medium' ? 'var(--color-accent-primary, #2563EB)' :
-                     'var(--color-warning-primary, #F59E0B)'
+                     confidence.label === 'medium' ? 'var(--color-accent-primary)' :
+                     'var(--color-warning-primary)'
             }}>
               {confidence.score}%
             </div>
