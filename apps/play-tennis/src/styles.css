@@ -82,7 +82,11 @@
   /* Additional typography */
   --font-caption: 13px;
   --font-micro: 11px;
+  --font-nano: 10px;
+  --font-title-xs: 20px;
   --font-heading-lg: 24px;
+  --font-display-md: 32px;
+  --font-display-lg: 48px;
   --font-hero: 40px;
   --font-hero-sm: 36px;
 
@@ -2210,7 +2214,7 @@ select:focus {
 }
 
 .onboard-logo-text {
-  font-size: 28px;
+  font-size: var(--font-title-lg);
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: -0.5px;
@@ -2230,7 +2234,7 @@ select:focus {
 }
 
 .onboard-title {
-  font-size: 28px;
+  font-size: var(--font-title-lg);
   font-weight: 700;
   line-height: 1.2;
   color: var(--color-text-primary);
@@ -2263,7 +2267,7 @@ select:focus {
 .onboard-chat-bubble {
   padding: 12px 16px;
   border-radius: var(--radius-lg);
-  font-size: 16px;
+  font-size: var(--font-body-lg);
   line-height: 1.35;
   max-width: 240px;
   opacity: 0;
@@ -2331,11 +2335,11 @@ select:focus {
 
 .onboard-match-player {
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--font-body-md);
 }
 
 .onboard-match-time {
-  font-size: 14px;
+  font-size: var(--font-body-md);
   color: var(--color-text-secondary);
 }
 
@@ -2344,7 +2348,7 @@ select:focus {
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--font-body-md);
   color: var(--color-positive-primary);
   padding-top: 4px;
   opacity: 0;
@@ -2381,7 +2385,7 @@ select:focus {
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid var(--color-divider);
-  font-size: 15px;
+  font-size: var(--font-body-md);
 }
 
 .onboard-lb-row:last-child {
@@ -2410,7 +2414,7 @@ select:focus {
 
 .onboard-lb-rating {
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: var(--font-body-md);
 }
 
 /* Matchup visual (screen 3) */
@@ -2438,13 +2442,13 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: var(--font-body-md);
   font-weight: 700;
   color: var(--color-text-secondary);
 }
 
 .onboard-matchup-rating {
-  font-size: 20px;
+  font-size: var(--font-title-xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -2458,7 +2462,7 @@ select:focus {
 }
 
 .onboard-matchup-vs-label {
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -2565,14 +2569,14 @@ select:focus {
 }
 
 .signup-subtitle {
-  font-size: 16px;
+  font-size: var(--font-body-lg);
   font-weight: 500;
   color: var(--color-text-secondary);
   margin-top: 4px;
 }
 
 .signup-desc {
-  font-size: 14px;
+  font-size: var(--font-body-md);
   color: var(--color-text-muted);
   margin-top: 8px;
   line-height: 1.4;
@@ -2653,14 +2657,14 @@ select:focus {
 }
 
 .otp-actions .btn-link {
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: 600;
   color: var(--color-positive-primary);
 }
 
 .signup-social-proof {
   text-align: center;
-  font-size: 13px;
+  font-size: var(--font-caption);
   color: var(--color-text-muted);
   margin-top: 20px;
   font-weight: 500;
@@ -2800,7 +2804,7 @@ select:focus {
   border-radius: var(--radius-md);
   background: var(--color-bg-surface);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: 500;
   transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   font-family: inherit;
@@ -2978,7 +2982,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-caption);
   color: var(--color-accent-primary);
   font-weight: var(--weight-bold);
   flex-shrink: 0;
@@ -3008,7 +3012,7 @@ select:focus {
   gap: var(--space-sm);
 
 .quick-presets-hint {
-  font-size: 13px;
+  font-size: var(--font-caption);
   color: var(--color-text-muted);
   margin: 0;
 }
@@ -3082,7 +3086,7 @@ select:focus {
   border-radius: var(--radius-button);
   border: 1px solid var(--color-divider);
   background: var(--color-surface);
-  font-size: 15px;
+  font-size: var(--font-body-md);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -3410,7 +3414,7 @@ select:focus {
 }
 
 .formation-choice-options .btn.btn-primary {
-  font-size: 1.05rem;
+  font-size: var(--font-body-lg);
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
 }
 
@@ -3557,7 +3561,7 @@ select:focus {
 
 .hero-step-icon {
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--font-body-md);
   line-height: 20px;
 }
 
@@ -3609,7 +3613,7 @@ select:focus {
 }
 
 .hero-check {
-  font-size: 16px;
+  font-size: var(--font-body-lg);
 }
 
 .hero-invite-nudge {
@@ -3708,7 +3712,7 @@ select:focus {
 }
 
 .rating-big {
-  font-size: 48px;
+  font-size: var(--font-display-lg);
   font-weight: 800;
   color: var(--color-accent-primary);
   line-height: 1;
@@ -3865,7 +3869,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
+  font-size: var(--font-hero-sm);
   font-weight: var(--weight-bold);
   border: 4px solid var(--color-bg-surface);
 }
@@ -3876,7 +3880,7 @@ select:focus {
 }
 
 .profile-hero-name {
-  font-size: 22px;
+  font-size: var(--font-title-md);
   font-weight: 800;
   color: var(--color-text-primary);
   margin: 0;
@@ -3903,12 +3907,12 @@ select:focus {
   border-radius: 100px;
   background: rgba(67, 97, 238, 0.1);
   color: #4361ee;
-  font-size: 12px;
+  font-size: var(--font-body-sm);
   font-weight: var(--weight-semibold);
 }
 
 .profile-hero-joined {
-  font-size: 12px;
+  font-size: var(--font-body-sm);
   color: var(--color-text-muted);
 }
 
@@ -3940,7 +3944,7 @@ select:focus {
 }
 
 .profile-hero-stat-value {
-  font-size: 24px;
+  font-size: var(--font-heading-lg);
   font-weight: 800;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -3953,7 +3957,7 @@ select:focus {
 }
 
 .profile-hero-stat-label {
-  font-size: 10px;
+  font-size: var(--font-nano);
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -3981,7 +3985,7 @@ select:focus {
   margin: 0;
   width: 72px;
   height: 72px;
-  font-size: 28px;
+  font-size: var(--font-title-lg);
 }
 
 .profile-identity-header .profile-avatar-img {
@@ -4771,7 +4775,7 @@ select:focus {
 .cancel-match-link {
   color: var(--color-negative-primary);
   font-weight: var(--weight-medium);
-  font-size: 0.875rem;
+  font-size: var(--font-body-md);
   justify-content: center;
 }
 
@@ -5045,7 +5049,7 @@ select:focus {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  font-size: 16px;
+  font-size: var(--font-body-lg);
 }
 
 .broadcast-create-card .field,
@@ -5952,7 +5956,7 @@ select:focus {
 }
 
 .caught-up-icon {
-  font-size: 48px;
+  font-size: var(--font-display-lg);
   margin-bottom: var(--space-md);
 }
 
@@ -5995,14 +5999,14 @@ select:focus {
   padding: var(--space-md);
   background: var(--color-neutral-bg);
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: var(--font-caption);
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
 .pn-info-banner-icon {
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: var(--font-body-lg);
   cursor: pointer;
   color: var(--color-accent-primary);
 }
@@ -6017,7 +6021,7 @@ select:focus {
   background: var(--color-surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  font-size: 13px;
+  font-size: var(--font-caption);
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
@@ -6216,7 +6220,7 @@ select:focus {
 }
 
 .devbar-group-label {
-  font-size: 10px;
+  font-size: var(--font-nano);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.3);
@@ -6343,7 +6347,7 @@ select:focus {
 }
 
 .activation-card-icon {
-  font-size: 32px;
+  font-size: var(--font-display-md);
   margin-bottom: var(--space-sm);
 }
 
@@ -6467,7 +6471,7 @@ select:focus {
 
 .welcome-hiw-season {
   margin-top: var(--space-sm);
-  font-size: 13px;
+  font-size: var(--font-caption);
   color: var(--color-text-muted);
 }
 
@@ -6492,7 +6496,7 @@ select:focus {
 }
 
 .rating-hero-number {
-  font-size: 48px;
+  font-size: var(--font-display-lg);
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
   font-variant-numeric: tabular-nums;
@@ -6606,7 +6610,7 @@ select:focus {
   letter-spacing: 0.01em;
 }
 .rating-explainer-toggle-chevron {
-  font-size: 0.85rem;
+  font-size: var(--font-caption);
   color: var(--color-accent-primary);
   transition: transform 0.2s ease;
 }
@@ -6777,7 +6781,7 @@ select:focus {
 }
 
 .user-status-rating-label {
-  font-size: 10px;
+  font-size: var(--font-nano);
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6994,7 +6998,7 @@ select:focus {
 }
 
 .lb-row-rating {
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -7159,13 +7163,13 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: var(--weight-bold);
   color: var(--color-text-secondary);
 }
 
 .badge-cell-label {
-  font-size: 10px;
+  font-size: var(--font-nano);
   color: var(--color-text-secondary);
   text-align: center;
   font-weight: var(--weight-medium);
@@ -7345,7 +7349,7 @@ select:focus {
 }
 
 .confirmed-ball {
-  font-size: 32px;
+  font-size: var(--font-display-md);
   animation: ballBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
 }
 
@@ -7610,7 +7614,7 @@ select:focus {
   right: -4px;
   background: var(--color-negative-primary);
   color: white;
-  font-size: 10px;
+  font-size: var(--font-nano);
   font-weight: var(--weight-bold);
   width: 18px;
   height: 18px;
@@ -7679,7 +7683,7 @@ select:focus {
 }
 
 .notif-icon {
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   flex-shrink: 0;
 }
 
@@ -7708,7 +7712,7 @@ select:focus {
   border-left: 3px solid var(--color-accent-primary);
 }
 .notif-time {
-  font-size: 10px;
+  font-size: var(--font-nano);
   color: var(--color-text-muted);
   margin-top: 2px;
 }
@@ -7733,7 +7737,7 @@ select:focus {
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-chip);
   padding: var(--space-xs) var(--space-lg);
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   color: var(--color-text-muted);
   cursor: pointer;
   font-family: inherit;
@@ -8702,7 +8706,7 @@ select:focus {
 }
 
 .schedule-progress-count {
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -8749,7 +8753,7 @@ select:focus {
 }
 
 .schedule-todo-count {
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
   min-width: 18px;
@@ -8757,7 +8761,7 @@ select:focus {
 }
 
 .schedule-todo-label {
-  font-size: 14px;
+  font-size: var(--font-body-md);
   color: var(--color-text-secondary);
 }
 
@@ -9597,7 +9601,7 @@ select:focus {
 }
 
 .faq-chevron {
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   color: var(--color-text-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
@@ -9758,7 +9762,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   font-weight: var(--weight-semibold);
-  font-size: 14px;
+  font-size: var(--font-body-md);
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
@@ -9984,7 +9988,7 @@ select:focus {
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 .score-toast-check {
-  font-size: 28px;
+  font-size: var(--font-title-lg);
   display: block;
   margin-bottom: var(--space-xs);
 }
@@ -10110,7 +10114,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: var(--font-display-md);
   font-weight: var(--weight-bold);
 }
 .profile-photo-btn {
@@ -10177,7 +10181,7 @@ select:focus {
   border: none;
   cursor: pointer;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: var(--font-body-md);
   padding: 2px;
   min-width: 24px;
   min-height: 24px;
@@ -10306,7 +10310,7 @@ select:focus {
   gap: 4px;
 }
 .reaction-star {
-  font-size: 20px;
+  font-size: var(--font-title-xs);
   cursor: pointer;
   background: none;
   border: none;
@@ -10401,7 +10405,7 @@ select:focus {
   color: var(--color-negative-primary);
 }
 .feedback-sentiment-icon {
-  font-size: 20px;
+  font-size: var(--font-title-xs);
   font-weight: var(--weight-bold);
   font-family: var(--font-mono);
   width: 28px;
@@ -10489,7 +10493,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: var(--weight-bold);
   color: var(--color-negative-primary);
   margin-top: 1px;
@@ -10870,8 +10874,8 @@ select:focus {
   border-radius: var(--radius-md); font-size: var(--font-body-md);
   resize: none; font-family: inherit;
 }
-.profile-bio-counter { text-align: right; font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 2px; }
-.profile-bio-display { margin-top: 6px; font-size: 0.9rem; color: var(--color-text-secondary); }
+.profile-bio-counter { text-align: right; font-size: var(--font-body-sm); color: var(--color-text-secondary); margin-top: 2px; }
+.profile-bio-display { margin-top: 6px; font-size: var(--font-body-md); color: var(--color-text-secondary); }
 
 /* --- R-20: Playing Style Tags --- */
 .profile-style-tags { margin-bottom: var(--space-md); }
@@ -10883,7 +10887,7 @@ select:focus {
 }
 .profile-style-btn.selected { background: var(--color-accent-primary); color: white; border-color: var(--color-accent-primary); }
 .profile-style-tags-display { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-top: 8px; justify-content: center; }
-.profile-style-tag { padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-md); background: var(--color-surface-alt); font-size: 0.8rem; }
+.profile-style-tag { padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-md); background: var(--color-surface-alt); font-size: var(--font-body-sm); }
 
 /* --- R-21: Preferred Courts --- */
 .profile-courts { margin-bottom: var(--space-md); }
@@ -10892,9 +10896,9 @@ select:focus {
 .profile-court-chip {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 10px; border-radius: var(--radius-card);
-  background: var(--color-surface-alt); font-size: 0.85rem;
+  background: var(--color-surface-alt); font-size: var(--font-caption);
 }
-.profile-court-chip-remove { background: none; border: none; cursor: pointer; font-size: 0.75rem; padding: 0; line-height: 1; color: var(--color-text-secondary); }
+.profile-court-chip-remove { background: none; border: none; cursor: pointer; font-size: var(--font-body-sm); padding: 0; line-height: 1; color: var(--color-text-secondary); }
 .profile-court-add { display: flex; gap: 8px; }
 .profile-court-input { flex: 1; padding: var(--space-xs) var(--space-sm); border: 1px solid var(--color-divider); border-radius: var(--radius-md); font-size: var(--font-body-sm); }
 
@@ -10908,18 +10912,18 @@ select:focus {
 /* --- R-23: Post-Match Rating Card --- */
 .post-match-card { padding: 12px; border-radius: var(--radius-md); background: var(--color-bg-surface); border: 1px solid var(--color-divider); text-align: left; }
 .post-match-saved { text-align: center; color: var(--color-positive-primary); font-weight: 600; }
-.post-match-title { font-weight: 600; margin-bottom: 8px; font-size: 0.95rem; }
+.post-match-title { font-weight: 600; margin-bottom: 8px; font-size: var(--font-body-md); }
 .post-match-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.post-match-label { font-size: 0.9rem; color: var(--color-text-secondary); }
+.post-match-label { font-size: var(--font-body-md); color: var(--color-text-secondary); }
 .post-match-stars { display: flex; gap: 4px; }
-.post-match-star { background: none; border: none; cursor: pointer; font-size: 1.3rem; padding: 0; color: var(--color-divider); transition: color 0.1s; }
+.post-match-star { background: none; border: none; cursor: pointer; font-size: var(--font-title-xs); padding: 0; color: var(--color-divider); transition: color 0.1s; }
 .post-match-star.active { color: #F59E0B; }
-.post-match-toggle { padding: var(--space-xs) var(--space-md); border-radius: var(--radius-card); border: 1px solid var(--color-divider); background: var(--color-bg-surface); cursor: pointer; font-size: 0.85rem; transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease; }
+.post-match-toggle { padding: var(--space-xs) var(--space-md); border-radius: var(--radius-card); border: 1px solid var(--color-divider); background: var(--color-bg-surface); cursor: pointer; font-size: var(--font-caption); transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease; }
 .post-match-toggle.active { background: var(--color-positive-primary); color: white; border-color: var(--color-positive-primary); }
 .post-match-actions { display: flex; gap: 8px; margin-top: 12px; }
 
 /* --- R-23: Match Reaction Summary --- */
-.match-reaction-summary { display: flex; gap: var(--space-sm); font-size: 0.8rem; color: var(--color-text-secondary); margin-top: 4px; padding: 4px 0; }
+.match-reaction-summary { display: flex; gap: var(--space-sm); font-size: var(--font-body-sm); color: var(--color-text-secondary); margin-top: 4px; padding: 4px 0; }
 .reaction-stat { display: inline-flex; align-items: center; gap: 2px; }
 .reaction-rematch { color: var(--color-positive-primary); }
 
@@ -10960,7 +10964,7 @@ select:focus {
 }
 
 .pn-tournament-match-opponent {
-  font-size: 16px;
+  font-size: var(--font-body-lg);
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -11016,7 +11020,7 @@ select:focus {
   z-index: var(--z-toast);
   animation: rally-toast-in var(--duration-slow) var(--ease-out-expo);
   box-shadow: var(--shadow-md);
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: 500;
 }
 
@@ -11029,7 +11033,7 @@ select:focus {
   background: none;
   border: none;
   color: inherit;
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   cursor: pointer;
   padding: 0 4px;
   opacity: 0.8;
@@ -11062,7 +11066,7 @@ select:focus {
   gap: var(--space-sm);
   z-index: calc(var(--z-toast) + 1);
   animation: rally-toast-in 0.3s ease-out;
-  font-size: 14px;
+  font-size: var(--font-body-md);
   color: var(--color-text-primary);
 }
 
@@ -11078,7 +11082,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-caption);
   font-weight: 600;
   border-radius: 50%;
   color: #fff;
@@ -11135,7 +11139,7 @@ select:focus {
 }
 
 .standings-toggle {
-  font-size: 13px;
+  font-size: var(--font-caption);
 }
 
 .standings-win-bar-container {
@@ -11177,7 +11181,7 @@ select:focus {
 .avail-segment-btn {
   flex: 1;
   padding: var(--space-sm) var(--space-md);
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: 600;
   border: none;
   background: var(--color-bg-surface);
@@ -11386,13 +11390,13 @@ main {
 }
 
 .rating-panel-title {
-  font-size: 1.1rem;
+  font-size: var(--font-title-sm);
   font-weight: 600;
   margin: 0;
 }
 
 .rating-panel-close {
-  font-size: 1.2rem;
+  font-size: var(--font-title-xs);
   color: var(--color-text-secondary);
   padding: 4px 8px;
 }
@@ -11420,7 +11424,7 @@ main {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #fff;
   font-weight: 700;
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   letter-spacing: 0.01em;
   border: none;
   border-radius: var(--radius-chip);
@@ -11754,7 +11758,7 @@ main {
 }
 
 .dgh-hero-title {
-  font-size: 56px;
+  font-size: var(--font-display-lg);
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.03em;
@@ -11763,7 +11767,7 @@ main {
 }
 
 .dgh-hero-subtitle {
-  font-size: 20px;
+  font-size: var(--font-title-xs);
   line-height: 1.6;
   color: var(--color-text-secondary);
   margin: 0 0 var(--space-xxl) 0;
@@ -11884,7 +11888,7 @@ main {
 }
 
 .dgh-mock-badge {
-  font-size: 10px;
+  font-size: var(--font-nano);
   font-weight: var(--weight-semibold);
   padding: 2px 8px;
   border-radius: var(--radius-chip);
@@ -11903,7 +11907,7 @@ main {
 }
 
 .dgh-mock-match-time {
-  font-size: 11px;
+  font-size: var(--font-micro);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -11919,7 +11923,7 @@ main {
 }
 
 .dgh-section-title {
-  font-size: 40px;
+  font-size: var(--font-hero);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
@@ -11928,7 +11932,7 @@ main {
 }
 
 .dgh-section-subtitle {
-  font-size: 18px;
+  font-size: var(--font-title-sm);
   color: var(--color-text-secondary);
   text-align: center;
   margin: 0 0 var(--space-3xl) 0;
@@ -12009,7 +12013,7 @@ main {
 }
 
 .dgh-problem-stat-number {
-  font-size: 36px;
+  font-size: var(--font-hero-sm);
   font-weight: 800;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -12091,7 +12095,7 @@ main {
   border-radius: 50%;
   background: var(--color-text-primary);
   color: #fff;
-  font-size: 20px;
+  font-size: var(--font-title-xs);
   font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
@@ -12194,7 +12198,7 @@ main {
 
 .dgh-stat-number {
   display: block;
-  font-size: 40px;
+  font-size: var(--font-hero);
   font-weight: 800;
   color: #fff;
   font-variant-numeric: tabular-nums;
@@ -12220,7 +12224,7 @@ main {
 }
 
 .dgh-cta-title {
-  font-size: 48px;
+  font-size: var(--font-display-lg);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
@@ -12228,7 +12232,7 @@ main {
 }
 
 .dgh-cta-subtitle {
-  font-size: 20px;
+  font-size: var(--font-title-xs);
   color: var(--color-text-secondary);
   margin: 0 0 var(--space-xxl) 0;
 }
@@ -12312,7 +12316,7 @@ main {
 }
 .dgh-blog-teaser-label {
   display: block;
-  font-size: 12px;
+  font-size: var(--font-body-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -12320,14 +12324,14 @@ main {
   margin-bottom: 6px;
 }
 .dgh-blog-teaser-title {
-  font-size: 28px;
+  font-size: var(--font-title-lg);
   font-weight: 800;
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
   margin-bottom: 6px;
 }
 .dgh-blog-teaser-subtitle {
-  font-size: 15px;
+  font-size: var(--font-body-md);
   color: var(--color-text-muted);
 }
 .dgh-blog-teaser-grid {
@@ -12352,27 +12356,27 @@ main {
   transform: translateY(-2px);
 }
 .dgh-blog-teaser-cat {
-  font-size: 11px;
+  font-size: var(--font-micro);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-primary);
 }
 .dgh-blog-teaser-card-title {
-  font-size: 15px;
+  font-size: var(--font-body-md);
   font-weight: 650;
   color: var(--color-text-primary);
   line-height: 1.35;
   flex: 1;
 }
 .dgh-blog-teaser-read {
-  font-size: 12px;
+  font-size: var(--font-body-sm);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .dgh-blog-teaser-all {
   display: inline-block;
-  font-size: 14px;
+  font-size: var(--font-body-md);
   font-weight: 600;
   color: var(--color-primary);
   text-decoration: none;
@@ -12391,7 +12395,7 @@ main {
   }
 
   .dgh-hero-title {
-    font-size: 40px;
+    font-size: var(--font-hero);
   }
 
   .dgh-hero-subtitle {
@@ -12421,15 +12425,15 @@ main {
   }
 
   .dgh-stat-number {
-    font-size: 32px;
+    font-size: var(--font-display-md);
   }
 
   .dgh-section-title {
-    font-size: 32px;
+    font-size: var(--font-display-md);
   }
 
   .dgh-cta-title {
-    font-size: 36px;
+    font-size: var(--font-hero-sm);
   }
 
   .dgh-footer-inner {
@@ -12478,12 +12482,12 @@ main {
   }
 
   .dgh-hero-title {
-    font-size: 32px;
+    font-size: var(--font-display-md);
     letter-spacing: -0.02em;
   }
 
   .dgh-hero-subtitle {
-    font-size: 16px;
+    font-size: var(--font-body-lg);
     margin-bottom: var(--space-xl);
   }
 
@@ -12512,7 +12516,7 @@ main {
   }
 
   .dgh-mock-opponent {
-    font-size: 11px;
+    font-size: var(--font-micro);
   }
 
   .dgh-mock-badge {
@@ -12521,7 +12525,7 @@ main {
   }
 
   .dgh-mock-match-time {
-    font-size: 10px;
+    font-size: var(--font-nano);
   }
 
   /* Sections */
@@ -12530,11 +12534,11 @@ main {
   }
 
   .dgh-section-title {
-    font-size: 26px;
+    font-size: var(--font-heading-lg);
   }
 
   .dgh-section-subtitle {
-    font-size: 15px;
+    font-size: var(--font-body-md);
     margin-bottom: var(--space-xl);
   }
 
@@ -12544,11 +12548,11 @@ main {
   }
 
   .dgh-problem-stat-number {
-    font-size: 28px;
+    font-size: var(--font-title-lg);
   }
 
   .dgh-chat-bubble {
-    font-size: 11px;
+    font-size: var(--font-micro);
     padding: 6px 12px;
   }
 
@@ -12566,7 +12570,7 @@ main {
   .dgh-how-number {
     width: 40px;
     height: 40px;
-    font-size: 18px;
+    font-size: var(--font-title-sm);
   }
 
   .dgh-how-title {
@@ -12606,11 +12610,11 @@ main {
   }
 
   .dgh-stat-number {
-    font-size: 28px;
+    font-size: var(--font-title-lg);
   }
 
   .dgh-stat-label {
-    font-size: 10px;
+    font-size: var(--font-nano);
   }
 
   /* Final CTA */
@@ -12619,11 +12623,11 @@ main {
   }
 
   .dgh-cta-title {
-    font-size: 28px;
+    font-size: var(--font-title-lg);
   }
 
   .dgh-cta-subtitle {
-    font-size: 16px;
+    font-size: var(--font-body-lg);
   }
 
   /* Footer */
@@ -12639,7 +12643,7 @@ main {
     padding: 40px var(--space-lg) 48px;
   }
   .dgh-blog-teaser-title {
-    font-size: 22px;
+    font-size: var(--font-title-md);
   }
   .dgh-blog-teaser-grid {
     grid-template-columns: 1fr;
@@ -12779,7 +12783,7 @@ main {
 }
 
 .analytics-metric-sub {
-  font-size: 11px;
+  font-size: var(--font-micro);
   color: var(--color-text-muted);
   margin-top: 2px;
 }
@@ -12814,7 +12818,7 @@ main {
 }
 
 .analytics-bar-value {
-  font-size: 10px;
+  font-size: var(--font-nano);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;

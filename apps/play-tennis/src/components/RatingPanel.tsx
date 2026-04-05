@@ -273,7 +273,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                 </span>
               )}
             </div>
-            <div className="rating-hero-explanation" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>
+            <div className="rating-hero-explanation" style={{ fontSize: 'var(--font-caption)', color: 'var(--color-text-secondary)', marginTop: 8 }}>
               Ratings adjust after each match — win against stronger players for a bigger boost
             </div>
             {engagementPrompt && (
@@ -349,7 +349,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           <div className="card profile-section">
             <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
             <RatingChart history={ratingHistory} currentRating={rating.rating} />
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
+            <p style={{ fontSize: 'var(--font-body-sm)', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
             {completedTournaments.length > 0 && (
               <div className="tournament-history">
                 {completedTournaments.map(t => {

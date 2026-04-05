@@ -266,7 +266,7 @@ export default function App() {
     return (
       <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center', opacity: 0.6 }}>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Loading...</p>
+          <p style={{ fontSize: 'var(--font-body-md)', color: 'var(--color-text-secondary)' }}>Loading...</p>
         </div>
       </div>
     )
@@ -296,7 +296,7 @@ export default function App() {
           <div className="top-nav-logo top-nav-logo-large">
               <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
             </div>
-          <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
+          <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
             Blog
           </a>
         </nav>
@@ -323,7 +323,7 @@ export default function App() {
               <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
             </div>
           {user?.email && (
-            <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 'var(--font-micro)', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.email}
             </span>
           )}
