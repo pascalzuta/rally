@@ -451,7 +451,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             </form>
 
             <p className="signup-social-proof auth-helper-copy">
-              No password needed. We’ll just verify your email.
+              No password. No spam. We only email you about matches.
             </p>
           </div>
         </div>
@@ -626,6 +626,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   )}
                 </>
               )}
+              <span className="field-hint">We'll match you with players in your county.</span>
             </div>
 
             <button
@@ -676,8 +677,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   </button>
                 ))}
               </div>
-              <p className="skill-reassurance" style={{ fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-                Your rating will adjust automatically after a few matches.
+              <p className="skill-reassurance">
+                Not sure? Pick whatever feels closest — your rating adjusts after a few matches.
               </p>
             </div>
 
@@ -747,7 +748,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             </svg>
           </div>
           <h1 className="onboard-title">You're in!</h1>
-          <p className="onboard-subtitle">Rally can now schedule matches for you.</p>
+          <p className="onboard-subtitle">Next: join your county's tournament and we'll auto-schedule your matches.</p>
           <div className="confirmed-ball">🎾</div>
         </div>
       </div>

@@ -503,8 +503,8 @@ export default function HomeHeroCard({
             </div>
             <div className="confidence-value" style={{
               color: confidence.label === 'high' ? 'var(--color-positive-primary)' :
-                     confidence.label === 'medium' ? 'var(--color-accent-primary, #2563EB)' :
-                     'var(--color-warning-primary, #F59E0B)'
+                     confidence.label === 'medium' ? 'var(--color-accent-primary)' :
+                     'var(--color-warning-primary)'
             }}>
               {confidence.score}%
             </div>

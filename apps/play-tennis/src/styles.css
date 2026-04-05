@@ -10829,6 +10829,14 @@ select:focus {
   font-style: italic;
 }
 
+.field-hint {
+  display: block;
+  font-size: var(--font-body-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+  line-height: 1.4;
+}
+
 /* --- R-20: Profile Photo Upload --- */
 .profile-avatar-photo {
   width: 64px;
@@ -11698,7 +11706,7 @@ main {
 }
 
 .dgh-btn-primary:hover {
-  background: #333;
+  background: var(--color-neutral-primary);
   transform: translateY(-1px);
 }
 
