@@ -6061,12 +6061,10 @@ select:focus {
 .action-message .action-card-type { color: var(--color-accent-primary); }
 
 .action-card-opponent {
-  font-family: var(--font-display);
-  font-size: var(--font-title-md);
-  font-weight: 900;
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
-  letter-spacing: -0.03em;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .action-card-detail,
