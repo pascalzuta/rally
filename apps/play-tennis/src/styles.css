@@ -433,7 +433,7 @@ body {
   justify-content: center;
   gap: 6px;
   color: var(--color-navy);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   line-height: 1;
   border: 1.5px solid var(--color-divider);
 }
@@ -457,7 +457,7 @@ body {
   background: var(--color-gold);
   color: var(--color-navy);
   border-color: transparent;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 16px;
   padding: 14px 32px;
@@ -488,7 +488,7 @@ body {
 
 /* ACTION — Navy bg, white text. For requests and initiating actions. */
 .btn-action {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 14px;
   background: var(--color-navy);
@@ -3383,6 +3383,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  background: var(--color-navy);
+  border-color: var(--color-navy);
 }
 
 .formation-hero:active {
@@ -3390,16 +3392,17 @@ select:focus {
 }
 
 .formation-title {
+  font-family: var(--font-serif);
   font-size: var(--font-title-md);
   font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   line-height: 1.25;
   margin-bottom: var(--space-sm);
 }
 
 .formation-desc {
   font-size: var(--font-body-md);
-  color: var(--color-text-secondary);
+  color: rgba(255,255,255,0.7);
   line-height: 1.5;
   margin-bottom: var(--space-lg);
 }
@@ -3415,25 +3418,25 @@ select:focus {
   font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
   font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
+  color: #FFFFFF;
 }
 
 .formation-count-sep {
   font-variant-numeric: tabular-nums;
   font-size: var(--font-body-lg);
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.5);
   margin: 0 1px;
 }
 
 .formation-count-label {
   font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
+  color: rgba(255,255,255,0.7);
   margin-left: var(--space-sm);
 }
 
 .formation-progress-bar {
   height: 6px;
-  background: var(--color-neutral-bg);
+  background: rgba(255,255,255,0.2);
   border-radius: var(--radius-chip);
   overflow: hidden;
   margin-bottom: var(--space-md);
@@ -3456,23 +3459,24 @@ select:focus {
 
 .formation-logic {
   font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.55);
   line-height: 1.5;
   margin-bottom: var(--space-lg);
 }
 
 .formation-availability-prompt {
-  background: rgba(59, 130, 246, 0.08);
-  border-left: 4px solid var(--color-accent-primary);
+  background: rgba(255,255,255,0.1);
+  border-left: 4px solid var(--color-gold);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-md);
   font-size: var(--font-body-sm);
   line-height: 1.5;
+  color: rgba(255,255,255,0.85);
 }
 .formation-availability-prompt p { margin: 0; }
 .formation-availability-hint {
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.55);
   margin-top: 4px !important;
 }
 
@@ -3488,8 +3492,9 @@ select:focus {
 }
 
 .formation-cta-secondary {
-  background: var(--color-neutral-bg);
-  color: var(--color-text-primary);
+  background: rgba(255,255,255,0.15);
+  color: #FFFFFF;
+  border-color: rgba(255,255,255,0.25);
   font-weight: var(--weight-medium);
 }
 
@@ -3927,16 +3932,16 @@ select:focus {
 
 /* Hero Profile Card */
 .profile-hero-card {
-  background: var(--color-bg-surface);
+  background: var(--color-navy);
   border-radius: var(--radius-card);
-  border: 1px solid var(--color-divider);
+  border: 1px solid var(--color-navy);
   overflow: hidden;
+  color: #FFFFFF;
 }
 
 .profile-hero-banner {
-  height: 80px;
+  height: 48px;
   background: linear-gradient(135deg, rgba(197,153,62,0.25) 0%, rgba(197,153,62,0.04) 100%);
-  background-color: var(--color-navy);
 }
 
 .profile-hero-photo {
@@ -3953,7 +3958,7 @@ select:focus {
   border-radius: 50%;
   object-fit: cover;
   display: block;
-  border: 4px solid var(--color-bg-surface);
+  border: 4px solid var(--color-navy);
 }
 
 .profile-hero-avatar {
@@ -3968,7 +3973,7 @@ select:focus {
   font-size: 34px;
   font-weight: var(--weight-bold);
   font-family: var(--font-sans);
-  border: 4px solid var(--color-bg-surface);
+  border: 4px solid var(--color-navy);
 }
 
 .profile-hero-info {
@@ -3980,14 +3985,14 @@ select:focus {
   font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 700;
-  color: var(--color-navy);
+  color: #FFFFFF;
   margin: 0;
   line-height: 1.2;
 }
 
 .profile-hero-county {
   font-size: var(--font-body-md);
-  color: var(--color-text-secondary);
+  color: rgba(255,255,255,0.7);
   margin: 4px 0 0;
   text-transform: capitalize;
 }
@@ -4003,7 +4008,7 @@ select:focus {
 .profile-hero-level {
   padding: 3px 12px;
   border-radius: 100px;
-  background: var(--color-accent-bg);
+  background: rgba(197,153,62,0.2);
   color: var(--color-gold);
   font-size: 12px;
   font-weight: var(--weight-semibold);
@@ -4011,7 +4016,7 @@ select:focus {
 
 .profile-hero-joined {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.5);
 }
 
 .profile-hero-stats {
@@ -4038,25 +4043,25 @@ select:focus {
   transform: translateY(-50%);
   width: 1px;
   height: 32px;
-  background: var(--color-divider);
+  background: rgba(255,255,255,0.15);
 }
 
 .profile-hero-stat-value {
   font-size: 24px;
   font-weight: 800;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .profile-hero-stat-sep {
   font-weight: 400;
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.5);
 }
 
 .profile-hero-stat-label {
   font-size: 10px;
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.55);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: var(--weight-semibold);
@@ -5587,7 +5592,29 @@ select:focus {
 
 .pn-my-broadcast--active,
 .pn-my-broadcast-active {
-  border-left: 3px solid var(--color-positive-primary);
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+  border-left: 3px solid var(--color-gold);
+  color: #FFFFFF;
+}
+
+.pn-my-broadcast-active .broadcast-player-name,
+.pn-my-broadcast-active .card-status-label {
+  color: #FFFFFF;
+}
+
+.pn-my-broadcast-active .broadcast-expiry-timer,
+.pn-my-broadcast-active .pn-broadcast-expiry {
+  color: rgba(255,255,255,0.7);
+}
+
+.pn-my-broadcast-active .broadcast-status-indicator {
+  color: var(--color-gold);
+}
+
+.pn-my-broadcast-active .broadcast-status-dot,
+.pn-my-broadcast-active .pn-active-indicator {
+  background: var(--color-gold);
 }
 
 .broadcast-status-indicator {
@@ -5974,8 +6001,8 @@ select:focus {
   padding: 0 var(--space-lg);
   border: none;
   border-radius: var(--radius-button);
-  font-family: var(--font-serif);
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   margin-top: var(--space-md);
@@ -8731,11 +8758,12 @@ select:focus {
 /* --- Unified Tournament Header Card --- */
 
 .schedule-header-card {
-  background: var(--color-bg-surface);
+  background: var(--color-navy);
   border-radius: var(--radius-card);
   padding: var(--space-lg);
   margin-bottom: var(--space-lg);
-  border: 1px solid var(--color-divider);
+  border: 1px solid var(--color-navy);
+  color: #FFFFFF;
 }
 
 /* Phase stepper: Round Robin ── Semi ── Final */
@@ -8766,25 +8794,25 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(197,153,62,0.2);
   animation: pulse-dot 2s ease-in-out infinite;
 }
-.schedule-phase-dot.upcoming { background: var(--color-divider); }
+.schedule-phase-dot.upcoming { background: rgba(255,255,255,0.3); }
 
 .schedule-phase-label {
   font-size: var(--font-body-sm);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
-.schedule-phase-label.completed { color: var(--color-positive-primary); }
-.schedule-phase-label.active { color: var(--color-accent-primary); font-weight: var(--weight-bold); }
-.schedule-phase-label.upcoming { color: var(--color-text-muted); }
+.schedule-phase-label.completed { color: #6FCF97; }
+.schedule-phase-label.active { color: var(--color-gold); font-weight: var(--weight-bold); }
+.schedule-phase-label.upcoming { color: rgba(255,255,255,0.5); }
 
 .schedule-phase-line {
   width: 32px;
   height: 2px;
-  background: var(--color-divider);
+  background: rgba(255,255,255,0.2);
   margin: 0 var(--space-sm);
   flex-shrink: 0;
 }
-.schedule-phase-line.completed { background: var(--color-positive-primary); }
+.schedule-phase-line.completed { background: #6FCF97; }
 
 /* Progress bar section */
 .schedule-progress-section {
@@ -8793,7 +8821,7 @@ select:focus {
 
 .schedule-progress-bar-track {
   height: 6px;
-  background: var(--color-neutral-bg);
+  background: rgba(255,255,255,0.2);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -8817,17 +8845,17 @@ select:focus {
   font-size: 13px;
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
 }
 
 .schedule-progress-est {
   font-size: var(--font-body-sm);
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.55);
 }
 
 /* Your To-Do section */
 .schedule-todo-section {
-  border-top: 1px solid var(--color-divider);
+  border-top: 1px solid rgba(255,255,255,0.15);
   padding-top: var(--space-md);
 }
 
@@ -8836,7 +8864,7 @@ select:focus {
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,0.55);
   margin-bottom: 4px;
 }
 
@@ -8865,12 +8893,12 @@ select:focus {
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
   min-width: 18px;
-  color: var(--color-text-primary);
+  color: #FFFFFF;
 }
 
 .schedule-todo-label {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: rgba(255,255,255,0.7);
 }
 
 /* --- Next match card --- */
@@ -11533,7 +11561,7 @@ main {
 .btn-join-free {
   background: var(--color-gold);
   color: #fff;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 18px;
   letter-spacing: 0.01em;
