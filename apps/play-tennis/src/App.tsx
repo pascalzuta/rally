@@ -299,7 +299,7 @@ export default function App() {
         <div className="app">
           <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
             <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
+              <div className="rally-mark">rally.</div>
             </div>
             <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
               Blog
@@ -352,7 +352,7 @@ export default function App() {
       <div className="screen">
         <nav className="top-nav">
           <div className="top-nav-logo" onClick={() => navigate(ROUTES.HOME)} style={{ cursor: 'pointer' }}>
-              <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
+              <div className="rally-mark">rally.</div>
             </div>
           {isStaging && user?.email && (
             <span style={{ fontSize: 'var(--font-micro)', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
