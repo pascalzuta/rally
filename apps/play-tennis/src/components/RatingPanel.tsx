@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { titleCase } from '../dateUtils'
 import { getPlayerRating, getRatingLabel, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead } from '../store'
 import type { MatchHistoryEntry } from '../store'
 import type { RatingSnapshot } from '../types'
@@ -260,7 +261,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             </div>
             <div className="rating-hero-details">
               {rankInfo.total > 1 && (
-                <span className="rating-hero-rank">Rank #{rankInfo.rank} in {profile.county}</span>
+                <span className="rating-hero-rank">Rank #{rankInfo.rank} in {titleCase(profile.county)}</span>
               )}
               {lastRatingChange !== 0 && (
                 <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
@@ -273,7 +274,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                 </span>
               )}
             </div>
-            <div className="rating-hero-explanation" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>
+            <div className="rating-hero-explanation" style={{ fontSize: 'var(--font-caption)', color: 'var(--color-text-secondary)', marginTop: 8 }}>
               Ratings adjust after each match — win against stronger players for a bigger boost
             </div>
             {engagementPrompt && (
@@ -349,7 +350,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
           <div className="card profile-section">
             <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
             <RatingChart history={ratingHistory} currentRating={rating.rating} />
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
+            <p style={{ fontSize: 'var(--font-body-sm)', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
             {completedTournaments.length > 0 && (
               <div className="tournament-history">
                 {completedTournaments.map(t => {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { titleCase } from '../dateUtils'
 import { getTournament, getPlayerName, getPlayerRating, getSeeds, getGroupStandings, winProbability, getPlayerActiveBroadcast, leaveTournament, getRescheduleUiState, hasUnreadFrom } from '../store'
 import { Tournament, Match } from '../types'
 import Standings from './Standings'
@@ -418,7 +419,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
       <header className="header">
         <button className="btn-back" onClick={onBack}>← Back</button>
         <div className="header-row">
-          <h1>{tournament.name}</h1>
+          <h1>{titleCase(tournament.name)}</h1>
           {tournament.players.some(p => p.id === currentPlayerId) && tournament.status !== 'completed' && (
             <button className="btn-leave" onClick={() => setShowLeaveConfirm(true)}>Leave</button>
           )}

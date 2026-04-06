@@ -1,28 +1,40 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
-import Inbox from './components/Inbox'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
 import { initSync, SYNC_EVENT } from './sync'
 import { flushQueue } from './offline-queue'
 import { analytics } from './analytics'
 import { getSession } from './supabase'
-import Register from './components/Register'
-import DesktopGuestHomepage from './components/DesktopGuestHomepage'
-import Home from './components/Home'
-import BracketTab from './components/BracketTab'
-import PlayNowTab from './components/PlayNowTab'
-import Profile from './components/Profile'
-import RatingPanel from './components/RatingPanel'
-import Leaderboard from './components/Leaderboard'
-import VictoryAnimation from './components/VictoryAnimation'
-import Help from './components/Help'
-import AnalyticsDashboard from './components/AnalyticsDashboard'
-import DevTools from './components/DevTools'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import './styles.css'
+
+// Critical path: loaded eagerly (landing page + home + auth)
+import Register from './components/Register'
+import Login from './components/Login'
+import JoinLanding from './components/JoinLanding'
+import DesktopGuestHomepage from './components/DesktopGuestHomepage'
+import Home from './components/Home'
+import Footer from './components/Footer'
+
+// Lazy-loaded: only fetched when user navigates to these tabs
+const BracketTab = lazy(() => import('./components/BracketTab'))
+const PlayNowTab = lazy(() => import('./components/PlayNowTab'))
+const Profile = lazy(() => import('./components/Profile'))
+const Leaderboard = lazy(() => import('./components/Leaderboard'))
+const Help = lazy(() => import('./components/Help'))
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'))
+const Inbox = lazy(() => import('./components/Inbox'))
+const RatingPanel = lazy(() => import('./components/RatingPanel'))
+const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
+
+// DevTools: loaded in development and on staging
+const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
+const DevTools = (import.meta.env.DEV || isStaging)
+  ? lazy(() => import('./components/DevTools'))
+  : () => null
 
 function getInviteCounty(): string | null {
   const params = new URLSearchParams(window.location.search)
@@ -62,7 +74,7 @@ export default function App() {
   const activeTab = tabFromPath(location.pathname)
 
   const { user, profile, loading: authLoading, signOut, setProfile } = useAuth()
-  const [forceSignup, setForceSignup] = useState(false)
+  // forceSignup removed — signup lives at /signup (a real URL, not a state toggle)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
@@ -99,6 +111,21 @@ export default function App() {
     }
   }, [authLoading, profile])
 
+  // Authenticated but no profile → new user arriving from magic link.
+  // Send them to /signup so they can complete registration.
+  // Signed out → if on a protected route, redirect to landing page.
+  useEffect(() => {
+    if (!authLoading && user && !profile) {
+      navigate(ROUTES.SIGNUP, { replace: true })
+    }
+    if (!authLoading && !user && !profile) {
+      const publicPaths = ['/', ROUTES.LOGIN, ROUTES.JOIN, ROUTES.SIGNUP]
+      if (!publicPaths.includes(location.pathname)) {
+        navigate('/', { replace: true })
+      }
+    }
+  }, [authLoading, user?.id, profile?.id])
+
   // Resolve tournament invite county for pre-filling registration
   useEffect(() => {
     if (inviteTournamentCode && !inviteTournamentCounty) {
@@ -110,19 +137,11 @@ export default function App() {
 
   const [showInbox, setShowInbox] = useState(false)
   const [showRatingPanel, setShowRatingPanel] = useState(false)
-  const notifWrapperRef = useRef<HTMLDivElement>(null)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
-  // Dismiss notification panel / inbox on outside click or Escape key
+  // Dismiss inbox on outside click
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
-      if (
-        showNotifications &&
-        notifWrapperRef.current &&
-        !notifWrapperRef.current.contains(e.target as Node)
-      ) {
-        setShowNotifications(false)
-      }
       if (
         showInbox &&
         inboxWrapperRef.current &&
@@ -131,19 +150,11 @@ export default function App() {
         setShowInbox(false)
       }
     }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setShowNotifications(false)
-        setShowInbox(false)
-      }
-    }
     document.addEventListener('mousedown', handleMouseDown)
-    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('mousedown', handleMouseDown)
-      document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [showNotifications, showInbox])
+  }, [showInbox])
 
   // Count pending actions for notification badge
   const matchActionCount = tournaments.reduce((count, t) => {
@@ -266,50 +277,71 @@ export default function App() {
     return (
       <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center', opacity: 0.6 }}>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Loading...</p>
+          <p style={{ fontSize: 'var(--font-label)', color: 'var(--color-text-secondary)' }}>Loading...</p>
         </div>
       </div>
     )
   }
 
   if (!profile) {
-    if (!forceSignup) {
+    const devTools = (
+      <DevTools
+        onProfileSwitch={p => setProfile(p)}
+        activeTournamentId={null}
+        onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+        onTournamentCreated={() => { refreshTournaments(); navigate(ROUTES.HOME) }}
+      />
+    )
+
+    // /signup — registration flow
+    if (location.pathname === ROUTES.SIGNUP) {
       return (
-        <div className="app app-desktop-guest">
-          <DesktopGuestHomepage onGetStarted={() => setForceSignup(true)} />
-          <DevTools
-            onProfileSwitch={p => setProfile(p)}
-            activeTournamentId={null}
-            onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-            onTournamentCreated={id => {
-              refreshTournaments()
-              navigate(ROUTES.HOME)
-            }}
-          />
+        <div className="app">
+          <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
+            <div className="top-nav-logo top-nav-logo-large">
+              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
+            </div>
+            <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
+              Blog
+            </a>
+          </nav>
+          <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
+          <Footer />
+          {devTools}
         </div>
       )
     }
 
+    // /login — dedicated login page (Strava-style dual column)
+    if (location.pathname === ROUTES.LOGIN) {
+      return (
+        <div className="app app-desktop-guest">
+          <Login onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          <Footer />
+          {devTools}
+        </div>
+      )
+    }
+
+    // /join — ad-optimised landing page (minimal, no nav)
+    if (location.pathname === ROUTES.JOIN) {
+      return (
+        <div className="app app-desktop-guest">
+          <JoinLanding onSignUp={() => navigate(ROUTES.SIGNUP)} />
+          <Footer />
+          {devTools}
+        </div>
+      )
+    }
+
+    // / — marketing home page (default for unauthenticated visitors)
     return (
-      <div className="app">
-        <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-          <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-            </div>
-          <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
-            Blog
-          </a>
-        </nav>
-        <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} />
-        <DevTools
-          onProfileSwitch={p => setProfile(p)}
-          activeTournamentId={null}
-          onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-          onTournamentCreated={id => {
-            refreshTournaments()
-            navigate(ROUTES.HOME)
-          }}
+      <div className="app app-desktop-guest">
+        <DesktopGuestHomepage
+          onGetStarted={() => navigate(ROUTES.SIGNUP)}
+          onLogin={() => navigate(ROUTES.LOGIN)}
         />
+        {devTools}
       </div>
     )
   }
@@ -322,8 +354,8 @@ export default function App() {
           <div className="top-nav-logo" onClick={() => navigate(ROUTES.HOME)} style={{ cursor: 'pointer' }}>
               <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
             </div>
-          {user?.email && (
-            <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {isStaging && user?.email && (
+            <span style={{ fontSize: 'var(--font-micro)', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.email}
             </span>
           )}
@@ -346,8 +378,7 @@ export default function App() {
               </svg>
               {unreadMsgCount > 0 && <span className="inbox-unread-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
-            <div className="notif-wrapper" ref={notifWrapperRef}>
-              <button className="top-nav-icon" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); setShowRatingPanel(false) }}>
+            <button className="top-nav-icon notif-wrapper" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); setShowRatingPanel(false) }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -355,97 +386,12 @@ export default function App() {
                 {pendingActionCount > 0 && (
                   <span className="notif-badge">{pendingActionCount}</span>
                 )}
-              </button>
-              {showNotifications && (() => {
-                const rallyNotifs = profile ? getNotifications(profile.id).slice(0, 10) : []
-                if (profile) markNotificationsRead(profile.id)
-                return (
-                  <div className="notif-dropdown">
-                    <div className="notif-header">Notifications</div>
-                    {pendingActionCount === 0 && rallyNotifs.length === 0 ? (
-                      <div className="notif-empty">All caught up!</div>
-                    ) : (
-                      <div className="notif-list">
-                        {/* Rally notifications (offers, acceptances, etc.) */}
-                        {rallyNotifs.map(n => {
-                          const icon = n.type === 'match_offer' ? '📩'
-                            : n.type === 'offer_accepted' ? '✅'
-                            : n.type === 'offer_declined' ? '✗'
-                            : n.type === 'offer_expired' ? '⏱'
-                            : '🎾'
-                          return (
-                            <button
-                              key={n.id}
-                              className={`notif-item ${!n.read ? 'notif-unread' : ''}`}
-                              onClick={() => {
-                                if (n.type === 'match_offer') {
-                                  navigate(ROUTES.PLAYNOW)
-                                } else if (n.type === 'offer_accepted') {
-                                  if (n.relatedOfferId) {
-                                    const offer = getMatchOffer(n.relatedOfferId)
-                                    if (offer?.matchId) {
-                                      setFocusMatchId(offer.matchId)
-                                    }
-                                  }
-                                  navigate(ROUTES.BRACKET)
-                                }
-                                setShowNotifications(false)
-                              }}
-                            >
-                              <span className="notif-icon">{icon}</span>
-                              <div className="notif-content">
-                                <div className="notif-action">{n.message}</div>
-                                {n.detail && <div className="notif-opponent">{n.detail}</div>}
-                              </div>
-                            </button>
-                          )
-                        })}
-                        {/* Match action notifications */}
-                        {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
-                          t.matches.filter(m =>
-                            !m.completed &&
-                            (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
-                            m.player1Id && m.player2Id
-                          ).map(m => {
-                            const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
-                            const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
-                            let action = ''
-                            let icon = ''
-                            let urgency = ''
-                            if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️'; urgency = 'notif-urgent' }
-                            else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾'; urgency = 'notif-ready' }
-                            else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = `${opponentName} proposed a time — tap to confirm`; icon = '📩'; urgency = 'notif-pending' }
-                            else { action = 'Needs scheduling'; icon = '📅'; urgency = '' }
-                            return (
-                              <button
-                                key={`${t.id}-${m.id}`}
-                                className={`notif-item ${urgency}`}
-                                onClick={() => {
-                                  setFocusMatchId(m.id)
-                                  navigate(ROUTES.BRACKET)
-                                  setShowNotifications(false)
-                                }}
-                              >
-                                <span className="notif-icon">{icon}</span>
-                                <div className="notif-content">
-                                  <div className="notif-action">{action}</div>
-                                  <div className="notif-opponent">vs {opponentName}</div>
-                                  <div className="notif-time">{t.name}</div>
-                                </div>
-                              </button>
-                            )
-                          })
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })()}
-            </div>
+            </button>
           </div>
         </nav>
 
         <main className="content tab-content">
+          <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', opacity: 0.5, fontSize: 'var(--font-label)' }}>Loading...</div>}>
           <Routes>
             <Route path={ROUTES.HOME} element={
               <Home
@@ -530,7 +476,9 @@ export default function App() {
             {/* Catch-all: redirect unknown paths to home */}
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
+          </Suspense>
         </main>
+        <Footer />
       </div>
 
         <nav className="bottom-tabs">
@@ -565,6 +513,7 @@ export default function App() {
           </button>
         </nav>
       {showInbox && (
+        <Suspense fallback={null}>
         <div ref={inboxWrapperRef}>
         <Inbox
           currentPlayerId={profile.id}
@@ -574,14 +523,131 @@ export default function App() {
           onClose={() => setShowInbox(false)}
         />
         </div>
+        </Suspense>
       )}
       {showRatingPanel && (
+        <Suspense fallback={null}>
         <RatingPanel
           profile={profile}
           onClose={() => setShowRatingPanel(false)}
           onViewLeaderboard={() => { setShowRatingPanel(false); navigate(ROUTES.LEADERBOARD) }}
         />
+        </Suspense>
       )}
+      {showNotifications && (() => {
+        const rallyNotifs = profile ? getNotifications(profile.id).slice(0, 20) : []
+        if (profile) markNotificationsRead(profile.id)
+        return (
+          <div className="notif-fullscreen">
+            <div className="notif-fullscreen-header">
+              <h2 className="notif-fullscreen-title">Notifications</h2>
+              <button className="chat-close-btn" onClick={() => setShowNotifications(false)} aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            {pendingActionCount === 0 && rallyNotifs.length === 0 ? (
+              <div className="notif-empty-full">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span>All caught up!</span>
+              </div>
+            ) : (
+              <div className="notif-fullscreen-list">
+                {rallyNotifs.map(n => {
+                  let iconSvg: React.ReactNode
+                  if (n.type === 'match_offer') {
+                    iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+                  } else if (n.type === 'offer_accepted') {
+                    iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  } else if (n.type === 'offer_declined') {
+                    iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  } else if (n.type === 'offer_expired') {
+                    iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  } else {
+                    iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  }
+                  return (
+                    <button
+                      key={n.id}
+                      className={`notif-item ${!n.read ? 'notif-unread' : ''}`}
+                      onClick={() => {
+                        if (n.type === 'match_offer') {
+                          navigate(ROUTES.PLAYNOW)
+                        } else if (n.type === 'offer_accepted') {
+                          if (n.relatedOfferId) {
+                            const offer = getMatchOffer(n.relatedOfferId)
+                            if (offer?.matchId) {
+                              setFocusMatchId(offer.matchId)
+                            }
+                          }
+                          navigate(ROUTES.BRACKET)
+                        }
+                        setShowNotifications(false)
+                      }}
+                    >
+                      <span className="notif-icon-svg">{iconSvg}</span>
+                      <div className="notif-content">
+                        <div className="notif-action">{n.message}</div>
+                        {n.detail && <div className="notif-opponent">{n.detail}</div>}
+                      </div>
+                    </button>
+                  )
+                })}
+                {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
+                  t.matches.filter(m =>
+                    !m.completed &&
+                    (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
+                    m.player1Id && m.player2Id
+                  ).map(m => {
+                    const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
+                    const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+                    let action = ''
+                    let iconSvg: React.ReactNode
+                    let urgency = ''
+                    if (m.schedule?.status === 'escalated') {
+                      action = 'Escalated — respond now'
+                      iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      urgency = 'notif-urgent'
+                    } else if (m.schedule?.status === 'confirmed') {
+                      action = 'Ready to score'
+                      iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      urgency = 'notif-ready'
+                    } else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) {
+                      action = `${opponentName} proposed a time`
+                      iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      urgency = 'notif-pending'
+                    } else {
+                      action = 'Needs scheduling'
+                      iconSvg = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      urgency = ''
+                    }
+                    return (
+                      <button
+                        key={`${t.id}-${m.id}`}
+                        className={`notif-item ${urgency}`}
+                        onClick={() => {
+                          setFocusMatchId(m.id)
+                          navigate(ROUTES.BRACKET)
+                          setShowNotifications(false)
+                        }}
+                      >
+                        <span className="notif-icon-svg">{iconSvg}</span>
+                        <div className="notif-content">
+                          <div className="notif-action">{action}</div>
+                          <div className="notif-opponent">vs {opponentName}</div>
+                          <div className="notif-time">{t.name}</div>
+                        </div>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
       <DevTools
         onProfileSwitch={p => { setProfile(p); navigate(ROUTES.HOME) }}
         activeTournamentId={activeTournament?.id ?? null}
@@ -592,11 +658,13 @@ export default function App() {
         }}
       />
       {victoryAnim && (
+        <Suspense fallback={null}>
         <VictoryAnimation
           tier={victoryAnim.tier}
           tournamentName={victoryAnim.name}
           onDismiss={() => setVictoryAnim(null)}
         />
+        </Suspense>
       )}
     </div>
     </ToastProvider>

@@ -1,15 +1,16 @@
-import { formatHourCompact } from '../dateUtils'
+import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, savePlayerProfile } from '../supabase'
+import { sendOtp, verifyOtp, savePlayerProfile, signInWithGoogle } from '../supabase'
 import { analytics } from '../analytics'
 import { useAuth } from '../context/AuthContext'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
   inviteCounty?: string | null
+  onCancel?: () => void
 }
 
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
@@ -86,7 +87,7 @@ async function reverseGeocodeCounty(lat: number, lon: number): Promise<string | 
     // Ensure "County" suffix
     const countyName = county.includes('County') || county.includes('Parish') || county.includes('Borough')
       ? county
-      : `${county} County`
+      : `${titleCase(county)} County`
     return `${countyName}, ${abbr}`
   } catch {
     return null
@@ -127,7 +128,7 @@ function clearAuthFlow() {
   try { sessionStorage.removeItem(AUTH_FLOW_KEY) } catch { /* ignore */ }
 }
 
-export default function Register({ onRegistered, inviteCounty }: Props) {
+export default function Register({ onRegistered, inviteCounty, onCancel }: Props) {
   // Start directly at email — no onboarding funnel
   const [step, setStepRaw] = useState<Step>(() => {
     // Recover auth flow state after page reload / component remount
@@ -154,6 +155,9 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
     function onPopState(e: PopStateEvent) {
       if (e.state?.step) {
         setStepRaw(e.state.step)
+      } else {
+        // Backed past Register's history — return to home page
+        onCancel?.()
       }
     }
     window.addEventListener('popstate', onPopState)
@@ -417,11 +421,27 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       <div className="onboard-screen signup-screen">
         <div className="signup-content">
           <div className="signup-header">
-            <h1 className="signup-title">What's your email?</h1>
-            <p className="signup-desc">We'll send you a verification code to sign in.</p>
+            <h1 className="signup-title">Join Rally</h1>
+            <p className="signup-desc">Find local opponents and let us handle the scheduling. Join 2,400+ active players on Rally for free.</p>
           </div>
 
           <div className="auth-card">
+            {/* Social login first — Strava pattern: lowest friction path on top */}
+            <button
+              type="button"
+              className="sh-btn-signup sh-btn-google"
+              onClick={() => signInWithGoogle()}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Sign Up with Google
+            </button>
+
+            <div className="auth-divider">
+              <span className="auth-divider-line" />
+              <span className="auth-divider-text">or</span>
+              <span className="auth-divider-line" />
+            </div>
+
             <form onSubmit={handleSendOtp} className="signup-form">
               <label className="field auth-field">
                 <span className="field-label">Email address</span>
@@ -446,12 +466,20 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                 className="btn btn-primary btn-large signup-cta auth-cta"
                 disabled={!email.trim() || otpSending}
               >
-                {otpSending ? 'Sending...' : 'Continue'}
+                {otpSending ? 'Sending...' : 'Sign Up with Email'}
               </button>
             </form>
 
             <p className="signup-social-proof auth-helper-copy">
-              No password needed. We’ll just verify your email.
+              No password. No spam. We only email you about matches.
+            </p>
+
+            <p className="auth-terms">
+              By signing up, you agree to Rally's <a href="/support/">Terms of Service</a> and <a href="/support/">Privacy Policy</a>.
+            </p>
+
+            <p className="auth-switch">
+              Already a member? <a href="/login" className="sh-link">Log In</a>
             </p>
           </div>
         </div>
@@ -463,7 +491,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
   if (step === 'verify') {
     async function handleVerifyOtp(e: React.FormEvent) {
       e.preventDefault()
-      if (otpCode.length !== 6 || otpVerifying) return
+      if (otpCode.length < 6 || otpVerifying) return
       setOtpError(null)
       setOtpVerifying(true)
       const result = await verifyOtp(email.trim().toLowerCase(), otpCode)
@@ -497,28 +525,30 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
           <div className="signup-header">
             <h1 className="signup-title">Check your email</h1>
             <p className="signup-desc">
-              Enter the 6-digit code sent to <strong>{email}</strong>
+              We sent a sign-in link to <strong>{email}</strong>. Click it to continue.
+            </p>
+            <p className="signup-desc" style={{ marginTop: 8, opacity: 0.7, fontSize: '0.9em' }}>
+              If you received a numeric code instead, enter it below.
             </p>
           </div>
 
           <div className="auth-card">
             <form onSubmit={handleVerifyOtp} className="signup-form">
               <label className="field auth-field">
-                <span className="field-label">Verification code</span>
+                <span className="field-label">Code (optional)</span>
                 <input
                   className="auth-input auth-input--otp"
                   type="text"
                   value={otpCode}
                   onChange={e => {
-                    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 8)
                     setOtpCode(val)
                     setOtpError(null)
                   }}
-                  placeholder="000000"
-                  autoFocus
+                  placeholder="12345678"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  maxLength={6}
+                  maxLength={8}
                 />
               </label>
 
@@ -529,7 +559,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
               <button
                 type="submit"
                 className="btn btn-primary btn-large signup-cta auth-cta"
-                disabled={otpCode.length !== 6 || otpVerifying}
+                disabled={otpCode.length < 6 || otpVerifying}
               >
                 {otpVerifying ? 'Verifying...' : 'Verify'}
               </button>
@@ -595,7 +625,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             <div className="field" ref={suggestionsRef}>
               <span className="field-label">Where do you play?</span>
               {inviteCounty ? (
-                <input type="text" value={county} readOnly />
+                <input type="text" value={titleCase(county)} readOnly />
               ) : (
                 <>
                   <input
@@ -626,6 +656,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   )}
                 </>
               )}
+              <span className="field-hint">We'll match you with players in your county.</span>
             </div>
 
             <button
@@ -676,8 +707,8 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
                   </button>
                 ))}
               </div>
-              <p className="skill-reassurance" style={{ fontSize: 'var(--font-body-sm, 13px)', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-                Your rating will adjust automatically after a few matches.
+              <p className="skill-reassurance">
+                Not sure? Pick whatever feels closest — your rating adjusts after a few matches.
               </p>
             </div>
 
@@ -747,7 +778,7 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
             </svg>
           </div>
           <h1 className="onboard-title">You're in!</h1>
-          <p className="onboard-subtitle">Rally can now schedule matches for you.</p>
+          <p className="onboard-subtitle">Next: join your county's tournament and we'll auto-schedule your matches.</p>
           <div className="confirmed-ball">🎾</div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { markConversationRead, RALLY_SYSTEM_ID } from '../store'
+import { titleCase } from '../dateUtils'
 
 type Section = 'overview' | 'scheduling' | 'scoring' | 'deadlines' | 'create' | 'faq'
 
@@ -80,7 +81,7 @@ function OverviewSection({ county }: { county: string }) {
   return (
     <div className="help-section">
       <p className="help-intro">
-        Rally runs monthly tennis tournaments in {county} — and schedules every match automatically.
+        Rally runs monthly tennis tournaments in {titleCase(county)} — and schedules every match automatically.
       </p>
 
       <div className="help-phases">

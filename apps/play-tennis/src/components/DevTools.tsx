@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { titleCase } from '../dateUtils'
 import {
   seedLobby,
   getProfile,
@@ -191,7 +192,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
       <div className="devbar-grid">
         {/* Seed lobby */}
         <div className="devbar-group">
-          <span className="devbar-group-label">Lobby {county && `· ${county}`}</span>
+          <span className="devbar-group-label">Lobby {county && `· ${titleCase(county)}`}</span>
           <div className="devbar-row">
             <button className="devbar-btn" onClick={() => run(() => seed(1))} disabled={busy}>+1</button>
             <button className="devbar-btn" onClick={() => run(() => seed(3))} disabled={busy}>+3</button>

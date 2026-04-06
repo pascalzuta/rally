@@ -46,3 +46,8 @@ export function formatSlotInline(slot: { day: number; startHour: number }): stri
 export function formatTimeRange(startHour: number, endHour: number): string {
   return `${formatTimeFull(startHour)} – ${formatTimeFull(endHour)}`;
 }
+
+/** "marin county" → "Marin County" — title-case for display */
+export function titleCase(str: string): string {
+  return str.replace(/\b\w/g, c => c.toUpperCase());
+}

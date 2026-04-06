@@ -186,7 +186,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
           </div>
           <div className="empty-state-title">No tournament yet</div>
-          <div className="empty-state-message">Join one from the Home tab to find matches and play</div>
+          <div className="empty-state-message">Head to the Home tab and join your county — we'll take it from there</div>
         </div>
       </div>
     )
@@ -438,8 +438,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
         <div className="section-header">Who's Free</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
-            <div className="pn-empty-title">No one's free right now</div>
-            <div className="pn-empty-desc">Post your availability — we'll notify players when you do</div>
+            <div className="pn-empty-title">Courts are quiet right now</div>
+            <div className="pn-empty-desc">Post when you're free — we'll rally the troops</div>
             {!myBroadcast && !showForm && <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>Play Now</button>}
           </div>
         ) : dateGroups.map(group => (

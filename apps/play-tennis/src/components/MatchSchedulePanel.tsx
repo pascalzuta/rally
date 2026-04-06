@@ -166,25 +166,35 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
 
   async function handleAccept(proposalId: string) {
     const proposal = schedule?.proposals.find(p => p.id === proposalId)
-    await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
-    if (onActionComplete && proposal) {
-      const label = proposalLabel(proposal)
-      onActionComplete(`Time confirmed \u2014 ${label}.`, 'green')
-    } else {
+    try {
+      await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
+      if (onActionComplete && proposal) {
+        const label = proposalLabel(proposal)
+        onActionComplete(`Time confirmed \u2014 ${label}.`, 'green')
+      } else {
+        onUpdated()
+      }
+    } catch (err) {
+      console.error('Failed to accept proposal:', err)
       onUpdated()
     }
   }
 
   async function handlePropose() {
     if (!propDay || propStart >= propEnd) return
-    await proposeNewSlots(tournament.id, match.id, currentPlayerId, [
-      { day: propDay as DayOfWeek, startHour: propStart, endHour: propEnd }
-    ])
-    setShowPropose(false)
-    setPropDay('')
-    if (onActionComplete) {
-      onActionComplete("Time proposed. You'll be notified when they respond.", 'blue')
-    } else {
+    try {
+      await proposeNewSlots(tournament.id, match.id, currentPlayerId, [
+        { day: propDay as DayOfWeek, startHour: propStart, endHour: propEnd }
+      ])
+      setShowPropose(false)
+      setPropDay('')
+      if (onActionComplete) {
+        onActionComplete("Time proposed. You'll be notified when they respond.", 'blue')
+      } else {
+        onUpdated()
+      }
+    } catch (err) {
+      console.error('Failed to propose slots:', err)
       onUpdated()
     }
   }
