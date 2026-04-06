@@ -293,9 +293,7 @@ export default function App() {
     return (
       <div className="app">
         <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-          <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-            </div>
+          <div className="rally-mark" style={{ fontSize: 30 }}>rally.</div>
           <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}>
             Blog
           </a>
@@ -319,14 +317,7 @@ export default function App() {
     <div className="app">
       <div className="screen">
         <nav className="top-nav">
-          <div className="top-nav-logo" onClick={() => navigate(ROUTES.HOME)} style={{ cursor: 'pointer' }}>
-              <img className="rally-logo" height="34" src="/rally-logo.svg" alt="Rally" style={{ position: 'relative', left: 4, top: 1 }} />
-            </div>
-          {user?.email && (
-            <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', opacity: 0.7, fontFamily: 'monospace', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user.email}
-            </span>
-          )}
+          <div className="rally-mark" onClick={() => navigate(ROUTES.HOME)}>rally.</div>
           <div className="top-nav-actions">
             <button className="top-nav-icon" aria-label="Rating & Trophies" onClick={() => { setShowRatingPanel(!showRatingPanel); setShowInbox(false); setShowNotifications(false) }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -8,7 +8,7 @@ export default function DesktopGuestHomepage({ onGetStarted }: Props) {
       {/* Nav */}
       <nav className="dgh-nav">
         <div className="dgh-nav-inner">
-          <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
+          <span className="rally-mark" style={{ fontSize: 30 }}>rally.</span>
           <div className="dgh-nav-actions">
             <a href="/blog/" className="dgh-btn-link">The Baseline</a>
             <a href="/support/" className="dgh-btn-link">Help</a>
