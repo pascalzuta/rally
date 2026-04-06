@@ -14,7 +14,7 @@
     <link rel="canonical" href="https://play-rally.com/" />
 
     <!-- Theme & App Config -->
-    <meta name="theme-color" content="#16a34a" />
+    <meta name="theme-color" content="#F8F7F5" />
     <meta name="color-scheme" content="light dark" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -28,7 +28,7 @@
     <meta property="og:url" content="https://play-rally.com/" />
     <meta property="og:title" content="Rally — Find Local Tennis Players & Tournaments Near You" />
     <meta property="og:description" content="Join your county's tennis lobby, get auto-matched by skill and availability, and play competitive round-robin tournaments. Free for all skill levels." />
-    <meta property="og:image" content="https://play-rally.com/og-image.png" />
+    <meta property="og:image" content="https://play-rally.com/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Rally — Local tennis tournaments made easy" />
@@ -40,7 +40,7 @@
     <meta name="twitter:url" content="https://play-rally.com/" />
     <meta name="twitter:title" content="Rally — Find Local Tennis Players & Tournaments Near You" />
     <meta name="twitter:description" content="Join your county's tennis lobby, get auto-matched by skill and availability, and play competitive round-robin tournaments. Free for all skill levels." />
-    <meta name="twitter:image" content="https://play-rally.com/og-image.png" />
+    <meta name="twitter:image" content="https://play-rally.com/og-image.jpg" />
     <meta name="twitter:image:alt" content="Rally — Local tennis tournaments made easy" />
 
     <!-- Geo Tags -->
@@ -52,9 +52,13 @@
 
     <!-- Favicons & Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- Preconnects for Performance -->
     <link rel="preconnect" href="https://gxiflulfgqahlvdirecz.supabase.co" />
@@ -107,7 +111,7 @@
         "Rally Rating system with ELO-based rankings",
         "Real-time leaderboards by county"
       ],
-      "screenshot": "https://play-rally.com/og-image.png"
+      "screenshot": "https://play-rally.com/og-image.jpg"
     }
     </script>
 
@@ -266,29 +270,41 @@
     }
     </script>
 
-    <!-- Meta Pixel Code -->
+    <!-- Analytics: deferred until after first paint for faster FCP -->
     <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window,document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '840050529907859');
-      fbq('track', 'PageView');
-    </script>
-    <!-- End Meta Pixel Code -->
-    <!-- Google Ads tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18049668578"></script>
-    <script>
+      // Stub fbq and gtag so calls before load are queued (not dropped)
+      window.fbq = function() { (window.fbq.q = window.fbq.q || []).push(arguments); };
+      window._fbq = window.fbq;
+      window.fbq.push = window.fbq; window.fbq.loaded = true; window.fbq.version = '2.0'; window.fbq.q = [];
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'AW-18049668578');
+
+      // Google Ads gtag — loaded immediately (async) so Google's verification crawler can detect it
+      var gt = document.createElement('script');
+      gt.async = true;
+      gt.src = 'https://www.googletagmanager.com/gtag/js?id=AW-18049668578';
+      document.head.appendChild(gt);
+      gt.onload = function() {
+        gtag('js', new Date());
+        gtag('config', 'AW-18049668578');
+        gtag('event', 'conversion', {
+          'send_to': 'AW-18049668578',
+          'value': 1.0,
+          'currency': 'USD'
+        });
+      };
+
+      // Load Meta Pixel after first paint
+      requestIdleCallback(function() {
+        var fb = document.createElement('script');
+        fb.async = true;
+        fb.src = 'https://connect.facebook.net/en_US/fbevents.js';
+        document.head.appendChild(fb);
+        fbq('init', '840050529907859');
+        fbq('track', 'PageView');
+      }, { timeout: 3000 });
     </script>
-    <!-- End Google Ads -->
+    <!-- End deferred analytics -->
   </head>
   <body>
     <!-- Noscript Fallback for SEO & Accessibility -->

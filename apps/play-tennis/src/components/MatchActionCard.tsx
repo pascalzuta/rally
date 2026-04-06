@@ -16,6 +16,7 @@ interface Props {
   isExpanded: boolean
   isMessaging: boolean
   className?: string
+  style?: React.CSSProperties
   onToggleExpanded: () => void
   onToggleMessaging: () => void
   onUpdated: () => void
@@ -31,6 +32,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     isExpanded,
     isMessaging,
     className,
+    style,
     onToggleExpanded,
     onToggleMessaging,
     onUpdated,
@@ -86,6 +88,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
     <div
       ref={ref}
       className={classes}
+      style={style}
       onClick={canToggleExpanded ? onToggleExpanded : undefined}
       >
       <div className="action-card-status-row">

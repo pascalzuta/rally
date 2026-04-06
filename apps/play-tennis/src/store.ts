@@ -8,6 +8,7 @@ import {
   syncRatingSnapshot, syncTrophiesToRemote, syncBadgesToRemote,
   SyncResult,
 } from './sync'
+import { titleCase } from './dateUtils'
 import { getClient } from './supabase'
 import { enqueue } from './offline-queue'
 import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
@@ -94,11 +95,6 @@ export function createProfile(
   return profile
 }
 
-export async function logout(): Promise<void> {
-  // Sign out of Supabase — AuthContext's SIGNED_OUT handler clears localStorage
-  const { signOut } = await import('./supabase')
-  await signOut()
-}
 
 // --- Lobby ---
 
@@ -140,7 +136,7 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
-    county: profile.county.toLowerCase(),
+    county: profile.county,
     joinedAt: new Date().toISOString(),
   }
   lobby.push(entry)
@@ -233,7 +229,7 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
   const num = getNextTournamentNumber(county, extraTournaments)
   return {
     id: generateId(),
-    name: `${county} Open #${num}`,
+    name: `${titleCase(county)} Open #${num}`,
     date: new Date().toISOString().split('T')[0],
     county,
     format: 'round-robin',
@@ -294,7 +290,7 @@ export async function createDoublesTournament(
 
   const tournament: Tournament = {
     id: generateId(),
-    name: `${county} Doubles #${num}`,
+    name: `${titleCase(county)} Doubles #${num}`,
     date: new Date().toISOString().split('T')[0],
     county,
     format: 'round-robin',
@@ -1375,7 +1371,7 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
     if (client) {
       const rows = tournaments.map(t => ({
         id: t.id,
-        county: t.county.toLowerCase(),
+        county: t.county,
         data: t,
       }))
       const { error } = await client.from('tournaments').upsert(rows, { onConflict: 'id' })
@@ -3068,7 +3064,7 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
   for (const name of toAdd) {
     const id = generateId()
     const playerIdx = TEST_PLAYERS.indexOf(name)
-    const entry: LobbyEntry = { playerId: id, playerName: name, county: normalizedCounty, joinedAt: new Date().toISOString() }
+    const entry: LobbyEntry = { playerId: id, playerName: name, county, joinedAt: new Date().toISOString() }
     lobby.push(entry)
 
     // Set up their rating (keyed by player ID)

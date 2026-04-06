@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, logout } from '../store'
+import { titleCase } from '../dateUtils'
+import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
 import { useStableOrder } from '../useStableOrder'
@@ -154,10 +155,7 @@ export default function Home({
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
 
   async function handleLogout() {
-    if (confirm('Sign out? You can sign back in with your email.')) {
-      await logout()
-      onLogout?.()
-    }
+    onLogout?.()
   }
 
   const activeTournaments = useMemo(
@@ -228,7 +226,7 @@ export default function Home({
       <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
         <div className="card-status-row">
           <div className="card-status-label card-status-label--blue">Leaderboard</div>
-          <div className="card-meta-chip">{profile.county}</div>
+          <div className="card-meta-chip">{titleCase(profile.county)}</div>
         </div>
         <div className="card-summary-main">
           <div className="card-title">{title}</div>
@@ -292,7 +290,7 @@ export default function Home({
 
       {/* Leaderboard (pre-tournament states) */}
       {activeTournaments.length === 0 && renderLeaderboardTeaser(
-        `Top players in ${profile.county}`,
+        `Top players in ${titleCase(profile.county)}`,
         setupTournaments.length > 0
           ? 'Ratings update after each result, even while the bracket is forming.'
           : 'See where you stand before your next tournament.'
@@ -324,7 +322,7 @@ export default function Home({
       {/* Action Cards */}
       {(actionCards.length > 0 || messageCards.length > 0) && (
         <div className="action-cards">
-          {actionCards.map(card => {
+          {actionCards.map((card, i) => {
             const cardKey = `${card.tournament.id}-${card.match.id}`
             const isExpanded = expandedCardKey === cardKey
             const isMessaging = messagingCardKey === cardKey
@@ -338,6 +336,7 @@ export default function Home({
                 currentPlayerName={profile.name}
                 isExpanded={isExpanded}
                 isMessaging={isMessaging}
+                style={{'--i': i} as React.CSSProperties}
                 onToggleExpanded={() => {
                   setMessagingCardKey(null)
                   setExpandedCardKey(isExpanded ? null : cardKey)
@@ -353,13 +352,14 @@ export default function Home({
               />
             )
           })}
-          {messageCards.map(card => {
+          {messageCards.map((card, i) => {
             const cardKey = `message-${card.opponentId}`
             const isMessaging = messagingCardKey === cardKey
             return (
               <div
                 key={cardKey}
                 className="action-card action-message"
+                style={{'--i': actionCards.length + i} as React.CSSProperties}
                 onClick={() => {
                   setExpandedCardKey(null)
                   setMessagingCardKey(isMessaging ? null : cardKey)
@@ -432,7 +432,7 @@ export default function Home({
       })()}
 
       {/* Leaderboard Teaser */}
-      {renderLeaderboardTeaser(`Top players in ${profile.county}`, 'Ratings update after each match.')}
+      {renderLeaderboardTeaser(`Top players in ${titleCase(profile.county)}`, 'Ratings update after each match.')}
 
       {/* View All */}
       <div className="home-view-all">

@@ -40,31 +40,53 @@ function buildProfile(userId: string, email: string, data: Awaited<ReturnType<ty
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Instantly restore cached profile from localStorage (no network wait)
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfileState] = useState<PlayerProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfileState] = useState<PlayerProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem(PROFILE_KEY)
+      return cached ? JSON.parse(cached) : null
+    } catch { return null }
+  })
+  // Skip the loading spinner if we already have a cached profile
+  const [loading, setLoading] = useState(!profile)
 
   useEffect(() => {
     const client = getClient()
     if (!client) { setLoading(false); return }
 
-    // Resolve initial session once, then rely on onAuthStateChange for all updates
-    client.auth.getSession().then(async ({ data }) => {
-      const sessionUser = data.session?.user ?? null
-      if (sessionUser) {
-        const profileData = await fetchPlayerProfile(sessionUser.id)
-        const restored = buildProfile(sessionUser.id, sessionUser.email ?? '', profileData)
-        if (restored) {
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
-          setProfileState(restored)
-        }
-        setUser(sessionUser)
-      }
-      setLoading(false)
-    })
-
+    // Use onAuthStateChange exclusively — INITIAL_SESSION fires on every page load
+    // (with session if one exists, null if not) and is the correct Supabase v2 pattern.
+    // This avoids the getSession() + onAuthStateChange race condition that caused
+    // infinite loading on refresh.
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'INITIAL_SESSION') {
+        // Fires once on mount. Resolves loading regardless of outcome.
+        try {
+          if (session?.user) {
+            const u = session.user
+            setUser(u)
+            const profileData = await fetchPlayerProfile(u.id)
+            const restored = buildProfile(u.id, u.email ?? '', profileData)
+            if (restored) {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
+              setProfileState(restored)
+            } else if (profile && (profile.id === u.id || profile.authId === u.id)) {
+              // DB fetch returned null but localStorage has a profile for this user.
+              // Trust localStorage — the DB save may not have completed yet.
+              setProfileState(profile)
+            }
+          } else if (profile) {
+            // No valid session but we have a cached profile — clear stale data
+            localStorage.removeItem(PROFILE_KEY)
+            setProfileState(null)
+          }
+        } finally {
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        // Fires after OTP verify, magic link redirect, or token refresh that upgrades
+        // an anonymous session. NOT fired on page refresh (that's INITIAL_SESSION).
         const u = session.user
         setUser(u)
         const profileData = await fetchPlayerProfile(u.id)
@@ -73,7 +95,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
         } else {
-          // New user — authenticated but not yet registered
+          // No profile in DB — check if localStorage has one for this user
+          const cached = localStorage.getItem(PROFILE_KEY)
+          if (cached) {
+            try {
+              const cachedProfile = JSON.parse(cached) as PlayerProfile
+              if (cachedProfile.id === u.id || cachedProfile.authId === u.id) {
+                setProfileState(cachedProfile)
+                return
+              }
+            } catch { /* ignore parse errors */ }
+          }
+          // Truly new user — no profile anywhere
           setProfileState(null)
         }
       } else if (event === 'SIGNED_OUT') {
@@ -89,9 +122,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signOut() {
-    const client = getClient()
-    if (client) await client.auth.signOut()
-    // SIGNED_OUT event handler above clears state and localStorage
+    // Clear local state immediately so the UI updates even if the network call fails
+    setUser(null)
+    setProfileState(null)
+    clearAuthLocalStorage()
+    // Then tell Supabase to revoke the session server-side (best-effort)
+    try {
+      const client = getClient()
+      if (client) await client.auth.signOut()
+    } catch {
+      // Network failure is fine — local state is already cleared
+    }
   }
 
   function setProfile(p: PlayerProfile | null) {

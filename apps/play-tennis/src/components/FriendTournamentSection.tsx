@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { titleCase } from '../dateUtils'
 import {
   cancelFriendTournament, startFriendTournament,
 } from '../store'
@@ -60,7 +61,7 @@ function FriendTournamentCard({
         <div className="card-meta-chip card-meta-chip--green">Free</div>
       </div>
       <div className="card-summary-main">
-        <div className="card-title">{tournament.name}</div>
+        <div className="card-title">{titleCase(tournament.name)}</div>
         <div className="card-supporting">
           {isCompleted && 'Tournament complete.'}
           {isActive && `${count} players · Round robin`}

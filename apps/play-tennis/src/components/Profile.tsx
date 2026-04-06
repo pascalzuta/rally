@@ -1,6 +1,6 @@
-import { formatHourCompact } from '../dateUtils'
+import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useRef, useMemo } from 'react'
-import { logout, getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
+import { getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
 
@@ -81,11 +81,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   }, [profile.createdAt])
 
   async function handleLogout() {
-    if (confirm('Sign out? You can sign back in with your email.')) {
-      await logout()
-      onLogout()
-      window.location.hash = '#home'
-    }
+    onLogout()
   }
 
   function toggleQuickSlot(quickSlot: { label: string; slots: AvailabilitySlot[] }) {
@@ -227,7 +223,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
         </div>
         <div className="profile-hero-info">
           <h2 className="profile-hero-name">{profile.name}</h2>
-          <p className="profile-hero-county">{profile.county}</p>
+          <p className="profile-hero-county">{titleCase(profile.county)}</p>
           <div className="profile-hero-tags">
             {profile.skillLevel && (
               <span className="profile-hero-level">

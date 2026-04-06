@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { titleCase } from '../dateUtils'
 import { Tournament, Match, MatchReaction } from '../types'
 import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, saveMatchReaction, getMatchReactions, checkAutoAcceptScores, getPendingFeedback, clearPendingFeedback, getPlayerFeedbackForMatch } from '../store'
 import { getMatchCardView } from '../matchCardModel'
@@ -186,17 +187,23 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8m-4-4v4m-4.5-8a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 0 4.5 4.5M6.5 13A4.5 4.5 0 0 1 2 8.5" /><path d="M12 2v1m-7 3H4m16 0h-1m-2.64-3.36-.7.7M8.64 3.64l-.7-.7" /></svg>
           </div>
           <div className="empty-state-title">No tournament yet</div>
-          <div className="empty-state-message">Join one from the Home tab — your bracket will appear here</div>
+          <div className="empty-state-message">Join your county from the Home tab — your draw will show up here</div>
         </div>
       </div>
     )
   }
 
   if (tournament.status === 'setup' || tournament.status === 'scheduling') {
+    const setupIsParticipant = tournament.players.some(p => p.id === currentPlayerId)
+    const handleSetupLeave = async () => {
+      await leaveTournament(tournament!.id, currentPlayerId)
+      setShowLeaveConfirm(false)
+      onTournamentUpdated()
+    }
     return (
       <div className="bracket-tab">
         <div className="bracket-tab-header">
-          <h2>{tournament.name}</h2>
+          <h2>{titleCase(tournament.name)}</h2>
           <div className="bracket-tab-meta">
             {tournament.status === 'scheduling' ? 'Generating your schedule...' : `Setting up · ${tournament.players.length} players`}
           </div>
@@ -209,6 +216,27 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             ))}
           </ul>
         </div>
+
+        {setupIsParticipant && (
+          <button className="btn btn-large logout-btn" onClick={() => setShowLeaveConfirm(true)}>
+            Leave Tournament
+          </button>
+        )}
+
+        {showLeaveConfirm && (
+          <div className="leave-overlay" onClick={() => setShowLeaveConfirm(false)}>
+            <div className="leave-modal" onClick={e => e.stopPropagation()}>
+              <h3 className="leave-title">Leave Tournament?</h3>
+              <p className="leave-message">
+                You will be removed from this tournament. This cannot be undone.
+              </p>
+              <div className="leave-actions">
+                <button className="btn" onClick={() => setShowLeaveConfirm(false)}>Cancel</button>
+                <button className="btn btn-danger" onClick={handleSetupLeave}>Leave Tournament</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -621,7 +649,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   return (
     <div className="bracket-tab">
       <div className="bracket-tab-header">
-        <h2>{tournament.name}</h2>
+        <h2>{titleCase(tournament.name)}</h2>
         <div className="bracket-tab-meta">
           {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}
         </div>
