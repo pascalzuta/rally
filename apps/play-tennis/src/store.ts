@@ -1353,7 +1353,10 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
             return { success: true }
           }
         }
-        return result
+        // Conflict couldn't be resolved remotely — still save locally so UI updates
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+        enqueue('tournament', changedTournament)
+        return { success: true }
       }
       // Network error: save locally + queue
       localStorage.setItem(STORAGE_KEY, JSON.stringify(all))

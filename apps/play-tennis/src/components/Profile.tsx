@@ -68,11 +68,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   const playerRating = getPlayerRating(profile.id, profile.name)
   const tournamentsPlayed = getPlayerTournaments(profile.id).length
 
-  const { wins, losses } = useMemo(() => {
+  const { wins, losses } = (() => {
     const leaderboard = getCountyLeaderboard(profile.county)
     const entry = leaderboard.find(e => e.name.toLowerCase() === profile.name.toLowerCase())
     return { wins: entry?.wins ?? 0, losses: entry?.losses ?? 0 }
-  }, [profile.county, profile.name])
+  })()
 
   const joinDate = useMemo(() => {
     if (!profile.createdAt) return ''
