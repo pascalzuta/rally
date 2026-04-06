@@ -3980,7 +3980,7 @@ select:focus {
   font-size: var(--font-body-md);
 }
 
-.availability-slot-day { font-weight: var(--weight-semibold); }
+.availability-slot-day { font-family: var(--font-display); font-weight: 700; }
 .availability-slot-hours { color: var(--color-text-secondary); }
 .availability-current--editing {
   margin-bottom: 0;
@@ -4042,11 +4042,13 @@ select:focus {
 }
 
 .profile-hero-name {
+  font-family: var(--font-display);
   font-size: var(--font-title-md);
   font-weight: 800;
+  letter-spacing: -0.025em;
   color: var(--color-text-primary);
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .profile-hero-county {
@@ -4106,8 +4108,10 @@ select:focus {
 }
 
 .profile-hero-stat-value {
+  font-family: var(--font-display);
   font-size: var(--font-title-md);
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -6274,10 +6278,10 @@ select:focus {
 
 .bracket-tab-header h2 {
   font-family: var(--font-display);
-  font-size: var(--font-title-md);
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  font-size: var(--font-title-sm);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .bracket-tab-meta {
