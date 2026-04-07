@@ -25,11 +25,28 @@ export function getClient(): SupabaseClient | null {
 }
 
 /**
+ * Test emails that bypass OTP verification (auto-confirmed via edge function).
+ */
+const TEST_EMAILS = new Set(
+  Array.from({ length: 8 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`)
+)
+
+export function isTestEmail(email: string): boolean {
+  return TEST_EMAILS.has(email.toLowerCase().trim())
+}
+
+/**
  * Send an OTP code to the given email address.
  * Works for both new and returning users.
+ * Test emails (pascal.zuta+test1001-1008@gmail.com) skip the real OTP send.
  */
 export async function sendOtp(email: string): Promise<{ ok: boolean; error?: string; status?: number }> {
   if (!client) return { ok: false, error: 'supabase_not_initialized' }
+
+  // Test emails: skip OTP send, they'll use the edge function to authenticate
+  if (isTestEmail(email)) {
+    return { ok: true }
+  }
 
   const { error } = await client.auth.signInWithOtp({
     email,
@@ -46,12 +63,44 @@ export async function sendOtp(email: string): Promise<{ ok: boolean; error?: str
 /**
  * Verify the OTP code the user received via email.
  * On success, establishes a Supabase auth session.
+ * Test emails use the test-auth edge function instead of real OTP verification.
  */
 export async function verifyOtp(
   email: string,
   token: string,
 ): Promise<{ ok: boolean; userId?: string; error?: string }> {
   if (!client) return { ok: false, error: 'supabase_not_initialized' }
+
+  // Test emails: use edge function to auto-authenticate
+  if (isTestEmail(email)) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/test-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        return { ok: false, error: data.error || 'Test auth failed' }
+      }
+      // Use the token hash to verify OTP via Supabase client (establishes session)
+      if (data.token_hash) {
+        const { data: verifyData, error: verifyError } = await client.auth.verifyOtp({
+          token_hash: data.token_hash,
+          type: 'magiclink',
+        })
+        if (verifyError) {
+          console.warn('[Rally] Test auth verify failed:', verifyError.message)
+          return { ok: false, error: verifyError.message }
+        }
+        return { ok: true, userId: verifyData.user?.id }
+      }
+      return { ok: false, error: 'No token hash returned' }
+    } catch (err) {
+      console.warn('[Rally] Test auth error:', err)
+      return { ok: false, error: 'Test auth request failed' }
+    }
+  }
 
   const { data, error } = await client.auth.verifyOtp({
     email,

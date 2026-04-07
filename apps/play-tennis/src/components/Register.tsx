@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, savePlayerProfile } from '../supabase'
+import { sendOtp, verifyOtp, savePlayerProfile, isTestEmail } from '../supabase'
 import { analytics } from '../analytics'
 import { useAuth } from '../context/AuthContext'
 
@@ -458,6 +458,22 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       </div>
     )
   }
+
+  // Auto-verify test emails (skip OTP entry entirely)
+  useEffect(() => {
+    if (step !== 'verify' || !isTestEmail(email) || otpVerifying || authUserId) return
+    setOtpVerifying(true)
+    setOtpCode('000000')
+    verifyOtp(email.trim().toLowerCase(), '000000').then(result => {
+      setOtpVerifying(false)
+      if (result.ok && result.userId) {
+        setAuthUserId(result.userId)
+        analytics.track('Lead')
+      } else {
+        setOtpError(result.error || 'Test auth failed')
+      }
+    })
+  }, [step, email]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- OTP Verification Screen ---
   if (step === 'verify') {
