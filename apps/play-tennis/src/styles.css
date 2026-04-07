@@ -6024,14 +6024,18 @@ select:focus {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.action-card.action-score::before { background: var(--color-purple-primary); }
-.action-card.action-respond::before { background: var(--color-purple-primary); }
-.action-card.action-confirmed::before { background: var(--color-positive-primary); }
-.action-card.action-schedule::before { background: var(--color-purple-primary); }
-.action-card.action-escalated::before { background: var(--color-negative-primary); }
-.action-card.action-completed::before { background: var(--color-text-muted); }
-.action-card.action-confirm-score::before { background: #2A5BD7; }
-.action-card.action-message::before { background: var(--color-accent-primary); }
+/* Left border color = action urgency:
+   green  = resolved     blue  = respond/decide
+   orange = initiate     red   = urgent
+   gray   = passive                              */
+.action-card.action-confirmed::before     { background: var(--color-positive-primary); }
+.action-card.action-respond::before       { background: var(--color-accent-primary); }
+.action-card.action-confirm-score::before { background: var(--color-accent-primary); }
+.action-card.action-score::before         { background: var(--color-accent-primary); }
+.action-card.action-message::before       { background: var(--color-accent-primary); }
+.action-card.action-schedule::before      { background: var(--color-warning-primary); }
+.action-card.action-escalated::before     { background: var(--color-negative-primary); }
+.action-card.action-completed::before     { background: var(--color-text-muted); }
 
 .action-card .action-card-status-row {
   margin-bottom: 0;
@@ -6050,10 +6054,10 @@ select:focus {
   color: var(--color-text-secondary);
 }
 
-.action-score .action-card-type { color: var(--color-purple-primary); }
-.action-respond .action-card-type { color: var(--color-purple-primary); }
+.action-score .action-card-type { color: var(--color-accent-primary); }
+.action-respond .action-card-type { color: var(--color-accent-primary); }
 .action-confirmed .action-card-type { color: var(--color-positive-primary); }
-.action-schedule .action-card-type { color: var(--color-purple-primary); }
+.action-schedule .action-card-type { color: var(--color-warning-primary); }
 .action-escalated .action-card-type { color: var(--color-negative-primary); }
 .action-completed .action-card-type { color: var(--color-text-muted); }
 .action-confirm-score .action-card-type,
@@ -6104,13 +6108,13 @@ select:focus {
 }
 
 .action-score .action-card-btn {
-  background: var(--color-purple-bg);
-  color: var(--color-purple-primary);
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
 }
 
 .action-respond .action-card-btn {
-  background: var(--color-purple-bg);
-  color: var(--color-purple-primary);
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
 }
 
 .action-confirmed .action-card-btn {
@@ -6119,24 +6123,19 @@ select:focus {
 }
 
 .action-schedule .action-card-btn {
-  background: var(--color-purple-bg);
-  color: var(--color-purple-primary);
-}
-
-.action-confirm-score .action-card-btn {
-  background: var(--color-purple-bg);
-  color: var(--color-purple-primary);
-}
-
-.action-escalated .action-card-btn {
-  background: var(--color-negative-bg);
-  color: var(--color-negative-primary);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
 }
 
 .action-confirm-score .action-card-btn,
 .action-message .action-card-btn {
   background: var(--color-accent-bg);
   color: var(--color-accent-primary);
+}
+
+.action-escalated .action-card-btn {
+  background: var(--color-negative-bg);
+  color: var(--color-negative-primary);
 }
 
 /* Up Next card */

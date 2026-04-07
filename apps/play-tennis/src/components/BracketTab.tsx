@@ -62,17 +62,17 @@ function scheduleStatusClass(match: Match): string {
   }
 }
 
-function eyebrowTone(type: string): 'slate' | 'blue' | 'green' | 'purple' | 'red' {
+function eyebrowTone(type: string): 'slate' | 'blue' | 'green' | 'amber' | 'red' {
   switch (type) {
     case 'confirmed':
       return 'green'
     case 'respond':
     case 'confirm-score':
-      return 'purple'
+      return 'blue'
     case 'escalated':
       return 'red'
     case 'schedule':
-      return 'purple'
+      return 'amber'
     default:
       return 'slate'
   }

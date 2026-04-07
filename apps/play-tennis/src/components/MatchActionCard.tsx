@@ -76,13 +76,15 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
   const classes = ['action-card', `action-${view.tone}`, highlightClass, className].filter(Boolean).join(' ')
   const toneClass = view.tone === 'completed'
     ? 'slate'
-    : view.tone === 'confirm-score'
+    : view.tone === 'confirm-score' || view.tone === 'respond'
       ? 'blue'
       : view.tone === 'confirmed'
         ? 'green'
         : view.tone === 'escalated'
           ? 'red'
-          : 'purple'
+          : view.tone === 'schedule'
+            ? 'amber'
+            : 'slate'
 
   return (
     <div
