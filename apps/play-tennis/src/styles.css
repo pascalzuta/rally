@@ -108,7 +108,7 @@
 
   /* Additional color aliases */
   --color-surface: var(--color-bg-surface);
-  --color-surface-alt: #F0F0F0;
+  --color-surface-alt: #F1F3F5;
   --color-bg: var(--color-bg-primary);
   --color-bg-secondary: var(--color-neutral-bg);
   --color-surface-primary: var(--color-bg-surface);
@@ -165,7 +165,7 @@ body {
 /* ================================================
    Typography Utility Classes
    ================================================ */
-.text-title-lg { font-size: var(--font-title-lg); font-weight: 800; line-height: 1.05; letter-spacing: -0.025em; }
+.text-title-lg { font-size: var(--font-title-lg); font-weight: var(--weight-bold); line-height: 1.05; letter-spacing: -0.025em; }
 .text-title-md { font-size: var(--font-title-md); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
 .text-title-sm { font-size: var(--font-title-sm); font-weight: 700; line-height: 1.15; letter-spacing: -0.015em; }
 .text-body-lg { font-size: var(--font-body-lg); font-weight: var(--weight-regular); line-height: 1.5; }
@@ -207,7 +207,7 @@ body {
 .header h1 {
 
   font-size: var(--font-title-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
@@ -278,7 +278,7 @@ body {
 .rally-wordmark {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   letter-spacing: -0.03em;
   line-height: 1;
@@ -302,7 +302,7 @@ body {
   border-radius: var(--radius-chip);
   color: var(--color-text-secondary);
   font-size: var(--font-body-lg);
-  transition: background 0.15s var(--ease-out-quart), color 0.15s, transform 0.1s var(--ease-out-quart);
+  transition: background var(--duration-fast) var(--ease-out-quart), color 0.15s, transform var(--duration-instant) var(--ease-out-quart);
 }
 
 .top-nav-icon:hover {
@@ -344,7 +344,7 @@ body {
   background: none;
   cursor: pointer;
   color: var(--color-text-muted);
-  transition: color 0.2s var(--ease-out-quart), transform 0.1s var(--ease-out-quart);
+  transition: color var(--duration-fast) var(--ease-out-quart), transform var(--duration-instant) var(--ease-out-quart);
   position: relative;
   min-height: 44px;
 }
@@ -815,7 +815,7 @@ body {
   opacity: 0;
   visibility: hidden;
   transform: translateY(-4px);
-  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  transition: opacity 0.16s var(--ease-out-quart), transform 0.16s ease, visibility 0.16s ease;
   pointer-events: none;
   z-index: var(--z-sticky);
 }
@@ -854,7 +854,7 @@ body {
 
 .card-status-label {
   font-size: var(--font-micro);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--color-text-secondary);
@@ -973,7 +973,7 @@ body {
   font-weight: var(--weight-semibold);
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--duration-fast);
   margin-top: var(--space-md);
 }
 
@@ -1107,7 +1107,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   background: var(--color-bg-surface);
 }
 
@@ -1242,7 +1242,7 @@ select:focus {
   font-weight: var(--weight-medium);
   cursor: pointer;
   color: var(--color-text-secondary);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   font-family: inherit;
 }
 
@@ -1282,7 +1282,7 @@ select:focus {
   border-radius: 50%;
   background: var(--color-divider);
   flex-shrink: 0;
-  transition: background var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
+  transition: background var(--duration-normal) var(--ease-out-quart), box-shadow var(--duration-normal) ease;
 }
 
 .round-progress-dot.completed {
@@ -1384,7 +1384,7 @@ select:focus {
   padding: 20px 24px;
   box-shadow: var(--shadow);
   border-left: 5px solid var(--color-divider);
-  transition: border-color 0.2s ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-normal) var(--ease-out-quart);
+  transition: border-color var(--duration-fast) var(--ease-out-quart), transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-normal) var(--ease-out-quart);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -1808,7 +1808,7 @@ select:focus {
   height: 100%;
   background: var(--color-accent-primary);
   border-radius: 4px 0 0 4px;
-  transition: width 0.3s ease;
+  transition: width var(--duration-normal) var(--ease-out-quart);
 }
 
 .prob-split-fill-right {
@@ -1816,7 +1816,7 @@ select:focus {
   background: var(--color-text-muted);
   opacity: 0.3;
   border-radius: 0 4px 4px 0;
-  transition: width 0.3s ease;
+  transition: width var(--duration-normal) var(--ease-out-quart);
 }
 
 .prob-split-label {
@@ -2100,7 +2100,7 @@ select:focus {
   height: 100%;
   background: var(--color-positive-primary);
   border-radius: 3px;
-  transition: width 0.3s;
+  transition: width var(--duration-normal);
 }
 
 .prob-labels {
@@ -2307,7 +2307,7 @@ select:focus {
 .onboard-title {
 
   font-size: var(--font-display-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   line-height: 0.95;
   letter-spacing: -0.03em;
   color: var(--color-text-primary);
@@ -2578,7 +2578,7 @@ select:focus {
   height: 6px;
   border-radius: 50%;
   background: var(--color-divider);
-  transition: background 0.2s;
+  transition: background var(--duration-fast);
 }
 
 .onboard-dot.active {
@@ -2652,7 +2652,7 @@ select:focus {
 
 .signup-title {
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   line-height: 1.1;
   color: var(--color-text-primary);
@@ -2708,7 +2708,7 @@ select:focus {
   border: 1.5px solid var(--color-divider);
   background: var(--color-bg-surface);
   font-size: var(--font-body-lg);
-  transition: border-color 0.2s var(--ease-out-quart), box-shadow 0.2s;
+  transition: border-color var(--duration-fast) var(--ease-out-quart), box-shadow 0.2s;
 }
 
 .auth-input:focus {
@@ -2735,7 +2735,7 @@ select:focus {
 .auth-cta {
   width: 100%;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   height: 52px;
   font-size: var(--font-body-md);
   font-weight: 700;
@@ -2743,7 +2743,7 @@ select:focus {
   color: #fff;
   border: none;
   box-shadow: 0 2px 10px rgba(42, 91, 215, 0.25);
-  transition: background 0.2s var(--ease-out-quart), transform 0.15s var(--ease-out-quart), box-shadow 0.2s;
+  transition: background var(--duration-fast) var(--ease-out-quart), transform var(--duration-fast) var(--ease-out-quart), box-shadow 0.2s;
 }
 
 .auth-cta:hover:not(:disabled) {
@@ -3019,7 +3019,7 @@ select:focus {
   font-family: inherit;
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   text-align: center;
 }
 
@@ -3078,7 +3078,7 @@ select:focus {
   font-family: inherit;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
 
 .avail-mode-btn.active {
@@ -3104,7 +3104,7 @@ select:focus {
   background: var(--color-bg-surface);
   font-size: var(--font-body-md);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   text-align: left;
   font-family: inherit;
   color: var(--color-text-primary);
@@ -3161,7 +3161,7 @@ select:focus {
 .avail-feedback {
   min-height: 44px;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--duration-fast) var(--ease-out-quart);
   padding: var(--space-sm) 0;
 }
 
@@ -3230,7 +3230,7 @@ select:focus {
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   padding: 0;
   font-family: inherit;
 }
@@ -3359,7 +3359,7 @@ select:focus {
 .lobby-header h2 {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.025em;
   line-height: 1.05;
 }
@@ -3401,7 +3401,7 @@ select:focus {
 
 .countdown-timer {
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -3441,7 +3441,7 @@ select:focus {
 
 .formation-title {
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -3465,7 +3465,7 @@ select:focus {
 .formation-count-mono {
   font-variant-numeric: tabular-nums;
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
 }
 
@@ -3491,7 +3491,7 @@ select:focus {
 }
 
 .formation-progress-animated .formation-progress-fill {
-  animation: progressGrow 500ms ease-out forwards;
+  animation: progressGrow 500ms var(--ease-out-quart) forwards;
 }
 
 @keyframes progressGrow {
@@ -3501,7 +3501,7 @@ select:focus {
 .formation-progress-fill {
   height: 100%;
   border-radius: var(--radius-chip);
-  transition: width 0.6s var(--ease-out-expo), background 0.3s ease;
+  transition: width 0.6s var(--ease-out-expo), background var(--duration-normal) ease;
   min-width: 2px;
 }
 
@@ -3826,7 +3826,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   margin: 0 auto var(--space-md);
   box-shadow: 0 4px 12px rgba(42, 91, 215, 0.2);
 }
@@ -3834,7 +3834,7 @@ select:focus {
 .profile-name {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.025em;
   line-height: 1.05;
 }
@@ -3862,7 +3862,7 @@ select:focus {
 .rating-big {
 
   font-size: var(--font-display-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
   line-height: 0.9;
   font-variant-numeric: tabular-nums;
@@ -3897,7 +3897,7 @@ select:focus {
 .stat-value {
 
   font-size: var(--font-display-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 0.95;
@@ -4040,7 +4040,7 @@ select:focus {
 .profile-hero-name {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.025em;
   color: var(--color-text-primary);
   margin: 0;
@@ -4106,7 +4106,7 @@ select:focus {
 .profile-hero-stat-value {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -4171,7 +4171,7 @@ select:focus {
 .profile-identity-info .profile-name {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   margin: 0;
   line-height: 1.05;
   letter-spacing: -0.025em;
@@ -4285,7 +4285,7 @@ select:focus {
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
 
 .profile-style-pill:hover {
@@ -5290,7 +5290,7 @@ select:focus {
   align-items: center;
   gap: var(--space-md);
   flex-wrap: wrap;
-  transition: background 0.1s;
+  transition: background var(--duration-instant);
 }
 
 .broadcast-timeline-entry:active {
@@ -5586,7 +5586,7 @@ select:focus {
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--duration-instant);
   font-family: inherit;
 }
 
@@ -5709,7 +5709,7 @@ select:focus {
 }
 
 .broadcast-toast {
-  animation: toast-slide-in 0.3s ease-out;
+  animation: toast-slide-in 0.3s var(--ease-out-quart);
 }
 
 .pn-toast {
@@ -5720,7 +5720,7 @@ select:focus {
   font-size: var(--font-caption);
   text-align: center;
   margin-bottom: var(--space-md);
-  animation: toast-slide-in 0.3s ease-out;
+  animation: toast-slide-in 0.3s var(--ease-out-quart);
 }
 
 .pn-toast-icon {
@@ -5777,7 +5777,7 @@ select:focus {
   flex-direction: column;
   gap: 0;
   padding: 20px;
-  transition: background 0.1s;
+  transition: background var(--duration-instant);
 }
 
 .pn-opponent-card-main {
@@ -5957,7 +5957,7 @@ select:focus {
 .home-tournament-header h2 {
 
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.025em;
   line-height: 1.05;
 }
@@ -6167,7 +6167,7 @@ select:focus {
 .upnext-opponent {
 
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.03em;
   line-height: 1;
   color: var(--color-text-primary);
@@ -6349,7 +6349,7 @@ select:focus {
   cursor: pointer;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  transition: opacity 0.15s;
+  transition: opacity var(--duration-fast);
   opacity: 0.85;
 }
 
@@ -6410,7 +6410,7 @@ select:focus {
   padding: 2px;
   display: flex;
   align-items: center;
-  transition: color 0.1s;
+  transition: color var(--duration-instant);
 }
 
 .devbar-close:hover {
@@ -6481,7 +6481,7 @@ select:focus {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 7px;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition: background var(--duration-instant), border-color 0.1s;
   white-space: nowrap;
 }
 
@@ -6846,7 +6846,7 @@ select:focus {
 .rating-explainer-toggle-chevron {
   font-size: var(--font-caption);
   color: var(--color-accent-primary);
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-fast) var(--ease-out-quart);
 }
 .rating-explainer-toggle[aria-expanded="true"] .rating-explainer-toggle-chevron {
   transform: rotate(90deg);
@@ -6886,7 +6886,7 @@ select:focus {
   padding: 10px var(--space-lg);
   background: var(--color-bg-surface);
   border-left: 4px solid var(--color-divider);
-  transition: background 0.1s ease;
+  transition: background var(--duration-instant) var(--ease-out-quart);
 }
 .rating-tier:not(:last-child) {
   border-bottom: 1px solid var(--color-divider);
@@ -7000,7 +7000,7 @@ select:focus {
 .user-status-headline {
 
   font-size: var(--font-title-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -7023,7 +7023,7 @@ select:focus {
 
   font-variant-numeric: tabular-nums;
   font-size: var(--font-title-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
   line-height: 1;
   letter-spacing: -0.02em;
@@ -7160,7 +7160,7 @@ select:focus {
 .lb-title {
 
   font-size: var(--font-title-sm, 17px);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   margin-top: var(--space-xs);
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
@@ -7272,7 +7272,7 @@ select:focus {
 .lb-row-rating {
 
   font-size: var(--font-body-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
   color: var(--color-text-primary);
@@ -7348,7 +7348,7 @@ select:focus {
   justify-content: center;
   z-index: var(--z-modal);
   padding: var(--space-md);
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.2s var(--ease-out-quart);
 }
 
 .trophy-modal {
@@ -7466,7 +7466,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0);
-  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.4s var(--ease-out-quart);
   cursor: pointer;
 }
 
@@ -7484,7 +7484,7 @@ select:focus {
 .victory-particle {
   position: absolute;
   top: 100%;
-  animation: particleRise 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: particleRise 1.6s var(--ease-out-quart) forwards;
   opacity: 0;
 }
 
@@ -7523,7 +7523,7 @@ select:focus {
 }
 
 .victory-trophy {
-  animation: trophyGlow 1.5s ease infinite alternate;
+  animation: trophyGlow 1.5s var(--ease-out-quart) infinite alternate;
 }
 
 .victory-trophy.champion {
@@ -7550,7 +7550,7 @@ select:focus {
 .victory-title {
 
   font-size: var(--font-hero);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: #fff;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -7593,7 +7593,7 @@ select:focus {
   font-weight: var(--weight-medium);
   color: var(--color-accent-primary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   width: 100%;
 }
 
@@ -7618,7 +7618,7 @@ select:focus {
 }
 
 .confirmed-check {
-  animation: confirmedPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: confirmedPop 0.5s var(--ease-out-expo) forwards;
 }
 
 .confirmed-circle {
@@ -7628,12 +7628,12 @@ select:focus {
 .confirmed-path {
   stroke-dasharray: 40;
   stroke-dashoffset: 40;
-  animation: confirmedDraw 0.4s ease 0.2s forwards;
+  animation: confirmedDraw 0.4s var(--ease-out-quart) 0.2s forwards;
 }
 
 .confirmed-ball {
   font-size: var(--font-display-md);
-  animation: ballBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  animation: ballBounce 0.7s var(--ease-out-expo) 0.3s both;
 }
 
 @keyframes confirmedPop {
@@ -7676,7 +7676,7 @@ select:focus {
   height: 100%;
   background: var(--color-accent-primary);
   border-radius: 2px;
-  transition: width 0.8s ease;
+  transition: width 0.8s var(--ease-out-quart);
 }
 
 /* ================================================
@@ -7720,7 +7720,7 @@ select:focus {
   height: 100%;
   background: var(--color-accent-primary);
   border-radius: 3px;
-  transition: width 0.8s ease;
+  transition: width 0.8s var(--ease-out-quart);
 }
 
 /* ================================================
@@ -7745,7 +7745,7 @@ select:focus {
   height: 100%;
   background: var(--color-negative-primary);
   border-radius: 3px;
-  transition: width 0.5s ease;
+  transition: width 0.5s var(--ease-out-quart);
 }
 
 .escalation-days {
@@ -7779,7 +7779,7 @@ select:focus {
   border-radius: var(--radius-card);
   margin-bottom: var(--space-md);
   cursor: pointer;
-  animation: advancementSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: advancementSlide 0.4s var(--ease-out-expo);
 }
 
 .advancement-icon {
@@ -8046,7 +8046,7 @@ select:focus {
 
 .notif-fullscreen-title {
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
 }
@@ -8120,7 +8120,7 @@ select:focus {
   cursor: pointer;
   font-family: inherit;
   letter-spacing: 2px;
-  transition: background 0.1s;
+  transition: background var(--duration-instant);
 }
 
 .bracket-overflow-btn:hover {
@@ -8196,7 +8196,7 @@ select:focus {
   border-radius: 50%;
   cursor: pointer;
   color: var(--color-text-secondary);
-  transition: background 0.15s;
+  transition: background var(--duration-fast);
 }
 
 .message-panel-close:hover {
@@ -8233,7 +8233,7 @@ select:focus {
 
 .chat-list-title {
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
   display: flex;
@@ -8267,7 +8267,7 @@ select:focus {
   justify-content: center;
   cursor: pointer;
   color: var(--color-text-secondary);
-  transition: background 0.15s;
+  transition: background var(--duration-fast);
 }
 
 .chat-close-btn:hover {
@@ -8293,7 +8293,7 @@ select:focus {
   color: var(--color-text-secondary);
   cursor: pointer;
   text-align: center;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--duration-fast), border-color 0.15s;
 }
 
 .chat-tab.active {
@@ -8701,7 +8701,7 @@ select:focus {
   flex-wrap: wrap;
   border-top: 1px solid var(--color-divider);
   background: var(--color-bg-surface);
-  animation: chat-quick-slide 0.15s ease;
+  animation: chat-quick-slide 0.15s var(--ease-out-quart);
 }
 
 @keyframes chat-quick-slide {
@@ -8755,7 +8755,7 @@ select:focus {
   background: var(--color-neutral-bg);
   color: var(--color-text-primary);
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast), background 0.15s;
 }
 
 .chat-input-bar input:focus {
@@ -8778,7 +8778,7 @@ select:focus {
   justify-content: center;
   cursor: pointer;
   color: var(--color-text-secondary);
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--duration-fast), background 0.15s;
   flex-shrink: 0;
 }
 
@@ -8800,7 +8800,7 @@ select:focus {
   cursor: pointer;
   color: #fff;
   flex-shrink: 0;
-  transition: opacity 0.15s;
+  transition: opacity var(--duration-fast);
 }
 
 .chat-send-btn:disabled {
@@ -8831,7 +8831,7 @@ select:focus {
   font-family: inherit;
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--duration-fast);
   white-space: nowrap;
 }
 
@@ -8869,7 +8869,7 @@ select:focus {
   cursor: pointer;
   color: var(--color-text-secondary);
   line-height: 0;
-  transition: background 0.15s var(--ease-out-quart), border-color 0.15s, color 0.15s, transform 0.1s var(--ease-out-quart);
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color 0.15s, color 0.15s, transform var(--duration-instant) var(--ease-out-quart);
 }
 
 .match-card-msg-btn:hover,
@@ -9003,7 +9003,7 @@ select:focus {
   padding: 0 0 32px;
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition: opacity 0.4s var(--ease-out-quart), transform 0.4s ease;
 }
 
 .schedule-summary-screen.visible {
@@ -9041,7 +9041,7 @@ select:focus {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
-  transition: background var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
+  transition: background var(--duration-normal) var(--ease-out-quart), box-shadow var(--duration-normal) ease;
 }
 .schedule-phase-dot.completed { background: var(--color-positive-primary); }
 .schedule-phase-dot.active {
@@ -9086,7 +9086,7 @@ select:focus {
   height: 100%;
   background: var(--color-accent-primary);
   border-radius: 3px;
-  transition: width 0.6s ease;
+  transition: width 0.6s var(--ease-out-quart);
   min-width: 2px;
 }
 
@@ -9195,7 +9195,7 @@ select:focus {
 
 .schedule-agenda-title {
   font-size: var(--font-title-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   margin-bottom: var(--space-md);
 }
@@ -9548,7 +9548,7 @@ select:focus {
 .confidence-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.6s ease;
+  transition: width 0.6s var(--ease-out-quart);
 }
 
 .confidence-fill--high { background: var(--color-positive-primary); }
@@ -9557,7 +9557,7 @@ select:focus {
 
 .confidence-value {
   font-size: var(--font-display-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   color: var(--color-accent-primary);
@@ -10028,7 +10028,7 @@ select:focus {
 .faq-chevron {
   font-size: var(--font-body-lg);
   color: var(--color-text-muted);
-  transition: transform 0.2s;
+  transition: transform var(--duration-fast);
   flex-shrink: 0;
 }
 
@@ -10113,7 +10113,7 @@ select:focus {
   font-weight: var(--weight-medium);
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background var(--duration-fast), color 0.15s, box-shadow 0.15s;
 }
 
 .lobby-mode-btn.active {
@@ -10166,7 +10166,7 @@ select:focus {
   background: var(--color-surface);
   cursor: pointer;
   font-family: inherit;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--duration-fast), background 0.15s;
 }
 
 .doubles-partner-item:hover {
@@ -10237,7 +10237,7 @@ select:focus {
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10329,7 +10329,7 @@ select:focus {
   height: 100%;
   background: var(--color-accent-primary);
   border-radius: 3px;
-  transition: width 0.4s ease;
+  transition: width 0.4s var(--ease-out-quart);
   min-width: 2px;
 }
 
@@ -10424,7 +10424,7 @@ select:focus {
 
 /* R-15: Deep-link match highlight */
 .match-card.match-highlighted {
-  animation: matchPulse 0.5s ease 3;
+  animation: matchPulse 0.5s var(--ease-out-quart) 3;
   box-shadow: 0 0 0 3px var(--color-accent-primary);
 }
 @keyframes matchPulse {
@@ -10452,7 +10452,7 @@ select:focus {
   color: var(--color-text-muted);
   cursor: pointer;
   font-family: inherit;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
 .match-filter-btn.active {
   background: var(--color-surface);
@@ -10485,7 +10485,7 @@ select:focus {
   height: 100%;
   background: var(--color-positive-primary);
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: width var(--duration-normal) var(--ease-out-quart);
 }
 .tournament-progress-meta {
   display: flex;
@@ -10507,7 +10507,7 @@ select:focus {
   font-size: var(--font-body-md);
   font-weight: var(--weight-medium);
   z-index: var(--z-modal);
-  animation: toastSlideUp 0.3s ease;
+  animation: toastSlideUp 0.3s var(--ease-out-quart);
   box-shadow: var(--shadow-md);
 }
 @keyframes toastSlideUp {
@@ -10580,7 +10580,7 @@ select:focus {
   cursor: pointer;
   font-family: inherit;
   min-height: 36px;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
 .profile-style-tag.selected {
   background: var(--color-accent-bg);
@@ -10667,7 +10667,7 @@ select:focus {
 .match-card .seed-label,
 .match-card .prob-split,
 .match-card .rating-label {
-  transition: opacity 0.2s, max-height 0.2s;
+  transition: opacity var(--duration-fast), max-height 0.2s;
 }
 .hide-details .seed-label,
 .hide-details .prob-split,
@@ -10743,7 +10743,7 @@ select:focus {
   min-width: 32px;
   min-height: 32px;
   color: var(--color-divider);
-  transition: color 0.15s;
+  transition: color var(--duration-fast);
 }
 .reaction-star--active {
   color: #F59E0B;
@@ -10805,7 +10805,7 @@ select:focus {
   font-size: var(--font-body-sm);
   font-family: inherit;
   color: var(--color-text-secondary);
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   min-height: 44px;
 }
 .feedback-sentiment-btn:active {
@@ -10893,7 +10893,7 @@ select:focus {
   border: 1px solid rgba(17, 17, 17, 0.08);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--duration-fast) var(--ease-out-quart), background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .feedback-issue-option.selected {
@@ -11316,7 +11316,7 @@ select:focus {
 .profile-style-btn {
   padding: var(--space-xs) var(--space-md); border-radius: var(--radius-lg);
   border: 1px solid var(--color-divider); background: var(--color-bg-surface);
-  font-size: var(--font-body-sm); cursor: pointer; transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  font-size: var(--font-body-sm); cursor: pointer; transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
 .profile-style-btn.selected { background: var(--color-accent-primary); color: #fff; border-color: var(--color-accent-primary); }
 .profile-style-tags-display { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-top: 8px; justify-content: center; }
@@ -11349,9 +11349,9 @@ select:focus {
 .post-match-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .post-match-label { font-size: var(--font-label); color: var(--color-text-secondary); }
 .post-match-stars { display: flex; gap: 4px; }
-.post-match-star { background: none; border: none; cursor: pointer; font-size: var(--font-title-sm); padding: 0; color: var(--color-divider); transition: color 0.1s; }
+.post-match-star { background: none; border: none; cursor: pointer; font-size: var(--font-title-sm); padding: 0; color: var(--color-divider); transition: color var(--duration-instant); }
 .post-match-star.active { color: #F59E0B; }
-.post-match-toggle { padding: var(--space-xs) var(--space-md); border-radius: var(--radius-card); border: 1px solid var(--color-divider); background: var(--color-bg-surface); cursor: pointer; font-size: var(--font-caption); transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease; }
+.post-match-toggle { padding: var(--space-xs) var(--space-md); border-radius: var(--radius-card); border: 1px solid var(--color-divider); background: var(--color-bg-surface); cursor: pointer; font-size: var(--font-caption); transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease; }
 .post-match-toggle.active { background: var(--color-positive-primary); color: #fff; border-color: var(--color-positive-primary); }
 .post-match-actions { display: flex; gap: 8px; margin-top: 12px; }
 
@@ -11498,7 +11498,7 @@ select:focus {
   align-items: center;
   gap: var(--space-sm);
   z-index: calc(var(--z-toast) + 1);
-  animation: rally-toast-in 0.3s ease-out;
+  animation: rally-toast-in 0.3s var(--ease-out-quart);
   font-size: var(--font-label);
   color: var(--color-text-primary);
 }
@@ -11557,10 +11557,10 @@ select:focus {
   100% { background-color: transparent; }
 }
 
-.action-card--highlight-green { animation: confirmPulse-green 3000ms ease-out; }
-.action-card--highlight-blue { animation: confirmPulse-blue 3000ms ease-out; }
-.action-card--highlight-orange { animation: confirmPulse-orange 3000ms ease-out; }
-.action-card--highlight-red { animation: confirmPulse-red 3000ms ease-out; }
+.action-card--highlight-green { animation: confirmPulse-green 3000ms var(--ease-out-quart); }
+.action-card--highlight-blue { animation: confirmPulse-blue 3000ms var(--ease-out-quart); }
+.action-card--highlight-orange { animation: confirmPulse-orange 3000ms var(--ease-out-quart); }
+.action-card--highlight-red { animation: confirmPulse-red 3000ms var(--ease-out-quart); }
 
 /* ================================================
    RM-04: Standings Improvements
@@ -11587,7 +11587,7 @@ select:focus {
   background: var(--color-positive-primary);
   border-radius: 3px;
   min-width: 2px;
-  transition: width 0.3s ease;
+  transition: width var(--duration-normal) var(--ease-out-quart);
 }
 
 .standings-win-pct {
@@ -11620,7 +11620,7 @@ select:focus {
   background: var(--color-bg-surface);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
   text-align: center;
 }
 
@@ -11790,7 +11790,7 @@ main {
 /* Toggle transitions */
 .details-toggle,
 .standings-toggle {
-  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+  transition: background-color var(--duration-fast) var(--ease-out-quart), color var(--duration-fast) ease;
 }
 
 /* --- Rating Panel (trophy icon overlay) --- */
@@ -11836,7 +11836,7 @@ main {
 
 .rating-panel-title {
   font-size: var(--font-body-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   margin: 0;
 }
@@ -12140,7 +12140,7 @@ main {
   font-weight: 500;
   color: var(--color-text-secondary);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color var(--duration-fast);
 }
 
 .sh-nav-link:hover {
@@ -12162,7 +12162,7 @@ main {
   cursor: pointer;
   padding: 8px 16px;
   border-radius: 8px;
-  transition: background 0.15s;
+  transition: background var(--duration-fast);
 }
 
 .sh-btn-text:hover {
@@ -12176,9 +12176,9 @@ main {
   font-size: var(--font-label);
   font-weight: 600;
   padding: 10px 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity var(--duration-fast);
 }
 
 .sh-btn-cta:hover {
@@ -12213,7 +12213,7 @@ main {
 
 .sh-hero-title {
   font-size: var(--font-display-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   line-height: 1.1;
   letter-spacing: -1px;
   color: var(--color-text-primary);
@@ -12242,11 +12242,11 @@ main {
   gap: 12px;
   width: 100%;
   padding: 14px 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   font-size: var(--font-body-md);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast), transform var(--duration-fast);
   border: 1.5px solid var(--color-divider);
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
@@ -12388,7 +12388,7 @@ main {
 
 .sh-mock-match {
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-divider);
   font-size: var(--font-body-sm);
 }
 
@@ -12440,7 +12440,7 @@ main {
 
 .sh-section-title {
   font-size: var(--font-display-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   text-align: center;
   margin-bottom: 12px;
   letter-spacing: -0.5px;
@@ -12493,12 +12493,12 @@ main {
   background: var(--color-accent-primary);
   color: #fff;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   padding: 10px 22px;
   font-size: var(--font-label);
   font-weight: var(--weight-semibold);
   cursor: pointer;
-  transition: background 0.2s var(--ease-out-quart), transform 0.15s var(--ease-out-quart), box-shadow 0.2s;
+  transition: background var(--duration-fast) var(--ease-out-quart), transform var(--duration-fast) var(--ease-out-quart), box-shadow 0.2s;
   font-family: inherit;
 }
 
@@ -12521,7 +12521,7 @@ main {
   cursor: pointer;
   padding: 10px 12px;
   font-family: inherit;
-  transition: color 0.15s, transform 0.15s var(--ease-out-quart);
+  transition: color var(--duration-fast), transform 0.15s var(--ease-out-quart);
 }
 
 .dgh-btn-text:hover { color: var(--color-text-primary); transform: translateY(-0.5px); }
@@ -12533,7 +12533,7 @@ main {
   font-size: var(--font-caption);
   font-weight: var(--weight-medium);
   padding: 10px 8px;
-  transition: color 0.15s;
+  transition: color var(--duration-fast);
 }
 .dgh-btn-link:hover { color: var(--color-text-primary); }
 
@@ -12564,7 +12564,7 @@ main {
 .dgh-hero-title {
 
   font-size: clamp(3rem, 6vw + 1rem, 5.5rem);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   line-height: 0.92;
   letter-spacing: -0.035em;
   color: var(--color-text-primary);
@@ -12594,7 +12594,7 @@ main {
   padding: 18px 40px;
   font-size: var(--font-body-lg);
   font-weight: var(--weight-bold);
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   box-shadow: 0 4px 16px rgba(42, 91, 215, 0.3), 0 1px 3px rgba(42, 91, 215, 0.15);
 }
 
@@ -12625,7 +12625,7 @@ main {
   display: block;
 
   font-size: var(--font-hero);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
   line-height: 1;
   letter-spacing: -0.03em;
@@ -12645,7 +12645,7 @@ main {
   font-size: var(--font-body-sm);
   font-weight: 700;
   color: var(--color-accent-primary);
-  background: #D4D8DC;
+  background: var(--color-neutral-bg);
   padding: 4px 12px;
   border-radius: 999px;
   margin-bottom: var(--space-md);
@@ -12655,7 +12655,7 @@ main {
 .dgh-section-heading {
 
   font-size: clamp(2rem, 3.5vw + 0.5rem, 3.25rem);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   line-height: 1.05;
   letter-spacing: -0.03em;
   color: var(--color-text-primary);
@@ -12679,10 +12679,10 @@ main {
   margin: 0 auto;
 }
 
-/* --- Problem section — warm rose tint conveys frustration --- */
+/* --- Problem section --- */
 .dgh-problem {
   padding: clamp(40px, 5vw, 64px) var(--space-xl) clamp(56px, 7vw, 88px);
-  background: #F1F2F4;
+  background: var(--color-neutral-bg);
 }
 
 .dgh-problem-inner {
@@ -12731,9 +12731,9 @@ main {
 }
 
 .dgh-story-bubble-in {
-  background: #EDEDEF;
+  background: var(--color-neutral-bg);
   color: var(--color-text-primary);
-  border: 1px solid #D4D6DA;
+  border: 1px solid var(--color-divider);
   align-self: flex-start;
   border-bottom-left-radius: 6px;
 }
@@ -12861,10 +12861,10 @@ main {
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* --- Matchmaking section — subtle teal tint --- */
+/* --- Matchmaking section --- */
 .dgh-matchmaking {
   padding: clamp(48px, 6vw, 80px) var(--space-xl) clamp(56px, 7vw, 88px);
-  background: #F1F3F5;
+  background: var(--color-neutral-bg);
 }
 
 .dgh-matchmaking-inner {
@@ -12916,7 +12916,7 @@ main {
 .dgh-cta-title {
 
   font-size: clamp(2.5rem, 5vw + 0.5rem, 4.5rem);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.035em;
   line-height: 0.95;
   color: #fff;
@@ -12940,18 +12940,18 @@ main {
   background: #fff;
   color: var(--color-accent-primary);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   padding: 18px 44px;
   font-size: var(--font-body-lg);
   font-weight: var(--weight-bold);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s var(--ease-out-quart), transform 0.2s var(--ease-out-quart), box-shadow 0.2s;
+  transition: background var(--duration-fast) var(--ease-out-quart), transform 0.2s var(--ease-out-quart), box-shadow 0.2s;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dgh-cta-btn-primary:hover {
-  background: #F0FDF4;
+  background: #EEF2FF;
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
@@ -12965,13 +12965,13 @@ main {
   background: none;
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
+  border-radius: var(--radius-button);
   padding: 18px 40px;
   font-size: var(--font-body-md);
   font-weight: var(--weight-medium);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s var(--ease-out-quart), border-color 0.2s, transform 0.15s var(--ease-out-quart);
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color 0.2s, transform var(--duration-fast) var(--ease-out-quart);
 }
 
 .dgh-cta-btn-secondary:hover {
@@ -12994,7 +12994,7 @@ main {
 /* --- Blog Teaser --- */
 .dgh-blog-teaser {
   padding: clamp(48px, 6vw, 72px) var(--space-xl);
-  background: #F6F7F9;
+  background: var(--color-bg-primary);
   border-top: 1px solid var(--color-divider);
 }
 
@@ -13023,7 +13023,7 @@ main {
 .dgh-blog-teaser-title {
 
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   margin: 0;
   letter-spacing: -0.02em;
@@ -13052,7 +13052,7 @@ main {
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
   text-decoration: none;
-  transition: box-shadow 0.2s var(--ease-out-quart), transform 0.2s var(--ease-out-quart);
+  transition: box-shadow var(--duration-fast) var(--ease-out-quart), transform 0.2s var(--ease-out-quart);
 }
 
 .dgh-anim-blog .dgh-blog-teaser-card {
@@ -13122,7 +13122,7 @@ main {
 .dgh-footer-links a:hover { color: var(--color-text-primary); }
 .dgh-footer-sep { color: var(--color-text-muted); }
 .dgh-footer-social { display: flex; gap: var(--space-sm); }
-.dgh-footer-social a { color: var(--color-text-muted); transition: color 0.15s; }
+.dgh-footer-social a { color: var(--color-text-muted); transition: color var(--duration-fast); }
 .dgh-footer-social a:hover { color: var(--color-text-primary); }
 
 /* --- Hero entrance --- */
@@ -13268,7 +13268,7 @@ main {
 .dgh-story-matchup-rating {
 
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -13368,7 +13368,7 @@ main {
   background: var(--color-positive-primary);
   color: #fff;
   font-size: var(--font-title-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13444,7 +13444,7 @@ main {
 
 .sh-stat-number {
   font-size: var(--font-hero-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -1px;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -13536,7 +13536,7 @@ main {
 
 .sh-problem-stat-number {
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
   color: var(--color-negative-primary);
 }
@@ -13605,7 +13605,7 @@ main {
 
 .sh-multi-title {
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   margin-bottom: 16px;
 }
 
@@ -13624,7 +13624,7 @@ main {
 
 .sh-cta-title {
   font-size: var(--font-hero-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   margin-bottom: 12px;
 }
 
@@ -13663,7 +13663,7 @@ main {
 
 .sh-blog-teaser-title {
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
 }
 
 .sh-blog-teaser-subtitle {
@@ -13687,7 +13687,7 @@ main {
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 0.2s;
+  transition: box-shadow var(--duration-fast);
 }
 
 .sh-blog-teaser-card:hover {
@@ -13783,7 +13783,7 @@ main {
   font-size: var(--font-caption);
   color: #999;
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color var(--duration-fast);
 }
 
 .sh-footer-col a:hover {
@@ -13873,7 +13873,7 @@ main {
 
 .login-title {
   font-size: var(--font-title-lg);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   margin-bottom: 4px;
 }
 
@@ -13953,7 +13953,7 @@ main {
 
 .join-title {
   font-size: var(--font-hero-sm);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   line-height: 1.1;
   margin-bottom: 12px;
 }
@@ -14006,7 +14006,7 @@ main {
   background: var(--color-positive-primary);
   color: #fff;
   font-size: var(--font-label);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14040,7 +14040,7 @@ main {
 
 .join-stat-num {
   font-size: var(--font-title-md);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
 }
 
@@ -14227,7 +14227,7 @@ main {
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background var(--duration-fast) var(--ease-out-quart), color var(--duration-fast) var(--ease-out-quart), box-shadow var(--duration-fast) var(--ease-out-quart);
 }
 
 .analytics-range-btn.active {
@@ -14256,7 +14256,7 @@ main {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: color var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) var(--ease-out-quart);
 }
 
 .analytics-tab.active {
@@ -14345,7 +14345,7 @@ main {
   width: 100%;
   max-width: 32px;
   border-radius: 4px 4px 0 0;
-  transition: height 0.3s ease;
+  transition: height var(--duration-normal) var(--ease-out-quart);
 }
 
 .analytics-bar-label {
@@ -14398,7 +14398,7 @@ main {
 .analytics-funnel-bar-fill {
   height: 100%;
   border-radius: 6px;
-  transition: width 0.4s ease;
+  transition: width 0.4s var(--ease-out-quart);
 }
 
 .analytics-funnel-rate {
@@ -14507,7 +14507,7 @@ main {
 }
 
 .analytics-mix-segment {
-  transition: width 0.3s ease;
+  transition: width var(--duration-normal) var(--ease-out-quart);
   min-width: 2px;
 }
 
