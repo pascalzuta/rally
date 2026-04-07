@@ -120,34 +120,21 @@ function hasConflict(
   for (const [, a] of assignments) {
     if (a.slot.week !== slot.week) continue
 
-    // Check double-booking: same day, same week, overlapping hours
+    // Check same-day conflict: only one match per player per day
     if (a.slot.day === slot.day) {
-      const overlaps = a.slot.startHour < slot.endHour && slot.startHour < a.slot.endHour
-      if (overlaps) {
-        // Conflict if either player is involved
-        if (a.player1Id === player1Id || a.player1Id === player2Id ||
-            a.player2Id === player1Id || a.player2Id === player2Id) {
-          return true
-        }
+      if (a.player1Id === player1Id || a.player1Id === player2Id ||
+          a.player2Id === player1Id || a.player2Id === player2Id) {
+        return true
       }
     }
 
-    // Check rest day: same players, same week, adjacent days
+    // Check rest day: no matches on adjacent days for same player
     const dayIdx1 = DAY_ORDER.indexOf(a.slot.day)
     const dayIdx2 = DAY_ORDER.indexOf(slot.day)
-    if (Math.abs(dayIdx1 - dayIdx2) < Math.ceil(constraints.restHours / 24)) {
+    if (dayIdx1 !== dayIdx2 && Math.abs(dayIdx1 - dayIdx2) < Math.ceil(constraints.restHours / 24)) {
       if (a.player1Id === player1Id || a.player1Id === player2Id ||
           a.player2Id === player1Id || a.player2Id === player2Id) {
-        // Same day or adjacent day for same player
-        if (a.slot.day === slot.day || Math.abs(dayIdx1 - dayIdx2) === 0) {
-          // Already checked overlapping above; only flag if same day different time
-        }
-        if (dayIdx1 !== dayIdx2 && Math.abs(dayIdx1 - dayIdx2) < Math.ceil(constraints.restHours / 24)) {
-          if (a.player1Id === player1Id || a.player1Id === player2Id ||
-              a.player2Id === player1Id || a.player2Id === player2Id) {
-            return true
-          }
-        }
+        return true
       }
     }
 
