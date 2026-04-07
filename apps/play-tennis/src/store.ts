@@ -6,6 +6,7 @@ import {
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
   getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
   syncRatingSnapshot, syncTrophiesToRemote, syncBadgesToRemote,
+  refreshLobbyFromRemote,
   SyncResult,
 } from './sync'
 import { titleCase } from './dateUtils'
@@ -131,8 +132,13 @@ export function isInLobby(playerId: string): boolean {
 }
 
 export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
+  const countyKey = profile.county.toLowerCase()
   const lobby = loadLobby()
-  if (lobby.some(e => e.playerId === profile.id)) return getLobbyByCounty(profile.county)
+  if (lobby.some(e => e.playerId === profile.id)) {
+    // Already in lobby locally — refresh from Supabase to get full aggregated count
+    await refreshLobbyFromRemote(countyKey)
+    return getLobbyByCounty(profile.county)
+  }
   const entry: LobbyEntry = {
     playerId: profile.id,
     playerName: profile.name,
@@ -141,8 +147,7 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   }
   lobby.push(entry)
 
-  // Save to localStorage FIRST so UI updates immediately and realtime refresh
-  // cannot overwrite before we persist (fixes race condition)
+  // Save to localStorage FIRST so UI updates immediately
   saveLobby(lobby)
 
   if (SUPABASE_PRIMARY) {
@@ -159,6 +164,8 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
       const result = await syncLobbyEntry(entry)
       if (!result.success) enqueue('lobby_add', entry)
     }
+    // Refresh from Supabase to get ALL players' entries (not just local)
+    await refreshLobbyFromRemote(countyKey)
   }
   return getLobbyByCounty(profile.county)
 }

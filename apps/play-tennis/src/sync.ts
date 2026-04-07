@@ -434,7 +434,7 @@ function subscribeToCounty(county: string): void {
     .subscribe()
 }
 
-async function refreshLobbyFromRemote(countyKey: string): Promise<void> {
+export async function refreshLobbyFromRemote(countyKey: string): Promise<void> {
   const client = getClient()
   if (!client) return
   const { data } = await client.from('lobby').select('*').eq('county', countyKey)

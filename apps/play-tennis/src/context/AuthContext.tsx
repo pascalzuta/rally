@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User } from '@supabase/supabase-js'
 import { PlayerProfile, SkillLevel, Gender } from '../types'
 import { getClient, fetchPlayerProfile } from '../supabase'
+import { refreshLobbyFromRemote, refreshAvailabilityFromRemote } from '../sync'
 
 interface AuthContextValue {
   user: User | null
@@ -16,10 +17,14 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 const PROFILE_KEY = 'play-tennis-profile'
 
 function clearAuthLocalStorage() {
+  // Preserve lobby and availability — these are shared/remote data that will be
+  // refreshed from Supabase on next login. Clearing them causes the lobby count
+  // to reset to 0 and forces users to re-enter availability each session.
+  const preserveKeys = new Set(['play-tennis-lobby', 'play-tennis-availability'])
   const keysToRemove: string[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    if (key && key.startsWith('play-tennis-')) keysToRemove.push(key)
+    if (key && key.startsWith('play-tennis-') && !preserveKeys.has(key)) keysToRemove.push(key)
   }
   for (const key of keysToRemove) localStorage.removeItem(key)
 }
@@ -71,10 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (restored) {
               localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
               setProfileState(restored)
+              // Eagerly refresh lobby + availability from Supabase so UI shows correct counts
+              const county = restored.county.toLowerCase()
+              refreshLobbyFromRemote(county)
+              refreshAvailabilityFromRemote(county)
             } else if (profile && (profile.id === u.id || profile.authId === u.id)) {
               // DB fetch returned null but localStorage has a profile for this user.
               // Trust localStorage — the DB save may not have completed yet.
               setProfileState(profile)
+              const county = profile.county.toLowerCase()
+              refreshLobbyFromRemote(county)
+              refreshAvailabilityFromRemote(county)
             }
           } else if (profile) {
             // No valid session but we have a cached profile — clear stale data
@@ -94,6 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (restored) {
           localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
+          // Refresh lobby + availability so returning users see correct counts
+          const county = restored.county.toLowerCase()
+          refreshLobbyFromRemote(county)
+          refreshAvailabilityFromRemote(county)
         } else {
           // No profile in DB — check if localStorage has one for this user
           const cached = localStorage.getItem(PROFILE_KEY)
@@ -102,6 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const cachedProfile = JSON.parse(cached) as PlayerProfile
               if (cachedProfile.id === u.id || cachedProfile.authId === u.id) {
                 setProfileState(cachedProfile)
+                const county = cachedProfile.county.toLowerCase()
+                refreshLobbyFromRemote(county)
+                refreshAvailabilityFromRemote(county)
                 return
               }
             } catch { /* ignore parse errors */ }

@@ -53,6 +53,7 @@ function getActivationSteps(
   hasAvailability: boolean,
   hasPlayedMatch: boolean
 ): ActivationStep[] {
+  const inLobby = isInLobby(profile.id)
   const inTournament = tournaments.some(t =>
     (t.status === 'setup' || t.status === 'in-progress') &&
     t.players.some(p => p.id === profile.id)
@@ -60,7 +61,7 @@ function getActivationSteps(
 
   return [
     { label: 'Set up your profile', completed: true },
-    { label: `Join the ${titleCase(profile.county)} lobby`, completed: inTournament || hasPlayedMatch },
+    { label: `Join the ${titleCase(profile.county)} lobby`, completed: inLobby || inTournament || hasPlayedMatch },
     { label: 'Set your availability', completed: hasAvailability },
     { label: 'Play your first match', completed: hasPlayedMatch },
   ]
