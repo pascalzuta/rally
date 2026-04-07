@@ -130,7 +130,6 @@ export async function fetchPlayerProfile(userId: string): Promise<{
     .from('players')
     .select('player_name, county, email, sex, experience_level, weekly_cap, created_at')
     .eq('auth_id', userId)
-    .eq('player_id', userId)
     .maybeSingle()
   if (error || !data) return null
   return {
