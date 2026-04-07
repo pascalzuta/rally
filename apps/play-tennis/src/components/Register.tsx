@@ -181,9 +181,13 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
   const [authUserId, setAuthUserId] = useState<string | null>(savedFlow?.authUserId ?? null)
 
   // React to auth state from AuthContext — handles magic link, OTP verify, and page refresh
-  const { user: authUser, profile: authProfile } = useAuth()
+  const { user: authUser, profile: authProfile, loading: authLoading } = useAuth()
   useEffect(() => {
     if (!authUser) return
+    // Wait for AuthContext to finish loading — profile may still be fetching.
+    // Without this, Google OAuth returning users get shown the signup form
+    // because authUser is set before authProfile is resolved.
+    if (authLoading) return
     if (authProfile) {
       // Returning user — AuthContext already restored profile, App will navigate away
       return
@@ -196,7 +200,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
       saveAuthFlow({ step: 'signup', email: userEmail, authUserId: authUser.id })
       setStep('signup')
     }
-  }, [authUser?.id, authProfile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authUser?.id, authProfile?.id, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resend countdown timer
   useEffect(() => {
