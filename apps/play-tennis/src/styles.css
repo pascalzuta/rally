@@ -3376,6 +3376,7 @@ select:focus {
 
 /* --- Tournament Formation Card (Polymarket style) --- */
 
+/* --- Navy hero card: scoped overrides for all child elements --- */
 .formation-hero {
   cursor: default;
   text-align: left;
@@ -3389,6 +3390,34 @@ select:focus {
 
 .formation-hero:active {
   transform: none;
+}
+
+/* Child overrides for navy context */
+.formation-hero .card-status-label { color: rgba(255,255,255,0.6); }
+.formation-hero .card-status-label--green { color: #6FCF97; }
+.formation-hero .card-status-label--blue { color: var(--color-gold); }
+.formation-hero .card-status-label--slate { color: rgba(255,255,255,0.6); }
+.formation-hero .card-meta-chip {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+}
+.formation-hero .card-meta-chip--green {
+  background: rgba(111,207,151,0.15);
+  color: #6FCF97;
+}
+.formation-hero .card-title {
+  color: #FFFFFF;
+}
+.formation-hero .card-supporting {
+  color: rgba(255,255,255,0.65);
+}
+.formation-hero .card-secondary {
+  color: rgba(255,255,255,0.55);
+}
+
+/* Override inline progress colors for navy context */
+.formation-hero .formation-progress-fill {
+  background: var(--color-gold) !important;
 }
 
 .formation-title {
@@ -3514,16 +3543,16 @@ select:focus {
 
 .formation-choice-options .btn.btn-primary {
   font-size: 1.05rem;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
 }
 
 .formation-choice-options .formation-cta-secondary {
-  background: var(--color-neutral-bg);
-  color: var(--color-text-secondary);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.2);
 }
 
 .formation-choice-options .formation-cta-secondary .formation-choice-label {
-  color: var(--color-text-primary);
+  color: #FFFFFF;
   font-weight: var(--weight-medium);
 }
 
@@ -4956,15 +4985,17 @@ select:focus {
 }
 
 /* Play Now button */
+/* PlayNow "I'm Free to Play" card — navy hero treatment */
 .broadcast-play-now-btn {
   width: 100%;
   margin-bottom: var(--space-lg);
-  border: none;
+  border: 1px solid var(--color-navy);
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  background: var(--color-bg-surface);
-  color: var(--color-text-primary);
+  background: var(--color-navy);
+  color: #FFFFFF;
+  border-left: 4px solid var(--color-gold);
 }
 
 .broadcast-play-now-btn:active {
@@ -4974,6 +5005,19 @@ select:focus {
 .broadcast-play-now-btn .action-card-status-row,
 .broadcast-play-now-btn .action-card-main {
   width: 100%;
+}
+
+.broadcast-play-now-btn .card-status-label,
+.broadcast-play-now-btn .card-status-label--green {
+  color: var(--color-gold);
+}
+
+.broadcast-play-now-btn .action-card-opponent {
+  color: #FFFFFF;
+}
+
+.broadcast-play-now-btn .action-card-supporting {
+  color: rgba(255,255,255,0.65);
 }
 
 /* Floating action buttons */
@@ -5594,18 +5638,33 @@ select:focus {
 .pn-my-broadcast-active {
   background: var(--color-navy);
   border-color: var(--color-navy);
-  border-left: 3px solid var(--color-gold);
+  border-left: 4px solid var(--color-gold);
   color: #FFFFFF;
 }
 
 .pn-my-broadcast-active .broadcast-player-name,
 .pn-my-broadcast-active .card-status-label {
-  color: #FFFFFF;
+  color: rgba(255,255,255,0.6);
+}
+
+.pn-my-broadcast-active .card-status-label--green {
+  color: var(--color-gold);
+}
+
+.pn-my-broadcast-active .card-meta-chip,
+.pn-my-broadcast-active .card-meta-chip--green {
+  background: rgba(197,153,62,0.2);
+  color: var(--color-gold);
+}
+
+.pn-my-broadcast-active .card-supporting,
+.pn-my-broadcast-active .broadcast-detail {
+  color: rgba(255,255,255,0.65);
 }
 
 .pn-my-broadcast-active .broadcast-expiry-timer,
 .pn-my-broadcast-active .pn-broadcast-expiry {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.55);
 }
 
 .pn-my-broadcast-active .broadcast-status-indicator {
@@ -5615,6 +5674,12 @@ select:focus {
 .pn-my-broadcast-active .broadcast-status-dot,
 .pn-my-broadcast-active .pn-active-indicator {
   background: var(--color-gold);
+}
+
+.pn-my-broadcast-active .broadcast-cancel-btn {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  border-color: rgba(255,255,255,0.2);
 }
 
 .broadcast-status-indicator {
@@ -8829,7 +8894,7 @@ select:focus {
 
 .schedule-progress-bar-fill {
   height: 100%;
-  background: var(--color-accent-primary);
+  background: var(--color-gold);
   border-radius: 3px;
   transition: width 0.6s ease;
   min-width: 2px;
