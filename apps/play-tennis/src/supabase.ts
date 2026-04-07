@@ -189,12 +189,16 @@ export async function fetchPlayerProfile(userId: string): Promise<{
   createdAt?: string
 } | null> {
   if (!client) return null
-  const { data, error } = await client
+  // Use .not('email', 'is', null) + .limit(1) instead of .maybeSingle() because
+  // seeded bot players may share the same auth_id. The real user always has an email.
+  const { data: rows, error } = await client
     .from('players')
     .select('player_name, county, email, sex, experience_level, weekly_cap, created_at')
     .eq('auth_id', userId)
-    .maybeSingle()
-  if (error || !data) return null
+    .not('email', 'is', null)
+    .limit(1)
+  if (error || !rows || rows.length === 0) return null
+  const data = rows[0]
   return {
     name: data.player_name,
     county: data.county,
