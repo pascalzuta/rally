@@ -129,14 +129,20 @@ function clearAuthFlow() {
 }
 
 export default function Register({ onRegistered, inviteCounty, onCancel }: Props) {
-  // Start directly at email — no onboarding funnel
+  // Start at email step. Only restore mid-flow state if the page was reloaded
+  // (sessionStorage persists across reloads but not across tabs).
+  // We clear stale flow state on mount to prevent skipping to signup after a
+  // previously abandoned attempt.
   const [step, setStepRaw] = useState<Step>(() => {
-    // Recover auth flow state after page reload / component remount
     const flow = loadAuthFlow()
     if (flow) {
-      if (flow.step === 'signup' || flow.step === 'verify' || flow.step === 'email') {
-        return flow.step as Step
+      // Only restore verify step (user was mid-OTP). For signup or later steps,
+      // start fresh — the user explicitly clicked "Sign up" again.
+      if (flow.step === 'verify') {
+        return 'verify'
       }
+      // Clear stale state from previous abandoned flows
+      clearAuthFlow()
     }
     return 'email'
   })
