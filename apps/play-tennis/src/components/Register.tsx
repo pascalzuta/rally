@@ -342,6 +342,22 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
     setMatchableCount(count)
   }, [county, detailedSlots])
 
+  // Auto-verify test emails (skip OTP entry entirely)
+  useEffect(() => {
+    if (step !== 'verify' || !isTestEmail(email) || otpVerifying || authUserId) return
+    setOtpVerifying(true)
+    setOtpCode('000000')
+    verifyOtp(email.trim().toLowerCase(), '000000').then(result => {
+      setOtpVerifying(false)
+      if (result.ok && result.userId) {
+        setAuthUserId(result.userId)
+        analytics.track('Lead')
+      } else {
+        setOtpError(result.error || 'Test auth failed')
+      }
+    })
+  }, [step, email]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
 
   function handleFinish(skip: boolean) {
@@ -486,22 +502,6 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
       </div>
     )
   }
-
-  // Auto-verify test emails (skip OTP entry entirely)
-  useEffect(() => {
-    if (step !== 'verify' || !isTestEmail(email) || otpVerifying || authUserId) return
-    setOtpVerifying(true)
-    setOtpCode('000000')
-    verifyOtp(email.trim().toLowerCase(), '000000').then(result => {
-      setOtpVerifying(false)
-      if (result.ok && result.userId) {
-        setAuthUserId(result.userId)
-        analytics.track('Lead')
-      } else {
-        setOtpError(result.error || 'Test auth failed')
-      }
-    })
-  }, [step, email]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- OTP Verification Screen ---
   if (step === 'verify') {
