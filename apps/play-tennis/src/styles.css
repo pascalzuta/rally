@@ -114,7 +114,7 @@
   --color-surface-primary: var(--color-bg-surface);
   --color-surface-raised: var(--color-bg-surface);
   --color-border-secondary: var(--color-divider);
-  --color-accent-blue: #2563EB;
+  --color-accent-blue: var(--color-accent-primary);
   --color-primary: var(--color-accent-primary);
 
   /* Weight alias */
@@ -231,8 +231,8 @@ body {
 }
 
 @keyframes tabFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ================================================
@@ -278,7 +278,7 @@ body {
 .rally-wordmark {
 
   font-size: var(--font-title-md);
-  font-weight: 900;
+  font-weight: 800;
   color: var(--color-text-primary);
   letter-spacing: -0.03em;
   line-height: 1;
@@ -689,9 +689,15 @@ body {
   cursor: pointer;
   position: relative;
   transition: transform var(--duration-fast) var(--ease-out-expo),
-              box-shadow var(--duration-normal) var(--ease-out-quart);
+              box-shadow var(--duration-normal) var(--ease-out-quart),
+              border-color var(--duration-normal);
   will-change: transform;
-  border: none;
+  border: 1px solid var(--color-divider);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--color-accent-primary), transparent 75%);
 }
 
 .card-status-row,
@@ -2301,7 +2307,7 @@ select:focus {
 .onboard-title {
 
   font-size: var(--font-display-md);
-  font-weight: 900;
+  font-weight: 800;
   line-height: 0.95;
   letter-spacing: -0.03em;
   color: var(--color-text-primary);
@@ -2349,7 +2355,7 @@ select:focus {
 .onboard-chat-out {
   align-self: flex-end;
   background: var(--color-accent-blue);
-  color: white;
+  color: #fff;
   border-bottom-right-radius: 6px;
 }
 
@@ -3814,7 +3820,7 @@ select:focus {
   width: 72px;
   height: 72px;
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -3856,7 +3862,7 @@ select:focus {
 .rating-big {
 
   font-size: var(--font-display-lg);
-  font-weight: 900;
+  font-weight: 800;
   color: var(--color-accent-primary);
   line-height: 0.9;
   font-variant-numeric: tabular-nums;
@@ -3891,7 +3897,7 @@ select:focus {
 .stat-value {
 
   font-size: var(--font-display-md);
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 0.95;
@@ -3992,7 +3998,7 @@ select:focus {
 
 .profile-hero-banner {
   height: 80px;
-  background: linear-gradient(135deg, var(--color-accent-primary) 0%, #1a5c47 100%);
+  background: linear-gradient(135deg, var(--color-accent-primary) 0%, color-mix(in srgb, var(--color-accent-primary), #000 20%) 100%);
 }
 
 .profile-hero-photo {
@@ -4015,8 +4021,8 @@ select:focus {
 .profile-hero-avatar {
   width: 88px;
   height: 88px;
-  background: linear-gradient(135deg, var(--color-accent-primary), #1a5c47);
-  color: white;
+  background: linear-gradient(135deg, var(--color-accent-primary), color-mix(in srgb, var(--color-accent-primary), #000 20%));
+  color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -4290,7 +4296,7 @@ select:focus {
 .profile-style-pill.active {
   background: var(--color-accent-primary);
   border-color: var(--color-accent-primary);
-  color: white;
+  color: #fff;
 }
 
 .profile-courts-list {
@@ -4574,7 +4580,7 @@ select:focus {
 .schedule-panel {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
-  background: #F5F6F8;
+  background: var(--color-bg-primary);
   border: 1px solid #E5E7EB;
   border-radius: var(--radius-card);
   display: flex;
@@ -5014,7 +5020,7 @@ select:focus {
 
 .broadcast-feedback {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-button);
   font-size: var(--font-caption);
@@ -5069,7 +5075,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 50%;
   font-size: var(--font-body-lg);
@@ -5708,7 +5714,7 @@ select:focus {
 
 .pn-toast {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-button);
   font-size: var(--font-caption);
@@ -5938,6 +5944,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-xxl);
+  animation: page-fade-in var(--duration-slow) var(--ease-out-expo);
 }
 
 .home-tournament-header {
@@ -6161,7 +6168,7 @@ select:focus {
 .upnext-opponent {
 
   font-size: var(--font-title-lg);
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1;
   color: var(--color-text-primary);
@@ -6349,7 +6356,7 @@ select:focus {
 
 .devbar-pill:hover {
   opacity: 1;
-  color: white;
+  color: #fff;
 }
 
 .devbar {
@@ -6408,7 +6415,7 @@ select:focus {
 }
 
 .devbar-close:hover {
-  color: white;
+  color: #fff;
 }
 
 .devbar-toast {
@@ -6506,7 +6513,7 @@ select:focus {
 .devbar-btn--active {
   background: var(--color-accent-primary);
   border-color: var(--color-accent-primary);
-  color: white;
+  color: #fff;
 }
 
 /* --- Activation Progress --- */
@@ -6889,7 +6896,7 @@ select:focus {
 .rating-tier:nth-child(1) { border-left-color: #8B5CF6; } /* Pro — purple */
 .rating-tier:nth-child(2) { border-left-color: var(--color-accent-primary); } /* Semi-pro — blue */
 .rating-tier:nth-child(3) { border-left-color: var(--color-positive-primary); } /* Elite — green */
-.rating-tier:nth-child(4) { border-left-color: #10B981; } /* Strong — teal */
+.rating-tier:nth-child(4) { border-left-color: var(--color-positive-primary); } /* Strong — teal */
 .rating-tier:nth-child(5) { border-left-color: var(--color-warning-primary); } /* Club — amber */
 .rating-tier:nth-child(6) { border-left-color: var(--color-text-muted); } /* Beginner — gray */
 .rating-tier:nth-child(7) { border-left-color: var(--color-divider); } /* Newcomer — light gray */
@@ -7081,6 +7088,10 @@ select:focus {
 .leaderboard-teaser-row.is-me {
   font-weight: var(--weight-bold);
   color: var(--color-accent-primary);
+  background: var(--color-accent-bg);
+  margin: 0 -8px;
+  padding: var(--space-xs) 8px;
+  border-radius: var(--radius-sm);
 }
 
 .leaderboard-rank {
@@ -7230,7 +7241,7 @@ select:focus {
 
 .lb-avatar-me {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
 }
 
 .lb-row-info {
@@ -7517,31 +7528,31 @@ select:focus {
 }
 
 .victory-trophy.champion {
-  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+  filter: drop-shadow(0 0 20px rgba(42, 91, 215, 0.3));
 }
 
 .victory-trophy.finalist {
-  filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.4));
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.15));
 }
 
 .victory-trophy.semifinalist {
-  filter: drop-shadow(0 0 12px rgba(205, 127, 50, 0.3));
+  filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.12));
 }
 
 @keyframes trophyGlow {
   0% {
-    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.3));
+    filter: drop-shadow(0 0 8px rgba(42, 91, 215, 0.2));
   }
   100% {
-    filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.6));
+    filter: drop-shadow(0 0 24px rgba(42, 91, 215, 0.35));
   }
 }
 
 .victory-title {
 
   font-size: var(--font-hero);
-  font-weight: 900;
-  color: white;
+  font-weight: 800;
+  color: #fff;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 0.95;
@@ -7589,7 +7600,7 @@ select:focus {
 
 .county-detect-btn:hover {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
 }
 
 .county-detect-btn:disabled {
@@ -7886,7 +7897,7 @@ select:focus {
   top: -4px;
   right: -4px;
   background: var(--color-negative-primary);
-  color: white;
+  color: #fff;
   font-size: var(--font-nano);
   font-weight: var(--weight-bold);
   width: 18px;
@@ -8233,7 +8244,7 @@ select:focus {
 
 .chat-list-badge {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   font-size: var(--font-body-sm);
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
@@ -8370,17 +8381,17 @@ select:focus {
   justify-content: center;
   font-weight: var(--weight-bold);
   font-size: var(--font-body-lg);
-  color: white;
+  color: #fff;
 }
 
 .chat-card-avatar--system {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
 }
 
 .chat-conv-avatar--system {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
 }
 
 .welcome-msg-body {
@@ -8451,7 +8462,7 @@ select:focus {
 
 .chat-card-badge {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   font-size: var(--font-body-sm);
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
@@ -8496,7 +8507,7 @@ select:focus {
   justify-content: center;
   font-weight: var(--weight-bold);
   font-size: var(--font-body-md);
-  color: white;
+  color: #fff;
   flex-shrink: 0;
 }
 
@@ -8637,7 +8648,7 @@ select:focus {
 
 .chat-bubble-mine .chat-bubble {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   border-radius: 18px 18px var(--space-xs) 18px;
   box-shadow: 0 1px 3px rgba(42, 91, 215, 0.15);
 }
@@ -8788,7 +8799,7 @@ select:focus {
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  color: white;
+  color: #fff;
   flex-shrink: 0;
   transition: opacity 0.15s;
 }
@@ -8900,7 +8911,7 @@ select:focus {
   top: -3px;
   right: -3px;
   background: var(--color-negative-primary);
-  color: white;
+  color: #fff;
   font-size: 0.5rem;
   font-weight: var(--weight-bold);
   width: 14px;
@@ -9715,7 +9726,7 @@ select:focus {
 
 .help-tab--active {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   font-weight: var(--weight-semibold);
 }
 
@@ -10349,7 +10360,7 @@ select:focus {
 }
 .confirm-match-btn.confirmed {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   pointer-events: none;
 }
 
@@ -10491,7 +10502,7 @@ select:focus {
   left: 50%;
   transform: translateX(-50%);
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   padding: var(--space-sm) var(--space-lg);
   border-radius: var(--radius-button);
   font-size: var(--font-body-md);
@@ -11283,7 +11294,7 @@ select:focus {
 .profile-photo-preview { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
 .profile-photo-placeholder {
   width: 56px; height: 56px; border-radius: 50%;
-  background: var(--color-accent-primary); color: white;
+  background: var(--color-accent-primary); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: var(--font-heading-lg); font-weight: 700;
 }
@@ -11308,7 +11319,7 @@ select:focus {
   border: 1px solid var(--color-divider); background: var(--color-bg-surface);
   font-size: var(--font-body-sm); cursor: pointer; transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
 }
-.profile-style-btn.selected { background: var(--color-accent-primary); color: white; border-color: var(--color-accent-primary); }
+.profile-style-btn.selected { background: var(--color-accent-primary); color: #fff; border-color: var(--color-accent-primary); }
 .profile-style-tags-display { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-top: 8px; justify-content: center; }
 .profile-style-tag { padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-md); background: var(--color-surface-alt); font-size: var(--font-body-sm); }
 
@@ -11342,7 +11353,7 @@ select:focus {
 .post-match-star { background: none; border: none; cursor: pointer; font-size: var(--font-title-sm); padding: 0; color: var(--color-divider); transition: color 0.1s; }
 .post-match-star.active { color: #F59E0B; }
 .post-match-toggle { padding: var(--space-xs) var(--space-md); border-radius: var(--radius-card); border: 1px solid var(--color-divider); background: var(--color-bg-surface); cursor: pointer; font-size: var(--font-caption); transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease; }
-.post-match-toggle.active { background: var(--color-positive-primary); color: white; border-color: var(--color-positive-primary); }
+.post-match-toggle.active { background: var(--color-positive-primary); color: #fff; border-color: var(--color-positive-primary); }
 .post-match-actions { display: flex; gap: 8px; margin-top: 12px; }
 
 /* --- R-23: Match Reaction Summary --- */
@@ -12161,7 +12172,7 @@ main {
 
 .sh-btn-cta {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   border: none;
   font-size: var(--font-label);
   font-weight: 600;
@@ -12257,7 +12268,7 @@ main {
 
 .sh-btn-email {
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   border-color: var(--color-positive-primary);
 }
 
@@ -12554,7 +12565,7 @@ main {
 .dgh-hero-title {
 
   font-size: clamp(3rem, 6vw + 1rem, 5.5rem);
-  font-weight: 900;
+  font-weight: 800;
   line-height: 0.92;
   letter-spacing: -0.035em;
   color: var(--color-text-primary);
@@ -12615,7 +12626,7 @@ main {
   display: block;
 
   font-size: var(--font-hero);
-  font-weight: 900;
+  font-weight: 800;
   color: var(--color-accent-primary);
   line-height: 1;
   letter-spacing: -0.03em;
@@ -12645,7 +12656,7 @@ main {
 .dgh-section-heading {
 
   font-size: clamp(2rem, 3.5vw + 0.5rem, 3.25rem);
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.03em;
   color: var(--color-text-primary);
@@ -12906,7 +12917,7 @@ main {
 .dgh-cta-title {
 
   font-size: clamp(2.5rem, 5vw + 0.5rem, 4.5rem);
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.035em;
   line-height: 0.95;
   color: #fff;
@@ -13356,7 +13367,7 @@ main {
   height: 48px;
   border-radius: 50%;
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   font-size: var(--font-title-sm);
   font-weight: 800;
   display: flex;
@@ -13504,7 +13515,7 @@ main {
 
 .sh-chat-out {
   background: var(--color-accent-primary);
-  color: white;
+  color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
@@ -13907,7 +13918,7 @@ main {
 .login-quote-text {
   font-size: var(--font-body-lg);
   font-weight: 600;
-  color: white;
+  color: #fff;
   line-height: 1.5;
   margin-bottom: 8px;
 }
@@ -13994,7 +14005,7 @@ main {
   height: 32px;
   border-radius: 50%;
   background: var(--color-positive-primary);
-  color: white;
+  color: #fff;
   font-size: var(--font-label);
   font-weight: 800;
   display: flex;

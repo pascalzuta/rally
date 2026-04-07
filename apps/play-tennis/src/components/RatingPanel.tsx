@@ -82,9 +82,9 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
 // --- Trophy helpers ---
 
 const TROPHY_COLORS: Record<TrophyTier, { primary: string; highlight: string; shadow: string }> = {
-  champion: { primary: '#D4AF37', highlight: '#F6E27A', shadow: '#9A7C1E' },
-  finalist: { primary: '#C0C0C0', highlight: '#E4E4E4', shadow: '#8A8A8A' },
-  semifinalist: { primary: '#CD7F32', highlight: '#E0A46C', shadow: '#8C5421' },
+  champion: { primary: '#D4AF37', highlight: '#F6E27A', shadow: '#8C7520' },
+  finalist: { primary: '#A0A5AD', highlight: '#C8CCD2', shadow: '#6B7280' },
+  semifinalist: { primary: '#B87333', highlight: '#D4956B', shadow: '#7A4E22' },
 }
 
 const TROPHY_LABEL: Record<TrophyTier, string> = {

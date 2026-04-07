@@ -15,17 +15,17 @@ const TIER_CONFIG: Record<TrophyTier, {
   champion: {
     title: 'CHAMPION',
     subtitle: '',
-    colors: ['#D4AF37', '#F6E27A', '#2563EB', '#E6E8EC'],
+    colors: ['#D4AF37', '#F6E27A', '#2A5BD7', '#E5E7EB'],
   },
   finalist: {
     title: 'FINALIST',
     subtitle: 'One match from the title',
-    colors: ['#C0C0C0', '#E4E4E4', '#2563EB', '#E6E8EC'],
+    colors: ['#A0A5AD', '#C8CCD2', '#2A5BD7', '#E5E7EB'],
   },
   semifinalist: {
     title: 'SEMIFINALIST',
     subtitle: 'Top 4',
-    colors: ['#CD7F32', '#E0A46C', '#2563EB', '#E6E8EC'],
+    colors: ['#B87333', '#D4956B', '#2A5BD7', '#E5E7EB'],
   },
 }
 
