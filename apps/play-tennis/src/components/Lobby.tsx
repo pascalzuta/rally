@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { titleCase } from '../dateUtils'
 import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFromLobby, getSetupTournamentForCounty, getCountdownRemaining, checkCountdownExpired, getSchedulingConfidence } from '../store'
-import { SYNC_EVENT } from '../sync'
+import { useRallyData } from '../context/RallyDataProvider'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 import { analytics } from '../analytics'
 
@@ -28,6 +28,8 @@ function formatCountdown(ms: number): string {
 }
 
 export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournamentCreated }: Props) {
+  // Lobby data comes from RallyDataProvider (Supabase-backed, realtime-updated)
+  const { lobby: providerLobby, tournaments: providerTournaments } = useRallyData()
   const [entries, setEntries] = useState<LobbyEntry[]>([])
   const [joined, setJoined] = useState(false)
   const [setupTournament, setSetupTournament] = useState<Tournament | null>(null)
@@ -50,17 +52,11 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
     refreshState()
   }, [profile])
 
-  // Listen for Supabase realtime sync updates
+  // React to Supabase realtime updates via provider (replaces SYNC_EVENT listener)
   useEffect(() => {
-    function handleSync() {
-      // Skip refresh while a join is in progress to prevent realtime from
-      // overwriting the optimistic state set by handleJoin
-      if (joiningRef.current) return
-      refreshState()
-    }
-    window.addEventListener(SYNC_EVENT, handleSync)
-    return () => window.removeEventListener(SYNC_EVENT, handleSync)
-  }, [profile])
+    if (joiningRef.current) return
+    refreshState()
+  }, [providerLobby, providerTournaments])
 
   // Auto-join when coming from "Start Tournament"
   useEffect(() => {

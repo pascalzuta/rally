@@ -1,8 +1,6 @@
 import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
 import {
-  SUPABASE_PRIMARY,
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
-  syncTournaments, syncLobbyForCounty, syncRatings,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
   getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
   syncRatingSnapshot, syncTrophiesToRemote, syncBadgesToRemote,
@@ -11,27 +9,30 @@ import {
 } from './sync'
 import { titleCase } from './dateUtils'
 import { getClient } from './supabase'
-import { enqueue } from './offline-queue'
 import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
 import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
+import {
+  bridgeGetTournaments, bridgeSetTournaments,
+  bridgeGetLobby, bridgeSetLobby,
+  bridgeGetRatings, bridgeSetRatings,
+  bridgeGetAvailability, bridgeSetAvailability,
+  bridgeGetTrophies, bridgeSetTrophies,
+  bridgeGetBadges, bridgeSetBadges,
+  bridgeGetRatingHistory, bridgeSetRatingHistory,
+  bridgeGetFeedback, bridgeSetFeedback,
+  bridgeGetEtiquetteScores, bridgeSetEtiquetteScores,
+  bridgeGetBroadcasts, bridgeSetBroadcasts,
+  bridgeGetMatchOffers, bridgeSetMatchOffers,
+  bridgeGetNotifications, bridgeSetNotifications,
+  bridgeGetMessages, bridgeSetMessages,
+  bridgeGetReactions, bridgeSetReactions,
+  bridgeGetReliabilityScores, bridgeSetReliabilityScores,
+  bridgeGetPendingVictories, bridgeSetPendingVictories,
+  bridgeGetPendingFeedback, bridgeSetPendingFeedback,
+  bridgeRefresh,
+} from './storeBridge'
 
-const STORAGE_KEY = 'play-tennis-data'
-const RATINGS_KEY = 'play-tennis-ratings'
 const PROFILE_KEY = 'play-tennis-profile'
-const LOBBY_KEY = 'play-tennis-lobby'
-const AVAILABILITY_KEY = 'play-tennis-availability'
-const BROADCAST_KEY = 'play-tennis-broadcasts'
-const RATING_HISTORY_KEY = 'play-tennis-rating-history'
-const TROPHIES_KEY = 'play-tennis-trophies'
-const BADGES_KEY = 'play-tennis-badges'
-const PENDING_VICTORY_KEY = 'play-tennis-pending-victory'
-const OFFERS_KEY = 'rally-match-offers'
-const NOTIFICATIONS_KEY = 'rally-notifications'
-const MESSAGES_KEY = 'rally-direct-messages'
-const FEEDBACK_KEY = 'play-tennis-feedback'
-const RELIABILITY_KEY = 'play-tennis-reliability'
-const ETIQUETTE_KEY = 'play-tennis-etiquette'
-const PENDING_FEEDBACK_KEY = 'play-tennis-pending-feedback'
 
 // --- Pending Feedback ---
 // Persists across sync-driven re-renders so the feedback form stays visible
@@ -44,18 +45,15 @@ export interface PendingFeedback {
 }
 
 export function setPendingFeedback(data: PendingFeedback): void {
-  try { localStorage.setItem(PENDING_FEEDBACK_KEY, JSON.stringify(data)) } catch {}
+  bridgeSetPendingFeedback(data)
 }
 
 export function getPendingFeedback(): PendingFeedback | null {
-  try {
-    const raw = localStorage.getItem(PENDING_FEEDBACK_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
+  return bridgeGetPendingFeedback()
 }
 
 export function clearPendingFeedback(): void {
-  try { localStorage.removeItem(PENDING_FEEDBACK_KEY) } catch {}
+  bridgeSetPendingFeedback(null)
 }
 
 function generateId(): string {
@@ -116,27 +114,11 @@ export function createProfile(
 // --- Lobby ---
 
 function loadLobby(): LobbyEntry[] {
-  try {
-    const data = localStorage.getItem(LOBBY_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetLobby()
 }
 
 function saveLobby(lobby: LobbyEntry[]): void {
-  localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
-  if (!SUPABASE_PRIMARY) {
-    const byCounty = new Map<string, LobbyEntry[]>()
-    for (const e of lobby) {
-      const key = e.county.toLowerCase()
-      if (!byCounty.has(key)) byCounty.set(key, [])
-      byCounty.get(key)!.push(e)
-    }
-    for (const [county, entries] of byCounty) {
-      syncLobbyForCounty(county, entries)
-    }
-  }
+  bridgeSetLobby(lobby)
 }
 
 export function getLobbyByCounty(county: string): LobbyEntry[] {
@@ -163,47 +145,43 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   }
   lobby.push(entry)
 
-  // Save to localStorage FIRST so UI updates immediately
+  // Save to bridge FIRST so UI updates immediately
   saveLobby(lobby)
 
-  if (SUPABASE_PRIMARY) {
-    // Try backend API first (validates + writes with service role key)
-    if (isApiConfigured()) {
-      const apiOk = await apiJoinLobby(entry)
-      if (!apiOk) {
-        // API failed — fall back to direct Supabase write
-        const result = await syncLobbyEntry(entry)
-        if (!result.success) enqueue('lobby_add', entry)
-      }
-    } else {
-      // No API configured — direct Supabase write (legacy path)
+  // Try backend API first (validates + writes with service role key)
+  if (isApiConfigured()) {
+    const apiOk = await apiJoinLobby(entry)
+    if (!apiOk) {
+      // API failed — fall back to direct Supabase write
       const result = await syncLobbyEntry(entry)
-      if (!result.success) enqueue('lobby_add', entry)
+      if (!result.success) console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
     }
-    // Refresh from Supabase to get ALL players' entries (not just local)
-    await refreshLobbyFromRemote(countyKey)
+  } else {
+    // No API configured — direct Supabase write (legacy path)
+    const result = await syncLobbyEntry(entry)
+    if (!result.success) console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
   }
+  // Refresh from Supabase to get ALL players' entries (not just local)
+  await refreshLobbyFromRemote(countyKey)
   return getLobbyByCounty(profile.county)
 }
 
 export async function leaveLobby(playerId: string): Promise<void> {
   const lobby = loadLobby().filter(e => e.playerId !== playerId)
 
-  // Save to localStorage FIRST for immediate UI update
+  // Save to bridge FIRST for immediate UI update
   saveLobby(lobby)
 
-  if (SUPABASE_PRIMARY) {
-    // Try backend API first
-    if (isApiConfigured()) {
-      const apiOk = await apiLeaveLobby(playerId)
-      if (!apiOk) {
-        const result = await syncRemoveLobbyEntry(playerId)
-        if (!result.success) enqueue('lobby_remove', { playerId })
-      }
-    } else {
+  // Try backend API first
+  if (isApiConfigured()) {
+    const apiOk = await apiLeaveLobby(playerId)
+    if (!apiOk) {
       const result = await syncRemoveLobbyEntry(playerId)
-      if (!result.success) enqueue('lobby_remove', { playerId })
+      if (!result.success) console.warn('[Rally] Failed to remove lobby entry from Supabase', playerId)
     }
+  } else {
+    const result = await syncRemoveLobbyEntry(playerId)
+    if (!result.success) console.warn('[Rally] Failed to remove lobby entry from Supabase', playerId)
   }
 }
 
@@ -330,7 +308,7 @@ export async function createDoublesTournament(
   save(all)
 
   await syncTournament(tournament).catch(() => {
-    enqueue('tournament', tournament)
+    console.warn('[Rally] Failed to sync doubles tournament to Supabase', tournament.id)
   })
 
   return tournament
@@ -448,13 +426,11 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
   // Remove players who entered tournaments from lobby
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
   saveLobby(remainingLobby)
-  if (SUPABASE_PRIMARY) {
-    await Promise.all(
-      [...takenIds].map(id =>
-        syncRemoveLobbyEntry(id).catch(() => enqueue('lobby_remove', { playerId: id }))
-      )
+  await Promise.all(
+    [...takenIds].map(id =>
+      syncRemoveLobbyEntry(id).catch(() => console.warn('[Rally] Failed to remove lobby entry from Supabase', id))
     )
-  }
+  )
 
   // Start any tournaments that are already at max capacity
   for (const t of load()) {
@@ -619,29 +595,24 @@ export async function startFriendTournament(tournamentId: string, playerId: stri
 // --- Availability ---
 
 function loadAllAvailability(): Record<string, AvailabilitySlot[]> {
-  try {
-    const data = localStorage.getItem(AVAILABILITY_KEY)
-    return data ? JSON.parse(data) : {}
-  } catch {
-    return {}
-  }
+  return bridgeGetAvailability()
 }
 
 function saveAllAvailability(avail: Record<string, AvailabilitySlot[]>): void {
-  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(avail))
+  bridgeSetAvailability(avail)
 }
 
 export async function saveAvailability(playerId: string, slots: AvailabilitySlot[], county?: string, weeklyCap?: number): Promise<void> {
   const all = loadAllAvailability()
   all[playerId] = slots
-  // Write to localStorage FIRST (local-first pattern)
+  // Write to bridge FIRST (local-first pattern)
   saveAllAvailability(all)
 
   // Sync to Supabase
-  if (SUPABASE_PRIMARY && county) {
+  if (county) {
     const result = await syncAvailabilityToRemote(playerId, county, slots, weeklyCap ?? 2)
     if (!result.success) {
-      enqueue('availability', { playerId, county, slots, weeklyCap: weeklyCap ?? 2 })
+      console.warn('[Rally] Failed to sync availability to Supabase', playerId)
     }
   }
 }
@@ -1340,56 +1311,46 @@ function advanceWinner(tournament: Tournament, match: Match, winnerId: string): 
 // --- Tournaments ---
 
 function load(): Tournament[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetTournaments()
 }
 
 function save(tournaments: Tournament[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tournaments))
-  if (!SUPABASE_PRIMARY) {
-    syncTournaments(tournaments)
-  }
+  bridgeSetTournaments(tournaments)
 }
 
-/** Supabase-first save: syncs a specific tournament, then updates localStorage */
+/** Supabase-first save: syncs a specific tournament, then updates bridge */
 async function saveAndSync(all: Tournament[], changedTournament: Tournament): Promise<SyncResult> {
-  if (SUPABASE_PRIMARY) {
-    const result = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
-    if (!result.success) {
-      if (result.conflict) {
-        // Conflict: refresh from remote and retry once with fresh timestamp
-        const fresh = await refreshTournamentById(changedTournament.id)
-        if (fresh) {
-          // Re-apply our changes on top of the fresh remote state
-          const mergedAll = all.map(t => t.id === changedTournament.id ? changedTournament : t)
-          const retry = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
-          if (retry.success) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedAll))
-            return { success: true }
-          }
+  const result = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
+  if (!result.success) {
+    if (result.conflict) {
+      // Conflict: refresh from remote and retry once with fresh timestamp
+      const fresh = await refreshTournamentById(changedTournament.id)
+      if (fresh) {
+        // Re-apply our changes on top of the fresh remote state
+        const mergedAll = all.map(t => t.id === changedTournament.id ? changedTournament : t)
+        const retry = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
+        if (retry.success) {
+          bridgeSetTournaments(mergedAll)
+          return { success: true }
         }
-        // Conflict couldn't be resolved remotely — still save locally so UI updates
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
-        enqueue('tournament', changedTournament)
-        return { success: true }
       }
-      // Network error: save locally + queue
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
-      enqueue('tournament', changedTournament)
+      // Conflict couldn't be resolved remotely — still save locally so UI updates
+      bridgeSetTournaments(all)
+      console.warn('[Rally] Tournament sync conflict could not be resolved', changedTournament.id)
       return { success: true }
     }
+    // Network error: save locally + log warning
+    bridgeSetTournaments(all)
+    console.warn('[Rally] Failed to sync tournament to Supabase', changedTournament.id)
+    return { success: true }
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  bridgeSetTournaments(all)
   return { success: true }
 }
 
 /** Batch sync: upserts multiple tournaments in a single request */
 async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): Promise<void> {
-  if (SUPABASE_PRIMARY && tournaments.length > 0) {
+  if (tournaments.length > 0) {
     const client = getClient()
     if (client) {
       const rows = tournaments.map(t => ({
@@ -1399,14 +1360,11 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
       }))
       const { error } = await client.from('tournaments').upsert(rows, { onConflict: 'id' })
       if (error) {
-        // Fall back to queuing individual tournaments
-        for (const t of tournaments) {
-          enqueue('tournament', t)
-        }
+        console.warn('[Rally] Failed to batch sync tournaments to Supabase', error)
       }
     }
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  bridgeSetTournaments(all)
 }
 
 export function getTournaments(): Tournament[] {
@@ -1429,12 +1387,9 @@ export async function deleteTournament(tournamentId: string): Promise<void> {
   const all = load().filter(t => t.id !== tournamentId)
   save(all)
   // Also delete from Supabase
-  if (SUPABASE_PRIMARY) {
-    const { getClient } = await import('./supabase')
-    const client = getClient()
-    if (client) {
-      await client.from('tournaments').delete().eq('id', tournamentId)
-    }
+  const client = getClient()
+  if (client) {
+    await client.from('tournaments').delete().eq('id', tournamentId)
   }
 }
 
@@ -1452,12 +1407,9 @@ export async function leaveTournament(tournamentId: string, playerId: string): P
     if (t.players.length === 0) {
       // Remove empty tournament
       save(all.filter(x => x.id !== tournamentId))
-      if (SUPABASE_PRIMARY) {
-        const { getClient } = await import('./supabase')
-        const client = getClient()
-        if (client) {
-          await client.from('tournaments').delete().eq('id', tournamentId)
-        }
+      const client = getClient()
+      if (client) {
+        await client.from('tournaments').delete().eq('id', tournamentId)
       }
     } else {
       await saveAndSync(all, t)
@@ -1945,7 +1897,7 @@ export async function saveMatchScore(
   }
 
   // Try RPC for atomic score submission + bracket advancement
-  if (SUPABASE_PRIMARY) {
+  {
     const client = getClient()
     if (client) {
       try {
@@ -2211,19 +2163,12 @@ export async function cancelMatch(
 
 // --- Match Reactions ---
 
-const REACTIONS_KEY = 'play-tennis-reactions'
-
 function loadReactions(): MatchReaction[] {
-  try {
-    const data = localStorage.getItem(REACTIONS_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetReactions()
 }
 
 function saveReactionsToStorage(reactions: MatchReaction[]): void {
-  localStorage.setItem(REACTIONS_KEY, JSON.stringify(reactions))
+  bridgeSetReactions(reactions)
 }
 
 export function saveMatchReaction(reaction: MatchReaction): void {
@@ -2267,32 +2212,22 @@ export function getPlayerSeed(tournament: Tournament, playerId: string | null): 
 // --- Player Ratings (Global Elo) ---
 
 function loadRatings(): Record<string, PlayerRating> {
-  try {
-    const data = localStorage.getItem(RATINGS_KEY)
-    return data ? JSON.parse(data) : {}
-  } catch {
-    return {}
-  }
+  return bridgeGetRatings()
 }
 
 function saveRatings(ratings: Record<string, PlayerRating>): void {
-  localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
-  if (!SUPABASE_PRIMARY) {
-    syncRatings(ratings)
-  }
+  bridgeSetRatings(ratings)
 }
 
 /** Sync specific player ratings to Supabase */
 async function saveRatingsAndSync(ratings: Record<string, PlayerRating>, ...playerIds: string[]): Promise<void> {
   saveRatings(ratings)
-  if (SUPABASE_PRIMARY) {
-    for (const id of playerIds) {
-      const rating = ratings[id]
-      if (rating) {
-        const result = await syncRatingsForPlayer(id, rating)
-        if (!result.success) {
-          enqueue('rating', { playerId: id, rating })
-        }
+  for (const id of playerIds) {
+    const rating = ratings[id]
+    if (rating) {
+      const result = await syncRatingsForPlayer(id, rating)
+      if (!result.success) {
+        console.warn('[Rally] Failed to sync rating to Supabase', id)
       }
     }
   }
@@ -2343,7 +2278,7 @@ export async function updateRatings(
   winnerId: string
 ): Promise<void> {
   // Try RPC first for atomic server-side calculation
-  if (SUPABASE_PRIMARY) {
+  {
     const client = getClient()
     if (client) {
       try {
@@ -2410,16 +2345,11 @@ export async function updateRatings(
 // --- Rating History ---
 
 function loadRatingHistory(): Record<string, RatingSnapshot[]> {
-  try {
-    const data = localStorage.getItem(RATING_HISTORY_KEY)
-    return data ? JSON.parse(data) : {}
-  } catch {
-    return {}
-  }
+  return bridgeGetRatingHistory()
 }
 
 function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
-  localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(history))
+  bridgeSetRatingHistory(history)
 }
 
 function recordRatingSnapshot(playerId: string, rating: number): void {
@@ -2429,9 +2359,7 @@ function recordRatingSnapshot(playerId: string, rating: number): void {
   history[playerId].push({ rating, timestamp })
   saveRatingHistory(history)
   // Sync to Supabase
-  if (SUPABASE_PRIMARY) {
-    syncRatingSnapshot(playerId, rating, timestamp)
-  }
+  syncRatingSnapshot(playerId, rating, timestamp)
 }
 
 export function getRatingHistory(playerId: string): RatingSnapshot[] {
@@ -2661,17 +2589,12 @@ export function getPlayerRank(playerName: string, county: string): { rank: numbe
 // --- Trophies ---
 
 function loadTrophies(): Trophy[] {
-  try {
-    const data = localStorage.getItem(TROPHIES_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetTrophies()
 }
 
 function saveTrophies(trophies: Trophy[], newTrophies?: Trophy[]): void {
-  localStorage.setItem(TROPHIES_KEY, JSON.stringify(trophies))
-  if (SUPABASE_PRIMARY && newTrophies && newTrophies.length > 0) {
+  bridgeSetTrophies(trophies)
+  if (newTrophies && newTrophies.length > 0) {
     syncTrophiesToRemote(newTrophies)
   }
 }
@@ -2879,17 +2802,12 @@ export function getLatestChampionTrophy(county: string): Trophy | null {
 // --- Badges ---
 
 function loadBadges(): Badge[] {
-  try {
-    const data = localStorage.getItem(BADGES_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetBadges()
 }
 
 function saveBadges(badges: Badge[], newBadges?: Badge[]): void {
-  localStorage.setItem(BADGES_KEY, JSON.stringify(badges))
-  if (SUPABASE_PRIMARY && newBadges && newBadges.length > 0) {
+  bridgeSetBadges(badges)
+  if (newBadges && newBadges.length > 0) {
     syncBadgesToRemote(newBadges)
   }
 }
@@ -2999,45 +2917,25 @@ export interface PendingVictory {
 }
 
 export function getPendingVictory(playerId: string): PendingVictory | null {
-  try {
-    const data = localStorage.getItem(PENDING_VICTORY_KEY)
-    const all: PendingVictory[] = data ? JSON.parse(data) : []
-    return all.find(v => v.playerId === playerId) ?? null
-  } catch {
-    return null
-  }
+  const all = bridgeGetPendingVictories()
+  return all.find(v => v.playerId === playerId) ?? null
 }
 
 export function clearPendingVictory(playerId: string): void {
-  try {
-    const data = localStorage.getItem(PENDING_VICTORY_KEY)
-    const all: PendingVictory[] = data ? JSON.parse(data) : []
-    const filtered = all.filter(v => v.playerId !== playerId)
-    if (filtered.length > 0) {
-      localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(filtered))
-    } else {
-      localStorage.removeItem(PENDING_VICTORY_KEY)
-    }
-  } catch {
-    localStorage.removeItem(PENDING_VICTORY_KEY)
-  }
+  const all = bridgeGetPendingVictories()
+  const filtered = all.filter(v => v.playerId !== playerId)
+  bridgeSetPendingVictories(filtered)
 }
 
 function setPendingVictory(trophy: Trophy): void {
-  try {
-    const data = localStorage.getItem(PENDING_VICTORY_KEY)
-    const all: PendingVictory[] = data ? JSON.parse(data) : []
-    // Don't duplicate
-    if (all.some(v => v.playerId === trophy.playerId && v.tournamentName === trophy.tournamentName)) return
-    all.push({
-      tier: trophy.tier,
-      tournamentName: trophy.tournamentName,
-      playerId: trophy.playerId,
-    })
-    localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(all))
-  } catch {
-    // ignore
-  }
+  const all = bridgeGetPendingVictories()
+  // Don't duplicate
+  if (all.some(v => v.playerId === trophy.playerId && v.tournamentName === trophy.tournamentName)) return
+  bridgeSetPendingVictories([...all, {
+    tier: trophy.tier,
+    tournamentName: trophy.tournamentName,
+    playerId: trophy.playerId,
+  }])
 }
 
 export function retroactivelyAwardTrophies(): void {
@@ -3104,14 +3002,14 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
       saveAvailability(id, TEST_AVAILABILITY[playerIdx])
     }
 
-    // Sync to Supabase (check results, queue on failure)
+    // Sync to Supabase
     const lobbyResult = await syncLobbyEntry(entry)
     if (!lobbyResult.success) {
-      enqueue('lobby_add', entry)
+      console.warn('[Rally] Failed to sync seeded lobby entry to Supabase', entry)
     }
     const ratingResult = await syncRatingsForPlayer(id, rating)
     if (!ratingResult.success) {
-      enqueue('rating', { playerId: id, rating })
+      console.warn('[Rally] Failed to sync seeded rating to Supabase', id)
     }
   }
 
@@ -3353,16 +3251,11 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
 // --- Match Broadcasts ---
 
 function loadBroadcasts(): MatchBroadcast[] {
-  try {
-    const data = localStorage.getItem(BROADCAST_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetBroadcasts()
 }
 
 function saveBroadcasts(broadcasts: MatchBroadcast[]): void {
-  localStorage.setItem(BROADCAST_KEY, JSON.stringify(broadcasts))
+  bridgeSetBroadcasts(broadcasts)
 }
 
 function cleanExpiredBroadcasts(): void {
@@ -3523,21 +3416,19 @@ export function cancelBroadcast(broadcastId: string, playerId: string): boolean 
 // =====================================================================
 
 function loadOffers(): MatchOffer[] {
-  const raw = localStorage.getItem(OFFERS_KEY)
-  return raw ? JSON.parse(raw) : []
+  return bridgeGetMatchOffers()
 }
 
 function saveOffers(offers: MatchOffer[]): void {
-  localStorage.setItem(OFFERS_KEY, JSON.stringify(offers))
+  bridgeSetMatchOffers(offers)
 }
 
 function loadNotifications(): RallyNotification[] {
-  const raw = localStorage.getItem(NOTIFICATIONS_KEY)
-  return raw ? JSON.parse(raw) : []
+  return bridgeGetNotifications()
 }
 
 function saveNotifications(notifications: RallyNotification[]): void {
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+  bridgeSetNotifications(notifications)
 }
 
 function addNotification(notif: Omit<RallyNotification, 'id' | 'createdAt' | 'read'>): RallyNotification {
@@ -3822,13 +3713,11 @@ export function getMatchOffer(offerId: string): MatchOffer | null {
 // --- Direct Messages ---
 
 function loadMessages(): DirectMessage[] {
-  try {
-    return JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]')
-  } catch { return [] }
+  return bridgeGetMessages()
 }
 
 function saveMessages(msgs: DirectMessage[]): void {
-  localStorage.setItem(MESSAGES_KEY, JSON.stringify(msgs))
+  bridgeSetMessages(msgs)
 }
 
 export function sendMessage(senderId: string, senderName: string, recipientId: string, recipientName: string, text: string): DirectMessage {
@@ -4087,16 +3976,11 @@ export async function reportMatchIssue(
 // --- Match Feedback (Reliability Rating) ---
 
 function loadFeedback(): MatchFeedback[] {
-  try {
-    const data = localStorage.getItem(FEEDBACK_KEY)
-    return data ? JSON.parse(data) : []
-  } catch {
-    return []
-  }
+  return bridgeGetFeedback()
 }
 
 function saveFeedbackToStorage(feedback: MatchFeedback[]): void {
-  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback))
+  bridgeSetFeedback(feedback)
 }
 
 export async function saveMatchFeedback(
@@ -4120,24 +4004,22 @@ export async function saveMatchFeedback(
   saveFeedbackToStorage(all)
 
   // Sync to Supabase
-  if (SUPABASE_PRIMARY) {
-    const client = getClient()
-    if (client) {
-      try {
-        await client.from('match_feedback').upsert({
-          id: entry.id,
-          match_id: entry.matchId,
-          tournament_id: entry.tournamentId,
-          from_player_id: entry.fromPlayerId,
-          to_player_id: entry.toPlayerId,
-          sentiment: entry.sentiment,
-          issue_categories: entry.issueCategories ?? [],
-          issue_text: entry.issueText ?? null,
-          created_at: entry.createdAt,
-        })
-      } catch {
-        enqueue('feedback', entry)
-      }
+  const client = getClient()
+  if (client) {
+    try {
+      await client.from('match_feedback').upsert({
+        id: entry.id,
+        match_id: entry.matchId,
+        tournament_id: entry.tournamentId,
+        from_player_id: entry.fromPlayerId,
+        to_player_id: entry.toPlayerId,
+        sentiment: entry.sentiment,
+        issue_categories: entry.issueCategories ?? [],
+        issue_text: entry.issueText ?? null,
+        created_at: entry.createdAt,
+      })
+    } catch {
+      console.warn('[Rally] Failed to sync feedback to Supabase', entry.id)
     }
   }
 
@@ -4163,16 +4045,11 @@ export function hasBothFeedback(matchId: string): boolean {
 // --- Reliability Score ---
 
 function loadReliability(): Record<string, ReliabilityScore> {
-  try {
-    const data = localStorage.getItem(RELIABILITY_KEY)
-    return data ? JSON.parse(data) : {}
-  } catch {
-    return {}
-  }
+  return bridgeGetReliabilityScores()
 }
 
 function saveReliabilityToStorage(scores: Record<string, ReliabilityScore>): void {
-  localStorage.setItem(RELIABILITY_KEY, JSON.stringify(scores))
+  bridgeSetReliabilityScores(scores)
 }
 
 export function recalculateReliability(playerId: string): ReliabilityScore {
@@ -4391,16 +4268,11 @@ function checkReliabilityBadges(
 // --- Etiquette Score ---
 
 function loadEtiquetteScores(): Record<string, EtiquetteScore> {
-  try {
-    const data = localStorage.getItem(ETIQUETTE_KEY)
-    return data ? JSON.parse(data) : {}
-  } catch {
-    return {}
-  }
+  return bridgeGetEtiquetteScores()
 }
 
 function saveEtiquetteScores(scores: Record<string, EtiquetteScore>): void {
-  localStorage.setItem(ETIQUETTE_KEY, JSON.stringify(scores))
+  bridgeSetEtiquetteScores(scores)
 }
 
 /**
@@ -4497,21 +4369,19 @@ export async function recalculateEtiquetteScore(playerId: string): Promise<Etiqu
   saveEtiquetteScores(scores)
 
   // Sync to Supabase
-  if (SUPABASE_PRIMARY) {
-    const client = getClient()
-    if (client) {
-      try {
-        await client.from('etiquette_scores').upsert({
-          player_id: playerId,
-          email,
-          overall_score: overallScore,
-          sentiment_avg: sentimentAvg,
-          issue_breakdown: issueBreakdown,
-          feedback_count: received.length,
-          last_updated: score.lastUpdated,
-        })
-      } catch { /* silent — etiquette sync is best-effort */ }
-    }
+  const client = getClient()
+  if (client) {
+    try {
+      await client.from('etiquette_scores').upsert({
+        player_id: playerId,
+        email,
+        overall_score: overallScore,
+        sentiment_avg: sentimentAvg,
+        issue_breakdown: issueBreakdown,
+        feedback_count: received.length,
+        last_updated: score.lastUpdated,
+      })
+    } catch { /* silent — etiquette sync is best-effort */ }
   }
 
   return score

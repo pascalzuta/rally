@@ -6,7 +6,7 @@ import {
   getCountdownRemaining, checkCountdownExpired,
   getSchedulingConfidence, getAvailability,
 } from '../store'
-import { SYNC_EVENT } from '../sync'
+import { useRallyData } from '../context/RallyDataProvider'
 import { PlayerProfile, Tournament, LobbyEntry } from '../types'
 import WelcomeCard, { ActivationStep } from './WelcomeCard'
 
@@ -78,6 +78,7 @@ export default function HomeHeroCard({
   onFindMatch,
   actionCardCount,
 }: Props) {
+  const { lobby: providerLobby, tournaments: providerTournaments } = useRallyData()
   const [entries, setEntries] = useState<LobbyEntry[]>([])
   const [joined, setJoined] = useState(false)
   const [setupTournament, setSetupTournament] = useState<Tournament | null>(null)
@@ -99,14 +100,11 @@ export default function HomeHeroCard({
 
   useEffect(() => { refreshState() }, [profile])
 
+  // React to Supabase realtime updates via provider (replaces SYNC_EVENT listener)
   useEffect(() => {
-    function handleSync() {
-      if (joiningRef.current) return
-      refreshState()
-    }
-    window.addEventListener(SYNC_EVENT, handleSync)
-    return () => window.removeEventListener(SYNC_EVENT, handleSync)
-  }, [profile])
+    if (joiningRef.current) return
+    refreshState()
+  }, [providerLobby, providerTournaments])
 
   useEffect(() => {
     if (autoJoin && !autoJoinedRef.current && !joined && !isInSetupTournament) {

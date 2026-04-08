@@ -4,7 +4,6 @@ import {
   cancelFriendTournament, startFriendTournament,
 } from '../store'
 import { PlayerProfile, Tournament } from '../types'
-import { SYNC_EVENT } from '../sync'
 
 interface Props {
   profile: PlayerProfile
@@ -141,13 +140,13 @@ export default function FriendTournamentSection({
   async function handleCancel(tournamentId: string) {
     if (!confirm('Cancel this tournament? All invited players will be removed.')) return
     await cancelFriendTournament(tournamentId, profile.id)
-    window.dispatchEvent(new Event(SYNC_EVENT))
+    // Data provider auto-refreshes via Supabase Realtime
     onDataChanged?.()
   }
 
   async function handleStart(tournamentId: string) {
     await startFriendTournament(tournamentId, profile.id)
-    window.dispatchEvent(new Event(SYNC_EVENT))
+    // Data provider auto-refreshes via Supabase Realtime
     onDataChanged?.()
   }
 

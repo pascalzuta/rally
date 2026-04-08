@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
-import { getTournamentsByCounty, getPlayerTournaments, joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
+import { useRallyData } from './context/RallyDataProvider'
+import { joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
 import { PlayerProfile, Tournament, TrophyTier } from './types'
-import { initSync, SYNC_EVENT } from './sync'
-import { flushQueue } from './offline-queue'
 import { analytics } from './analytics'
-import { getSession } from './supabase'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import './styles.css'
@@ -74,8 +72,9 @@ export default function App() {
   const activeTab = tabFromPath(location.pathname)
 
   const { user, profile, loading: authLoading, signOut, setProfile } = useAuth()
-  // forceSignup removed — signup lives at /signup (a real URL, not a state toggle)
-  const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const rallyData = useRallyData()
+  // Tournaments come from the data provider (Supabase-backed, realtime-updated)
+  const tournaments = rallyData.tournaments
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
   const [inviteTournamentCounty, setInviteTournamentCounty] = useState<string | null>(null)
@@ -204,19 +203,7 @@ export default function App() {
     retroactivelyAwardTrophies()
   }, [])
 
-  // Initialize Supabase sync when profile is available
-  useEffect(() => {
-    if (!profile) return
-    getSession().then(() => initSync(profile.county))
-    const handler = () => setRefreshKey(r => r + 1)
-    window.addEventListener(SYNC_EVENT, handler)
-    const onlineHandler = () => { flushQueue() }
-    window.addEventListener('online', onlineHandler)
-    return () => {
-      window.removeEventListener(SYNC_EVENT, handler)
-      window.removeEventListener('online', onlineHandler)
-    }
-  }, [profile?.id])
+  // Supabase sync is now handled by RallyDataProvider — no SYNC_EVENT or offline queue needed
 
   // Auto-join when an existing user opens an invite link (county or tournament)
   useEffect(() => {
@@ -224,7 +211,6 @@ export default function App() {
       joinFriendTournament(inviteTournamentCode, profile).then(() => {
         clearInviteParam()
         navigate(ROUTES.HOME)
-        setRefreshKey(r => r + 1)
       })
     } else if (profile && inviteCounty) {
       joinLobby({ ...profile, county: inviteCounty })
@@ -233,29 +219,15 @@ export default function App() {
     }
   }, [profile, inviteCounty, inviteTournamentCode])
 
+  // Check for pending victory animation when tournaments change
   useEffect(() => {
-    if (profile) refreshTournaments()
-  }, [profile, location.pathname, refreshKey])
-
-  function refreshTournaments() {
     if (!profile) return
-    const county = getTournamentsByCounty(profile.county)
-    const mine = getPlayerTournaments(profile.id)
-    const map = new Map<string, Tournament>()
-    for (const t of [...mine, ...county]) map.set(t.id, t)
-    const sorted = Array.from(map.values()).sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-
-    // Check for pending victory animation
     const pending = getPendingVictory(profile.id)
     if (pending) {
       setVictoryAnim({ tier: pending.tier, name: pending.tournamentName })
       clearPendingVictory(profile.id)
     }
-
-    setTournaments(sorted)
-  }
+  }, [profile?.id, tournaments])
 
   async function handleRegistered(p: PlayerProfile) {
     if (inviteTournamentCode) {
@@ -289,7 +261,7 @@ export default function App() {
         onProfileSwitch={p => setProfile(p)}
         activeTournamentId={null}
         onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-        onTournamentCreated={() => { refreshTournaments(); navigate(ROUTES.HOME) }}
+        onTournamentCreated={() => { rallyData.refresh(); navigate(ROUTES.HOME) }}
       />
     )
 
@@ -400,7 +372,7 @@ export default function App() {
                 autoJoin={autoJoinLobby}
                 onAutoJoinConsumed={() => setAutoJoinLobby(false)}
                 onTournamentCreated={id => {
-                  refreshTournaments()
+                  rallyData.refresh()
                   navigate(ROUTES.BRACKET)
                 }}
                 onViewTournament={() => navigate(ROUTES.BRACKET)}
@@ -653,7 +625,7 @@ export default function App() {
         activeTournamentId={activeTournament?.id ?? null}
         onTournamentUpdated={() => setRefreshKey(r => r + 1)}
         onTournamentCreated={id => {
-          refreshTournaments()
+          rallyData.refresh()
           navigate(ROUTES.BRACKET)
         }}
       />
