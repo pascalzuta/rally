@@ -205,9 +205,10 @@ export async function syncAvailabilityToRemote(
 
 const AVAILABILITY_KEY = 'play-tennis-availability'
 
-export async function refreshAvailabilityFromRemote(countyKey: string): Promise<void> {
+export async function refreshAvailabilityFromRemote(rawCounty: string): Promise<void> {
   const client = getClient()
   if (!client) return
+  const countyKey = rawCounty.toLowerCase()
   const { data } = await client.from('availability').select('*').eq('county', countyKey)
   if (!data) return
 
@@ -434,15 +435,16 @@ function subscribeToCounty(county: string): void {
     .subscribe()
 }
 
-export async function refreshLobbyFromRemote(countyKey: string): Promise<void> {
+export async function refreshLobbyFromRemote(rawCounty: string): Promise<void> {
   const client = getClient()
   if (!client) return
+  const countyKey = rawCounty.toLowerCase()
   const { data } = await client.from('lobby').select('*').eq('county', countyKey)
   if (!data) return
   const remoteEntries: LobbyEntry[] = data.map(row => ({
     playerId: row.player_id,
     playerName: row.player_name,
-    county: row.county,
+    county: row.county?.toLowerCase() ?? countyKey,
     joinedAt: row.joined_at,
   }))
   // Merge: keep local-only entries (e.g. dev-seeded players) alongside remote data

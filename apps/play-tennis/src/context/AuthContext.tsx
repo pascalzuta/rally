@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { PlayerProfile, SkillLevel, Gender } from '../types'
-import { getClient, fetchPlayerProfile } from '../supabase'
+import { getClient, fetchPlayerProfile, savePlayerProfile } from '../supabase'
 import { refreshLobbyFromRemote, refreshAvailabilityFromRemote } from '../sync'
 
 interface AuthContextValue {
@@ -44,6 +44,53 @@ function buildProfile(userId: string, email: string, data: Awaited<ReturnType<ty
   }
 }
 
+/**
+ * Recover profile from localStorage when Supabase has no record.
+ * Handles the case where savePlayerProfile() failed during registration
+ * (network error, offline, etc.). Rewrites the ID to the stable auth UUID
+ * and retries the Supabase write.
+ *
+ * Unlike the previous version, this does NOT require the cached profile's
+ * id/authId to match the auth UUID — the whole point is that they diverged.
+ * We only require the profile to have a name and county (i.e., registration
+ * was actually completed).
+ */
+function recoverAndAdoptProfile(userId: string, email: string): PlayerProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY)
+    if (!raw) return null
+    const local = JSON.parse(raw) as PlayerProfile
+    if (!local.name || !local.county) return null
+
+    // Rewrite with canonical auth UUID
+    const recovered: PlayerProfile = {
+      ...local,
+      id: userId,
+      authId: userId,
+      email: email || local.email,
+    }
+
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(recovered))
+
+    // Retry saving to Supabase (fire-and-forget — retried on next login if it fails)
+    savePlayerProfile(userId, {
+      name: recovered.name,
+      county: recovered.county,
+      email: recovered.email,
+      skillLevel: recovered.skillLevel,
+      gender: recovered.gender,
+      weeklyCap: recovered.weeklyCap,
+    }).catch(() => {
+      console.warn('[Rally] Failed to backfill profile to Supabase — will retry on next login')
+    })
+
+    console.log('[Rally] Recovered profile from localStorage, adopted auth UUID:', userId)
+    return recovered
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Instantly restore cached profile from localStorage (no network wait)
   const [user, setUser] = useState<User | null>(null)
@@ -80,13 +127,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const county = restored.county.toLowerCase()
               refreshLobbyFromRemote(county)
               refreshAvailabilityFromRemote(county)
-            } else if (profile && (profile.id === u.id || profile.authId === u.id)) {
-              // DB fetch returned null but localStorage has a profile for this user.
-              // Trust localStorage — the DB save may not have completed yet.
-              setProfileState(profile)
-              const county = profile.county.toLowerCase()
-              refreshLobbyFromRemote(county)
-              refreshAvailabilityFromRemote(county)
+            } else {
+              // DB fetch returned null — recover from localStorage regardless of
+              // whether the cached profile's ID matches. The profile may have been
+              // created with a random generateId() before auth was established.
+              const recovered = recoverAndAdoptProfile(u.id, u.email ?? '')
+              if (recovered) {
+                setProfileState(recovered)
+                const county = recovered.county.toLowerCase()
+                refreshLobbyFromRemote(county)
+                refreshAvailabilityFromRemote(county)
+              }
             }
           } else if (profile) {
             // No valid session but we have a cached profile — clear stale data
@@ -111,22 +162,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           refreshLobbyFromRemote(county)
           refreshAvailabilityFromRemote(county)
         } else {
-          // No profile in DB — check if localStorage has one for this user
-          const cached = localStorage.getItem(PROFILE_KEY)
-          if (cached) {
-            try {
-              const cachedProfile = JSON.parse(cached) as PlayerProfile
-              if (cachedProfile.id === u.id || cachedProfile.authId === u.id) {
-                setProfileState(cachedProfile)
-                const county = cachedProfile.county.toLowerCase()
-                refreshLobbyFromRemote(county)
-                refreshAvailabilityFromRemote(county)
-                return
-              }
-            } catch { /* ignore parse errors */ }
+          // No profile in DB — recover from localStorage (handles failed
+          // registration saves AND profiles created with random IDs)
+          const recovered = recoverAndAdoptProfile(u.id, u.email ?? '')
+          if (recovered) {
+            setProfileState(recovered)
+            const county = recovered.county.toLowerCase()
+            refreshLobbyFromRemote(county)
+            refreshAvailabilityFromRemote(county)
+          } else {
+            // Truly new user — no profile anywhere
+            setProfileState(null)
           }
-          // Truly new user — no profile anywhere
-          setProfileState(null)
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)

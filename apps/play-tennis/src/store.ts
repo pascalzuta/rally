@@ -78,12 +78,28 @@ export function createProfile(
   county: string,
   options?: { skillLevel?: SkillLevel; gender?: Gender; email?: string; authId?: string },
 ): PlayerProfile {
-  // Duplicate guard: return existing profile if one exists
+  // Duplicate guard: return existing profile if one exists, but re-key it
+  // to the auth UUID if the IDs diverged (random ID → stable auth UUID)
   const existing = getProfile()
-  if (existing) return existing
+  if (existing) {
+    if (options?.authId && existing.id !== options.authId) {
+      existing.id = options.authId
+      existing.authId = options.authId
+      if (options.email) existing.email = options.email
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(existing))
+    }
+    return existing
+  }
+
+  // Auth UUID is the canonical player identity. Fall back to generateId()
+  // only as a last resort (should not happen with current registration flow).
+  const id = options?.authId ?? generateId()
+  if (!options?.authId) {
+    console.warn('[Rally] createProfile called without authId — player ID will not be stable across devices')
+  }
 
   const profile: PlayerProfile = {
-    id: options?.authId ?? generateId(),
+    id,
     authId: options?.authId,
     email: options?.email,
     name: name.trim(),
