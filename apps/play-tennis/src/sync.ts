@@ -79,11 +79,15 @@ export async function syncLobbyEntry(entry: LobbyEntry): Promise<SyncResult> {
   const client = getClient()
   if (!client) return { success: true }
 
+  // auth_id required by RLS policy "Authenticated write own lobby"
+  const authId = await getAuthUserId()
+
   const { error } = await client.from('lobby').upsert({
     player_id: entry.playerId,
     player_name: entry.playerName,
     county: entry.county.toLowerCase(),
     joined_at: entry.joinedAt,
+    auth_id: authId,
   }, { onConflict: 'player_id' })
 
   if (error) return { success: false, error: error.message }
@@ -103,9 +107,13 @@ export async function syncRatingsForPlayer(playerId: string, rating: PlayerRatin
   const client = getClient()
   if (!client) return { success: true }
 
+  // auth_id required by RLS policy "Authenticated write own ratings"
+  const authId = await getAuthUserId()
+
   const { error } = await client.from('ratings').upsert({
     player_id: playerId,
     data: rating,
+    auth_id: authId,
   }, { onConflict: 'player_id' })
 
   if (error) return { success: false, error: error.message }
@@ -121,11 +129,16 @@ export async function syncAvailabilityToRemote(
   const client = getClient()
   if (!client) return { success: true }
 
+  // auth_id is required by RLS policy "Authenticated write own availability"
+  // which checks auth_id = auth.uid(). Without it, the upsert is silently rejected.
+  const authId = await getAuthUserId()
+
   const { error } = await client.from('availability').upsert({
     player_id: playerId,
     county: county.toLowerCase(),
     slots,
     weekly_cap: weeklyCap,
+    auth_id: authId,
   }, { onConflict: 'player_id' })
 
   if (error) return { success: false, error: error.message }

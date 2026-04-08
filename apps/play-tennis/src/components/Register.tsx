@@ -370,7 +370,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
 
   const [createdProfile, setCreatedProfile] = useState<PlayerProfile | null>(null)
 
-  function handleFinish(skip: boolean) {
+  async function handleFinish(skip: boolean) {
     const p = createProfile(fullName, county, {
       skillLevel: skillLevel || undefined,
       gender: gender || undefined,
@@ -385,7 +385,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
       // detailedSlots is the combined source (presets pre-fill into it)
       const slots = detailedSlots
       if (slots.length > 0) {
-        saveAvailability(p.id, slots, county, weeklyCap)
+        await saveAvailability(p.id, slots, county, weeklyCap)
       }
     }
 
