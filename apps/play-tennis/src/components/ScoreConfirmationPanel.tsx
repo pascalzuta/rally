@@ -67,7 +67,13 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
 
   const p1Name = getPlayerName(tournament, match.player1Id)
   const p2Name = getPlayerName(tournament, match.player2Id)
-  const reportedScore = match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
+  // Show scores from the current player's perspective:
+  // Reporter sees what they entered (score1=player1, score2=player2).
+  // Confirmer sees their own score first.
+  const isCurrentPlayer2 = currentPlayerId === match.player2Id
+  const yourScores = isCurrentPlayer2 ? match.score2 : match.score1
+  const oppScores = isCurrentPlayer2 ? match.score1 : match.score2
+  const reportedScore = yourScores.map((s, i) => `${s}-${oppScores[i]}`).join(', ')
   const reporterName = getPlayerName(tournament, match.scoreReportedBy ?? null)
   const reportedWinnerName = getPlayerName(tournament, match.winnerId)
   const countdownDeadline = formatDeadline(match.scoreReportedAt)

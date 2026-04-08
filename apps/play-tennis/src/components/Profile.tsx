@@ -1,6 +1,7 @@
 import { formatHourCompact, titleCase } from '../dateUtils'
-import { useState, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
+import { useRallyData } from '../context/RallyDataProvider'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
 
@@ -55,6 +56,7 @@ const QUICK_SLOTS: { label: string; slots: AvailabilitySlot[] }[] = [
 
 export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: Props) {
   const { showSuccess } = useToast()
+  const { availability: providerAvailability } = useRallyData()
 
   const [editing, setEditing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -64,6 +66,14 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   const [detailDay, setDetailDay] = useState<DayOfWeek>('monday')
   const [detailStart, setDetailStart] = useState(9)
   const [detailEnd, setDetailEnd] = useState(12)
+
+  // Re-sync availability when provider data updates (e.g., after hydration from Supabase)
+  useEffect(() => {
+    if (!editing) {
+      const fresh = getAvailability(profile.id)
+      if (fresh.length > 0) setSlots(fresh)
+    }
+  }, [providerAvailability, profile.id])
 
   const playerRating = getPlayerRating(profile.id, profile.name)
   const tournamentsPlayed = getPlayerTournaments(profile.id).length

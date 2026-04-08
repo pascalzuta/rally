@@ -36,7 +36,7 @@ export async function syncTournament(tournament: Tournament, expectedUpdatedAt?:
   if (expectedUpdatedAt) {
     const { error, count } = await client
       .from('tournaments')
-      .update({ data: tournament })
+      .update({ data: tournament, updated_at: new Date().toISOString() })
       .eq('id', tournament.id)
       .eq('updated_at', expectedUpdatedAt)
 
