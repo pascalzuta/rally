@@ -38,6 +38,10 @@ export default function Login({ onSignUp }: Props) {
     const result = await sendOtp(email.trim().toLowerCase())
     setSending(false)
     if (result.ok) {
+      if (result.autoVerified) {
+        // Test email: session already established, AuthContext handles the rest
+        return
+      }
       setResendCountdown(60)
       setStep('verify')
     } else {

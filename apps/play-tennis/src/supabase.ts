@@ -28,7 +28,7 @@ export function getClient(): SupabaseClient | null {
  * Test emails that bypass OTP verification (auto-confirmed via edge function).
  */
 const TEST_EMAILS = new Set(
-  Array.from({ length: 8 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`)
+  Array.from({ length: 16 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`)
 )
 
 export function isTestEmail(email: string): boolean {
@@ -40,12 +40,34 @@ export function isTestEmail(email: string): boolean {
  * Works for both new and returning users.
  * Test emails (pascal.zuta+test1001-1008@gmail.com) skip the real OTP send.
  */
-export async function sendOtp(email: string): Promise<{ ok: boolean; error?: string; status?: number }> {
+export async function sendOtp(email: string): Promise<{ ok: boolean; error?: string; status?: number; autoVerified?: boolean }> {
   if (!client) return { ok: false, error: 'supabase_not_initialized' }
 
-  // Test emails: skip OTP send, they'll use the edge function to authenticate
+  // Test emails: auto-authenticate via edge function (skip OTP entirely)
   if (isTestEmail(email)) {
-    return { ok: true }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/test-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok || !data.token_hash) {
+        return { ok: false, error: data.error || 'Test auth failed' }
+      }
+      // Verify the token hash to establish a real Supabase session
+      const { error: verifyError } = await client.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: 'magiclink',
+      })
+      if (verifyError) {
+        return { ok: false, error: verifyError.message }
+      }
+      // Session is now active — AuthContext's onAuthStateChange will fire SIGNED_IN
+      return { ok: true, autoVerified: true }
+    } catch {
+      return { ok: false, error: 'Test auth request failed' }
+    }
   }
 
   const { error } = await client.auth.signInWithOtp({

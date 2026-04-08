@@ -429,6 +429,11 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
       const result = await sendOtp(email.trim().toLowerCase())
       setOtpSending(false)
       if (result.ok) {
+        if (result.autoVerified) {
+          // Test email: session already established, skip OTP screen
+          // AuthContext will fire SIGNED_IN → profile check → land on signup step
+          return
+        }
         setResendCountdown(60)
         saveAuthFlow({ step: 'verify', email: email.trim().toLowerCase() })
         setStep('verify')
