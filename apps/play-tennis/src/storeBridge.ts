@@ -65,6 +65,10 @@ interface BridgeState {
 
   // Full refresh
   refresh: () => Promise<void>
+
+  // Toast callback for user-visible error messages from store.ts
+  showError: (message: string) => void
+  showSuccess: (message: string) => void
 }
 
 let bridge: BridgeState | null = null
@@ -222,4 +226,37 @@ export function bridgeSetPendingFeedback(updater: React.SetStateAction<PendingFe
 // Refresh
 export function bridgeRefresh(): Promise<void> {
   return bridge?.refresh() ?? Promise.resolve()
+}
+
+// ── User-facing error/success messages ──
+
+// ── Cross-tab sync ──
+
+/** Notify other tabs that data changed so they re-fetch from Supabase */
+export function bridgeNotifyOtherTabs(): void {
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      const bc = new BroadcastChannel('rally-data-sync')
+      bc.postMessage('refresh')
+      bc.close()
+    }
+  } catch { /* BroadcastChannel not available */ }
+}
+
+// ── User-facing error/success messages ──
+
+export function bridgeShowError(message: string): void {
+  if (bridge) {
+    bridge.showError(message)
+  } else {
+    console.error('[Rally]', message)
+  }
+}
+
+export function bridgeShowSuccess(message: string): void {
+  if (bridge) {
+    bridge.showSuccess(message)
+  } else {
+    console.log('[Rally]', message)
+  }
 }

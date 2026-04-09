@@ -30,6 +30,8 @@ import {
   bridgeGetPendingVictories, bridgeSetPendingVictories,
   bridgeGetPendingFeedback, bridgeSetPendingFeedback,
   bridgeRefresh,
+  bridgeShowError,
+  bridgeNotifyOtherTabs,
 } from './storeBridge'
 
 const PROFILE_KEY = 'play-tennis-profile'
@@ -96,12 +98,32 @@ export function createProfile(
     console.warn('[Rally] createProfile called without authId — player ID will not be stable across devices')
   }
 
+  // Validate and sanitize inputs
+  const trimmedName = name.trim().replace(/<[^>]*>/g, '').slice(0, 100)
+  const trimmedCounty = county.trim().replace(/<[^>]*>/g, '').slice(0, 200)
+  if (!trimmedName || !trimmedCounty) {
+    console.warn('[Rally] Invalid profile data: empty name or county')
+    // Return a minimal profile to prevent crashes
+    const fallback: PlayerProfile = {
+      id,
+      authId: options?.authId,
+      email: options?.email,
+      name: trimmedName || 'Player',
+      county: trimmedCounty || 'unknown',
+      skillLevel: options?.skillLevel,
+      gender: options?.gender,
+      createdAt: new Date().toISOString(),
+    }
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(fallback))
+    return fallback
+  }
+
   const profile: PlayerProfile = {
     id,
     authId: options?.authId,
     email: options?.email,
-    name: name.trim(),
-    county: county.trim(),
+    name: trimmedName,
+    county: trimmedCounty,
     skillLevel: options?.skillLevel,
     gender: options?.gender,
     createdAt: new Date().toISOString(),
@@ -154,12 +176,18 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
     if (!apiOk) {
       // API failed — fall back to direct Supabase write
       const result = await syncLobbyEntry(entry)
-      if (!result.success) console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
+      if (!result.success) {
+        console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
+        bridgeShowError('Could not join lobby — check your connection')
+      }
     }
   } else {
     // No API configured — direct Supabase write (legacy path)
     const result = await syncLobbyEntry(entry)
-    if (!result.success) console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
+    if (!result.success) {
+      console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
+      bridgeShowError('Could not join lobby — check your connection')
+    }
   }
   // Refresh from Supabase to get ALL players' entries (not just local)
   await refreshLobbyFromRemote(countyKey)
@@ -177,11 +205,17 @@ export async function leaveLobby(playerId: string): Promise<void> {
     const apiOk = await apiLeaveLobby(playerId)
     if (!apiOk) {
       const result = await syncRemoveLobbyEntry(playerId)
-      if (!result.success) console.warn('[Rally] Failed to remove lobby entry from Supabase', playerId)
+      if (!result.success) {
+        console.warn('[Rally] Failed to remove lobby entry from Supabase', playerId)
+        bridgeShowError('Could not leave lobby — check your connection')
+      }
     }
   } else {
     const result = await syncRemoveLobbyEntry(playerId)
-    if (!result.success) console.warn('[Rally] Failed to remove lobby entry from Supabase', playerId)
+    if (!result.success) {
+      console.warn('[Rally] Failed to remove lobby entry from Supabase', playerId)
+      bridgeShowError('Could not leave lobby — check your connection')
+    }
   }
 }
 
@@ -309,6 +343,7 @@ export async function createDoublesTournament(
 
   await syncTournament(tournament).catch(() => {
     console.warn('[Rally] Failed to sync doubles tournament to Supabase', tournament.id)
+    bridgeShowError('Could not save tournament — check your connection')
   })
 
   return tournament
@@ -428,7 +463,7 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
   saveLobby(remainingLobby)
   await Promise.all(
     [...takenIds].map(id =>
-      syncRemoveLobbyEntry(id).catch(() => console.warn('[Rally] Failed to remove lobby entry from Supabase', id))
+      syncRemoveLobbyEntry(id).catch(() => { console.warn('[Rally] Failed to remove lobby entry from Supabase', id); bridgeShowError('Could not save — check your connection') })
     )
   )
 
@@ -538,6 +573,7 @@ export async function joinFriendTournament(inviteCode: string, profile: PlayerPr
       }
     } catch (err) {
       console.warn('[Rally] RPC join_friend_tournament failed, falling back to local:', err)
+      bridgeShowError('Connection issue — your changes are saved locally but may not sync')
     }
   }
 
@@ -627,16 +663,22 @@ function saveAllAvailability(avail: Record<string, AvailabilitySlot[]>): void {
 }
 
 export async function saveAvailability(playerId: string, slots: AvailabilitySlot[], county?: string, weeklyCap?: number): Promise<void> {
+  // Validate and deduplicate slots
+  const validSlots = slots
+    .filter(s => s.startHour < s.endHour && s.startHour >= 0 && s.endHour <= 24)
+    .filter((s, i, arr) => arr.findIndex(x => x.day === s.day && x.startHour === s.startHour && x.endHour === s.endHour) === i)
+
   const all = loadAllAvailability()
-  all[playerId] = slots
+  all[playerId] = validSlots
   // Write to bridge FIRST (local-first pattern)
   saveAllAvailability(all)
 
   // Sync to Supabase
   if (county) {
-    const result = await syncAvailabilityToRemote(playerId, county, slots, weeklyCap ?? 2)
+    const result = await syncAvailabilityToRemote(playerId, county, validSlots, weeklyCap ?? 2)
     if (!result.success) {
       console.warn('[Rally] Failed to sync availability to Supabase', playerId)
+      bridgeShowError('Could not save your changes — please try again')
     }
   }
 }
@@ -1361,14 +1403,17 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
       // Conflict couldn't be resolved remotely — still save locally so UI updates
       bridgeSetTournaments(all)
       console.warn('[Rally] Tournament sync conflict could not be resolved', changedTournament.id)
+      bridgeShowError('Changes saved locally but may not sync until you\'re back online')
       return { success: true }
     }
     // Network error: save locally + log warning
     bridgeSetTournaments(all)
     console.warn('[Rally] Failed to sync tournament to Supabase', changedTournament.id)
+    bridgeShowError('Changes saved locally but may not sync until you\'re back online')
     return { success: true }
   }
   bridgeSetTournaments(all)
+  bridgeNotifyOtherTabs()
   return { success: true }
 }
 
@@ -1385,6 +1430,7 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
       const { error } = await client.from('tournaments').upsert(rows, { onConflict: 'id' })
       if (error) {
         console.warn('[Rally] Failed to batch sync tournaments to Supabase', error)
+        bridgeShowError('Could not save tournaments — check your connection')
       }
     }
   }
@@ -1444,6 +1490,7 @@ export async function leaveTournament(tournamentId: string, playerId: string): P
       }
     } catch (err) {
       console.warn('[Rally] RPC forfeit failed, falling back to local:', err)
+      bridgeShowError('Connection issue — your changes are saved locally but may not sync')
     }
   }
 
@@ -2091,6 +2138,7 @@ export async function confirmMatchScore(
       }
     } catch (err) {
       console.warn('[Rally] RPC confirm_score failed, falling back to local:', err)
+      bridgeShowError('Connection issue — your changes are saved locally but may not sync')
     }
   }
 
@@ -2333,6 +2381,7 @@ async function saveRatingsAndSync(ratings: Record<string, PlayerRating>, ...play
       const result = await syncRatingsForPlayer(id, rating)
       if (!result.success) {
         console.warn('[Rally] Failed to sync rating to Supabase', id)
+        bridgeShowError('Could not update your rating — please try again')
       }
     }
   }
@@ -2464,7 +2513,7 @@ function recordRatingSnapshot(playerId: string, rating: number): void {
   history[playerId].push({ rating, timestamp })
   saveRatingHistory(history)
   // Sync to Supabase
-  syncRatingSnapshot(playerId, rating, timestamp).catch(err => console.warn('[Rally] Rating snapshot sync failed:', err))
+  syncRatingSnapshot(playerId, rating, timestamp).catch(err => { console.warn('[Rally] Rating snapshot sync failed:', err); bridgeShowError('Could not update your rating — please try again') })
 }
 
 export function getRatingHistory(playerId: string): RatingSnapshot[] {
@@ -2697,10 +2746,15 @@ function loadTrophies(): Trophy[] {
   return bridgeGetTrophies()
 }
 
-function saveTrophies(trophies: Trophy[], newTrophies?: Trophy[]): void {
+async function saveTrophies(trophies: Trophy[], newTrophies?: Trophy[]): Promise<void> {
   bridgeSetTrophies(trophies)
   if (newTrophies && newTrophies.length > 0) {
-    syncTrophiesToRemote(newTrophies).catch(err => console.warn('[Rally] Trophy sync failed:', err))
+    try {
+      await syncTrophiesToRemote(newTrophies)
+    } catch (err) {
+      console.warn('[Rally] Trophy sync failed:', err)
+      bridgeShowError('Could not save trophy — please refresh')
+    }
   }
 }
 
@@ -2910,10 +2964,15 @@ function loadBadges(): Badge[] {
   return bridgeGetBadges()
 }
 
-function saveBadges(badges: Badge[], newBadges?: Badge[]): void {
+async function saveBadges(badges: Badge[], newBadges?: Badge[]): Promise<void> {
   bridgeSetBadges(badges)
   if (newBadges && newBadges.length > 0) {
-    syncBadgesToRemote(newBadges).catch(err => console.warn('[Rally] Badge sync failed:', err))
+    try {
+      await syncBadgesToRemote(newBadges)
+    } catch (err) {
+      console.warn('[Rally] Badge sync failed:', err)
+      bridgeShowError('Could not save badge — please refresh')
+    }
   }
 }
 
@@ -3111,10 +3170,12 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
     const lobbyResult = await syncLobbyEntry(entry)
     if (!lobbyResult.success) {
       console.warn('[Rally] Failed to sync seeded lobby entry to Supabase', entry)
+      bridgeShowError('Could not save — check your connection')
     }
     const ratingResult = await syncRatingsForPlayer(id, rating)
     if (!ratingResult.success) {
       console.warn('[Rally] Failed to sync seeded rating to Supabase', id)
+      bridgeShowError('Could not save — check your connection')
     }
   }
 
@@ -4125,6 +4186,7 @@ export async function saveMatchFeedback(
       })
     } catch {
       console.warn('[Rally] Failed to sync feedback to Supabase', entry.id)
+      bridgeShowError('Could not save your feedback — please try again')
     }
   }
 

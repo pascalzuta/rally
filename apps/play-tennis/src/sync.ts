@@ -25,7 +25,7 @@ export function setTournamentTimestamp(id: string, ts: string): void {
 
 export async function syncTournament(tournament: Tournament, expectedUpdatedAt?: string): Promise<SyncResult> {
   const client = getClient()
-  if (!client) return { success: true }
+  if (!client) return { success: false, error: 'Not connected to server' }
 
   const row = {
     id: tournament.id,
@@ -77,7 +77,7 @@ export async function syncTournament(tournament: Tournament, expectedUpdatedAt?:
 
 export async function syncLobbyEntry(entry: LobbyEntry): Promise<SyncResult> {
   const client = getClient()
-  if (!client) return { success: true }
+  if (!client) return { success: false, error: 'Not connected to server' }
 
   // auth_id required by RLS policy "Authenticated write own lobby"
   const authId = await getAuthUserId()
@@ -96,7 +96,7 @@ export async function syncLobbyEntry(entry: LobbyEntry): Promise<SyncResult> {
 
 export async function syncRemoveLobbyEntry(playerId: string): Promise<SyncResult> {
   const client = getClient()
-  if (!client) return { success: true }
+  if (!client) return { success: false, error: 'Not connected to server' }
 
   const { error } = await client.from('lobby').delete().eq('player_id', playerId)
   if (error) return { success: false, error: error.message }
@@ -105,7 +105,7 @@ export async function syncRemoveLobbyEntry(playerId: string): Promise<SyncResult
 
 export async function syncRatingsForPlayer(playerId: string, rating: PlayerRating): Promise<SyncResult> {
   const client = getClient()
-  if (!client) return { success: true }
+  if (!client) return { success: false, error: 'Not connected to server' }
 
   // auth_id required by RLS policy "Authenticated write own ratings"
   const authId = await getAuthUserId()
@@ -127,7 +127,7 @@ export async function syncAvailabilityToRemote(
   weeklyCap: number = 2,
 ): Promise<SyncResult> {
   const client = getClient()
-  if (!client) return { success: true }
+  if (!client) return { success: false, error: 'Not connected to server' }
 
   // auth_id is required by RLS policy "Authenticated write own availability"
   // which checks auth_id = auth.uid(). Without it, the upsert is silently rejected.

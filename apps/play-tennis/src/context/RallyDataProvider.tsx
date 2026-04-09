@@ -18,6 +18,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react'
 import { useAuth } from './AuthContext'
+import { useToast } from '../components/Toast'
 import { getClient } from '../supabase'
 import { registerBridge, unregisterBridge } from '../storeBridge'
 import {
@@ -27,6 +28,10 @@ import {
   MatchReaction, ReliabilityScore,
 } from '../types'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+
+// ── App version (placeholder for future version mismatch detection) ──
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const APP_VERSION = '1.0.0'
 
 // ── Ephemeral state types (no Supabase table, lives in React state only) ──
 
@@ -71,6 +76,8 @@ export interface RallyData {
   loading: boolean
   /** True once the initial Supabase fetch completes */
   hydrated: boolean
+  /** True when hydration failed (network error, Supabase down, etc.) */
+  hydrationFailed: boolean
 
   // ── Updater functions (called by store.ts after Supabase writes) ──
   setLobby: React.Dispatch<React.SetStateAction<LobbyEntry[]>>
@@ -188,6 +195,7 @@ async function fetchRatingHistory(playerId: string): Promise<RatingSnapshot[]> {
 
 export function RallyDataProvider({ children }: { children: ReactNode }) {
   const { profile } = useAuth()
+  const { showError, showSuccess } = useToast()
   const channelRef = useRef<RealtimeChannel | null>(null)
 
   // Core Supabase-backed state
@@ -213,6 +221,7 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
 
   const [loading, setLoading] = useState(true)
   const [hydrated, setHydrated] = useState(false)
+  const [hydrationFailed, setHydrationFailed] = useState(false)
 
   // ── Hydrate from Supabase on mount / profile change ──
 
@@ -223,6 +232,7 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
     }
 
     const county = profile.county.toLowerCase()
+    setHydrationFailed(false)
 
     try {
       // Fetch core data in parallel
@@ -246,6 +256,8 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
       setRatingHistory(prev => ({ ...prev, [profile.id]: historyData }))
     } catch (err) {
       console.error('[Rally] Failed to hydrate data from Supabase:', err)
+      setHydrationFailed(true)
+      showError('Could not load data — check your connection')
     } finally {
       setLoading(false)
       setHydrated(true)
@@ -253,45 +265,45 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
   }, [profile?.id, profile?.county])
 
   useEffect(() => {
-    hydrateAll()
-  }, [hydrateAll])
-
-  // ── Supabase Realtime subscriptions ──
-
-  useEffect(() => {
-    if (!profile) return
+    // Subscribe FIRST, then hydrate — prevents missing changes during fetch
     const client = getClient()
-    if (!client) return
+    if (client && profile) {
+      const county = profile.county.toLowerCase()
 
-    const county = profile.county.toLowerCase()
+      if (channelRef.current) channelRef.current.unsubscribe()
 
-    // Unsubscribe from previous channel
-    if (channelRef.current) {
-      channelRef.current.unsubscribe()
+      const channel = client.channel(`rally-${county}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby', filter: `county=eq.${county}` }, () => {
+          fetchLobby(county).then(setLobby)
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `county=eq.${county}` }, () => {
+          fetchTournaments(county).then(setTournaments)
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'availability', filter: `county=eq.${county}` }, () => {
+          fetchAvailability(county).then(setAvailability)
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {
+          fetchRatings().then(setRatings)
+        })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.warn('[Rally] Realtime channel error — will retry on next mount')
+          }
+        })
+
+      channelRef.current = channel
     }
 
-    const channel = client.channel(`rally-${county}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby', filter: `county=eq.${county}` }, () => {
-        fetchLobby(county).then(setLobby)
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `county=eq.${county}` }, () => {
-        fetchTournaments(county).then(setTournaments)
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'availability', filter: `county=eq.${county}` }, () => {
-        fetchAvailability(county).then(setAvailability)
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {
-        fetchRatings().then(setRatings)
-      })
-      .subscribe()
-
-    channelRef.current = channel
+    // Then hydrate (any changes during fetch will be caught by subscription above)
+    hydrateAll()
 
     return () => {
-      channel.unsubscribe()
-      channelRef.current = null
+      if (channelRef.current) {
+        channelRef.current.unsubscribe()
+        channelRef.current = null
+      }
     }
-  }, [profile?.id, profile?.county])
+  }, [hydrateAll])
 
   // ── Clean up on sign out (profile goes null) ──
 
@@ -317,6 +329,21 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
       setHydrated(false)
     }
   }, [profile])
+
+  // ── Cross-tab sync via BroadcastChannel ──
+  // When one tab writes data, it broadcasts a "refresh" message.
+  // Other tabs re-fetch from Supabase to stay in sync.
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return // SSR / old browsers
+    const bc = new BroadcastChannel('rally-data-sync')
+    bc.onmessage = (event) => {
+      if (event.data === 'refresh' && profile) {
+        hydrateAll()
+      }
+    }
+    return () => bc.close()
+  }, [profile?.id, hydrateAll])
 
   // ── Register bridge so store.ts can access state without React hooks ──
 
@@ -345,6 +372,8 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
       setNotifications, setMessages, setReactions,
       setReliabilityScores, setPendingVictories, setPendingFeedback,
       refresh: hydrateAll,
+      showError,
+      showSuccess,
     })
     return () => unregisterBridge()
   }) // No deps — re-register on every render so getters capture latest state
@@ -354,13 +383,26 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
     ratingHistory, feedback, etiquetteScores,
     broadcasts, matchOffers, notifications, messages, reactions,
     reliabilityScores, pendingVictories, pendingFeedback,
-    loading, hydrated,
+    loading, hydrated, hydrationFailed,
     setLobby, setTournaments, setRatings, setAvailability,
     setTrophies, setBadges, setRatingHistory, setFeedback,
     setEtiquetteScores, setBroadcasts, setMatchOffers,
     setNotifications, setMessages, setReactions,
     setReliabilityScores, setPendingVictories, setPendingFeedback,
     refresh: hydrateAll,
+  }
+
+  if (hydrationFailed && !hydrated) {
+    return (
+      <RallyDataContext.Provider value={value}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: 12 }}>
+          <p style={{ color: '#666' }}>Could not connect to server</p>
+          <button onClick={() => hydrateAll()} style={{ padding: '8px 24px', borderRadius: 8, border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      </RallyDataContext.Provider>
+    )
   }
 
   return (

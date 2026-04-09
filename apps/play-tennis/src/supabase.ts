@@ -26,10 +26,16 @@ export function getClient(): SupabaseClient | null {
 
 /**
  * Test emails that bypass OTP verification (auto-confirmed via edge function).
+ * Only active on staging and localhost — disabled in production.
  */
-const TEST_EMAILS = new Set(
-  Array.from({ length: 16 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`)
+const isStaging = typeof window !== 'undefined' && (
+  window.location.hostname === 'staging.play-rally.com' ||
+  window.location.hostname === 'localhost'
 )
+
+const TEST_EMAILS = isStaging
+  ? new Set(Array.from({ length: 16 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`))
+  : new Set<string>()
 
 export function isTestEmail(email: string): boolean {
   return TEST_EMAILS.has(email.toLowerCase().trim())
