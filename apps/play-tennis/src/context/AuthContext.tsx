@@ -111,8 +111,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // (with session if one exists, null if not) and is the correct Supabase v2 pattern.
     // This avoids the getSession() + onAuthStateChange race condition that caused
     // infinite loading on refresh.
+    // Safety timeout: if INITIAL_SESSION never fires or hangs, force loading to false
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false)
+      console.warn('[Rally] Auth loading timeout — forced loading=false after 8s')
+    }, 8000)
+
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === 'INITIAL_SESSION') {
+        clearTimeout(loadingTimeout)
         // Fires once on mount. Resolves loading regardless of outcome.
         try {
           if (session?.user) {
@@ -184,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => { clearTimeout(loadingTimeout); subscription.unsubscribe() }
   }, [])
 
   async function signOut() {

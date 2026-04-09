@@ -517,11 +517,35 @@ export async function getInviteTournamentCounty(inviteCode: string): Promise<str
 }
 
 export async function joinFriendTournament(inviteCode: string, profile: PlayerProfile): Promise<Tournament | null> {
+  // Try RPC first — single atomic server-side operation
+  const client = getClient()
+  if (client) {
+    try {
+      const { data: rpcResult } = await client.rpc('rpc_join_friend_tournament', {
+        p_invite_code: inviteCode,
+        p_player_id: profile.id,
+        p_player_name: profile.name,
+      })
+      if (rpcResult?.success && rpcResult.tournament) {
+        // Update local state from RPC result
+        const serverTournament = rpcResult.tournament as Tournament
+        const all = bridgeGetTournaments()
+        const idx = all.findIndex(t => t.id === serverTournament.id)
+        if (idx >= 0) all[idx] = serverTournament
+        else all.push(serverTournament)
+        bridgeSetTournaments([...all])
+        return serverTournament
+      }
+    } catch (err) {
+      console.warn('[Rally] RPC join_friend_tournament failed, falling back to local:', err)
+    }
+  }
+
+  // Fallback: read-modify-write path
   let tournament = getTournamentByInviteCode(inviteCode)
 
   // If not found locally, try fetching from Supabase
   if (!tournament) {
-    const client = getClient()
     if (client) {
       const { data } = await client
         .from('tournaments')
@@ -1394,6 +1418,36 @@ export async function deleteTournament(tournamentId: string): Promise<void> {
 }
 
 export async function leaveTournament(tournamentId: string, playerId: string): Promise<boolean> {
+  // Try RPC first — atomic server-side forfeit
+  const client = getClient()
+  if (client) {
+    try {
+      const { data: rpcResult } = await client.rpc('rpc_forfeit_player', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId,
+      })
+      if (rpcResult?.success && rpcResult.tournament) {
+        const serverTournament = rpcResult.tournament as Tournament
+        const all = bridgeGetTournaments()
+        const idx = all.findIndex(t => t.id === serverTournament.id)
+        if (idx >= 0) all[idx] = serverTournament
+        bridgeSetTournaments([...all])
+
+        // Award trophies/badges if tournament completed
+        if (serverTournament.status === 'completed') {
+          awardTournamentTrophies(serverTournament.id, serverTournament)
+          for (const p of serverTournament.players) {
+            checkAndAwardBadges(p.id, serverTournament.id, serverTournament)
+          }
+        }
+        return true
+      }
+    } catch (err) {
+      console.warn('[Rally] RPC forfeit failed, falling back to local:', err)
+    }
+  }
+
+  // Fallback: local read-modify-write
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return false
@@ -2359,7 +2413,7 @@ function recordRatingSnapshot(playerId: string, rating: number): void {
   history[playerId].push({ rating, timestamp })
   saveRatingHistory(history)
   // Sync to Supabase
-  syncRatingSnapshot(playerId, rating, timestamp)
+  syncRatingSnapshot(playerId, rating, timestamp).catch(err => console.warn('[Rally] Rating snapshot sync failed:', err))
 }
 
 export function getRatingHistory(playerId: string): RatingSnapshot[] {
@@ -2595,7 +2649,7 @@ function loadTrophies(): Trophy[] {
 function saveTrophies(trophies: Trophy[], newTrophies?: Trophy[]): void {
   bridgeSetTrophies(trophies)
   if (newTrophies && newTrophies.length > 0) {
-    syncTrophiesToRemote(newTrophies)
+    syncTrophiesToRemote(newTrophies).catch(err => console.warn('[Rally] Trophy sync failed:', err))
   }
 }
 
@@ -2808,7 +2862,7 @@ function loadBadges(): Badge[] {
 function saveBadges(badges: Badge[], newBadges?: Badge[]): void {
   bridgeSetBadges(badges)
   if (newBadges && newBadges.length > 0) {
-    syncBadgesToRemote(newBadges)
+    syncBadgesToRemote(newBadges).catch(err => console.warn('[Rally] Badge sync failed:', err))
   }
 }
 
@@ -4027,7 +4081,7 @@ export async function saveMatchFeedback(
   recalculateReliability(feedback.toPlayerId)
 
   // Recalculate etiquette score for the rated player
-  recalculateEtiquetteScore(feedback.toPlayerId)
+  await recalculateEtiquetteScore(feedback.toPlayerId)
 }
 
 export function getMatchFeedback(matchId: string): MatchFeedback[] {
