@@ -2044,6 +2044,57 @@ export async function confirmMatchScore(
   matchId: string,
   currentPlayerId: string
 ): Promise<Tournament | undefined> {
+  // Try atomic RPC first — handles score confirmation + ratings + history in one transaction
+  const client = getClient()
+  if (client) {
+    try {
+      const { data: rpcResult } = await client.rpc('rpc_confirm_score', {
+        p_tournament_id: tournamentId,
+        p_match_id: matchId,
+        p_confirming_player_id: currentPlayerId,
+      })
+      if (rpcResult?.success && rpcResult.tournament) {
+        const serverTournament = rpcResult.tournament as Tournament
+        const all = bridgeGetTournaments()
+        const idx = all.findIndex(t => t.id === serverTournament.id)
+        if (idx >= 0) all[idx] = serverTournament
+        else all.push(serverTournament)
+        bridgeSetTournaments([...all])
+
+        // Update local ratings from RPC result
+        if (rpcResult.ratings) {
+          const ratings = bridgeGetRatings()
+          const pA = rpcResult.ratings.playerA
+          const pB = rpcResult.ratings.playerB
+          if (pA) ratings[pA.id] = { name: pA.name ?? pA.id, rating: pA.rating, matchesPlayed: pA.matchesPlayed }
+          if (pB) ratings[pB.id] = { name: pB.name ?? pB.id, rating: pB.rating, matchesPlayed: pB.matchesPlayed }
+          bridgeSetRatings({ ...ratings })
+        }
+
+        // Award trophies/badges locally if tournament completed (client-side presentation logic)
+        if (serverTournament.status === 'completed') {
+          awardTournamentTrophies(serverTournament.id, serverTournament)
+          for (const p of serverTournament.players) {
+            checkAndAwardBadges(p.id, serverTournament.id, serverTournament)
+          }
+        }
+
+        // Set pending feedback for the confirming player
+        const match = serverTournament.matches.find(m => m.id === matchId)
+        if (match) {
+          const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
+          const opponentName = serverTournament.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+          setPendingFeedback({ matchId, tournamentId, opponentId, opponentName })
+        }
+
+        return serverTournament
+      }
+    } catch (err) {
+      console.warn('[Rally] RPC confirm_score failed, falling back to local:', err)
+    }
+  }
+
+  // Fallback: local logic (same as before)
   const all = load()
   const t = all.find(x => x.id === tournamentId)
   if (!t) return undefined
