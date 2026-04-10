@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { titleCase } from '../dateUtils'
 import { Tournament, Match } from '../types'
-import { getPlayerName, getPlayerRating, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, checkAutoAcceptScores, getPendingFeedback, clearPendingFeedback, getPlayerFeedbackForMatch } from '../store'
+import { getPlayerName, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, checkAutoAcceptScores, getPendingFeedback, clearPendingFeedback, getPlayerFeedbackForMatch } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { useStableSortPriority } from '../useStableOrder'
 import MessagePanel from './MessagePanel'
@@ -313,8 +313,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     : []
   const groupComplete = hasGroupPhase && !!tournament.groupPhaseComplete
   const groupStandings = hasGroupPhase ? getGroupStandings(tournament) : []
-  const groupMatchesCompleted = groupMatches.filter(m => m.completed).length
-  const groupMatchesTotal = groupMatches.length
 
   const seeds = getSeeds(tournament)
 
@@ -362,8 +360,6 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const doublesTeam2 = tournament!.mode === 'doubles' && match.player2Id ? tournament!.teams?.find(t => t.player1Id === match.player2Id || t.player2Id === match.player2Id) : null
     const p1 = doublesTeam1?.teamName ?? p1Raw
     const p2 = doublesTeam2?.teamName ?? p2Raw
-    const r1 = match.player1Id ? getPlayerRating(match.player1Id, p1) : null
-    const r2 = match.player2Id ? getPlayerRating(match.player2Id, p2) : null
     const seed1 = match.player1Id ? seeds.get(match.player1Id) : null
     const seed2 = match.player2Id ? seeds.get(match.player2Id) : null
     const isMyMatch = match.player1Id === currentPlayerId || match.player2Id === currentPlayerId
@@ -632,19 +628,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   // R-05: Clear rendered IDs before each render pass to reset dedup tracking
   renderedMatchIds.current.clear()
 
-  // R-18: Tournament progress calculations
-  const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
   const completedMatchCount = tournament.matches.filter(m => m.completed).length
-  const completionPct = totalMatches > 0 ? Math.round((completedMatchCount / totalMatches) * 100) : 0
-  const tournamentStartDate = tournament.createdAt ? new Date(tournament.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null
-  // Estimate end date: assume ~2 matches/week pace
-  const estimatedWeeksRemaining = totalMatches > 0 ? Math.max(1, Math.ceil((totalMatches - completedMatchCount) / 2)) : 0
-  const estimatedEndDate = (() => {
-    if (completedMatchCount >= totalMatches) return null
-    const d = new Date()
-    d.setDate(d.getDate() + estimatedWeeksRemaining * 7)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  })()
 
   return (
     <div className="bracket-tab">

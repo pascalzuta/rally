@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { useRallyData } from './context/RallyDataProvider'
 import { joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
-import { PlayerProfile, Tournament, TrophyTier } from './types'
+import { PlayerProfile, TrophyTier } from './types'
 import { analytics } from './analytics'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
@@ -78,7 +78,7 @@ export default function App() {
   const [inviteCounty] = useState<string | null>(getInviteCounty)
   const [inviteTournamentCode] = useState<string | null>(getInviteTournamentCode)
   const [inviteTournamentCounty, setInviteTournamentCounty] = useState<string | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [, setRefreshKey] = useState(0)
   const [autoJoinLobby, setAutoJoinLobby] = useState(false)
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)

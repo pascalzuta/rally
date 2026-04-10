@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, MatchResolution, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, RallyNotification, DirectMessage, SchedulingSummary, MatchReaction, MatchFeedback, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
 import {
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
@@ -29,7 +29,6 @@ import {
   bridgeGetReliabilityScores, bridgeSetReliabilityScores,
   bridgeGetPendingVictories, bridgeSetPendingVictories,
   bridgeGetPendingFeedback, bridgeSetPendingFeedback,
-  bridgeRefresh,
   bridgeShowError,
   bridgeNotifyOtherTabs,
 } from './storeBridge'

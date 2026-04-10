@@ -326,7 +326,6 @@ export interface DashboardData {
 
 async function fetchDashboardData(dateRange?: { from: string; to: string }): Promise<DashboardData | null> {
   const from = dateRange?.from ?? new Date(Date.now() - 90 * 86400000).toISOString()
-  const to = dateRange?.to ?? new Date().toISOString()
 
   try {
     // Use REST API with anon key to bypass authenticated client RLS issues.

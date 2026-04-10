@@ -1,7 +1,7 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState, useEffect } from 'react'
 import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom } from '../store'
-import { Tournament, Match, MatchBroadcast, MatchOffer } from '../types'
+import { Tournament, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
 import { useToast } from './Toast'
 
@@ -128,37 +128,6 @@ function offerKey(playerId: string, date: string, startHour: number, endHour: nu
   return `${playerId}:${date}:${startHour}:${endHour}`
 }
 
-function getPlayerTournamentMatches(t: Tournament, playerId: string): (Match & { opponentName: string })[] {
-  const playerMap = new Map(t.players.map(p => [p.id, p.name]))
-  return t.matches
-    .filter(m => !m.completed && (m.player1Id === playerId || m.player2Id === playerId) && m.player1Id != null && m.player2Id != null)
-    .map(m => {
-      const opponentId = m.player1Id === playerId ? m.player2Id! : m.player1Id!
-      return { ...m, opponentName: playerMap.get(opponentId) || 'TBD' }
-    })
-    .sort((a, b) => {
-      const tierOrder: Record<string, number> = { auto: 0, 'needs-accept': 1, 'needs-negotiation': 2 }
-      const aTier = a.schedule?.schedulingTier ? tierOrder[a.schedule.schedulingTier] ?? 3 : 3
-      const bTier = b.schedule?.schedulingTier ? tierOrder[b.schedule.schedulingTier] ?? 3 : 3
-      if (aTier !== bTier) return aTier - bTier
-      return a.round - b.round
-    })
-}
-
-function schedulingTierLabel(match: Match): { label: string; className: string; border: string } {
-  const tier = match.schedule?.schedulingTier
-  if (tier === 'auto') return { label: 'CONFIRMED', className: 'pn-tier-confirmed', border: 'score' }
-  if (tier === 'needs-accept') return { label: 'PROPOSED', className: 'pn-tier-proposed', border: 'respond' }
-  if (tier === 'needs-negotiation') return { label: 'NEEDS SCHEDULING', className: 'pn-tier-unscheduled', border: 'schedule' }
-  return { label: 'UNSCHEDULED', className: 'pn-tier-unscheduled', border: 'schedule' }
-}
-
-function formatSlotTime(match: Match): string {
-  const slot = match.schedule?.confirmedSlot
-  if (!slot) return 'Time TBD'
-  return `${formatHourCompact(slot.startHour)} – ${formatHourCompact(slot.endHour)}`
-}
-
 export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerName, onMatchConfirmed }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -266,8 +235,6 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleStartTimeChange(val: string) { setStartTime(val); setEndTime(defaultEndTime(val)) }
-
-  const tournamentMatches = getPlayerTournamentMatches(tournament, currentPlayerId)
 
   return (
     <div className="playnow-tab">

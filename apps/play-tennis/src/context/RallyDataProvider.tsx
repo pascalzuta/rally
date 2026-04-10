@@ -31,7 +31,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 
 // ── App version (placeholder for future version mismatch detection) ──
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const APP_VERSION = '1.0.0'
+export const _APP_VERSION = '1.0.0'
 
 // ── Ephemeral state types (no Supabase table, lives in React state only) ──
 

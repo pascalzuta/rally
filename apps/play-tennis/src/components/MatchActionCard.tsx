@@ -43,7 +43,6 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
   const { showConfirmation } = useToast()
   const [highlightTone, setHighlightTone] = useState<ConfirmationTone | null>(null)
   const collapseTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const highlightTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const handleActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
     showConfirmation(message, tone)

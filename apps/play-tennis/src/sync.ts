@@ -1,5 +1,5 @@
 import { getClient, getAuthUserId } from './supabase'
-import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot, Trophy, Badge, RatingSnapshot } from './types'
+import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot, Trophy, Badge } from './types'
 
 // --- Sync result type ---
 

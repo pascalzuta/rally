@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { saveMatchScore, getPlayerName, getSeeds, clearPendingFeedback } from '../store'
+import { saveMatchScore, getPlayerName, clearPendingFeedback } from '../store'
 import { Tournament } from '../types'
 import { useToast, ConfirmationTone } from './Toast'
 import { analytics } from '../analytics'

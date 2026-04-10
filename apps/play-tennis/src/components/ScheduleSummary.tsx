@@ -80,11 +80,8 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
 
   // Phase data
   const hasGroupPhase = tournament.format === 'group-knockout' || tournament.format === 'round-robin'
-  const groupMatches = hasGroupPhase ? tournament.matches.filter(m => m.phase === 'group') : []
   const knockoutMatches = hasGroupPhase ? tournament.matches.filter(m => m.phase === 'knockout') : []
   const groupComplete = hasGroupPhase && !!tournament.groupPhaseComplete
-  const groupMatchesCompleted = groupMatches.filter(m => m.completed).length
-  const groupMatchesTotal = groupMatches.length
 
   // Estimated end date — based on tournament start + total weeks needed
   const playerCount = tournament.players.length

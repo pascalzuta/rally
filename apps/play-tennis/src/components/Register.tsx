@@ -68,46 +68,6 @@ function timeOptions(startVal: number, endVal: number): { value: number; label: 
 const START_OPTIONS = timeOptions(6, 21.5)
 const END_OPTIONS = timeOptions(6.5, 22)
 
-// Reverse geocode coordinates to county using free Nominatim API
-async function reverseGeocodeCounty(lat: number, lon: number): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
-      { headers: { 'Accept-Language': 'en' } }
-    )
-    const data = await res.json()
-    const addr = data?.address
-    if (!addr) return null
-    const county = addr.county
-    const state = addr.state
-    if (!county || !state) return null
-    // Convert state name to abbreviation
-    const abbr = STATE_ABBREVS[state.toLowerCase()]
-    if (!abbr) return null
-    // Ensure "County" suffix
-    const countyName = county.includes('County') || county.includes('Parish') || county.includes('Borough')
-      ? county
-      : `${titleCase(county)} County`
-    return `${countyName}, ${abbr}`
-  } catch {
-    return null
-  }
-}
-
-const STATE_ABBREVS: Record<string, string> = {
-  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'district of columbia': 'DC',
-  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL',
-  'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA',
-  'maine': 'ME', 'maryland': 'MD', 'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN',
-  'mississippi': 'MS', 'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
-  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
-  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK', 'oregon': 'OR',
-  'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC', 'south dakota': 'SD',
-  'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT', 'virginia': 'VA',
-  'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
-}
-
 type Step = 'email' | 'verify' | 'welcome-back' | 'signup' | 'skill-gender' | 'availability' | 'confirmed'
 
 // Persist auth flow progress so the step survives page reloads / component remounts
@@ -215,8 +175,6 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
   const [countyQuery, setCountyQuery] = useState(inviteCounty ?? '')
   const [countySuggestions, setCountySuggestions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [suggestedCounty, setSuggestedCounty] = useState<string | null>(null)
-  const [detectingLocation, setDetectingLocation] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
 
   const [skillLevel, setSkillLevel] = useState<SkillLevel | ''>('')
@@ -230,25 +188,6 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
   const [addingEnd, setAddingEnd] = useState(21)
   const [weeklyCap, setWeeklyCap] = useState<1 | 2 | 3>(2)
   const [matchableCount, setMatchableCount] = useState(0)
-
-  function detectLocation() {
-    if (detectingLocation || suggestedCounty) return
-    if ('geolocation' in navigator) {
-      setDetectingLocation(true)
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const result = await reverseGeocodeCounty(pos.coords.latitude, pos.coords.longitude)
-          if (result) {
-            setSuggestedCounty(result)
-            selectCounty(result)
-          }
-          setDetectingLocation(false)
-        },
-        () => setDetectingLocation(false),
-        { timeout: 5000 }
-      )
-    }
-  }
 
   // County autocomplete
   useEffect(() => {
@@ -277,13 +216,6 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
     setCounty(value)
     setCountyQuery(value)
     setShowSuggestions(false)
-  }
-
-  function useSuggestedCounty() {
-    if (suggestedCounty) {
-      selectCounty(suggestedCounty)
-      setSuggestedCounty(null)
-    }
   }
 
   const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()

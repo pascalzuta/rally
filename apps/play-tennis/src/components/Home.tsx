@@ -51,12 +51,6 @@ function isMyMatch(match: Match, playerId: string): boolean {
   return match.player1Id === playerId || match.player2Id === playerId
 }
 
-function getOpponentId(match: Match, playerId: string): string | null {
-  if (match.player1Id === playerId) return match.player2Id
-  if (match.player2Id === playerId) return match.player1Id
-  return null
-}
-
 function buildHomeMatchCards(
   tournaments: Tournament[],
   playerId: string

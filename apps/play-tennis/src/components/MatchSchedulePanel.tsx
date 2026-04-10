@@ -89,8 +89,6 @@ function getVenueSuggestion(
   if (!profile) return null
 
   const currentCourts = profile.preferredCourts ?? []
-  const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
-  const opponentName = tournament.players.find(p => p.id === opponentId)?.name?.split(' ')[0] ?? 'Opponent'
 
   // We only have access to the current player's profile via localStorage.
   // If the current player has preferred courts, show them as a suggestion.
