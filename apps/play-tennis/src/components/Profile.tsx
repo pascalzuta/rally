@@ -127,8 +127,9 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     setSlots(slots.filter((_, i) => i !== index))
   }
 
-  function handleSaveAvailability() {
-    saveAvailability(profile.id, slots)
+  async function handleSaveAvailability() {
+    // Must pass county + weeklyCap so the write actually reaches Supabase
+    await saveAvailability(profile.id, slots, profile.county, profile.weeklyCap ?? 2)
     setEditing(false)
     showSuccess('Changes saved')
   }

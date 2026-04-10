@@ -673,13 +673,29 @@ export async function saveAvailability(playerId: string, slots: AvailabilitySlot
   // Write to bridge FIRST (local-first pattern)
   saveAllAvailability(all)
 
+  // Fallback: if county not provided, try to get it from the current profile.
+  // This prevents callers from accidentally skipping the Supabase sync.
+  if (!county) {
+    const profile = getProfile()
+    if (profile?.county) {
+      county = profile.county
+      weeklyCap = weeklyCap ?? profile.weeklyCap ?? 2
+    }
+  }
+
   // Sync to Supabase
   if (county) {
     const result = await syncAvailabilityToRemote(playerId, county, validSlots, weeklyCap ?? 2)
     if (!result.success) {
       console.warn('[Rally] Failed to sync availability to Supabase', playerId)
       bridgeShowError('Could not save your changes — please try again')
+    } else {
+      // Notify other tabs so they re-fetch and stay in sync
+      bridgeNotifyOtherTabs()
     }
+  } else {
+    // Only dev/seed code paths should reach here (no profile context)
+    console.warn('[Rally] saveAvailability called without county — skipping Supabase sync')
   }
 }
 
