@@ -37,3 +37,4 @@ apps/grp/assets/originals/*.jpeg
 apps/grp/assets/originals/*.jpg
 apps/grp/assets/originals/*.png
 .vercel
+apps/play-tennis/test-results/
