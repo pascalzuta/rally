@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, DoublesTeam, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, BroadcastStatus, MatchResolution, ResolutionType, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, OfferStatus, RallyNotification, NotificationType, DirectMessage, SchedulingSummary, MatchReaction, ScoreDispute, MatchFeedback, FeedbackSentiment, IssueCategory, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
 import {
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
@@ -277,84 +277,6 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
   }
 }
 
-// --- Doubles Tournament ---
-
-function generateDoublesRoundRobinMatches(teams: DoublesTeam[]): Match[] {
-  const n = teams.length
-  if (n < 2) return []
-  const matches: Match[] = []
-  let matchPos = 0
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      matches.push({
-        id: generateId(),
-        round: 1,
-        position: matchPos++,
-        player1Id: teams[i].id,
-        player2Id: teams[j].id,
-        score1: [],
-        score2: [],
-        winnerId: null,
-        completed: false,
-      })
-    }
-  }
-  return matches
-}
-
-export async function createDoublesTournament(
-  county: string,
-  teams: { player1: LobbyEntry; player2: LobbyEntry }[]
-): Promise<Tournament | null> {
-  if (teams.length < 3) return null
-
-  const num = getNextTournamentNumber(county)
-  const doublesTeams: DoublesTeam[] = teams.map(t => ({
-    id: generateId(),
-    player1Id: t.player1.playerId,
-    player2Id: t.player2.playerId,
-    teamName: `${t.player1.playerName.split(' ')[0]} & ${t.player2.playerName.split(' ')[0]}`,
-  }))
-
-  const allPlayers: Player[] = teams.flatMap(t => [
-    { id: t.player1.playerId, name: t.player1.playerName, partnerId: t.player2.playerId },
-    { id: t.player2.playerId, name: t.player2.playerName, partnerId: t.player1.playerId },
-  ])
-
-  const matches = generateDoublesRoundRobinMatches(doublesTeams)
-
-  const tournament: Tournament = {
-    id: generateId(),
-    name: `${titleCase(county)} Doubles #${num}`,
-    date: new Date().toISOString().split('T')[0],
-    county,
-    format: 'round-robin',
-    mode: 'doubles',
-    players: allPlayers,
-    teams: doublesTeams,
-    matches,
-    status: 'in-progress',
-    createdAt: new Date().toISOString(),
-  }
-
-  const all = load()
-  all.unshift(tournament)
-  save(all)
-
-  await syncTournament(tournament).catch(() => {
-    console.warn('[Rally] Failed to sync doubles tournament to Supabase', tournament.id)
-    bridgeShowError('Could not save tournament — check your connection')
-  })
-
-  return tournament
-}
-
-export function getTeamName(tournament: Tournament, teamId: string | null): string {
-  if (!teamId || !tournament.teams) return 'TBD'
-  const team = tournament.teams.find(t => t.id === teamId)
-  return team?.teamName ?? 'TBD'
-}
-
 export async function startTournamentFromLobby(county: string): Promise<Tournament | null> {
   const lobby = loadLobby()
   const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
@@ -499,30 +421,6 @@ export async function forceStartTournament(tournamentId: string): Promise<Tourna
 }
 
 // --- Friend Tournaments ---
-
-export async function createFriendTournament(profile: PlayerProfile): Promise<Tournament> {
-  const inviteCode = generateId()
-  const tournament: Tournament = {
-    id: generateId(),
-    name: `${profile.name.split(' ')[0]}'s Tournament`,
-    date: new Date().toISOString().split('T')[0],
-    county: profile.county,
-    format: 'round-robin',
-    players: [{ id: profile.id, name: profile.name }],
-    matches: [],
-    status: 'setup',
-    createdAt: new Date().toISOString(),
-    type: 'friend',
-    createdBy: profile.id,
-    inviteCode,
-    maxPlayers: 8,
-  }
-
-  const all = load()
-  all.unshift(tournament)
-  await saveAndSync(all, tournament)
-  return tournament
-}
 
 export function getFriendTournaments(playerId: string): Tournament[] {
   return load().filter(t => t.type === 'friend' && t.players.some(p => p.id === playerId))
@@ -1250,17 +1148,6 @@ export async function escalateMatch(
 }
 
 const PARTICIPATION_THRESHOLD = 3
-
-export function getParticipationScore(schedule: MatchSchedule, playerId: string): number {
-  return schedule.participationScores?.[playerId] ?? 0
-}
-
-export function getParticipationLabel(score: number): string {
-  if (score >= 6) return 'Very Active'
-  if (score >= PARTICIPATION_THRESHOLD) return 'Participated'
-  if (score >= 1) return 'Minimal'
-  return 'Inactive'
-}
 
 async function resolveMatchByParticipation(tournament: Tournament, match: Match): Promise<void> {
   if (!match.schedule || !match.player1Id || !match.player2Id) return
@@ -2253,59 +2140,6 @@ export async function confirmMatchScore(
   return t
 }
 
-export async function editMatchScore(
-  tournamentId: string,
-  matchId: string,
-  score1: number[],
-  score2: number[],
-  winnerId: string
-): Promise<Tournament | undefined> {
-  const all = load()
-  const t = all.find(x => x.id === tournamentId)
-  if (!t) return undefined
-
-  const match = t.matches.find(m => m.id === matchId)
-  if (!match || !match.completed) return undefined
-
-  // Check if the match was completed less than 48 hours ago
-  // Use the schedule's resolution timestamp or fall back to allowing the edit
-  const now = Date.now()
-  const completedAt = match.schedule?.resolution?.resolvedAt
-    ? new Date(match.schedule.resolution.resolvedAt).getTime()
-    : match.schedule?.createdAt
-      ? new Date(match.schedule.createdAt).getTime()
-      : 0
-  if (completedAt > 0 && now - completedAt > 48 * 60 * 60 * 1000) {
-    return undefined // Cannot edit after 48 hours
-  }
-
-  // Update scores and recalculate winner
-  match.score1 = score1
-  match.score2 = score2
-  match.winnerId = winnerId
-
-  await saveAndSync(all, t)
-  return t
-}
-
-export async function rescheduleMatch(
-  tournamentId: string,
-  matchId: string,
-  newDay: DayOfWeek,
-  newStartHour: number,
-  newEndHour: number
-): Promise<Tournament | undefined> {
-  const profile = getProfile()
-  if (!profile) return undefined
-  return requestHardReschedule(
-    tournamentId,
-    matchId,
-    profile.id,
-    'conflict',
-    [{ day: newDay, startHour: newStartHour, endHour: newEndHour }]
-  )
-}
-
 export async function cancelMatch(
   tournamentId: string,
   matchId: string,
@@ -2372,12 +2206,6 @@ export function getSeeds(tournament: Tournament): Map<string, number> {
   return seeds
 }
 
-export function getPlayerSeed(tournament: Tournament, playerId: string | null): number | null {
-  if (!playerId) return null
-  const seeds = getSeeds(tournament)
-  return seeds.get(playerId) ?? null
-}
-
 // --- Player Ratings (Global Elo) ---
 
 function loadRatings(): Record<string, PlayerRating> {
@@ -2403,15 +2231,6 @@ async function saveRatingsAndSync(ratings: Record<string, PlayerRating>, ...play
   }
 }
 
-// Legacy: look up by normalized name (for backwards compat with old data)
-function findRatingByName(ratings: Record<string, PlayerRating>, name: string): PlayerRating | null {
-  const normalized = name.trim().toLowerCase()
-  for (const entry of Object.values(ratings)) {
-    if (entry.name.trim().toLowerCase() === normalized) return entry
-  }
-  return null
-}
-
 export function getPlayerRating(playerId: string, playerName?: string): PlayerRating {
   const ratings = loadRatings()
   // Try by ID first
@@ -2421,17 +2240,6 @@ export function getPlayerRating(playerId: string, playerName?: string): PlayerRa
   const legacyKey = displayName.trim().toLowerCase()
   if (ratings[legacyKey]) return ratings[legacyKey]
   return { name: displayName, rating: 1500, matchesPlayed: 0 }
-}
-
-// Lookup by name for leaderboard (searches all entries)
-export function getPlayerRatingByName(playerName: string): PlayerRating {
-  const ratings = loadRatings()
-  const found = findRatingByName(ratings, playerName)
-  return found ?? { name: playerName, rating: 1500, matchesPlayed: 0 }
-}
-
-export function getAllRatings(): PlayerRating[] {
-  return Object.values(loadRatings()).sort((a, b) => b.rating - a.rating)
 }
 
 function kFactor(matchesPlayed: number): number {
@@ -2782,10 +2590,6 @@ export function getPlayerTrophies(playerId: string): Trophy[] {
     })
 }
 
-export function getAllTrophies(): Trophy[] {
-  return loadTrophies()
-}
-
 function formatMatchScore(score1: number[], score2: number[]): string {
   return score1.map((s, i) => `${s}-${score2[i]}`).join(' ')
 }
@@ -2964,14 +2768,6 @@ export function isDefendingChampion(playerName: string, county: string): boolean
     t.county.toLowerCase() === county.toLowerCase() &&
     t.tier === 'champion'
   )
-}
-
-export function getLatestChampionTrophy(county: string): Trophy | null {
-  const trophies = loadTrophies()
-  const countyChampions = trophies
-    .filter(t => t.county.toLowerCase() === county.toLowerCase() && t.tier === 'champion')
-    .sort((a, b) => b.awardedAt.localeCompare(a.awardedAt))
-  return countyChampions[0] ?? null
 }
 
 // --- Badges ---
@@ -4213,16 +4009,8 @@ export async function saveMatchFeedback(
   await recalculateEtiquetteScore(feedback.toPlayerId)
 }
 
-export function getMatchFeedback(matchId: string): MatchFeedback[] {
-  return loadFeedback().filter(f => f.matchId === matchId)
-}
-
 export function getPlayerFeedbackForMatch(matchId: string, playerId: string): MatchFeedback | null {
   return loadFeedback().find(f => f.matchId === matchId && f.fromPlayerId === playerId) ?? null
-}
-
-export function hasBothFeedback(matchId: string): boolean {
-  return loadFeedback().filter(f => f.matchId === matchId).length >= 2
 }
 
 // --- Reliability Score ---
@@ -4568,11 +4356,6 @@ export async function recalculateEtiquetteScore(playerId: string): Promise<Etiqu
   }
 
   return score
-}
-
-export function getEtiquetteScore(playerId: string): EtiquetteScore | null {
-  const scores = loadEtiquetteScores()
-  return scores[playerId] ?? null
 }
 
 // --- Auto-accept timeout (48h) ---

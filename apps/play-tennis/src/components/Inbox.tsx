@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getConversationList, markConversationRead, sendMessage, RALLY_SYSTEM_ID } from '../store'
+import { getConversationList, markConversationRead, RALLY_SYSTEM_ID } from '../store'
 import { Tournament } from '../types'
 import MessagePanel from './MessagePanel'
 import WelcomeMessage from './WelcomeMessage'
