@@ -4360,7 +4360,7 @@ export async function recalculateEtiquetteScore(playerId: string): Promise<Etiqu
 
 // --- Auto-accept timeout (48h) ---
 
-export function checkAutoAcceptScores(): void {
+export async function checkAutoAcceptScores(): Promise<void> {
   const all = load()
   let changed = false
   const now = Date.now()
@@ -4408,9 +4408,12 @@ export function checkAutoAcceptScores(): void {
 
   if (changed) {
     save(all)
-    // Sync changed tournaments
+    // Sync changed tournaments (awaited so errors surface)
     for (const t of all) {
-      syncTournament(t)
+      const result = await syncTournament(t)
+      if (!result.success) {
+        console.warn('[Rally] Auto-accept sync failed for tournament', t.id)
+      }
     }
   }
 }

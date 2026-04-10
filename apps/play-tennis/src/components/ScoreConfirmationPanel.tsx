@@ -189,29 +189,56 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
   async function handleSubmitCorrection() {
     if (!scores || !winnerId) return
     setSaving(true)
-    await proposeScoreCorrection(tournament.id, match.id, currentPlayerId, scores.score1, scores.score2, winnerId)
-    if (onActionComplete) {
-      onActionComplete('Correction submitted. Your opponent will review.', 'blue')
-    } else {
-      onUpdated()
+    try {
+      await proposeScoreCorrection(tournament.id, match.id, currentPlayerId, scores.score1, scores.score2, winnerId)
+      if (onActionComplete) {
+        onActionComplete('Correction submitted. Your opponent will review.', 'blue')
+      } else {
+        onUpdated()
+      }
+    } catch (err) {
+      console.warn('[Rally] Score correction failed:', err)
+      if (onActionComplete) {
+        onActionComplete('Could not submit correction — please try again', 'red')
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
   async function handleSubmitIssue() {
     if (!issueText.trim()) return
     setSaving(true)
-    await reportMatchIssue(tournament.id, match.id, currentPlayerId, issueText.trim())
-    if (onActionComplete) {
-      onActionComplete('Issue reported. An admin will review.', 'red')
-    } else {
-      onUpdated()
+    try {
+      await reportMatchIssue(tournament.id, match.id, currentPlayerId, issueText.trim())
+      if (onActionComplete) {
+        onActionComplete('Issue reported. An admin will review.', 'red')
+      } else {
+        onUpdated()
+      }
+    } catch (err) {
+      console.warn('[Rally] Issue report failed:', err)
+      if (onActionComplete) {
+        onActionComplete('Could not report issue — please try again', 'red')
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
   async function handleResolveDispute(action: 'accept' | 'reject') {
     setSaving(true)
-    await resolveScoreDispute(tournament.id, match.id, currentPlayerId, action)
-    setShowFeedback(true)
+    try {
+      await resolveScoreDispute(tournament.id, match.id, currentPlayerId, action)
+      setShowFeedback(true)
+    } catch (err) {
+      console.warn('[Rally] Dispute resolution failed:', err)
+      if (onActionComplete) {
+        onActionComplete('Could not resolve dispute — please try again', 'red')
+      }
+    } finally {
+      setSaving(false)
+    }
   }
 
   // After confirming / resolving, show feedback form in the same panel
