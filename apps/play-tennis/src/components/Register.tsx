@@ -3,9 +3,16 @@ import { useState, useEffect, useRef } from 'react'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, savePlayerProfile } from '../supabase'
+import { sendOtp, verifyOtp, signInWithPassword, savePlayerProfile } from '../supabase'
 import { analytics } from '../analytics'
 import { useAuth } from '../context/AuthContext'
+
+// Pre-registered staging test accounts that skip the OTP code screen.
+// These users exist in Supabase auth with a shared password — entering any
+// of these emails signs in instantly and lands on the signup step (name +
+// county) because they have no row in public.players.
+const TEST_EMAIL_PATTERN = /^pascal\.zuta\+test102[0-7]@gmail\.com$/i
+const TEST_ACCOUNT_PASSWORD = 'rally-test-1234'
 
 interface Props {
   onRegistered: (profile: PlayerProfile) => void
@@ -396,11 +403,29 @@ export default function Register({ onRegistered, inviteCounty }: Props) {
       if (!email.trim() || otpSending) return
       setOtpError(null)
       setOtpSending(true)
-      const result = await sendOtp(email.trim().toLowerCase())
+
+      const normalizedEmail = email.trim().toLowerCase()
+
+      // Test account bypass — sign in via password instead of OTP.
+      // AuthContext's SIGNED_IN listener + the useEffect above advances
+      // directly to the signup step (since these accounts have no profile).
+      if (TEST_EMAIL_PATTERN.test(normalizedEmail)) {
+        const testResult = await signInWithPassword(normalizedEmail, TEST_ACCOUNT_PASSWORD)
+        setOtpSending(false)
+        if (testResult.ok && testResult.userId) {
+          setAuthUserId(testResult.userId)
+          analytics.track('Lead')
+          return
+        }
+        setOtpError('Test sign-in failed. Please try again.')
+        return
+      }
+
+      const result = await sendOtp(normalizedEmail)
       setOtpSending(false)
       if (result.ok) {
         setResendCountdown(60)
-        saveAuthFlow({ step: 'verify', email: email.trim().toLowerCase() })
+        saveAuthFlow({ step: 'verify', email: normalizedEmail })
         setStep('verify')
       } else {
         const err = (result.error ?? '').toLowerCase()

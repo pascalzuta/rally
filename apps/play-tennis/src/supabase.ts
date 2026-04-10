@@ -68,6 +68,27 @@ export async function verifyOtp(
 }
 
 /**
+ * Password sign-in — used only for pre-registered test accounts
+ * (pascal.zuta+test1020..1027@gmail.com) so we can skip the OTP screen
+ * entirely during multi-user testing. Normal users still go through OTP.
+ */
+export async function signInWithPassword(
+  email: string,
+  password: string,
+): Promise<{ ok: boolean; userId?: string; error?: string }> {
+  if (!client) return { ok: false, error: 'supabase_not_initialized' }
+
+  const { data, error } = await client.auth.signInWithPassword({ email, password })
+
+  if (error) {
+    console.warn('[Rally] password sign-in failed:', error.message)
+    return { ok: false, error: error.message }
+  }
+
+  return { ok: true, userId: data.user?.id }
+}
+
+/**
  * Check for an existing authenticated session.
  * Returns the user ID and email if a session exists, null otherwise.
  */
