@@ -1,6 +1,7 @@
 import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { getAvailability, saveAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
+import { getAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
+import { updateMyAvailability } from '../mutations'
 import { useRallyData } from '../context/RallyDataProvider'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
 import { useToast } from './Toast'
@@ -128,10 +129,15 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   }
 
   async function handleSaveAvailability() {
-    // Must pass county + weeklyCap so the write actually reaches Supabase
-    await saveAvailability(profile.id, slots, profile.county, profile.weeklyCap ?? 2)
-    setEditing(false)
-    showSuccess('Changes saved')
+    // Mutations layer pulls profile context automatically — no params can be forgotten
+    const result = await updateMyAvailability(slots)
+    if (result.ok) {
+      setEditing(false)
+      showSuccess('Changes saved')
+    } else {
+      // Toast already shown by mutations layer — just don't close edit mode
+      console.warn('[Rally] Save availability failed:', result.error)
+    }
   }
 
   function handleCancelEdit() {
