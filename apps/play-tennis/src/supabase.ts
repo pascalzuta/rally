@@ -36,7 +36,7 @@ const isStaging = typeof window !== 'undefined' && (
 )
 
 const TEST_EMAILS = isStaging
-  ? new Set(Array.from({ length: 16 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`))
+  ? new Set(Array.from({ length: 27 }, (_, i) => `pascal.zuta+test${1001 + i}@gmail.com`))
   : new Set<string>()
 
 export function isTestEmail(email: string): boolean {
