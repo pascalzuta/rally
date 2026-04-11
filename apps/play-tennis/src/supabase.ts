@@ -252,7 +252,10 @@ export async function savePlayerProfile(userId: string, profile: {
   gender?: string
   weeklyCap?: number
 }): Promise<boolean> {
-  if (!client) return false
+  if (!client) {
+    console.warn('[Rally] savePlayerProfile skipped: supabase client not initialized')
+    return false
+  }
   const { error } = await client.from('players').upsert({
     player_id: userId,
     auth_id: userId,
@@ -263,5 +266,19 @@ export async function savePlayerProfile(userId: string, profile: {
     experience_level: profile.skillLevel ?? null,
     weekly_cap: profile.weeklyCap ?? 2,
   }, { onConflict: 'player_id' })
-  return !error
+  if (error) {
+    // Log everything Supabase gives us. The players table has previously been
+    // empty despite 63 auth.users, and the call site swallowed errors — so we
+    // log the full shape (code, message, details, hint) to diagnose silently
+    // failing upserts on staging.
+    console.warn('[Rally] savePlayerProfile upsert failed:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      userId,
+    })
+    return false
+  }
+  return true
 }

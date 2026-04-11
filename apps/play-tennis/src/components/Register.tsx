@@ -321,16 +321,28 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
       }
     }
 
-    // Save full profile to Supabase so returning users can be restored
+    // Save full profile to Supabase so returning users can be restored.
+    // Awaited so the upsert completes while the auth session is still fresh —
+    // firing and forgetting risks the session being torn down mid-request, and
+    // the RLS check (auth_id = auth.uid()) would then silently reject the row.
     if (authUserId) {
-      savePlayerProfile(authUserId, {
-        name: fullName,
-        county,
-        email: email || undefined,
-        skillLevel: skillLevel || undefined,
-        gender: gender || undefined,
-        weeklyCap,
-      }).catch(() => { /* offline — profile will be saved on next lobby join */ })
+      try {
+        const ok = await savePlayerProfile(authUserId, {
+          name: fullName,
+          county,
+          email: email || undefined,
+          skillLevel: skillLevel || undefined,
+          gender: gender || undefined,
+          weeklyCap,
+        })
+        if (!ok) {
+          console.warn('[Rally] savePlayerProfile returned false — players row was NOT written for', authUserId)
+        }
+      } catch (err) {
+        console.warn('[Rally] savePlayerProfile threw:', err)
+      }
+    } else {
+      console.warn('[Rally] handleFinish: no authUserId — skipping savePlayerProfile. Player will only exist locally.')
     }
 
     setCreatedProfile(p)
