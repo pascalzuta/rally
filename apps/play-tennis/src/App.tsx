@@ -188,6 +188,19 @@ export default function App() {
     t.status === 'setup' && t.players.some(p => p.id === profile?.id)
   ) ?? null
 
+  // Most recent completed tournament — used as a Bracket-tab fallback so a
+  // finished tournament stays visible (with trophies + final score) instead of
+  // disappearing into "No tournament yet" the moment the final is scored.
+  // Only consumed by BracketTab; Home/PlayNow keep their "no active" state.
+  const lastCompletedTournament = (() => {
+    const mine = tournaments.filter(t =>
+      t.status === 'completed' && t.players.some(p => p.id === profile?.id)
+    )
+    if (mine.length === 0) return null
+    return mine.reduce((latest, t) => (t.createdAt > latest.createdAt ? t : latest))
+  })()
+  const bracketTournament = activeTournament ?? lastCompletedTournament
+
   // Auto-redirect to bracket when tournament starts (setup -> in-progress)
   const [lastTournamentStatus, setLastTournamentStatus] = useState<string | null>(null)
   const currentStatus = activeTournament?.status ?? null
@@ -392,7 +405,7 @@ export default function App() {
 
             <Route path={ROUTES.BRACKET} element={
               <BracketTab
-                tournament={activeTournament}
+                tournament={bracketTournament}
                 currentPlayerId={profile.id}
                 currentPlayerName={profile.name}
                 onTournamentUpdated={() => setRefreshKey(r => r + 1)}

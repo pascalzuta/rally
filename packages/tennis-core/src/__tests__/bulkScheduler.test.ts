@@ -57,7 +57,7 @@ describe("bulkScheduleMatches", () => {
     expect(result.needsNegotiation[0]!.matchId).toBe("m1");
   });
 
-  it("returns needsAccept when players have no overlap", () => {
+  it("returns needsNegotiation when players have no overlap", () => {
     const matches: MatchToSchedule[] = [
       { matchId: "m1", player1Id: "p1", player2Id: "p2" },
     ];
@@ -69,8 +69,10 @@ describe("bulkScheduleMatches", () => {
     const result = bulkScheduleMatches(matches, availability);
 
     expect(result.confirmed).toHaveLength(0);
-    // Should suggest from one player's availability
-    expect(result.needsAccept.length).toBe(1);
+    // No shared windows — must be negotiation, not a fake suggestion that
+    // p2 can't actually make.
+    expect(result.needsNegotiation.length).toBe(1);
+    expect(result.needsAccept.length).toBe(0);
   });
 
   it("confirms a match when two players overlap", () => {
@@ -185,5 +187,76 @@ describe("bulkScheduleMatches", () => {
 
     expect(total).toBe(15);
     expect(result.confirmed.length).toBeGreaterThan(0);
+  });
+
+  // Regression: Strategy B run on a real 6-player tournament returned
+  // 0 confirmed / 15 needs-accept / 0 negotiation. Root cause: the backtracking
+  // algorithm only commits results when it finds a near-complete solution
+  // (≤ maxBacktrackDepth=2 unscheduled). When it can't, it returns ZERO assignments
+  // even though a partial solution clearly exists. This pins the live availability
+  // shape so we don't regress on it.
+  it("regression: 6 identical players with weeknight + weekend availability — must auto-confirm > 0", () => {
+    const players = ["p1", "p2", "p3", "p4", "p5", "p6"];
+    const matches = roundRobinMatches(players);
+    const availability: Record<string, SimpleAvailabilitySlot[]> = {};
+    for (const p of players) {
+      availability[p] = avail(
+        ["monday", 18, 21],
+        ["wednesday", 18, 21],
+        ["saturday", 10, 14],
+      );
+    }
+
+    const result = bulkScheduleMatches(matches, availability);
+
+    // The reasonable bar: at least half of all matches should auto-confirm
+    // when all 6 players share generous overlapping availability.
+    expect(result.confirmed.length, `confirmed got ${result.confirmed.length}/15`).toBeGreaterThanOrEqual(8);
+    // Total still accounts for all 15
+    expect(result.confirmed.length + result.needsAccept.length + result.needsNegotiation.length).toBe(15);
+  });
+
+  // Regression: this is the EXACT availability shape that produced 0/15 confirmed
+  // in a live preview run — pascal + the 5 seeded players from store.ts. Each player
+  // has plenty of overlap with several others, so a "0 confirmed" result is wrong.
+  it("regression: live seeded-lobby availability — must not return 0 confirmed", () => {
+    const players = ["pascal", "alex", "jordan", "sam", "taylor", "casey"];
+    const matches = roundRobinMatches(players);
+    const availability: Record<string, SimpleAvailabilitySlot[]> = {
+      pascal: avail(["monday", 18, 21], ["wednesday", 18, 21], ["saturday", 10, 14]),
+      alex:   avail(["tuesday", 18, 21], ["saturday", 9, 13]),
+      jordan: avail(["monday", 18, 21], ["wednesday", 18, 21], ["saturday", 10, 14]),
+      sam:    avail(["saturday", 8, 12], ["sunday", 8, 12]),
+      taylor: avail(["thursday", 17, 20], ["friday", 17, 20], ["sunday", 13, 17]),
+      casey:  avail(["tuesday", 19, 21], ["thursday", 19, 21], ["saturday", 9, 12]),
+    };
+
+    const result = bulkScheduleMatches(matches, availability);
+
+    // Was: 0 confirmed / 15 needs-accept / 0 negotiation in the live run.
+    // Reasonable bar: at least a third of matches should auto-confirm with this much overlap.
+    expect(result.confirmed.length, `confirmed got ${result.confirmed.length}/15`).toBeGreaterThanOrEqual(5);
+    expect(result.confirmed.length + result.needsAccept.length + result.needsNegotiation.length).toBe(15);
+  });
+
+  // Honest labeling: when player A has Monday-only and player B has Friday-only
+  // availability, there is NO overlap. Suggesting Monday is dishonest because
+  // player B is definitely not available — this should be needsNegotiation,
+  // not needsAccept.
+  it("regression: zero-overlap matches must be needsNegotiation, not fake needsAccept", () => {
+    const matches: MatchToSchedule[] = [
+      { matchId: "m1", player1Id: "p1", player2Id: "p2" },
+    ];
+    const availability: Record<string, SimpleAvailabilitySlot[]> = {
+      p1: avail(["monday", 8, 12]),
+      p2: avail(["friday", 18, 21]),
+    };
+
+    const result = bulkScheduleMatches(matches, availability);
+
+    expect(result.confirmed).toHaveLength(0);
+    // Was: needsAccept (suggesting from p1) — that's a lie because p2 can't make it.
+    expect(result.needsNegotiation).toHaveLength(1);
+    expect(result.needsAccept).toHaveLength(0);
   });
 });
