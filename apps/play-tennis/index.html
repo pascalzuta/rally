@@ -290,11 +290,10 @@
       gt.onload = function() {
         gtag('js', new Date());
         gtag('config', 'AW-18049668578');
-        gtag('event', 'conversion', {
-          'send_to': 'AW-18049668578',
-          'value': 1.0,
-          'currency': 'USD'
-        });
+        // Do NOT fire a conversion event here. The gtag config call is enough
+        // for Google Ads to detect the tag. The actual conversion event fires
+        // exactly once per real registration from analytics.ts sendToGoogle(),
+        // which targets a dedicated conversion action with a specific label.
       };
 
       // Load Meta Pixel after first paint

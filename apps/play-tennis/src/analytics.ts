@@ -231,14 +231,30 @@ function sendToMeta(event: string, properties?: Record<string, unknown>) {
   } catch { /* noop */ }
 }
 
+// Google Ads conversion id (the account-level tag) + the specific conversion
+// action label. The label identifies which conversion action in Google Ads
+// this event should count against; without it, Google Ads silently drops the
+// event instead of attributing it to a campaign. Configure via env var so we
+// can rotate conversion actions without redeploying code.
+const GOOGLE_ADS_ID = 'AW-18049668578'
+const GOOGLE_CONVERSION_LABEL = (import.meta.env.VITE_GOOGLE_CONVERSION_LABEL ?? '').trim()
+
 function sendToGoogle(event: string, properties?: Record<string, unknown>) {
   try {
     if (typeof gtag === 'undefined') return
     const googleEvent = GOOGLE_EVENT_MAP[event] ?? event.toLowerCase()
     gtag('event', googleEvent, properties)
-    // Fire Google Ads conversion event on registration
-    if (event === 'CompleteRegistration') {
-      gtag('event', 'conversion', { send_to: 'AW-18049668578', value: 1.0, currency: 'USD' })
+    // Fire Google Ads conversion event on registration. Only fires when a
+    // conversion label is configured — without one, send_to would point at
+    // the account tag with no specific action and Google Ads would not count
+    // it as a conversion (which is what caused every registration to be
+    // invisible in Ads reporting despite the tag being present on the page).
+    if (event === 'CompleteRegistration' && GOOGLE_CONVERSION_LABEL) {
+      gtag('event', 'conversion', {
+        send_to: `${GOOGLE_ADS_ID}/${GOOGLE_CONVERSION_LABEL}`,
+        value: 1.0,
+        currency: 'USD',
+      })
     }
   } catch { /* noop */ }
 }
