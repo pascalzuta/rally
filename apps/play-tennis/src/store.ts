@@ -2216,7 +2216,11 @@ function loadRatings(): Record<string, PlayerRating> {
 }
 
 function saveRatings(ratings: Record<string, PlayerRating>): void {
-  bridgeSetRatings(ratings)
+  // Spread into a new reference so React's useState triggers a re-render.
+  // updateRatings() mutates the rating objects in place, so passing `ratings`
+  // directly would be a no-op for subscribers (same Object.is identity) and the
+  // UI would not reflect the new rating until an unrelated re-render.
+  bridgeSetRatings({ ...ratings })
 }
 
 /** Sync specific player ratings to Supabase */
@@ -2294,33 +2298,37 @@ export async function updateRatings(
     }
   }
 
-  // Phase 1 fallback: local ELO calculation
+  // Phase 1 fallback: local ELO calculation.
+  // IMPORTANT: build NEW rating objects rather than mutating the existing ones.
+  // Subscribers (React components, tests, selectors) may be holding references
+  // to the pre-match objects; mutating in place would make before/after reads
+  // return the same values and hide the update until an unrelated re-render.
   const ratings = loadRatings()
 
-  const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1500, matchesPlayed: 0 }
-  const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1500, matchesPlayed: 0 }
-  // Keep display name current
-  a.name = playerA.name
-  b.name = playerB.name
+  const prevA = ratings[playerA.id] ?? { name: playerA.name, rating: 1500, matchesPlayed: 0 }
+  const prevB = ratings[playerB.id] ?? { name: playerB.name, rating: 1500, matchesPlayed: 0 }
 
-  const pA = winProbability(a.rating, b.rating)
-
-  const kA = kFactor(a.matchesPlayed)
-  const kB = kFactor(b.matchesPlayed)
-
+  const pA = winProbability(prevA.rating, prevB.rating)
+  const kA = kFactor(prevA.matchesPlayed)
+  const kB = kFactor(prevB.matchesPlayed)
   const sA = winnerId === playerA.id ? 1 : 0
   const sB = 1 - sA
 
-  a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
-  b.rating = Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10
-  a.matchesPlayed += 1
-  b.matchesPlayed += 1
+  const nextA: PlayerRating = {
+    name: playerA.name,
+    rating: Math.round((prevA.rating + kA * (sA - pA)) * 10) / 10,
+    matchesPlayed: prevA.matchesPlayed + 1,
+  }
+  const nextB: PlayerRating = {
+    name: playerB.name,
+    rating: Math.round((prevB.rating + kB * (sB - (1 - pA))) * 10) / 10,
+    matchesPlayed: prevB.matchesPlayed + 1,
+  }
 
-  ratings[playerA.id] = a
-  ratings[playerB.id] = b
-  await saveRatingsAndSync(ratings, playerA.id, playerB.id)
-  recordRatingSnapshot(playerA.id, a.rating)
-  recordRatingSnapshot(playerB.id, b.rating)
+  const nextRatings = { ...ratings, [playerA.id]: nextA, [playerB.id]: nextB }
+  await saveRatingsAndSync(nextRatings, playerA.id, playerB.id)
+  recordRatingSnapshot(playerA.id, nextA.rating)
+  recordRatingSnapshot(playerB.id, nextB.rating)
 }
 
 // --- Rating History ---

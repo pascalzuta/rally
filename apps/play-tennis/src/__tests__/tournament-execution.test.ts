@@ -400,16 +400,20 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
     if (!started) return
 
     await simulateRoundScores(started.id) // group
-    const afterGroup = getTournament(started.id)!
-    const completedAfterGroup = afterGroup.matches.filter(m => m.completed).length
+    // Structured-clone the snapshot: store mutates tournaments in place so a
+    // plain reference would silently track future changes.
+    const afterGroup = structuredClone(getTournament(started.id)!)
+    const groupCompletedIds = new Set(
+      afterGroup.matches.filter(m => m.completed).map(m => m.id),
+    )
 
     await simulateRoundScores(started.id) // semis
     const afterSemis = getTournament(started.id)!
 
     // Every match that was completed before should still be completed after.
     const stillCompleted = afterSemis.matches.filter(
-      m => afterGroup.matches.find(x => x.id === m.id)?.completed && m.completed,
+      m => groupCompletedIds.has(m.id) && m.completed,
     )
-    expect(stillCompleted.length, 'previously completed matches stay completed').toBe(completedAfterGroup)
+    expect(stillCompleted.length, 'previously completed matches stay completed').toBe(groupCompletedIds.size)
   })
 })
