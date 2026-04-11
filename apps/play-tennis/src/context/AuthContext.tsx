@@ -45,6 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Dev-only bootstrap: if the "play-tennis-dev-bypass" flag is set in
+    // localStorage AND a profile is cached there, hydrate from it without
+    // talking to Supabase. Used only for local/headless tests. Safe in prod
+    // because nothing ever sets the flag there.
+    if (import.meta.env.DEV && localStorage.getItem('play-tennis-dev-bypass') === '1') {
+      try {
+        const raw = localStorage.getItem(PROFILE_KEY)
+        if (raw) {
+          const cached = JSON.parse(raw) as PlayerProfile
+          // Build a minimal User object so components that read useAuth().user don't crash
+          setUser({ id: cached.id, email: cached.email ?? '' } as unknown as User)
+          setProfileState(cached)
+          setLoading(false)
+          return
+        }
+      } catch {}
+    }
+
     const client = getClient()
     if (!client) { setLoading(false); return }
 

@@ -195,10 +195,19 @@ export function bulkScheduleMatches(
 
   // Step 1: Compute candidate slots for each match
   const matchCandidates = new Map<string, { match: MatchToSchedule; candidates: CandidateSlot[] }>()
+  const zeroOverlap: MatchToSchedule[] = []
   for (const match of validMatches) {
     const slots1 = availability[match.player1Id] ?? []
     const slots2 = availability[match.player2Id] ?? []
     const candidates = computeOverlapWindows(slots1, slots2, constraints.matchDurationHours, weeks)
+    if (candidates.length === 0) {
+      // No shared windows — honestly mark this as negotiation. Critically,
+      // we must NOT include zero-candidate matches in the backtracking pool:
+      // 3+ unfeasible matches at the front of the sorted list exhaust the
+      // backtrack budget and cause the DFS to return zero assignments overall.
+      zeroOverlap.push(match)
+      continue
+    }
     matchCandidates.set(match.matchId, { match, candidates })
   }
 
@@ -253,8 +262,11 @@ export function bulkScheduleMatches(
           week: assignment.slot.week,
         },
       })
-    } else if (candidates.length > 0) {
-      // Has overlap but couldn't fit due to constraints — suggest best slot
+    } else {
+      // Has overlap but couldn't fit due to scheduling constraints (rest day,
+      // weekly cap, double-booking). Suggest the highest-scored candidate so
+      // the players can confirm or counter-propose. Both players DO have this
+      // slot in their availability — this is an honest needsAccept.
       result.needsAccept.push({
         matchId,
         slot: {
@@ -264,26 +276,16 @@ export function bulkScheduleMatches(
           week: candidates[0]!.week,
         },
       })
-    } else {
-      // No overlap at all — check if either player has availability
-      const slots1 = availability[match.player1Id] ?? []
-      const slots2 = availability[match.player2Id] ?? []
-      if (slots1.length > 0 || slots2.length > 0) {
-        // At least one player has availability — suggest from the player with more slots
-        const bestSlots = slots1.length >= slots2.length ? slots1 : slots2
-        if (bestSlots.length > 0) {
-          const s = bestSlots[0]!
-          result.needsAccept.push({
-            matchId,
-            slot: { day: s.day, startHour: s.startHour, endHour: s.startHour + constraints.matchDurationHours, week: 1 },
-          })
-        } else {
-          result.needsNegotiation.push({ matchId })
-        }
-      } else {
-        result.needsNegotiation.push({ matchId })
-      }
     }
+  }
+
+  // Zero-overlap matches: classified up front in step 1. These are matches
+  // where the two players literally share no time windows. Suggesting one
+  // player's slot would be a lie (the other player can't make it), so we
+  // honestly mark them as needsNegotiation — the players will see this in
+  // the schedule summary and can coordinate manually.
+  for (const match of zeroOverlap) {
+    result.needsNegotiation.push({ matchId: match.matchId })
   }
 
   return result

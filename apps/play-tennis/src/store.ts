@@ -1914,13 +1914,14 @@ export async function saveMatchScore(
   const match = t.matches.find(m => m.id === matchId)
   if (!match) return undefined
 
-  // Update ELO ratings (tries RPC internally)
+  // Note: ratings are NOT applied here. The 2-phase offline flow applies them
+  // in confirmMatchScore when match.completed flips to true. The RPC atomic
+  // path applies them inside the success branch below (since RPC completes
+  // the match in one shot). Applying them here would double-count when both
+  // saveMatchScore and confirmMatchScore run.
   const p1 = t.players.find(p => p.id === match.player1Id)
   const p2 = t.players.find(p => p.id === match.player2Id)
   const winner = t.players.find(p => p.id === winnerId)
-  if (p1 && p2 && winner) {
-    await updateRatings(p1, p2, winner.id)
-  }
 
   // Try RPC for atomic score submission + bracket advancement
   if (SUPABASE_PRIMARY) {
@@ -1935,7 +1936,10 @@ export async function saveMatchScore(
           p_winner_id: winnerId,
         })
         if (!error && data?.success) {
-          // Server handled score + advancement atomically
+          // Server handled score + advancement atomically — apply ratings now
+          if (p1 && p2 && winner) {
+            await updateRatings(p1, p2, winner.id)
+          }
           const serverTournament = data.tournament as Tournament
           if (data.updated_at) {
             setTournamentTimestamp(tournamentId, data.updated_at)
@@ -3139,6 +3143,7 @@ export async function autoConfirmAllSchedules(tournamentId: string): Promise<Tou
           p.status = p.id === best.id ? 'accepted' : 'rejected'
         }
         match.schedule.status = 'confirmed'
+        match.schedule.schedulingTier = 'auto'
         match.schedule.confirmedSlot = { day: best.day, startHour: best.startHour, endHour: best.endHour }
       }
     }
