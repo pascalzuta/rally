@@ -11,10 +11,9 @@ class MemoryStorage {
   clear() { this.data.clear() }
 }
 
-// @ts-expect-error polyfill
-globalThis.localStorage = new MemoryStorage()
-// @ts-expect-error polyfill
-globalThis.window = globalThis.window ?? { location: { origin: 'http://localhost' } }
+;(globalThis as unknown as { localStorage: Storage }).localStorage = new MemoryStorage() as unknown as Storage
+;(globalThis as unknown as { window: unknown }).window =
+  (globalThis as unknown as { window?: unknown }).window ?? { location: { origin: 'http://localhost' } }
 
 // Mock the Supabase module so store.ts doesn't try to talk to the network.
 vi.mock('../supabase', () => ({

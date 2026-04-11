@@ -14,6 +14,7 @@ import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import ReliabilityIndicator from './ReliabilityIndicator'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import { canEnterScore, canExpandMatch } from '../matchCapabilities'
+import { VictoryScreen, isVictoryDismissed, markVictoryDismissed } from './VictoryScreen'
 
 type MatchFilterMode = 'upcoming' | 'completed' | 'all'
 
@@ -142,6 +143,24 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
 
   // Check for auto-accept (48h timeout) on mount
   useEffect(() => { checkAutoAcceptScores() }, [])
+
+  // Victory screen: show once per (tournament, player) when they first view a
+  // completed tournament. Track dismissal in localStorage so it doesn't
+  // re-pop on every mount.
+  const [showVictory, setShowVictory] = useState(false)
+  useEffect(() => {
+    if (!tournament) return
+    if (tournament.status !== 'completed') { setShowVictory(false); return }
+    const isParticipant = tournament.players.some(p => p.id === currentPlayerId)
+    if (!isParticipant) return
+    if (isVictoryDismissed(tournament.id, currentPlayerId)) return
+    setShowVictory(true)
+  }, [tournament?.id, tournament?.status, currentPlayerId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function dismissVictory() {
+    if (tournament) markVictoryDismissed(tournament.id, currentPlayerId)
+    setShowVictory(false)
+  }
 
   // R-15: Deep-link focus — scroll to match and highlight with pulse effect
   useEffect(() => {
@@ -753,7 +772,23 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 <div className="completed-stat-label">Matches</div>
               </div>
             </div>
+            <button className="victory-replay" onClick={() => setShowVictory(true)}>
+              {myTrophies.length > 0 ? 'Replay celebration' : 'View summary'}
+            </button>
           </div>
+        )
+      })()}
+
+      {showVictory && tournament.status === 'completed' && isParticipant && (() => {
+        const myTrophy = getPlayerTrophies(currentPlayerId).find(t => t.tournamentId === tournament.id)
+        return (
+          <VictoryScreen
+            tournament={tournament}
+            currentPlayerId={currentPlayerId}
+            currentPlayerName={currentPlayerName}
+            trophy={myTrophy}
+            onDismiss={dismissVictory}
+          />
         )
       })()}
 
