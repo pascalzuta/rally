@@ -30,7 +30,7 @@ import {
   confirmMatchScore,
   getPlayerRating,
 } from '../store'
-import type { Tournament, Match, AvailabilitySlot } from '../types'
+import type { Tournament, AvailabilitySlot } from '../types'
 
 const COUNTY = 'testville'
 

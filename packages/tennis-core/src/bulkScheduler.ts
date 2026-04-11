@@ -237,7 +237,7 @@ export function bulkScheduleMatches(
     needsNegotiation: [],
   }
 
-  for (const [matchId, { match, candidates }] of matchCandidates) {
+  for (const [matchId, { candidates }] of matchCandidates) {
     const assignment = assignments.get(matchId)
     if (assignment) {
       result.confirmed.push({
