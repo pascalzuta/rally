@@ -10,6 +10,7 @@ import {
 } from './sync'
 import { getClient } from './supabase'
 import { enqueue } from './offline-queue'
+import { getItem, setItem, removeItem } from './memoryStore'
 import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
 import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
 
@@ -42,18 +43,18 @@ export interface PendingFeedback {
 }
 
 export function setPendingFeedback(data: PendingFeedback): void {
-  try { localStorage.setItem(PENDING_FEEDBACK_KEY, JSON.stringify(data)) } catch {}
+  try { setItem(PENDING_FEEDBACK_KEY, JSON.stringify(data)) } catch {}
 }
 
 export function getPendingFeedback(): PendingFeedback | null {
   try {
-    const raw = localStorage.getItem(PENDING_FEEDBACK_KEY)
+    const raw = getItem(PENDING_FEEDBACK_KEY)
     return raw ? JSON.parse(raw) : null
   } catch { return null }
 }
 
 export function clearPendingFeedback(): void {
-  try { localStorage.removeItem(PENDING_FEEDBACK_KEY) } catch {}
+  try { removeItem(PENDING_FEEDBACK_KEY) } catch {}
 }
 
 function generateId(): string {
@@ -64,7 +65,7 @@ function generateId(): string {
 
 export function getProfile(): PlayerProfile | null {
   try {
-    const data = localStorage.getItem(PROFILE_KEY)
+    const data = getItem(PROFILE_KEY)
     return data ? JSON.parse(data) : null
   } catch {
     return null
@@ -90,7 +91,7 @@ export function createProfile(
     gender: options?.gender,
     createdAt: new Date().toISOString(),
   }
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  setItem(PROFILE_KEY, JSON.stringify(profile))
   return profile
 }
 
@@ -104,7 +105,7 @@ export async function logout(): Promise<void> {
 
 function loadLobby(): LobbyEntry[] {
   try {
-    const data = localStorage.getItem(LOBBY_KEY)
+    const data = getItem(LOBBY_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -112,7 +113,7 @@ function loadLobby(): LobbyEntry[] {
 }
 
 function saveLobby(lobby: LobbyEntry[]): void {
-  localStorage.setItem(LOBBY_KEY, JSON.stringify(lobby))
+  setItem(LOBBY_KEY, JSON.stringify(lobby))
   if (!SUPABASE_PRIMARY) {
     const byCounty = new Map<string, LobbyEntry[]>()
     for (const e of lobby) {
@@ -601,7 +602,7 @@ export async function startFriendTournament(tournamentId: string, playerId: stri
 
 function loadAllAvailability(): Record<string, AvailabilitySlot[]> {
   try {
-    const data = localStorage.getItem(AVAILABILITY_KEY)
+    const data = getItem(AVAILABILITY_KEY)
     return data ? JSON.parse(data) : {}
   } catch {
     return {}
@@ -609,7 +610,7 @@ function loadAllAvailability(): Record<string, AvailabilitySlot[]> {
 }
 
 function saveAllAvailability(avail: Record<string, AvailabilitySlot[]>): void {
-  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(avail))
+  setItem(AVAILABILITY_KEY, JSON.stringify(avail))
 }
 
 export async function saveAvailability(playerId: string, slots: AvailabilitySlot[], county?: string, weeklyCap?: number): Promise<void> {
@@ -1322,7 +1323,7 @@ function advanceWinner(tournament: Tournament, match: Match, winnerId: string): 
 
 function load(): Tournament[] {
   try {
-    const data = localStorage.getItem(STORAGE_KEY)
+    const data = getItem(STORAGE_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -1330,7 +1331,7 @@ function load(): Tournament[] {
 }
 
 function save(tournaments: Tournament[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tournaments))
+  setItem(STORAGE_KEY, JSON.stringify(tournaments))
   if (!SUPABASE_PRIMARY) {
     syncTournaments(tournaments)
   }
@@ -1349,19 +1350,19 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
           const mergedAll = all.map(t => t.id === changedTournament.id ? changedTournament : t)
           const retry = await syncTournament(changedTournament, getTournamentTimestamp(changedTournament.id))
           if (retry.success) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedAll))
+            setItem(STORAGE_KEY, JSON.stringify(mergedAll))
             return { success: true }
           }
         }
         return result
       }
       // Network error: save locally + queue
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+      setItem(STORAGE_KEY, JSON.stringify(all))
       enqueue('tournament', changedTournament)
       return { success: true }
     }
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  setItem(STORAGE_KEY, JSON.stringify(all))
   return { success: true }
 }
 
@@ -1384,7 +1385,7 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
       }
     }
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  setItem(STORAGE_KEY, JSON.stringify(all))
 }
 
 export function getTournaments(): Tournament[] {
@@ -2193,7 +2194,7 @@ const REACTIONS_KEY = 'play-tennis-reactions'
 
 function loadReactions(): MatchReaction[] {
   try {
-    const data = localStorage.getItem(REACTIONS_KEY)
+    const data = getItem(REACTIONS_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -2201,7 +2202,7 @@ function loadReactions(): MatchReaction[] {
 }
 
 function saveReactionsToStorage(reactions: MatchReaction[]): void {
-  localStorage.setItem(REACTIONS_KEY, JSON.stringify(reactions))
+  setItem(REACTIONS_KEY, JSON.stringify(reactions))
 }
 
 export function saveMatchReaction(reaction: MatchReaction): void {
@@ -2246,7 +2247,7 @@ export function getPlayerSeed(tournament: Tournament, playerId: string | null): 
 
 function loadRatings(): Record<string, PlayerRating> {
   try {
-    const data = localStorage.getItem(RATINGS_KEY)
+    const data = getItem(RATINGS_KEY)
     return data ? JSON.parse(data) : {}
   } catch {
     return {}
@@ -2254,7 +2255,7 @@ function loadRatings(): Record<string, PlayerRating> {
 }
 
 function saveRatings(ratings: Record<string, PlayerRating>): void {
-  localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings))
+  setItem(RATINGS_KEY, JSON.stringify(ratings))
   if (!SUPABASE_PRIMARY) {
     syncRatings(ratings)
   }
@@ -2389,7 +2390,7 @@ export async function updateRatings(
 
 function loadRatingHistory(): Record<string, RatingSnapshot[]> {
   try {
-    const data = localStorage.getItem(RATING_HISTORY_KEY)
+    const data = getItem(RATING_HISTORY_KEY)
     return data ? JSON.parse(data) : {}
   } catch {
     return {}
@@ -2397,7 +2398,7 @@ function loadRatingHistory(): Record<string, RatingSnapshot[]> {
 }
 
 function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
-  localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(history))
+  setItem(RATING_HISTORY_KEY, JSON.stringify(history))
 }
 
 function recordRatingSnapshot(playerId: string, rating: number): void {
@@ -2640,7 +2641,7 @@ export function getPlayerRank(playerName: string, county: string): { rank: numbe
 
 function loadTrophies(): Trophy[] {
   try {
-    const data = localStorage.getItem(TROPHIES_KEY)
+    const data = getItem(TROPHIES_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -2648,7 +2649,7 @@ function loadTrophies(): Trophy[] {
 }
 
 function saveTrophies(trophies: Trophy[], newTrophies?: Trophy[]): void {
-  localStorage.setItem(TROPHIES_KEY, JSON.stringify(trophies))
+  setItem(TROPHIES_KEY, JSON.stringify(trophies))
   if (SUPABASE_PRIMARY && newTrophies && newTrophies.length > 0) {
     syncTrophiesToRemote(newTrophies)
   }
@@ -2858,7 +2859,7 @@ export function getLatestChampionTrophy(county: string): Trophy | null {
 
 function loadBadges(): Badge[] {
   try {
-    const data = localStorage.getItem(BADGES_KEY)
+    const data = getItem(BADGES_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -2866,7 +2867,7 @@ function loadBadges(): Badge[] {
 }
 
 function saveBadges(badges: Badge[], newBadges?: Badge[]): void {
-  localStorage.setItem(BADGES_KEY, JSON.stringify(badges))
+  setItem(BADGES_KEY, JSON.stringify(badges))
   if (SUPABASE_PRIMARY && newBadges && newBadges.length > 0) {
     syncBadgesToRemote(newBadges)
   }
@@ -2978,7 +2979,7 @@ export interface PendingVictory {
 
 export function getPendingVictory(playerId: string): PendingVictory | null {
   try {
-    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const data = getItem(PENDING_VICTORY_KEY)
     const all: PendingVictory[] = data ? JSON.parse(data) : []
     return all.find(v => v.playerId === playerId) ?? null
   } catch {
@@ -2988,22 +2989,22 @@ export function getPendingVictory(playerId: string): PendingVictory | null {
 
 export function clearPendingVictory(playerId: string): void {
   try {
-    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const data = getItem(PENDING_VICTORY_KEY)
     const all: PendingVictory[] = data ? JSON.parse(data) : []
     const filtered = all.filter(v => v.playerId !== playerId)
     if (filtered.length > 0) {
-      localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(filtered))
+      setItem(PENDING_VICTORY_KEY, JSON.stringify(filtered))
     } else {
-      localStorage.removeItem(PENDING_VICTORY_KEY)
+      removeItem(PENDING_VICTORY_KEY)
     }
   } catch {
-    localStorage.removeItem(PENDING_VICTORY_KEY)
+    removeItem(PENDING_VICTORY_KEY)
   }
 }
 
 function setPendingVictory(trophy: Trophy): void {
   try {
-    const data = localStorage.getItem(PENDING_VICTORY_KEY)
+    const data = getItem(PENDING_VICTORY_KEY)
     const all: PendingVictory[] = data ? JSON.parse(data) : []
     // Don't duplicate
     if (all.some(v => v.playerId === trophy.playerId && v.tournamentName === trophy.tournamentName)) return
@@ -3012,7 +3013,7 @@ function setPendingVictory(trophy: Trophy): void {
       tournamentName: trophy.tournamentName,
       playerId: trophy.playerId,
     })
-    localStorage.setItem(PENDING_VICTORY_KEY, JSON.stringify(all))
+    setItem(PENDING_VICTORY_KEY, JSON.stringify(all))
   } catch {
     // ignore
   }
@@ -3121,7 +3122,7 @@ export function getTestProfiles(county: string): PlayerProfile[] {
 }
 
 export function switchProfile(profile: PlayerProfile): void {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  setItem(PROFILE_KEY, JSON.stringify(profile))
 }
 
 // Auto-confirm all pending schedules (dev tool)
@@ -3332,7 +3333,7 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
 
 function loadBroadcasts(): MatchBroadcast[] {
   try {
-    const data = localStorage.getItem(BROADCAST_KEY)
+    const data = getItem(BROADCAST_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -3340,7 +3341,7 @@ function loadBroadcasts(): MatchBroadcast[] {
 }
 
 function saveBroadcasts(broadcasts: MatchBroadcast[]): void {
-  localStorage.setItem(BROADCAST_KEY, JSON.stringify(broadcasts))
+  setItem(BROADCAST_KEY, JSON.stringify(broadcasts))
 }
 
 function cleanExpiredBroadcasts(): void {
@@ -3501,21 +3502,21 @@ export function cancelBroadcast(broadcastId: string, playerId: string): boolean 
 // =====================================================================
 
 function loadOffers(): MatchOffer[] {
-  const raw = localStorage.getItem(OFFERS_KEY)
+  const raw = getItem(OFFERS_KEY)
   return raw ? JSON.parse(raw) : []
 }
 
 function saveOffers(offers: MatchOffer[]): void {
-  localStorage.setItem(OFFERS_KEY, JSON.stringify(offers))
+  setItem(OFFERS_KEY, JSON.stringify(offers))
 }
 
 function loadNotifications(): RallyNotification[] {
-  const raw = localStorage.getItem(NOTIFICATIONS_KEY)
+  const raw = getItem(NOTIFICATIONS_KEY)
   return raw ? JSON.parse(raw) : []
 }
 
 function saveNotifications(notifications: RallyNotification[]): void {
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
+  setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications))
 }
 
 function addNotification(notif: Omit<RallyNotification, 'id' | 'createdAt' | 'read'>): RallyNotification {
@@ -3801,12 +3802,12 @@ export function getMatchOffer(offerId: string): MatchOffer | null {
 
 function loadMessages(): DirectMessage[] {
   try {
-    return JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]')
+    return JSON.parse(getItem(MESSAGES_KEY) || '[]')
   } catch { return [] }
 }
 
 function saveMessages(msgs: DirectMessage[]): void {
-  localStorage.setItem(MESSAGES_KEY, JSON.stringify(msgs))
+  setItem(MESSAGES_KEY, JSON.stringify(msgs))
 }
 
 export function sendMessage(senderId: string, senderName: string, recipientId: string, recipientName: string, text: string): DirectMessage {
@@ -4066,7 +4067,7 @@ export async function reportMatchIssue(
 
 function loadFeedback(): MatchFeedback[] {
   try {
-    const data = localStorage.getItem(FEEDBACK_KEY)
+    const data = getItem(FEEDBACK_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -4074,7 +4075,7 @@ function loadFeedback(): MatchFeedback[] {
 }
 
 function saveFeedbackToStorage(feedback: MatchFeedback[]): void {
-  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback))
+  setItem(FEEDBACK_KEY, JSON.stringify(feedback))
 }
 
 export async function saveMatchFeedback(
@@ -4142,7 +4143,7 @@ export function hasBothFeedback(matchId: string): boolean {
 
 function loadReliability(): Record<string, ReliabilityScore> {
   try {
-    const data = localStorage.getItem(RELIABILITY_KEY)
+    const data = getItem(RELIABILITY_KEY)
     return data ? JSON.parse(data) : {}
   } catch {
     return {}
@@ -4150,7 +4151,7 @@ function loadReliability(): Record<string, ReliabilityScore> {
 }
 
 function saveReliabilityToStorage(scores: Record<string, ReliabilityScore>): void {
-  localStorage.setItem(RELIABILITY_KEY, JSON.stringify(scores))
+  setItem(RELIABILITY_KEY, JSON.stringify(scores))
 }
 
 export function recalculateReliability(playerId: string): ReliabilityScore {
@@ -4302,7 +4303,7 @@ function checkReliabilityNudge(playerId: string, score: ReliabilityScore): void 
 
   // Check cooldown (max once per week)
   try {
-    const data = localStorage.getItem(NUDGE_COOLDOWN_KEY)
+    const data = getItem(NUDGE_COOLDOWN_KEY)
     const nudges: Record<string, string> = data ? JSON.parse(data) : {}
     const lastNudge = nudges[playerId]
     if (lastNudge) {
@@ -4326,7 +4327,7 @@ function checkReliabilityNudge(playerId: string, score: ReliabilityScore): void 
     })
 
     nudges[playerId] = new Date().toISOString()
-    localStorage.setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(nudges))
+    setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(nudges))
   } catch {
     // ignore storage errors
   }
@@ -4370,7 +4371,7 @@ function checkReliabilityBadges(
 
 function loadEtiquetteScores(): Record<string, EtiquetteScore> {
   try {
-    const data = localStorage.getItem(ETIQUETTE_KEY)
+    const data = getItem(ETIQUETTE_KEY)
     return data ? JSON.parse(data) : {}
   } catch {
     return {}
@@ -4378,7 +4379,7 @@ function loadEtiquetteScores(): Record<string, EtiquetteScore> {
 }
 
 function saveEtiquetteScores(scores: Record<string, EtiquetteScore>): void {
-  localStorage.setItem(ETIQUETTE_KEY, JSON.stringify(scores))
+  setItem(ETIQUETTE_KEY, JSON.stringify(scores))
 }
 
 /**

@@ -8,6 +8,7 @@ import MessagePanel from './MessagePanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import { canEnterScore, canExpandMatch } from '../matchCapabilities'
 import { getMatchCardView, MatchCardView } from '../matchCardModel'
+import { getItem, setItem } from '../memoryStore'
 
 interface Props {
   tournamentId: string
@@ -91,7 +92,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
   const [tab, setTab] = useState<'matches' | 'standings'>('matches')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [matchFilter, setMatchFilter] = useState<MatchFilterMode>('upcoming')
-  const [showDetails, setShowDetails] = useState(() => { try { return localStorage.getItem('rally-show-details') === 'true' } catch { return false } })
+  const [showDetails, setShowDetails] = useState(() => { try { return getItem('rally-show-details') === 'true' } catch { return false } })
   const broadcastRef = useRef<HTMLDivElement>(null)
   // R-05: Track rendered match IDs to prevent duplicates
   const renderedMatchIds = useRef<Set<string>>(new Set())
@@ -444,7 +445,7 @@ export default function TournamentView({ tournamentId, currentPlayerId, onBack }
         {/* Show details toggle (R-27) */}
         {tab === 'matches' && (
           <div className="details-toggle-row">
-            <button className="btn-link details-toggle-btn" onClick={(e) => { e.stopPropagation(); const next = !showDetails; setShowDetails(next); try { localStorage.setItem('rally-show-details', String(next)) } catch {} }}>
+            <button className="btn-link details-toggle-btn" onClick={(e) => { e.stopPropagation(); const next = !showDetails; setShowDetails(next); try { setItem('rally-show-details', String(next)) } catch {} }}>
               {showDetails ? 'Hide Advanced Stats' : 'Show Advanced Stats'}
             </button>
           </div>

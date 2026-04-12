@@ -106,6 +106,12 @@ function computeOverlapWindows(
 
 /**
  * Check if assigning a slot to a match conflicts with existing assignments.
+ *
+ * Enforces three constraints:
+ * 1. No time overlap — a player can't be in two matches at once
+ * 2. Rest period  — minimum gap between matches for the same player (restHours).
+ *    With the default 24h, a player can play at most once per calendar day.
+ * 3. Weekly cap   — maximum matches per player per week
  */
 function hasConflict(
   slot: CandidateSlot,
@@ -114,44 +120,33 @@ function hasConflict(
   assignments: Map<string, { matchId: string; slot: CandidateSlot; player1Id: string; player2Id: string }>,
   constraints: SchedulingConstraints,
 ): boolean {
-  // Count weekly matches per player
   const weeklyCount: Record<string, number> = {}
+  const restDays = Math.ceil(constraints.restHours / 24)
 
   for (const [, a] of assignments) {
     if (a.slot.week !== slot.week) continue
 
-    // Check double-booking: same day, same week, overlapping hours
-    if (a.slot.day === slot.day) {
-      const overlaps = a.slot.startHour < slot.endHour && slot.startHour < a.slot.endHour
-      if (overlaps) {
-        // Conflict if either player is involved
-        if (a.player1Id === player1Id || a.player1Id === player2Id ||
-            a.player2Id === player1Id || a.player2Id === player2Id) {
-          return true
-        }
+    // Does this assignment involve any of the same players?
+    const sharesPlayer =
+      a.player1Id === player1Id || a.player1Id === player2Id ||
+      a.player2Id === player1Id || a.player2Id === player2Id
+
+    if (sharesPlayer) {
+      const dayIdxA = DAY_ORDER.indexOf(a.slot.day)
+      const dayIdxB = DAY_ORDER.indexOf(slot.day)
+      const dayGap = Math.abs(dayIdxA - dayIdxB)
+
+      if (dayGap === 0) {
+        // Same day: any second match on the same day violates restHours >= 24
+        // (even non-overlapping times are at most ~12h apart, less than 24h)
+        if (restDays >= 1) return true
+      } else if (dayGap < restDays) {
+        // Adjacent days within rest window (e.g., Mon+Tue with restHours=48)
+        return true
       }
     }
 
-    // Check rest day: same players, same week, adjacent days
-    const dayIdx1 = DAY_ORDER.indexOf(a.slot.day)
-    const dayIdx2 = DAY_ORDER.indexOf(slot.day)
-    if (Math.abs(dayIdx1 - dayIdx2) < Math.ceil(constraints.restHours / 24)) {
-      if (a.player1Id === player1Id || a.player1Id === player2Id ||
-          a.player2Id === player1Id || a.player2Id === player2Id) {
-        // Same day or adjacent day for same player
-        if (a.slot.day === slot.day || Math.abs(dayIdx1 - dayIdx2) === 0) {
-          // Already checked overlapping above; only flag if same day different time
-        }
-        if (dayIdx1 !== dayIdx2 && Math.abs(dayIdx1 - dayIdx2) < Math.ceil(constraints.restHours / 24)) {
-          if (a.player1Id === player1Id || a.player1Id === player2Id ||
-              a.player2Id === player1Id || a.player2Id === player2Id) {
-            return true
-          }
-        }
-      }
-    }
-
-    // Count weekly matches
+    // Count weekly matches per player
     for (const pid of [a.player1Id, a.player2Id]) {
       weeklyCount[pid] = (weeklyCount[pid] ?? 0) + 1
     }
@@ -182,13 +177,29 @@ export function bulkScheduleMatches(
   constraintsInput?: Partial<SchedulingConstraints>,
 ): BulkScheduleResult {
   const constraints = { ...DEFAULT_CONSTRAINTS, ...constraintsInput }
-  // Calculate weeks based on actual player count: with N players and cap K,
-  // at most N*K/2 matches can happen per week (each match uses 2 player slots)
+  // Calculate weeks needed to fit all matches given constraints.
+  // With N players and cap K, at most N*K/2 matches can happen per week.
+  // But the per-day rest constraint may reduce this further — if players
+  // share only 1 available day, each player can play at most once per week.
   const playerIds = new Set<string>()
   for (const m of matches) { playerIds.add(m.player1Id); playerIds.add(m.player2Id) }
   const playerCount = playerIds.size
-  const matchesPerWeek = Math.max(1, Math.floor(playerCount * constraints.weeklyCapPerPlayer / 2))
-  const weeks = Math.max(3, Math.ceil(matches.length / matchesPerWeek))
+
+  // Count distinct available days across all players
+  const allDays = new Set<string>()
+  for (const pid of playerIds) {
+    for (const s of (availability[pid] ?? [])) allDays.add(s.day)
+  }
+  const availableDays = Math.max(1, allDays.size)
+  const restDays = Math.ceil(constraints.restHours / 24)
+
+  // Effective matches per player per week is min of weekly cap and available day slots
+  const slotsPerPlayerPerWeek = Math.min(
+    constraints.weeklyCapPerPlayer,
+    Math.max(1, Math.floor(availableDays / restDays))
+  )
+  const matchesPerWeek = Math.max(1, Math.floor(playerCount * slotsPerPlayerPerWeek / 2))
+  const weeks = Math.max(4, Math.ceil(matches.length / matchesPerWeek))
 
   // Filter out bye matches (missing player IDs)
   const validMatches = matches.filter(m => m.player1Id && m.player2Id)
@@ -206,15 +217,19 @@ export function bulkScheduleMatches(
   const sorted = [...matchCandidates.entries()]
     .sort(([, a], [, b]) => a.candidates.length - b.candidates.length)
 
-  // Step 3: Greedy assignment with backtracking
+  // Step 3: Greedy assignment with backtracking (iteration-limited)
   const assignments = new Map<string, { matchId: string; slot: CandidateSlot; player1Id: string; player2Id: string }>()
+  const MAX_ITERATIONS = 50_000
+  let iterations = 0
 
   function tryAssign(matchIdx: number, backtrackDepth: number): boolean {
+    if (++iterations > MAX_ITERATIONS) return false // safety valve
     if (matchIdx >= sorted.length) return true
 
     const [matchId, { match, candidates }] = sorted[matchIdx]!
 
     for (const slot of candidates) {
+      if (iterations > MAX_ITERATIONS) return false
       if (!hasConflict(slot, match.player1Id, match.player2Id, assignments, constraints)) {
         assignments.set(matchId, { matchId, slot, player1Id: match.player1Id, player2Id: match.player2Id })
 

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User } from '@supabase/supabase-js'
 import { PlayerProfile, SkillLevel, Gender } from '../types'
 import { getClient, fetchPlayerProfile } from '../supabase'
+import { getItem, setItem, removeItem, clear as clearMemoryStore } from '../memoryStore'
 
 interface AuthContextValue {
   user: User | null
@@ -16,12 +17,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 const PROFILE_KEY = 'play-tennis-profile'
 
 function clearAuthLocalStorage() {
-  const keysToRemove: string[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith('play-tennis-')) keysToRemove.push(key)
-  }
-  for (const key of keysToRemove) localStorage.removeItem(key)
+  clearMemoryStore()
 }
 
 function buildProfile(userId: string, email: string, data: Awaited<ReturnType<typeof fetchPlayerProfile>>): PlayerProfile | null {
@@ -55,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profileData = await fetchPlayerProfile(sessionUser.id)
         const restored = buildProfile(sessionUser.id, sessionUser.email ?? '', profileData)
         if (restored) {
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
+          setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
         }
         setUser(sessionUser)
@@ -70,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profileData = await fetchPlayerProfile(u.id)
         const restored = buildProfile(u.id, u.email ?? '', profileData)
         if (restored) {
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
+          setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
         } else {
           // New user — authenticated but not yet registered
@@ -97,9 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function setProfile(p: PlayerProfile | null) {
     setProfileState(p)
     if (p) {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(p))
+      setItem(PROFILE_KEY, JSON.stringify(p))
     } else {
-      localStorage.removeItem(PROFILE_KEY)
+      removeItem(PROFILE_KEY)
     }
   }
 

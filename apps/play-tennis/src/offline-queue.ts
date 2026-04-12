@@ -1,5 +1,6 @@
 import { getClient } from './supabase'
 import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot } from './types'
+import { getItem, setItem } from './memoryStore'
 
 const QUEUE_KEY = 'rally-offline-queue'
 
@@ -12,7 +13,7 @@ export interface QueuedWrite {
 
 function loadQueue(): QueuedWrite[] {
   try {
-    const data = localStorage.getItem(QUEUE_KEY)
+    const data = getItem(QUEUE_KEY)
     return data ? JSON.parse(data) : []
   } catch {
     return []
@@ -20,7 +21,7 @@ function loadQueue(): QueuedWrite[] {
 }
 
 function saveQueue(queue: QueuedWrite[]): void {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue))
+  setItem(QUEUE_KEY, JSON.stringify(queue))
 }
 
 export function enqueue(type: QueuedWrite['type'], payload: unknown): void {

@@ -1,6 +1,7 @@
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { initSupabase, getClient, getAuthUserId } from './supabase'
 import { Tournament, LobbyEntry, PlayerRating, AvailabilitySlot, Trophy, TrophyTier, Badge, RatingSnapshot } from './types'
+import { getItem, setItem } from './memoryStore'
 
 // Feature flag: set to false to revert to localStorage-first (old behavior)
 export const SUPABASE_PRIMARY = true
@@ -212,7 +213,7 @@ export async function refreshAvailabilityFromRemote(countyKey: string): Promise<
   if (!data) return
 
   // Merge remote availability into localStorage (preserve local-only entries)
-  const localRaw = localStorage.getItem(AVAILABILITY_KEY)
+  const localRaw = getItem(AVAILABILITY_KEY)
   const local: Record<string, AvailabilitySlot[]> = localRaw ? JSON.parse(localRaw) : {}
   const remoteIds = new Set(data.map(row => row.player_id))
 
@@ -228,7 +229,7 @@ export async function refreshAvailabilityFromRemote(countyKey: string): Promise<
     }
   }
 
-  localStorage.setItem(AVAILABILITY_KEY, JSON.stringify(merged))
+  setItem(AVAILABILITY_KEY, JSON.stringify(merged))
   dispatchSync()
 }
 
@@ -283,9 +284,9 @@ async function refreshRatingHistoryFromRemote(playerId: string): Promise<void> {
     timestamp: row.recorded_at,
   }))
 
-  const local: Record<string, RatingSnapshot[]> = safeParseJSON(localStorage.getItem(RATING_HISTORY_KEY), {})
+  const local: Record<string, RatingSnapshot[]> = safeParseJSON(getItem(RATING_HISTORY_KEY), {})
   local[playerId] = snapshots
-  localStorage.setItem(RATING_HISTORY_KEY, JSON.stringify(local))
+  setItem(RATING_HISTORY_KEY, JSON.stringify(local))
 }
 
 // --- Trophies sync ---
@@ -335,7 +336,7 @@ async function refreshTrophiesFromRemote(playerId: string): Promise<void> {
   }))
 
   // Merge: remote trophies take precedence, keep local-only ones
-  const localTrophies: Trophy[] = safeParseJSON(localStorage.getItem(TROPHIES_KEY), [])
+  const localTrophies: Trophy[] = safeParseJSON(getItem(TROPHIES_KEY), [])
   const remoteIds = new Set(remoteTrophies.map(t => t.id))
   const localOnly = localTrophies.filter(t => t.playerId !== playerId || !remoteIds.has(t.id))
   // Also keep trophies for OTHER players that are local-only
@@ -348,7 +349,7 @@ async function refreshTrophiesFromRemote(playerId: string): Promise<void> {
     seen.add(t.id)
     return true
   })
-  localStorage.setItem(TROPHIES_KEY, JSON.stringify(deduped))
+  setItem(TROPHIES_KEY, JSON.stringify(deduped))
 }
 
 // --- Badges sync ---
@@ -391,11 +392,11 @@ async function refreshBadgesFromRemote(playerId: string): Promise<void> {
     ...(row.tournament_id ? { tournamentId: row.tournament_id } : {}),
   }))
 
-  const localBadges: Badge[] = safeParseJSON(localStorage.getItem(BADGES_KEY), [])
+  const localBadges: Badge[] = safeParseJSON(getItem(BADGES_KEY), [])
   const remoteIds = new Set(remoteBadges.map(b => b.id))
   const otherPlayerLocal = localBadges.filter(b => b.playerId !== playerId)
   const merged = [...remoteBadges, ...otherPlayerLocal.filter(b => !remoteIds.has(b.id))]
-  localStorage.setItem(BADGES_KEY, JSON.stringify(merged))
+  setItem(BADGES_KEY, JSON.stringify(merged))
 }
 
 /** Refresh rating history, trophies, and badges for the current player from Supabase */
@@ -446,13 +447,13 @@ async function refreshLobbyFromRemote(countyKey: string): Promise<void> {
     joinedAt: row.joined_at,
   }))
   // Merge: keep local-only entries (e.g. dev-seeded players) alongside remote data
-  const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
+  const localLobby: LobbyEntry[] = safeParseJSON(getItem(LOBBY_KEY), [])
   const otherCounties = localLobby.filter(e => e.county.toLowerCase() !== countyKey)
   const remoteIds = new Set(remoteEntries.map(e => e.playerId))
   const localOnlyCounty = localLobby.filter(
     e => e.county.toLowerCase() === countyKey && !remoteIds.has(e.playerId)
   )
-  localStorage.setItem(LOBBY_KEY, JSON.stringify([...otherCounties, ...remoteEntries, ...localOnlyCounty]))
+  setItem(LOBBY_KEY, JSON.stringify([...otherCounties, ...remoteEntries, ...localOnlyCounty]))
   dispatchSync()
 }
 
@@ -469,13 +470,13 @@ async function refreshTournamentsFromRemote(countyKey: string): Promise<void> {
     return row.data as Tournament
   })
   const remoteIds = new Set(remoteTournaments.map(t => t.id))
-  const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
+  const localTournaments: Tournament[] = safeParseJSON(getItem(STORAGE_KEY), [])
   // Keep local-only tournaments for this county (not yet synced) + tournaments from other counties
   const localOnlyForCounty = localTournaments.filter(
     t => t.county.toLowerCase() === countyKey && !remoteIds.has(t.id)
   )
   const otherCounties = localTournaments.filter(t => t.county.toLowerCase() !== countyKey)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...remoteTournaments, ...localOnlyForCounty, ...otherCounties]))
+  setItem(STORAGE_KEY, JSON.stringify([...remoteTournaments, ...localOnlyForCounty, ...otherCounties]))
   dispatchSync()
 }
 
@@ -490,15 +491,15 @@ export async function refreshTournamentById(tournamentId: string): Promise<Tourn
   }
   const tournament = data.data as Tournament
 
-  // Update localStorage cache
-  const local: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
+  // Update memoryStore cache
+  const local: Tournament[] = safeParseJSON(getItem(STORAGE_KEY), [])
   const idx = local.findIndex(t => t.id === tournamentId)
   if (idx >= 0) {
     local[idx] = tournament
   } else {
     local.unshift(tournament)
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(local))
+  setItem(STORAGE_KEY, JSON.stringify(local))
   dispatchSync()
   return tournament
 }
@@ -508,12 +509,12 @@ async function refreshRatingsFromRemote(): Promise<void> {
   if (!client) return
   const { data } = await client.from('ratings').select('*')
   if (!data) return
-  const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
+  const localRatings: Record<string, PlayerRating> = safeParseJSON(getItem(RATINGS_KEY), {})
   const remoteRatings: Record<string, PlayerRating> = {}
   for (const row of data) remoteRatings[row.player_id] = row.data as PlayerRating
   // Remote wins for known players; local-only entries preserved
   const merged = { ...localRatings, ...remoteRatings }
-  localStorage.setItem(RATINGS_KEY, JSON.stringify(merged))
+  setItem(RATINGS_KEY, JSON.stringify(merged))
   dispatchSync()
 }
 
@@ -531,7 +532,7 @@ export async function initSync(county: string): Promise<void> {
 
   if (!SUPABASE_PRIMARY) {
     // Legacy mode: push local data to remote (old behavior)
-    const localLobby: LobbyEntry[] = safeParseJSON(localStorage.getItem(LOBBY_KEY), [])
+    const localLobby: LobbyEntry[] = safeParseJSON(getItem(LOBBY_KEY), [])
     const localCountyLobby = localLobby.filter(e => e.county.toLowerCase() === countyKey)
     if (localCountyLobby.length > 0) {
       await client.from('lobby').upsert(
@@ -545,7 +546,7 @@ export async function initSync(county: string): Promise<void> {
       )
     }
 
-    const localTournaments: Tournament[] = safeParseJSON(localStorage.getItem(STORAGE_KEY), [])
+    const localTournaments: Tournament[] = safeParseJSON(getItem(STORAGE_KEY), [])
     const localCountyTournaments = localTournaments.filter(t => t.county.toLowerCase() === countyKey)
     if (localCountyTournaments.length > 0) {
       await client.from('tournaments').upsert(
@@ -558,7 +559,7 @@ export async function initSync(county: string): Promise<void> {
       )
     }
 
-    const localRatings: Record<string, PlayerRating> = safeParseJSON(localStorage.getItem(RATINGS_KEY), {})
+    const localRatings: Record<string, PlayerRating> = safeParseJSON(getItem(RATINGS_KEY), {})
     const ratingRows = Object.entries(localRatings).map(([id, r]) => ({
       player_id: id,
       data: r,
@@ -577,7 +578,7 @@ export async function initSync(county: string): Promise<void> {
   // Fetch player-specific data (rating history, trophies, badges)
   const PROFILE_KEY = 'play-tennis-profile'
   try {
-    const profileStr = localStorage.getItem(PROFILE_KEY)
+    const profileStr = getItem(PROFILE_KEY)
     if (profileStr) {
       const profile = JSON.parse(profileStr)
       if (profile?.id) {
@@ -607,7 +608,7 @@ async function linkProfileToAuth(client: ReturnType<typeof getClient>, county: s
 
   const PROFILE_KEY = 'play-tennis-profile'
   try {
-    const profileStr = localStorage.getItem(PROFILE_KEY)
+    const profileStr = getItem(PROFILE_KEY)
     if (!profileStr) return
     const profile = JSON.parse(profileStr)
     if (!profile?.id || !profile?.name) return
