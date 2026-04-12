@@ -27,9 +27,13 @@ interface Props {
   onFocusConsumed?: () => void
 }
 
-function formatScoreSummary(match: Match): string | null {
+function formatScoreSummary(match: Match, currentPlayerId?: string): string | null {
   if (!match.score1.length || match.score1.length !== match.score2.length) return null
-  return match.score1.map((s, i) => `${s}-${match.score2[i]}`).join(', ')
+  // Show current user's score first (e.g., "6-3, 6-4" not "3-6, 4-6")
+  const isPlayer2 = currentPlayerId && match.player2Id === currentPlayerId
+  const myScores = isPlayer2 ? match.score2 : match.score1
+  const oppScores = isPlayer2 ? match.score1 : match.score2
+  return myScores.map((s, i) => `${s}-${oppScores[i]}`).join(', ')
 }
 
 function matchSortPriority(match: Match, currentPlayerId: string): number {
@@ -389,7 +393,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     const cardView = getMatchCardView(tournament!, match, currentPlayerId)
 
     const scored = hasScores(match)
-    const scoreSummary = formatScoreSummary(match)
+    const scoreSummary = formatScoreSummary(match, currentPlayerId)
     const opponentName = isMyMatch
       ? match.player1Id === currentPlayerId ? p2 : p1
       : null

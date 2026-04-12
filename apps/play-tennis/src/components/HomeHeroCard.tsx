@@ -91,20 +91,54 @@ export default function HomeHeroCard({
 
   const isInSetupTournament = setupTournament?.players.some(p => p.id === profile.id) ?? false
 
+  // Derive lobby entries directly from provider state — no bridge roundtrip
   function refreshState() {
-    setEntries(getLobbyByCounty(profile.county))
-    setJoined(isInLobby(profile.id))
-    const t = getSetupTournamentForCounty(profile.county)
-    setSetupTournament(t ?? null)
+    const countyLobby = providerLobby.filter(
+      e => e.county.toLowerCase() === profile.county.toLowerCase()
+    )
+    setEntries(countyLobby)
+    setJoined(countyLobby.some(e => e.playerId === profile.id))
+    const t = providerTournaments.find(
+      pt => pt.status === 'setup' && pt.county.toLowerCase() === profile.county.toLowerCase()
+    ) ?? null
+    setSetupTournament(t)
   }
 
   useEffect(() => { refreshState() }, [profile])
 
-  // React to Supabase realtime updates via provider (replaces SYNC_EVENT listener)
+  // React to Supabase realtime updates via provider — data is always fresh
   useEffect(() => {
     if (joiningRef.current) return
     refreshState()
   }, [providerLobby, providerTournaments])
+
+  // Auto-trigger tournament when lobby reaches 6 via realtime sync
+  // (not just when the joining player clicks the button)
+  const autoTriggerRef = useRef(false)
+  useEffect(() => {
+    if (autoTriggerRef.current || joiningRef.current) return
+    const countyLobby = providerLobby.filter(
+      e => e.county.toLowerCase() === profile.county.toLowerCase()
+    )
+    const alreadyHasSetup = providerTournaments.some(
+      t => (t.status === 'setup' || t.status === 'in-progress') &&
+           t.county.toLowerCase() === profile.county.toLowerCase()
+    )
+    const userInLobby = countyLobby.some(e => e.playerId === profile.id)
+    if (userInLobby && countyLobby.length >= 6 && !alreadyHasSetup) {
+      autoTriggerRef.current = true
+      startTournamentFromLobby(profile.county).then(tournament => {
+        if (tournament) {
+          if (tournament.status === 'in-progress') {
+            onTournamentCreated(tournament.id)
+          } else {
+            setSetupTournament(tournament)
+          }
+        }
+        autoTriggerRef.current = false
+      })
+    }
+  }, [providerLobby])
 
   useEffect(() => {
     if (autoJoin && !autoJoinedRef.current && !joined && !isInSetupTournament) {

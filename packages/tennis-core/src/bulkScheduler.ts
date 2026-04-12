@@ -202,15 +202,19 @@ export function bulkScheduleMatches(
   const sorted = [...matchCandidates.entries()]
     .sort(([, a], [, b]) => a.candidates.length - b.candidates.length)
 
-  // Step 3: Greedy assignment with backtracking
+  // Step 3: Greedy assignment with backtracking (iteration-limited)
   const assignments = new Map<string, { matchId: string; slot: CandidateSlot; player1Id: string; player2Id: string }>()
+  const MAX_ITERATIONS = 50_000
+  let iterations = 0
 
   function tryAssign(matchIdx: number, backtrackDepth: number): boolean {
+    if (++iterations > MAX_ITERATIONS) return false // safety valve
     if (matchIdx >= sorted.length) return true
 
     const [matchId, { match, candidates }] = sorted[matchIdx]!
 
     for (const slot of candidates) {
+      if (iterations > MAX_ITERATIONS) return false
       if (!hasConflict(slot, match.player1Id, match.player2Id, assignments, constraints)) {
         assignments.set(matchId, { matchId, slot, player1Id: match.player1Id, player2Id: match.player2Id })
 
