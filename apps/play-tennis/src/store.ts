@@ -8,6 +8,7 @@ import {
   SyncResult,
 } from './sync'
 import { titleCase } from './dateUtils'
+import { getItem, setItem } from './memoryStore'
 import { getClient } from './supabase'
 import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
 import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
@@ -65,7 +66,7 @@ function generateId(): string {
 
 export function getProfile(): PlayerProfile | null {
   try {
-    const data = localStorage.getItem(PROFILE_KEY)
+    const data = getItem(PROFILE_KEY)
     return data ? JSON.parse(data) : null
   } catch {
     return null
@@ -85,7 +86,7 @@ export function createProfile(
       existing.id = options.authId
       existing.authId = options.authId
       if (options.email) existing.email = options.email
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(existing))
+      setItem(PROFILE_KEY, JSON.stringify(existing))
     }
     return existing
   }
@@ -113,7 +114,7 @@ export function createProfile(
       gender: options?.gender,
       createdAt: new Date().toISOString(),
     }
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(fallback))
+    setItem(PROFILE_KEY, JSON.stringify(fallback))
     return fallback
   }
 
@@ -127,7 +128,7 @@ export function createProfile(
     gender: options?.gender,
     createdAt: new Date().toISOString(),
   }
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  setItem(PROFILE_KEY, JSON.stringify(profile))
   return profile
 }
 
@@ -3030,7 +3031,7 @@ export function getTestProfiles(county: string): PlayerProfile[] {
 }
 
 export function switchProfile(profile: PlayerProfile): void {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  setItem(PROFILE_KEY, JSON.stringify(profile))
 }
 
 // Auto-confirm all pending schedules (dev tool)
@@ -4184,7 +4185,7 @@ function checkReliabilityNudge(playerId: string, score: ReliabilityScore): void 
 
   // Check cooldown (max once per week)
   try {
-    const data = localStorage.getItem(NUDGE_COOLDOWN_KEY)
+    const data = getItem(NUDGE_COOLDOWN_KEY)
     const nudges: Record<string, string> = data ? JSON.parse(data) : {}
     const lastNudge = nudges[playerId]
     if (lastNudge) {
@@ -4208,7 +4209,7 @@ function checkReliabilityNudge(playerId: string, score: ReliabilityScore): void 
     })
 
     nudges[playerId] = new Date().toISOString()
-    localStorage.setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(nudges))
+    setItem(NUDGE_COOLDOWN_KEY, JSON.stringify(nudges))
   } catch {
     // ignore storage errors
   }

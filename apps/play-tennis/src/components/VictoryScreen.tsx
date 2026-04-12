@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Tournament, Trophy, TrophyTier } from '../types'
+import { getItem, setItem } from '../memoryStore'
 
 // --- Tier model ---
 
@@ -325,7 +326,7 @@ function dismissKey(tournamentId: string, playerId: string): string {
 
 export function isVictoryDismissed(tournamentId: string, playerId: string): boolean {
   try {
-    return localStorage.getItem(dismissKey(tournamentId, playerId)) === '1'
+    return getItem(dismissKey(tournamentId, playerId)) === '1'
   } catch {
     return false
   }
@@ -333,7 +334,7 @@ export function isVictoryDismissed(tournamentId: string, playerId: string): bool
 
 export function markVictoryDismissed(tournamentId: string, playerId: string): void {
   try {
-    localStorage.setItem(dismissKey(tournamentId, playerId), '1')
+    setItem(dismissKey(tournamentId, playerId), '1')
   } catch {
     // localStorage unavailable — silent fail (worst case: screen shows again)
   }

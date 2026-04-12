@@ -1,5 +1,6 @@
 import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useEffect, useRef } from 'react'
+import { setItem } from '../memoryStore'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
@@ -311,7 +312,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
     })
     // Save weekly cap to profile
     p.weeklyCap = weeklyCap
-    localStorage.setItem('play-tennis-profile', JSON.stringify(p))
+    setItem('play-tennis-profile', JSON.stringify(p))
 
     if (!skip) {
       // detailedSlots is the combined source (presets pre-fill into it)

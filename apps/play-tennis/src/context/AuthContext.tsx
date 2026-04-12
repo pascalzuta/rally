@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js'
 import { PlayerProfile, SkillLevel, Gender } from '../types'
 import { getClient, fetchPlayerProfile, savePlayerProfile } from '../supabase'
 import { refreshLobbyFromRemote, refreshAvailabilityFromRemote } from '../sync'
+import { getItem, setItem, removeItem, clear as clearMemoryStore } from '../memoryStore'
 
 interface AuthContextValue {
   user: User | null
@@ -17,16 +18,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 const PROFILE_KEY = 'play-tennis-profile'
 
 function clearAuthLocalStorage() {
-  // Preserve lobby and availability — these are shared/remote data that will be
-  // refreshed from Supabase on next login. Clearing them causes the lobby count
-  // to reset to 0 and forces users to re-enter availability each session.
-  const preserveKeys = new Set(['play-tennis-lobby', 'play-tennis-availability'])
-  const keysToRemove: string[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith('play-tennis-') && !preserveKeys.has(key)) keysToRemove.push(key)
-  }
-  for (const key of keysToRemove) localStorage.removeItem(key)
+  clearMemoryStore()
 }
 
 function buildProfile(userId: string, email: string, data: Awaited<ReturnType<typeof fetchPlayerProfile>>): PlayerProfile | null {
@@ -57,7 +49,7 @@ function buildProfile(userId: string, email: string, data: Awaited<ReturnType<ty
  */
 function recoverAndAdoptProfile(userId: string, email: string): PlayerProfile | null {
   try {
-    const raw = localStorage.getItem(PROFILE_KEY)
+    const raw = getItem(PROFILE_KEY)
     if (!raw) return null
     const local = JSON.parse(raw) as PlayerProfile
     if (!local.name || !local.county) return null
@@ -70,7 +62,7 @@ function recoverAndAdoptProfile(userId: string, email: string): PlayerProfile | 
       email: email || local.email,
     }
 
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(recovered))
+    setItem(PROFILE_KEY, JSON.stringify(recovered))
 
     // Retry saving to Supabase (fire-and-forget — retried on next login if it fails)
     savePlayerProfile(userId, {
@@ -96,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfileState] = useState<PlayerProfile | null>(() => {
     try {
-      const cached = localStorage.getItem(PROFILE_KEY)
+      const cached = getItem(PROFILE_KEY)
       return cached ? JSON.parse(cached) : null
     } catch { return null }
   })
@@ -108,9 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // localStorage AND a profile is cached there, hydrate from it without
     // talking to Supabase. Used only for local/headless tests. Safe in prod
     // because nothing ever sets the flag there.
-    if (import.meta.env.DEV && localStorage.getItem('play-tennis-dev-bypass') === '1') {
+    if (import.meta.env.DEV && getItem('play-tennis-dev-bypass') === '1') {
       try {
-        const raw = localStorage.getItem(PROFILE_KEY)
+        const raw = getItem(PROFILE_KEY)
         if (raw) {
           const cached = JSON.parse(raw) as PlayerProfile
           // Build a minimal User object so components that read useAuth().user don't crash
@@ -146,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const profileData = await fetchPlayerProfile(u.id)
             const restored = buildProfile(u.id, u.email ?? '', profileData)
             if (restored) {
-              localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
+              setItem(PROFILE_KEY, JSON.stringify(restored))
               setProfileState(restored)
               // Eagerly refresh lobby + availability from Supabase so UI shows correct counts
               const county = restored.county.toLowerCase()
@@ -166,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } else if (profile) {
             // No valid session but we have a cached profile — clear stale data
-            localStorage.removeItem(PROFILE_KEY)
+            removeItem(PROFILE_KEY)
             setProfileState(null)
           }
         } finally {
@@ -180,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profileData = await fetchPlayerProfile(u.id)
         const restored = buildProfile(u.id, u.email ?? '', profileData)
         if (restored) {
-          localStorage.setItem(PROFILE_KEY, JSON.stringify(restored))
+          setItem(PROFILE_KEY, JSON.stringify(restored))
           setProfileState(restored)
           // Refresh lobby + availability so returning users see correct counts
           const county = restored.county.toLowerCase()
@@ -229,9 +221,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function setProfile(p: PlayerProfile | null) {
     setProfileState(p)
     if (p) {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(p))
+      setItem(PROFILE_KEY, JSON.stringify(p))
     } else {
-      localStorage.removeItem(PROFILE_KEY)
+      removeItem(PROFILE_KEY)
     }
   }
 
