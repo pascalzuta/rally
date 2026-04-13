@@ -15061,3 +15061,504 @@ main {
   transition: background 140ms ease;
 }
 .victory-replay:hover { background: #e3e6eb; }
+
+/* ================================================
+   Court Booking Coordination
+   ================================================ */
+
+/* --- Court Chip (on match cards) --- */
+.court-section { margin-top: var(--space-sm); }
+
+.court-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  padding: 4px 12px;
+  border: none;
+  border-radius: var(--radius-chip);
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 200ms ease-out;
+  text-align: left;
+}
+.court-chip--empty {
+  background: var(--color-neutral-bg);
+  color: var(--color-text-secondary);
+}
+.court-chip--suggested {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-primary);
+}
+.court-chip--confirmed {
+  background: var(--color-positive-bg);
+  color: var(--color-positive-primary);
+}
+.court-chip--conflict {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
+}
+.court-chip-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.court-chip-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.court-chip-chevron {
+  font-size: 16px;
+  font-weight: 600;
+  transition: transform 200ms ease-out;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.court-chip-chevron--open { transform: rotate(90deg); }
+
+/* --- Court Expanded Area --- */
+.court-expanded {
+  margin-top: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
+  animation: courtExpand 200ms ease-out;
+}
+@keyframes courtExpand {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 600px; }
+}
+
+.court-source-label {
+  font-size: var(--font-micro);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+/* --- Court Details Block --- */
+.court-details { margin-bottom: var(--space-md); }
+.court-details-name {
+  font-size: var(--font-body-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.court-details-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+.court-details-meta {
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+.court-cost-badge {
+  display: inline-block;
+  font-size: var(--font-micro);
+  font-weight: 500;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+.court-guest-info {
+  margin-top: var(--space-xs);
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+}
+.court-guest-label { font-weight: 600; margin-right: 4px; }
+.court-notes {
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+.court-directions-link {
+  font-size: var(--font-body-sm);
+  color: var(--color-accent-primary);
+  text-decoration: none;
+}
+.court-directions-link:hover { text-decoration: underline; }
+
+/* --- Court Empty State (match card) --- */
+.court-empty-hint {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+/* --- Profile court picks --- */
+.court-profile-picks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+.court-picks-label {
+  font-size: var(--font-micro);
+  color: var(--color-text-muted);
+}
+.court-pick-pill {
+  padding: 4px 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-chip);
+  background: var(--color-bg-surface);
+  font-size: var(--font-micro);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.court-pick-pill:hover { background: var(--color-accent-bg); color: var(--color-accent-primary); }
+
+/* --- Inline Court Form --- */
+.court-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.court-inline-form input[type="text"] {
+  padding: 8px 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-body-sm);
+  width: 100%;
+}
+.court-inline-form input:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+}
+.court-save-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.court-inline-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* --- Suggestion Actions --- */
+.court-suggestion-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+/* --- Confirmed --- */
+.court-confirmed-label {
+  font-size: var(--font-body-sm);
+  font-weight: 600;
+  color: var(--color-positive-primary);
+  margin-bottom: var(--space-sm);
+}
+.court-confirmed-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+.court-change-link {
+  font-size: var(--font-micro) !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* --- Booking --- */
+.court-booking-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-sm);
+}
+.court-booking-done { color: var(--color-positive-primary); font-weight: 500; }
+.court-booking-prompt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-sm);
+}
+
+/* --- Conflict State --- */
+.court-conflict-label {
+  font-size: var(--font-body-sm);
+  font-weight: 600;
+  color: var(--color-warning-primary);
+  margin-bottom: 2px;
+}
+.court-conflict-hint {
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md);
+}
+.court-conflict-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.court-conflict-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-md);
+}
+.court-conflict-name {
+  font-size: var(--font-body-sm);
+  font-weight: 600;
+  flex: 1;
+}
+.court-conflict-meta {
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+}
+.court-different-link {
+  display: block;
+  margin-top: var(--space-sm);
+  font-size: var(--font-micro);
+  color: var(--color-accent-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* --- Court Form (Modal) --- */
+.court-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.court-form-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  overflow-y: auto;
+  animation: courtSheetUp 250ms ease-out;
+}
+@keyframes courtSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.court-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--color-divider);
+}
+.court-form-header h3 {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-semibold);
+}
+.court-form-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 4px;
+}
+.court-form-body {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.court-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.court-field label {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+.court-field input,
+.court-field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-button);
+  font-size: var(--font-body-md);
+  font-family: inherit;
+  resize: vertical;
+}
+.court-field input:focus,
+.court-field textarea:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px var(--color-accent-bg);
+}
+.court-field-error {
+  font-size: var(--font-micro);
+  color: var(--color-negative-primary);
+}
+.court-field--indent { margin-left: var(--space-lg); }
+.court-char-count {
+  font-size: var(--font-nano);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* Toggle switch */
+.court-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-body-sm);
+  color: var(--color-text-primary);
+}
+.court-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--color-divider);
+  cursor: pointer;
+  transition: background 200ms;
+  padding: 0;
+}
+.court-toggle--on { background: var(--color-positive-primary); }
+.court-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 200ms;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.court-toggle--on .court-toggle-thumb { transform: translateX(20px); }
+
+.court-form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-top: 1px solid var(--color-divider);
+}
+.court-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+  font-size: var(--font-body-sm);
+}
+.btn-danger-text {
+  margin-left: auto;
+  color: var(--color-negative-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-body-sm);
+}
+.btn-danger-sm {
+  background: var(--color-negative-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 4px 10px;
+  font-size: var(--font-micro);
+  cursor: pointer;
+}
+
+/* --- Profile: Your Courts section --- */
+.court-section-profile { margin-top: var(--space-xl); }
+.court-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+.section-subtitle {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+.court-limit-hint {
+  font-size: var(--font-micro);
+  color: var(--color-text-muted);
+  padding-top: 4px;
+}
+
+.court-empty-profile {
+  text-align: center;
+  padding: var(--space-xl);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+}
+.court-empty-icon { font-size: 48px; margin-bottom: var(--space-sm); }
+.court-empty-profile p {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+}
+.court-empty-sub {
+  color: var(--color-text-secondary) !important;
+  max-width: 280px;
+  margin: 0 auto var(--space-md) !important;
+}
+
+.court-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.court-card {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.court-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.court-card-name {
+  font-size: var(--font-body-md);
+  font-weight: var(--weight-semibold);
+}
+.court-card-actions { display: flex; gap: var(--space-xs); }
+.court-card-label {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}
+.court-card-meta {
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+.court-card-notes {
+  font-size: var(--font-micro);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+.court-card-always {
+  font-size: var(--font-micro);
+  color: var(--color-warning-primary);
+  font-weight: var(--weight-medium);
+  margin-top: 6px;
+}

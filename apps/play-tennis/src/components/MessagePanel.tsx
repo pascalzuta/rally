@@ -12,7 +12,7 @@ interface Props {
   embedded?: boolean
 }
 
-const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!']
+const QUICK_MESSAGES = ['Running late', 'What court?', 'Looking forward to it!', "Let's play at...", 'Can you book?', 'I booked it']
 
 export default function MessagePanel({ currentPlayerId, currentPlayerName, otherPlayerId, otherPlayerName, onClose, embedded }: Props) {
   const [messages, setMessages] = useState<DirectMessage[]>([])

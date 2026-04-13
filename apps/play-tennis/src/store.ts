@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, MatchResolution, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, RallyNotification, DirectMessage, SchedulingSummary, MatchReaction, MatchFeedback, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, MatchResolution, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, RallyNotification, DirectMessage, SchedulingSummary, MatchReaction, MatchFeedback, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot, Court, MatchCourt } from './types'
 import {
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
@@ -2991,6 +2991,220 @@ export function getTestProfiles(county: string): PlayerProfile[] {
 
 export function switchProfile(profile: PlayerProfile): void {
   setItem(PROFILE_KEY, JSON.stringify(profile))
+}
+
+// --- Courts ---
+
+export function getProfileCourts(): Court[] {
+  const profile = getProfile()
+  return profile?.courts ?? []
+}
+
+export function addCourt(court: Omit<Court, 'id' | 'sort_order' | 'created_at' | 'updated_at'>): Court | null {
+  const profile = getProfile()
+  if (!profile) return null
+  const courts = profile.courts ?? []
+  if (courts.length >= 3) return null
+
+  const now = new Date().toISOString()
+  const newCourt: Court = {
+    ...court,
+    id: generateId(),
+    sort_order: courts.length,
+    created_at: now,
+    updated_at: now,
+  }
+
+  // If this court has always_play_here, clear it on others
+  if (newCourt.always_play_here) {
+    for (const c of courts) c.always_play_here = false
+  }
+
+  profile.courts = [...courts, newCourt]
+  setItem(PROFILE_KEY, JSON.stringify(profile))
+  syncProfileCourtsToLobby(profile)
+  return newCourt
+}
+
+export function updateCourt(courtId: string, updates: Partial<Court>): Court | null {
+  const profile = getProfile()
+  if (!profile) return null
+  const courts = profile.courts ?? []
+  const idx = courts.findIndex(c => c.id === courtId)
+  if (idx === -1) return null
+
+  const updated = { ...courts[idx], ...updates, updated_at: new Date().toISOString() }
+
+  // If toggling always_play_here on, clear it on others
+  if (updated.always_play_here) {
+    for (const c of courts) {
+      if (c.id !== courtId) c.always_play_here = false
+    }
+  }
+
+  courts[idx] = updated
+  profile.courts = courts
+  setItem(PROFILE_KEY, JSON.stringify(profile))
+  syncProfileCourtsToLobby(profile)
+  return updated
+}
+
+export function deleteCourt(courtId: string): boolean {
+  const profile = getProfile()
+  if (!profile) return false
+  const courts = profile.courts ?? []
+  const filtered = courts.filter(c => c.id !== courtId)
+  if (filtered.length === courts.length) return false
+
+  // Recompute sort_order
+  filtered.forEach((c, i) => { c.sort_order = i })
+  profile.courts = filtered
+  setItem(PROFILE_KEY, JSON.stringify(profile))
+  syncProfileCourtsToLobby(profile)
+  return true
+}
+
+function syncProfileCourtsToLobby(profile: PlayerProfile): void {
+  // Sync courts to Supabase via the lobby table's courts JSONB column
+  const client = getClient()
+  if (!client) return
+  client.from('lobby').update({ courts: profile.courts ?? [] })
+    .eq('player_id', profile.id)
+    .then(({ error }) => {
+      if (error) console.warn('[Rally] Failed to sync courts to lobby', error)
+    })
+}
+
+// --- Court Suggestion Algorithm ---
+
+export function suggestCourt(
+  player1: PlayerProfile,
+  player2: PlayerProfile,
+  matchIndex: number,
+  tournamentMatches: Match[]
+): MatchCourt | 'conflict' | null {
+  const courts1 = player1.courts ?? []
+  const courts2 = player2.courts ?? []
+  const always1 = courts1.find(c => c.always_play_here)
+  const always2 = courts2.find(c => c.always_play_here)
+
+  // Rule 1: Both have "always play here"
+  if (always1 && always2) return 'conflict'
+
+  // Rule 2: One player has "always play here"
+  if (always1) return courtToMatchCourt(always1)
+  if (always2) return courtToMatchCourt(always2)
+
+  // Rule 3: Both have courts — alternate
+  if (courts1.length > 0 && courts2.length > 0) {
+    // Deterministic: lower player ID is "Player 1"
+    const [p1Courts, p2Courts] = player1.id < player2.id
+      ? [courts1, courts2]
+      : [courts2, courts1]
+
+    // Count prior matches between these two in this tournament
+    const priorCount = tournamentMatches.filter(m =>
+      m.court?.confirmed &&
+      ((m.player1Id === player1.id && m.player2Id === player2.id) ||
+       (m.player1Id === player2.id && m.player2Id === player1.id))
+    ).length
+
+    const sourceCourts = priorCount % 2 === 0 ? p1Courts : p2Courts
+    const best = sourceCourts.reduce((a, b) => a.sort_order <= b.sort_order ? a : b)
+    return courtToMatchCourt(best)
+  }
+
+  // Rule 4: Only one player has courts
+  if (courts1.length > 0) return courtToMatchCourt(courts1.reduce((a, b) => a.sort_order <= b.sort_order ? a : b))
+  if (courts2.length > 0) return courtToMatchCourt(courts2.reduce((a, b) => a.sort_order <= b.sort_order ? a : b))
+
+  // Rule 5: Neither has courts
+  return null
+}
+
+function courtToMatchCourt(court: Court): MatchCourt {
+  const now = new Date().toISOString()
+  return {
+    venue_name: court.venue_name,
+    label: court.label,
+    court_id: court.id,
+    source: 'auto',
+    confirmed: false,
+    booking_needed: court.booking_needed,
+    booking_claimed: false,
+    booking_confirmed: false,
+    cost_applies: court.cost_applies,
+    cost_description: court.cost_description,
+    covers_guests: court.covers_guests,
+    guest_instructions: court.guest_instructions,
+    notes: court.notes,
+    directions_url: court.directions_url,
+    created_at: now,
+    updated_at: now,
+  }
+}
+
+// --- Match Court Actions ---
+
+export async function setMatchCourt(
+  tournamentId: string,
+  matchId: string,
+  court: MatchCourt
+): Promise<void> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match) return
+  match.court = court
+  await saveAndSync(all, t)
+}
+
+export async function confirmMatchCourt(
+  tournamentId: string,
+  matchId: string,
+  playerId: string
+): Promise<void> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.court) return
+  match.court.confirmed = true
+  match.court.confirmed_by = playerId
+  match.court.confirmed_at = new Date().toISOString()
+  match.court.updated_at = new Date().toISOString()
+  await saveAndSync(all, t)
+}
+
+export async function claimBooking(
+  tournamentId: string,
+  matchId: string,
+  playerId: string
+): Promise<void> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.court) return
+  match.court.booking_claimed = true
+  match.court.booking_claimed_by = playerId
+  match.court.updated_at = new Date().toISOString()
+  await saveAndSync(all, t)
+}
+
+export async function confirmBooking(
+  tournamentId: string,
+  matchId: string
+): Promise<void> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  if (!t) return
+  const match = t.matches.find(m => m.id === matchId)
+  if (!match?.court) return
+  match.court.booking_confirmed = true
+  match.court.updated_at = new Date().toISOString()
+  await saveAndSync(all, t)
 }
 
 // Auto-confirm all pending schedules (dev tool)

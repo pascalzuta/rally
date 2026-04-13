@@ -19,6 +19,7 @@ export interface PlayerProfile {
   playingStyle?: string[]
   photoUrl?: string
   preferredCourts?: string[]
+  courts?: Court[]
   createdAt: string
 }
 
@@ -146,6 +147,7 @@ export interface Match {
   scoreDispute?: ScoreDispute | null
   splitDecision?: boolean
   schedule?: MatchSchedule
+  court?: MatchCourt
   resolution?: MatchResolution
   phase?: MatchPhase
 }
@@ -380,6 +382,54 @@ export interface MatchReaction {
   fair: number // 1-5
   playAgain: boolean
   createdAt: string
+}
+
+// --- Courts ---
+
+export interface Court {
+  id: string
+  venue_name: string
+  label?: string
+  booking_needed: boolean
+  cost_applies: boolean
+  cost_description?: string
+  covers_guests: boolean
+  guest_instructions?: string
+  notes?: string
+  directions_url?: string
+  always_play_here: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface MatchCourt {
+  venue_name: string
+  label?: string
+  court_id?: string
+  source: 'auto' | 'player'
+  suggested_by?: string
+  confirmed: boolean
+  confirmed_by?: string
+  confirmed_at?: string
+  booking_needed: boolean
+  booking_claimed: boolean
+  booking_claimed_by?: string
+  booking_confirmed: boolean
+  cost_applies: boolean
+  cost_description?: string
+  covers_guests: boolean
+  guest_instructions?: string
+  notes?: string
+  directions_url?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface InlineCourt {
+  venue_name: string
+  notes?: string
+  save_to_profile: boolean
 }
 
 // --- Doubles ---

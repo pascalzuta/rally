@@ -7,6 +7,7 @@ import MessagePanel from './MessagePanel'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import InlineScoreEntry from './InlineScoreEntry'
+import CourtSection from './CourtSection'
 
 interface Props {
   tournament: Tournament
@@ -157,6 +158,16 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             </button>
           )}
         </div>
+      )}
+
+      {view.isMyMatch && view.opponentId && !match.completed && (
+        <CourtSection
+          match={match}
+          tournamentId={tournament.id}
+          currentPlayerId={currentPlayerId}
+          opponentName={view.opponentName ?? 'Opponent'}
+          onUpdated={onUpdated}
+        />
       )}
 
       {isMessaging && view.opponentId && view.opponentName && (

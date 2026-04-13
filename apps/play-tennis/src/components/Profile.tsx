@@ -1,10 +1,11 @@
 import { formatHourCompact, titleCase } from '../dateUtils'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { getAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard } from '../store'
+import { getAvailability, switchProfile, getLobbyByCounty, getPlayerRating, getPlayerTournaments, getCountyLeaderboard, getProfileCourts, addCourt, updateCourt, deleteCourt } from '../store'
 import { updateMyAvailability } from '../mutations'
 import { useRallyData } from '../context/RallyDataProvider'
-import { PlayerProfile, AvailabilitySlot, DayOfWeek } from '../types'
+import { PlayerProfile, AvailabilitySlot, DayOfWeek, Court } from '../types'
 import { useToast } from './Toast'
+import CourtForm from './CourtForm'
 
 interface Props {
   profile: PlayerProfile
@@ -67,6 +68,40 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
   const [detailDay, setDetailDay] = useState<DayOfWeek>('monday')
   const [detailStart, setDetailStart] = useState(9)
   const [detailEnd, setDetailEnd] = useState(12)
+
+  // Courts state
+  const [courts, setCourts] = useState<Court[]>(() => getProfileCourts())
+  const [showCourtForm, setShowCourtForm] = useState(false)
+  const [editingCourt, setEditingCourt] = useState<Court | undefined>(undefined)
+
+  function refreshCourts() { setCourts(getProfileCourts()) }
+
+  function handleAddCourt(data: Omit<Court, 'id' | 'sort_order' | 'created_at' | 'updated_at'>) {
+    const result = addCourt(data)
+    if (result) {
+      refreshCourts()
+      setShowCourtForm(false)
+      showSuccess('Court added')
+      if (data.always_play_here) showSuccess('Matches will default to ' + data.venue_name + ' when possible')
+    }
+  }
+
+  function handleUpdateCourt(data: Omit<Court, 'id' | 'sort_order' | 'created_at' | 'updated_at'>) {
+    if (!editingCourt) return
+    updateCourt(editingCourt.id, data)
+    refreshCourts()
+    setEditingCourt(undefined)
+    setShowCourtForm(false)
+    showSuccess('Court updated')
+  }
+
+  function handleDeleteCourt(courtId: string) {
+    deleteCourt(courtId)
+    refreshCourts()
+    setEditingCourt(undefined)
+    setShowCourtForm(false)
+    showSuccess('Court removed')
+  }
 
   // Re-sync availability when provider data updates (e.g., after hydration from Supabase)
   useEffect(() => {
@@ -382,6 +417,92 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
           </>
         )}
       </div>
+
+      {/* Your Courts */}
+      <div className="profile-section court-section-profile">
+        <div className="court-section-header">
+          <div>
+            <h3 className="section-title">Your Courts</h3>
+            <p className="section-subtitle">Add your favorite courts so matches auto-fill.</p>
+          </div>
+          {courts.length < 3 && (
+            <button
+              className="btn btn-sm"
+              onClick={() => { setEditingCourt(undefined); setShowCourtForm(true) }}
+            >
+              + Add Court
+            </button>
+          )}
+          {courts.length >= 3 && (
+            <span className="court-limit-hint">Max 3 courts</span>
+          )}
+        </div>
+
+        {courts.length === 0 ? (
+          <div className="court-empty-profile">
+            <div className="court-empty-icon">🎾</div>
+            <p>Your courts will show up here</p>
+            <p className="court-empty-sub">
+              Add your favorite courts so we can auto-suggest venues for your matches. You can also set one up on any match card.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => { setEditingCourt(undefined); setShowCourtForm(true) }}
+            >
+              + Add a Court
+            </button>
+          </div>
+        ) : (
+          <div className="court-cards">
+            {courts.map(court => (
+              <div key={court.id} className="court-card">
+                <div className="court-card-header">
+                  <div className="court-card-name">{court.venue_name}</div>
+                  <div className="court-card-actions">
+                    <button
+                      className="btn-icon"
+                      onClick={() => { setEditingCourt(court); setShowCourtForm(true) }}
+                      aria-label="Edit court"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className="btn-icon"
+                      onClick={() => handleDeleteCourt(court.id)}
+                      aria-label="Delete court"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                {court.label && <div className="court-card-label">{court.label}</div>}
+                <div className="court-card-meta">
+                  {court.booking_needed ? 'Booking required' : 'No booking needed'}
+                  {court.cost_applies && court.cost_description ? ` · ${court.cost_description}` : ''}
+                </div>
+                {court.notes && <div className="court-card-notes">"{court.notes}"</div>}
+                {court.always_play_here && (
+                  <div className="court-card-always">★ Always play here</div>
+                )}
+                {court.directions_url && (
+                  <a href={court.directions_url} target="_blank" rel="noopener noreferrer" className="court-directions-link">
+                    Directions ↗
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showCourtForm && (
+        <CourtForm
+          court={editingCourt}
+          onSave={editingCourt ? handleUpdateCourt : handleAddCourt}
+          onCancel={() => { setShowCourtForm(false); setEditingCourt(undefined) }}
+          onDelete={editingCourt ? () => handleDeleteCourt(editingCourt.id) : undefined}
+        />
+      )}
 
       {/* Help & How Rally Works */}
       {onViewHelp && (
