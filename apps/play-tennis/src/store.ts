@@ -2250,6 +2250,47 @@ export function getPlayerRating(playerId: string, playerName?: string): PlayerRa
   return { name: displayName, rating: 1000, matchesPlayed: 0 }
 }
 
+function kFactor(matchesPlayed: number): number {
+  return 250 / Math.pow(matchesPlayed + 5, 0.4)
+}
+
+export function winProbability(ratingA: number, ratingB: number): number {
+  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
+}
+
+export async function updateRatings(
+  playerA: { id: string; name: string },
+  playerB: { id: string; name: string },
+  winnerId: string
+): Promise<void> {
+  const ratings = loadRatings()
+
+  const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1000, matchesPlayed: 0 }
+  const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1000, matchesPlayed: 0 }
+  // Keep display name current
+  a.name = playerA.name
+  b.name = playerB.name
+
+  const pA = winProbability(a.rating, b.rating)
+
+  const kA = kFactor(a.matchesPlayed)
+  const kB = kFactor(b.matchesPlayed)
+
+  const sA = winnerId === playerA.id ? 1 : 0
+  const sB = 1 - sA
+
+  a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
+  b.rating = Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10
+  a.matchesPlayed += 1
+  b.matchesPlayed += 1
+
+  ratings[playerA.id] = a
+  ratings[playerB.id] = b
+  await saveRatingsAndSync(ratings, playerA.id, playerB.id)
+  recordRatingSnapshot(playerA.id, a.rating)
+  recordRatingSnapshot(playerB.id, b.rating)
+}
+
 // --- Rating History ---
 
 function loadRatingHistory(): Record<string, RatingSnapshot[]> {
