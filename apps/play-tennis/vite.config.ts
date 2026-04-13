@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     {
@@ -14,7 +14,11 @@ export default defineConfig({
       },
     },
   ],
-  base: '/',
+  // Web deploy uses '/' (Vercel). Native build uses './' (Capacitor file serving).
+  base: process.env.CAPACITOR_BUILD ? './' : '/',
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.1.0'),
+  },
   build: {
     rollupOptions: {
       output: {
@@ -26,4 +30,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
