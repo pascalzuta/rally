@@ -83,6 +83,13 @@ export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
     const { playerId, playerName, county } = parsed.data;
     const authId = req.authUser!.authId;
 
+    // Ownership check: prevent impersonating another player's lobby entry
+    const { data: existing } = await supabase.from("lobby").select("auth_id").eq("player_id", playerId).maybeSingle();
+    if (existing && existing.auth_id !== authId) {
+      res.status(403).json({ error: "not_your_lobby_entry" });
+      return;
+    }
+
     // Upsert lobby entry with auth_id linkage
     const { error } = await supabase.from("lobby").upsert({
       player_id: playerId,
@@ -118,6 +125,14 @@ export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
     }
 
     const { playerId } = parsed.data;
+    const authId = req.authUser!.authId;
+
+    // Ownership check: only allow deleting your own lobby entry
+    const { data: existing } = await supabase.from("lobby").select("auth_id").eq("player_id", playerId).maybeSingle();
+    if (existing && existing.auth_id !== authId) {
+      res.status(403).json({ error: "not_your_lobby_entry" });
+      return;
+    }
 
     const { error } = await supabase.from("lobby").delete().eq("player_id", playerId);
     if (error) {
@@ -166,6 +181,19 @@ export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
     }
 
     const { id, county, data } = parsed.data;
+    const authId = req.authUser!.authId;
+
+    // Ownership check: only participants can update a tournament
+    const { data: existing } = await supabase.from("tournaments").select("data").eq("id", id).maybeSingle();
+    if (existing) {
+      const tournamentData = existing.data as { players?: Array<{ id?: string; playerId?: string }> } | null;
+      const players = tournamentData?.players ?? [];
+      const isParticipant = players.some(p => p.id === authId || p.playerId === authId);
+      if (!isParticipant) {
+        res.status(403).json({ error: "not_a_participant" });
+        return;
+      }
+    }
 
     const { error } = await supabase.from("tournaments").upsert({
       id,
