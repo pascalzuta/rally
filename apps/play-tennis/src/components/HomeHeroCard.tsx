@@ -153,11 +153,12 @@ export default function HomeHeroCard({
     if (!setupTournament) { setCountdown(null); return }
 
     function tick() {
-      if (!setupTournament) return
-      const remaining = getCountdownRemaining(setupTournament)
+      const fresh = getSetupTournamentForCounty(profile.county)
+      if (!fresh) { setCountdown(null); return }
+      const remaining = getCountdownRemaining(fresh)
       if (remaining === null) { setCountdown(null); return }
       if (remaining <= 0) {
-        checkCountdownExpired(setupTournament.id).then(started => {
+        checkCountdownExpired(fresh.id).then(started => {
           if (started && started.status === 'in-progress') {
             onTournamentCreated(started.id)
           }

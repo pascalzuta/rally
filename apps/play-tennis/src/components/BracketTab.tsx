@@ -611,7 +611,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   currentPlayerId={currentPlayerId}
                   onUpdated={() => { setExpandedMatchId(null); refreshAndCheckFeedback() }}
                 />
-              ) : match.schedule ? (
+              ) : !match.scoreReportedBy && match.schedule ? (
                 <UpcomingMatchPanel
                   tournament={tournament!}
                   match={match}

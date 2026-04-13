@@ -18,7 +18,7 @@ function RatingChart({ history, currentRating }: { history: RatingSnapshot[]; cu
     points.push({ rating: currentRating, timestamp: new Date().toISOString() })
   }
   if (points.length === 1) {
-    points.unshift({ rating: 1500, timestamp: points[0].timestamp })
+    points.unshift({ rating: 1000, timestamp: points[0].timestamp })
   }
 
   const W = 300
@@ -436,7 +436,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             </button>
             {showRatingInfo && (
               <div className="rating-explainer">
-                <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1500</strong>.</p>
+                <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1000</strong>.</p>
                 <p>Beat a stronger opponent for a bigger boost. Lose to a weaker one and you drop more. The system finds your true level over time.</p>
                 <div className="rating-tiers">
                   <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>

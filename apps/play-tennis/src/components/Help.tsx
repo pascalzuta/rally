@@ -186,7 +186,7 @@ function ScoringSection() {
       <h3 className="help-subheading">Rating</h3>
       <p className="help-intro">
         Your Elo rating updates after each match. Decisive wins earn a bigger boost.
-        New players start at 1500. Forfeits affect standings but not your rating.
+        New players start at 1000. Forfeits affect standings but not your rating.
       </p>
     </div>
   )

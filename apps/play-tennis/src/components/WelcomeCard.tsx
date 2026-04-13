@@ -254,7 +254,7 @@ function ScoringSection() {
       <h3 className="help-subheading">Rating</h3>
       <p className="help-intro">
         Your Elo rating updates after each match. Decisive wins earn a bigger boost.
-        New players start at 1500.
+        New players start at 1000.
       </p>
     </div>
   )

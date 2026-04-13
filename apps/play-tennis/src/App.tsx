@@ -371,7 +371,97 @@ export default function App() {
                 {pendingActionCount > 0 && (
                   <span className="notif-badge">{pendingActionCount}</span>
                 )}
-            </button>
+              </button>
+              {showNotifications && (() => {
+                const rallyNotifs = profile ? getNotifications(profile.id).slice(0, 10) : []
+                if (profile) markNotificationsRead(profile.id)
+                return (
+                  <div className="notif-dropdown">
+                    <div className="notif-header">
+                      <span>Notifications</span>
+                      <button className="notif-close-btn" onClick={(e) => { e.stopPropagation(); setShowNotifications(false) }} aria-label="Close notifications">&times;</button>
+                    </div>
+                    {pendingActionCount === 0 && rallyNotifs.length === 0 ? (
+                      <div className="notif-empty">All caught up!</div>
+                    ) : (
+                      <div className="notif-list">
+                        {/* Rally notifications (offers, acceptances, etc.) */}
+                        {rallyNotifs.map(n => {
+                          const icon = n.type === 'match_offer' ? '📩'
+                            : n.type === 'offer_accepted' ? '✅'
+                            : n.type === 'offer_declined' ? '✗'
+                            : n.type === 'offer_expired' ? '⏱'
+                            : '🎾'
+                          return (
+                            <button
+                              key={n.id}
+                              className={`notif-item ${!n.read ? 'notif-unread' : ''}`}
+                              onClick={() => {
+                                if (n.type === 'match_offer') {
+                                  navigate(ROUTES.PLAYNOW)
+                                } else if (n.type === 'offer_accepted') {
+                                  if (n.relatedOfferId) {
+                                    const offer = getMatchOffer(n.relatedOfferId)
+                                    if (offer?.matchId) {
+                                      setFocusMatchId(offer.matchId)
+                                    }
+                                  }
+                                  navigate(ROUTES.BRACKET)
+                                }
+                                setShowNotifications(false)
+                              }}
+                            >
+                              <span className="notif-icon">{icon}</span>
+                              <div className="notif-content">
+                                <div className="notif-action">{n.message}</div>
+                                {n.detail && <div className="notif-opponent">{n.detail}</div>}
+                              </div>
+                            </button>
+                          )
+                        })}
+                        {/* Match action notifications */}
+                        {tournaments.filter(t => t.status === 'in-progress').flatMap(t =>
+                          t.matches.filter(m =>
+                            !m.completed &&
+                            (m.player1Id === profile?.id || m.player2Id === profile?.id) &&
+                            m.player1Id && m.player2Id
+                          ).map(m => {
+                            const opponentId = m.player1Id === profile?.id ? m.player2Id : m.player1Id
+                            const opponentName = t.players.find(p => p.id === opponentId)?.name ?? 'Opponent'
+                            let action = ''
+                            let icon = ''
+                            let urgency = ''
+                            if (m.schedule?.status === 'escalated') { action = 'Escalated — respond now'; icon = '⚠️'; urgency = 'notif-urgent' }
+                            else if (m.schedule?.status === 'confirmed') { action = 'Ready to score'; icon = '🎾'; urgency = 'notif-ready' }
+                            else if (m.schedule?.status === 'proposed' && m.schedule.proposals.some(p => p.status === 'pending' && p.proposedBy !== profile?.id)) { action = `${opponentName} proposed a time — tap to confirm`; icon = '📩'; urgency = 'notif-pending' }
+                            else { action = 'Needs scheduling'; icon = '📅'; urgency = '' }
+                            return (
+                              <button
+                                key={`${t.id}-${m.id}`}
+                                className={`notif-item ${urgency}`}
+                                onClick={() => {
+                                  setFocusMatchId(m.id)
+                                  navigate(ROUTES.BRACKET)
+                                  setShowNotifications(false)
+                                }}
+                              >
+                                <span className="notif-icon">{icon}</span>
+                                <div className="notif-content">
+                                  <div className="notif-action">{action}</div>
+                                  <div className="notif-opponent">vs {opponentName}</div>
+                                  <div className="notif-time">{t.name}</div>
+                                </div>
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
+
           </div>
         </nav>
 

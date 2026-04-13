@@ -253,18 +253,18 @@ export function bulkScheduleMatches(
           week: assignment.slot.week,
         },
       })
-    } else {
-      // Has overlap but couldn't fit due to scheduling constraints (rest day,
-      // weekly cap, double-booking). Suggest the highest-scored candidate so
-      // the players can confirm or counter-propose. Both players DO have this
-      // slot in their availability — this is an honest needsAccept.
+    } else if (candidates.length > 0) {
+      // Has overlap but couldn't fit due to constraints — suggest best non-conflicting slot
+      const nonConflicting = candidates.find(c => !hasConflict(c, match.player1Id, match.player2Id, assignments, constraints))
+      const best = nonConflicting ?? candidates[0]!
+
       result.needsAccept.push({
         matchId,
         slot: {
-          day: candidates[0]!.day,
-          startHour: candidates[0]!.startHour,
-          endHour: candidates[0]!.endHour,
-          week: candidates[0]!.week,
+          day: best.day,
+          startHour: best.startHour,
+          endHour: best.endHour,
+          week: best.week,
         },
       })
     }

@@ -147,7 +147,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
     return () => clearInterval(interval)
   }, [])
 
-  if (!tournament || tournament.status !== 'in-progress') {
+  if (!tournament || !['in-progress', 'setup'].includes(tournament.status)) {
     return (
       <div className="playnow-tab">
         <div className="empty-state">

@@ -12,6 +12,24 @@ const DAY_INDEX: Record<string, number> = {
   saturday: 6,
 }
 
+/** Compute the Monday of week 1 from the tournament's startsAt date */
+function getWeekOneMonday(tournament: { startsAt?: string; date?: string; createdAt?: string }): Date | null {
+  const ref = (tournament as any).startsAt ?? (tournament as any).date ?? (tournament as any).createdAt
+  if (!ref) return null
+  const d = new Date(ref)
+  // Find the Monday of that week
+  const dayOfWeek = d.getDay() // 0=Sun, 1=Mon, ...
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+const DAY_TO_INDEX: Record<string, number> = {
+  monday: 0, tuesday: 1, wednesday: 2, thursday: 3,
+  friday: 4, saturday: 5, sunday: 6,
+}
+
 const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 
 export type MatchCardTone = 'confirmed' | 'respond' | 'schedule' | 'confirm-score' | 'escalated' | 'completed'
@@ -84,8 +102,15 @@ function resolveNextDate(dayOfWeek: string): Date {
   return date
 }
 
-function formatSlotMeta(slot: Pick<MatchSlot, 'day' | 'startHour'> | Pick<MatchProposal, 'day' | 'startHour'>): string {
-  const date = resolveNextDate(slot.day)
+function formatSlotMeta(slot: Pick<MatchSlot, 'day' | 'startHour'> | Pick<MatchProposal, 'day' | 'startHour'>, weekOneMonday?: Date | null): string {
+  let date: Date
+  if (weekOneMonday && 'week' in slot && (slot as any).week) {
+    const dayIdx = DAY_TO_INDEX[slot.day.toLowerCase()] ?? 0
+    date = new Date(weekOneMonday)
+    date.setDate(weekOneMonday.getDate() + (((slot as any).week - 1) * 7) + dayIdx)
+  } else {
+    date = resolveNextDate(slot.day)
+  }
   return `${formatDateCompact(date)} ${formatHourCompact(slot.startHour)}`
 }
 
@@ -139,8 +164,9 @@ export function getMatchCardView(
   const scoreSummary = formatScoreSummary(match)
   const rescheduleUiState = getRescheduleUiState(match, currentPlayerId)
   const pendingProposal = getPendingProposal(match, currentPlayerId)
-  const pendingProposalMeta = pendingProposal ? formatSlotMeta(pendingProposal) : null
-  const confirmedSlotMeta = match.schedule?.confirmedSlot ? formatSlotMeta(match.schedule.confirmedSlot) : null
+  const weekOneMonday = getWeekOneMonday(tournament)
+  const pendingProposalMeta = pendingProposal ? formatSlotMeta(pendingProposal, weekOneMonday) : null
+  const confirmedSlotMeta = match.schedule?.confirmedSlot ? formatSlotMeta(match.schedule.confirmedSlot, weekOneMonday) : null
   const countdownMeta = formatScoreConfirmationTimeLeft(match.scoreReportedAt)
 
   if (match.completed) {

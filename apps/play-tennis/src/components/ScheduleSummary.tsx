@@ -75,7 +75,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
 
   const summary = getSchedulingSummary(tournament)
   const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
-  const completedMatchCount = tournament.matches.filter(m => m.completed).length
+  const completedMatchCount = tournament.matches.filter(m => m.completed || m.scoreReportedBy).length
   const playedPct = totalMatches > 0 ? Math.round((completedMatchCount / totalMatches) * 100) : 0
 
   // Phase data

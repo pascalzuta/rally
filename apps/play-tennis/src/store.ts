@@ -2247,67 +2247,20 @@ export function getPlayerRating(playerId: string, playerName?: string): PlayerRa
   const displayName = playerName ?? playerId
   const legacyKey = displayName.trim().toLowerCase()
   if (ratings[legacyKey]) return ratings[legacyKey]
-  return { name: displayName, rating: 1500, matchesPlayed: 0 }
+  return { name: displayName, rating: 1000, matchesPlayed: 0 }
 }
 
-function kFactor(matchesPlayed: number): number {
-  return 250 / Math.pow(matchesPlayed + 5, 0.4)
-}
+  const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1000, matchesPlayed: 0 }
+  const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1000, matchesPlayed: 0 }
+  // Keep display name current
+  a.name = playerA.name
+  b.name = playerB.name
 
-export function winProbability(ratingA: number, ratingB: number): number {
-  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
-}
+  const pA = winProbability(a.rating, b.rating)
 
-export async function updateRatings(
-  playerA: { id: string; name: string },
-  playerB: { id: string; name: string },
-  winnerId: string
-): Promise<void> {
-  // Try RPC first for atomic server-side calculation
-  {
-    const client = getClient()
-    if (client) {
-      try {
-        const { data, error } = await client.rpc('rpc_update_ratings', {
-          p_player_a_id: playerA.id,
-          p_player_a_name: playerA.name,
-          p_player_b_id: playerB.id,
-          p_player_b_name: playerB.name,
-          p_winner_id: winnerId,
-        })
-        if (!error && data?.success) {
-          // Update local ratings from server response
-          const ratings = loadRatings()
-          ratings[playerA.id] = {
-            name: playerA.name,
-            rating: data.playerA.rating,
-            matchesPlayed: data.playerA.matchesPlayed,
-          }
-          ratings[playerB.id] = {
-            name: playerB.name,
-            rating: data.playerB.rating,
-            matchesPlayed: data.playerB.matchesPlayed,
-          }
-          await saveRatingsAndSync(ratings, playerA.id, playerB.id)
-          recordRatingSnapshot(playerA.id, data.playerA.rating)
-          recordRatingSnapshot(playerB.id, data.playerB.rating)
-          return
-        }
-      } catch {
-        // RPC failed, fall through to local calculation
-      }
-    }
-  }
+  const kA = kFactor(a.matchesPlayed)
+  const kB = kFactor(b.matchesPlayed)
 
-  // Phase 1 fallback: local ELO calculation.
-  // IMPORTANT: build NEW rating objects rather than mutating the existing ones.
-  // Subscribers (React components, tests, selectors) may be holding references
-  // to the pre-match objects; mutating in place would make before/after reads
-  // return the same values and hide the update until an unrelated re-render.
-  const ratings = loadRatings()
-
-  const prevA = ratings[playerA.id] ?? { name: playerA.name, rating: 1500, matchesPlayed: 0 }
-  const prevB = ratings[playerB.id] ?? { name: playerB.name, rating: 1500, matchesPlayed: 0 }
 
   const pA = winProbability(prevA.rating, prevB.rating)
   const kA = kFactor(prevA.matchesPlayed)
@@ -2979,7 +2932,7 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
     // Set up their rating (keyed by player ID)
     const ratings = loadRatings()
     const normalizedName = name.trim().toLowerCase()
-    const rating: PlayerRating = { name, rating: TEST_RATINGS[normalizedName] ?? 1500, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
+    const rating: PlayerRating = { name, rating: TEST_RATINGS[normalizedName] ?? 1000, matchesPlayed: Math.floor(Math.random() * 20) + 5 }
     if (!ratings[id]) {
       ratings[id] = rating
       await saveRatingsAndSync(ratings, id)
