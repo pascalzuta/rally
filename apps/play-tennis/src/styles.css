@@ -106,6 +106,13 @@
   --z-modal: 1000;
   --z-toast: 2000;
 
+  /* Text on colored backgrounds */
+  --color-text-inverse: #FFFFFF;
+
+  /* Interactive surface states */
+  --color-surface-hover: #EFF1F3;
+  --color-surface-pressed: #E8EAEC;
+
   /* Additional color aliases */
   --color-surface: var(--color-bg-surface);
   --color-surface-alt: #F1F3F5;
@@ -133,6 +140,31 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
+}
+
+/* ================================================
+   Global Transitions for Interactive Elements
+   ================================================ */
+button, a,
+[class*="-btn"], [class*="-pill"], [class*="-tab"],
+[class*="-option"], [class*="-toggle"], [class*="-link"],
+.btn, .btn-link, .btn-icon, .btn-back,
+.card, .trophy-cell, .faq-question,
+.notif-item, .chat-card, .broadcast-timeline-entry,
+.calendar-match, .offer-card, .action-card {
+  transition: background var(--duration-fast) var(--ease-out-quart),
+              color var(--duration-fast) var(--ease-out-quart),
+              border-color var(--duration-fast) var(--ease-out-quart),
+              box-shadow var(--duration-fast) var(--ease-out-quart),
+              transform var(--duration-instant) var(--ease-out-quart),
+              opacity var(--duration-fast) var(--ease-out-quart);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 body {
@@ -2149,7 +2181,7 @@ select:focus {
 }
 
 .standings tr:nth-child(even) {
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
 }
 
 .standings tr {
@@ -2157,7 +2189,7 @@ select:focus {
 }
 
 .standings tr:hover {
-  background: #E8E8EA;
+  background: var(--color-surface-pressed);
 }
 
 .rank,
@@ -2466,7 +2498,7 @@ select:focus {
 }
 
 .onboard-lb-you {
-  background: #EFF1F3;
+  background: var(--color-surface-hover);
   margin: 0 -20px;
   padding-left: 20px;
   padding-right: 20px;
@@ -2548,7 +2580,7 @@ select:focus {
   gap: 4px;
   padding: 4px 10px;
   border-radius: var(--radius-md);
-  background: #E8EAEC;
+  background: var(--color-surface-pressed);
   color: var(--color-accent-primary);
   font-size: var(--font-body-sm);
   font-weight: var(--weight-bold);
@@ -2827,7 +2859,7 @@ select:focus {
 }
 
 .county-suggestion-item:hover {
-  background: #EDEDEF;
+  background: var(--color-surface-hover);
 }
 
 .county-suggestion-item:active {
@@ -2911,7 +2943,7 @@ select:focus {
 
 .skill-option.selected {
   border-color: var(--color-accent-primary);
-  background: #EAECEE;
+  background: var(--color-surface-hover);
   box-shadow: 0 0 0 3px rgba(42, 91, 215, 0.08);
 }
 
@@ -2954,7 +2986,7 @@ select:focus {
 
 .gender-option.selected {
   border-color: var(--color-accent-primary);
-  background: #EAECEE;
+  background: var(--color-surface-hover);
   font-weight: var(--weight-semibold);
   box-shadow: 0 0 0 3px rgba(42, 91, 215, 0.08);
 }
@@ -3367,7 +3399,7 @@ select:focus {
 .lobby-count {
   font-size: var(--font-caption);
   color: var(--color-accent-primary);
-  background: #E8EAEC;
+  background: var(--color-surface-pressed);
   padding: var(--space-xs) 10px;
   border-radius: var(--radius-chip);
   font-weight: var(--weight-bold);
@@ -3383,7 +3415,7 @@ select:focus {
 
 .countdown-banner {
   text-align: center;
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
   border: 1px solid #CDD1D6;
   border-radius: var(--radius-card);
   padding: var(--space-lg);
@@ -3513,7 +3545,7 @@ select:focus {
 }
 
 .formation-availability-prompt {
-  background: #ECEEF0;
+  background: var(--color-surface-hover);
   border-left: 4px solid var(--color-accent-primary);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
@@ -3524,7 +3556,7 @@ select:focus {
 .formation-availability-prompt p { margin: 0; }
 .formation-availability-hint {
   color: var(--color-text-muted);
-  margin-top: 4px !important;
+  margin-top: var(--space-xs);
 }
 
 .formation-actions {
@@ -3655,7 +3687,7 @@ select:focus {
 }
 
 .friend-tournament-cancel {
-  color: var(--color-negative-primary) !important;
+  color: var(--color-negative-primary);
   font-size: var(--font-body-sm);
 }
 
@@ -4581,7 +4613,7 @@ select:focus {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
   background: var(--color-bg-primary);
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius-card);
   display: flex;
   flex-direction: column;
@@ -4608,8 +4640,8 @@ select:focus {
 .inline-score-entry {
   margin-top: var(--space-lg);
   padding: var(--space-lg);
-  background: #FDFDFD;
-  border: 1px solid #E5E7EB;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius-card);
   display: flex;
   flex-direction: column;
@@ -4633,12 +4665,12 @@ select:focus {
 }
 
 .schedule-panel--info {
-  background: #ECEEF0;
+  background: var(--color-surface-hover);
   border-color: #BCC0C6;
 }
 
 .schedule-panel--success {
-  background: #EFF1F3;
+  background: var(--color-surface-hover);
   border-color: #C0C5CA;
 }
 
@@ -4835,7 +4867,7 @@ select:focus {
 
 .schedule-choice-pill:hover {
   border-color: #A0A6AE;
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
 }
 
 .schedule-choice-pill:active {
@@ -4850,8 +4882,8 @@ select:focus {
 }
 
 .schedule-choice-pill--danger.is-selected {
-  border-color: #D64545;
-  background: #F1E8E8;
+  border-color: var(--color-negative-primary);
+  background: var(--color-negative-bg);
   color: var(--color-negative-primary);
   font-weight: var(--weight-semibold);
 }
@@ -4860,7 +4892,7 @@ select:focus {
   padding: var(--space-sm);
   border-radius: var(--radius-button);
   border: 1px solid var(--color-divider);
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
   line-height: 1.5;
@@ -4897,7 +4929,7 @@ select:focus {
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-button);
   border: 1px solid #BCC0C6;
-  background: #EFF1F3;
+  background: var(--color-surface-hover);
   color: var(--color-text-secondary);
   font-size: var(--font-body-sm);
   line-height: 1.5;
@@ -4967,9 +4999,9 @@ select:focus {
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-md);
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius-card);
-  background: #FDFDFD;
+  background: var(--color-bg-surface);
 }
 
 .confirmed-actions-footer {
@@ -6428,17 +6460,17 @@ select:focus {
 
 .devbar-toast--success {
   background: rgba(52, 199, 89, 0.2);
-  color: #34c759;
+  color: var(--color-positive-primary);
 }
 
 .devbar-toast--info {
   background: rgba(90, 130, 255, 0.15);
-  color: #8ab4f8;
+  color: var(--color-accent-primary);
 }
 
 .devbar-toast--error {
   background: rgba(255, 69, 58, 0.2);
-  color: #ff6961;
+  color: var(--color-negative-primary);
 }
 
 .devbar-grid {
@@ -6502,7 +6534,7 @@ select:focus {
 .devbar-btn--accent {
   background: rgba(90, 130, 255, 0.15);
   border-color: rgba(90, 130, 255, 0.3);
-  color: #8ab4f8;
+  color: var(--color-accent-primary);
 }
 
 .devbar-btn--accent:hover:not(:disabled) {
@@ -6892,7 +6924,7 @@ select:focus {
   border-bottom: 1px solid var(--color-divider);
 }
 /* Color-coded left borders per tier level */
-.rating-tier:nth-child(1) { border-left-color: #8B5CF6; } /* Pro — purple */
+.rating-tier:nth-child(1) { border-left-color: var(--color-purple-primary); } /* Pro — purple */
 .rating-tier:nth-child(2) { border-left-color: var(--color-accent-primary); } /* Semi-pro — blue */
 .rating-tier:nth-child(3) { border-left-color: var(--color-positive-primary); } /* Elite — green */
 .rating-tier:nth-child(4) { border-left-color: var(--color-positive-primary); } /* Strong — teal */
@@ -7188,7 +7220,7 @@ select:focus {
 }
 
 .lb-row-me {
-  background: #EFF1F3;
+  background: var(--color-surface-hover);
 }
 
 .lb-row-me::before {
@@ -7323,7 +7355,7 @@ select:focus {
 }
 
 .trophy-cell:hover {
-  background: #EDEDEF;
+  background: var(--color-surface-hover);
   border-color: #C4C7CB;
 }
 
@@ -7980,11 +8012,11 @@ select:focus {
 }
 
 .notif-item:hover {
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
 }
 
 .notif-item:active {
-  background: #E8E8EA;
+  background: var(--color-surface-pressed);
 }
 
 .notif-fullscreen-list .notif-item {
@@ -8370,7 +8402,7 @@ select:focus {
 }
 
 .chat-card:hover {
-  background: #F3F4F6;
+  background: var(--color-neutral-bg);
 }
 
 .chat-card:active {
@@ -8668,7 +8700,7 @@ select:focus {
 }
 
 .chat-bubble-theirs .chat-bubble {
-  background: #EDEDEF;
+  background: var(--color-surface-hover);
   color: var(--color-text-primary);
   border-radius: 18px 18px 18px var(--space-xs);
 }
@@ -8738,7 +8770,7 @@ select:focus {
 }
 
 .chat-quick-btn:hover {
-  background: #EDEDEF;
+  background: var(--color-surface-hover);
   border-color: #C6C8CC;
 }
 
@@ -9446,7 +9478,7 @@ select:focus {
 }
 
 .scheduling-badge--accept {
-  background: #E8EAEC;
+  background: var(--color-surface-pressed);
   color: var(--color-accent-primary);
 }
 
@@ -10101,9 +10133,9 @@ select:focus {
 
 
 .help-link-btn {
-  background: var(--color-neutral-bg) !important;
-  color: var(--color-accent-primary) !important;
-  border: 1px solid var(--color-divider) !important;
+  background: var(--color-neutral-bg);
+  color: var(--color-accent-primary);
+  border: 1px solid var(--color-divider);
 }
 
 /* --- Lobby Mode Toggle (Singles/Doubles) --- */
@@ -10424,7 +10456,7 @@ select:focus {
 }
 .score-toast--error {
   background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  color: var(--color-negative-primary);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 .score-toast-check {
@@ -10761,7 +10793,7 @@ select:focus {
   transition: color var(--duration-fast);
 }
 .reaction-star--active {
-  color: #F59E0B;
+  color: var(--color-warning-primary);
 }
 .reaction-label {
   font-size: var(--font-body-sm);
@@ -11230,7 +11262,7 @@ select:focus {
   background-color: var(--color-positive-primary);
 }
 .reliability-dot--yellow {
-  background-color: #F59E0B;
+  background-color: var(--color-warning-primary);
 }
 .reliability-dot--red {
   background-color: var(--color-negative-primary);
@@ -11671,7 +11703,7 @@ select:focus {
    RM-12: Skeleton Loading & Empty States
    ================================================ */
 .skeleton {
-  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background: linear-gradient(90deg, var(--color-divider) 25%, var(--color-neutral-bg) 50%, var(--color-divider) 75%);
   background-size: 200% 100%;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   border-radius: var(--radius-card);
@@ -11998,7 +12030,7 @@ main {
   }
 
   .bottom-tab.active {
-    background: #EFF1F3;
+    background: var(--color-surface-hover);
   }
 
   .bottom-tab.active::before {
@@ -13309,7 +13341,7 @@ main {
   align-items: center;
   gap: 4px;
   background: #D6D8DC;
-  color: #6B7280;
+  color: var(--color-text-secondary);
   font-size: var(--font-body-sm);
   font-weight: var(--weight-semibold);
   padding: 5px 12px;

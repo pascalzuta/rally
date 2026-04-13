@@ -14,7 +14,7 @@ const DAY_INDEX: Record<string, number> = {
 
 /** Compute the Monday of week 1 from the tournament's startsAt date */
 function getWeekOneMonday(tournament: { startsAt?: string; date?: string; createdAt?: string }): Date | null {
-  const ref = (tournament as any).startsAt ?? (tournament as any).date ?? (tournament as any).createdAt
+  const ref = tournament.startsAt ?? tournament.date ?? tournament.createdAt
   if (!ref) return null
   const d = new Date(ref)
   // Find the Monday of that week
@@ -108,10 +108,11 @@ function resolveNextDate(dayOfWeek: string): Date {
 
 function formatSlotMeta(slot: Pick<MatchSlot, 'day' | 'startHour'> | Pick<MatchProposal, 'day' | 'startHour'>, weekOneMonday?: Date | null): string {
   let date: Date
-  if (weekOneMonday && 'week' in slot && (slot as any).week) {
+  const slotWeek = 'week' in slot ? (slot as { week?: number }).week : undefined
+  if (weekOneMonday && slotWeek) {
     const dayIdx = DAY_TO_INDEX[slot.day.toLowerCase()] ?? 0
     date = new Date(weekOneMonday)
-    date.setDate(weekOneMonday.getDate() + (((slot as any).week - 1) * 7) + dayIdx)
+    date.setDate(weekOneMonday.getDate() + ((slotWeek - 1) * 7) + dayIdx)
   } else {
     date = resolveNextDate(slot.day)
   }
