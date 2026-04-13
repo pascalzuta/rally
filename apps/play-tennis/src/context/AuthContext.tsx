@@ -96,7 +96,7 @@ function recoverAndAdoptProfile(userId: string, email: string): PlayerProfile | 
       console.warn('[Rally] Failed to backfill profile to Supabase — will retry on next login')
     })
 
-    console.log('[Rally] Recovered profile from localStorage, adopted auth UUID:', userId)
+    // Profile recovered from localStorage with auth UUID
     return recovered
   } catch {
     return null
