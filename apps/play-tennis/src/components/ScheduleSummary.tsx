@@ -213,8 +213,11 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         if (!fbMatch || !fbMatch.player1Id || !fbMatch.player2Id) return null
         const opponentId = fbMatch.player1Id === currentPlayerId ? fbMatch.player2Id : fbMatch.player1Id
         const opponentName = getPlayerName(tournament, opponentId)
-        const score = fbMatch.score1?.length > 0
-          ? fbMatch.score1.map((s: number, i: number) => `${s}-${fbMatch.score2[i]}`).join(', ')
+        const isPlayer2 = fbMatch.player2Id === currentPlayerId
+        const myScores = isPlayer2 ? fbMatch.score2 : fbMatch.score1
+        const oppScores = isPlayer2 ? fbMatch.score1 : fbMatch.score2
+        const score = myScores?.length > 0
+          ? myScores.map((s: number, i: number) => `${s}-${oppScores[i]}`).join(', ')
           : null
         return (
           <div className="card action-card action-completed">

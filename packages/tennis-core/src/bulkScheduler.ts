@@ -241,7 +241,7 @@ export function bulkScheduleMatches(
     needsNegotiation: [],
   }
 
-  for (const [matchId, { candidates }] of matchCandidates) {
+  for (const [matchId, { match: m, candidates }] of matchCandidates) {
     const assignment = assignments.get(matchId)
     if (assignment) {
       result.confirmed.push({
@@ -255,7 +255,7 @@ export function bulkScheduleMatches(
       })
     } else if (candidates.length > 0) {
       // Has overlap but couldn't fit due to constraints — suggest best non-conflicting slot
-      const nonConflicting = candidates.find(c => !hasConflict(c, match.player1Id, match.player2Id, assignments, constraints))
+      const nonConflicting = candidates.find(c => !hasConflict(c, m.player1Id, m.player2Id, assignments, constraints))
       const best = nonConflicting ?? candidates[0]!
 
       result.needsAccept.push({
