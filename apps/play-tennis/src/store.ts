@@ -2250,41 +2250,6 @@ export function getPlayerRating(playerId: string, playerName?: string): PlayerRa
   return { name: displayName, rating: 1000, matchesPlayed: 0 }
 }
 
-  const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1000, matchesPlayed: 0 }
-  const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1000, matchesPlayed: 0 }
-  // Keep display name current
-  a.name = playerA.name
-  b.name = playerB.name
-
-  const pA = winProbability(a.rating, b.rating)
-
-  const kA = kFactor(a.matchesPlayed)
-  const kB = kFactor(b.matchesPlayed)
-
-
-  const pA = winProbability(prevA.rating, prevB.rating)
-  const kA = kFactor(prevA.matchesPlayed)
-  const kB = kFactor(prevB.matchesPlayed)
-  const sA = winnerId === playerA.id ? 1 : 0
-  const sB = 1 - sA
-
-  const nextA: PlayerRating = {
-    name: playerA.name,
-    rating: Math.round((prevA.rating + kA * (sA - pA)) * 10) / 10,
-    matchesPlayed: prevA.matchesPlayed + 1,
-  }
-  const nextB: PlayerRating = {
-    name: playerB.name,
-    rating: Math.round((prevB.rating + kB * (sB - (1 - pA))) * 10) / 10,
-    matchesPlayed: prevB.matchesPlayed + 1,
-  }
-
-  const nextRatings = { ...ratings, [playerA.id]: nextA, [playerB.id]: nextB }
-  await saveRatingsAndSync(nextRatings, playerA.id, playerB.id)
-  recordRatingSnapshot(playerA.id, nextA.rating)
-  recordRatingSnapshot(playerB.id, nextB.rating)
-}
-
 // --- Rating History ---
 
 function loadRatingHistory(): Record<string, RatingSnapshot[]> {

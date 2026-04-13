@@ -461,8 +461,6 @@ export default function App() {
                 )
               })()}
             </div>
-
-          </div>
         </nav>
 
         <main className="content tab-content">
