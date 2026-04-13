@@ -1,5 +1,5 @@
 import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
-import type { AuthRepo, AvailabilityRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
+import type { AuthRepo, AvailabilityRepo, DeviceToken, DeviceTokenRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
 export class InMemoryAuthRepo implements AuthRepo {
   private readonly byId = new Map<string, AuthUser>();
@@ -153,6 +153,19 @@ export class InMemoryPoolRepo implements PoolRepo {
     for (const id of playerIds) {
       this.byPlayerId.delete(id);
     }
+  }
+}
+
+export class InMemoryDeviceTokenRepo implements DeviceTokenRepo {
+  private readonly tokens: DeviceToken[] = [];
+
+  async findByPlayerId(playerId: string): Promise<DeviceToken[]> {
+    return this.tokens.filter((t) => t.playerId === playerId);
+  }
+
+  async deleteByToken(token: string): Promise<void> {
+    const idx = this.tokens.findIndex((t) => t.token === token);
+    if (idx >= 0) this.tokens.splice(idx, 1);
   }
 }
 

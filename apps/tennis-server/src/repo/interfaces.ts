@@ -52,3 +52,18 @@ export interface NotificationRepo {
   findByMatchAndType(matchId: string, type: string): Promise<Notification[]>;
   findByPlayerSince(playerId: string, since: string): Promise<Notification[]>;
 }
+
+export interface DeviceToken {
+  id: string;
+  playerId: string;
+  token: string;
+  platform: "ios" | "android" | "web";
+  appVersion?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DeviceTokenRepo {
+  findByPlayerId(playerId: string): Promise<DeviceToken[]>;
+  deleteByToken(token: string): Promise<void>;
+}

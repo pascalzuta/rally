@@ -7,6 +7,7 @@ import type { AppConfig } from "../config.js";
 import {
   InMemoryAuthRepo,
   InMemoryAvailabilityRepo,
+  InMemoryDeviceTokenRepo,
   InMemoryMatchRepo,
   InMemoryNotificationRepo,
   InMemoryPlayerRepo,
@@ -16,13 +17,15 @@ import {
 import {
   SupabaseAuthRepo,
   SupabaseAvailabilityRepo,
+  SupabaseDeviceTokenRepo,
   SupabaseMatchRepo,
   SupabaseNotificationRepo,
   SupabasePlayerRepo,
   SupabasePoolRepo,
   SupabaseTournamentRepo
 } from "../repo/supabase.js";
-import type { AuthRepo, NotificationRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
+import type { AuthRepo, DeviceTokenRepo, NotificationRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
+import { initPush, closePushSession } from "../services/pushService.js";
 import { TournamentEngine } from "../services/tournamentEngine.js";
 import { createRoutes } from "./routes.js";
 import { createFrontendRoutes } from "./frontendRoutes.js";
@@ -46,6 +49,9 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   const httpLogger = (pinoHttp as unknown as (args: { logger: pino.Logger }) => express.RequestHandler)({ logger });
   app.use(httpLogger);
 
+  // Initialize push notification service (APNs)
+  await initPush(logger);
+
   // Repos — use Supabase if configured, otherwise fall back to in-memory
   let auth: AuthRepo;
   let players: PlayerRepo;
@@ -54,6 +60,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   let tournaments: TournamentRepo;
   let pool: PoolRepo;
   let notifications: NotificationRepo;
+  let deviceTokens: DeviceTokenRepo;
 
   const useSupabase = config.SUPABASE_URL && config.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -69,6 +76,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     tournaments = new SupabaseTournamentRepo(supabase);
     pool = new SupabasePoolRepo(supabase);
     notifications = new SupabaseNotificationRepo(supabase);
+    deviceTokens = new SupabaseDeviceTokenRepo(supabase);
   } else {
     logger.info("Using in-memory database (no SUPABASE_URL set)");
 
@@ -86,6 +94,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     tournaments = memTournaments;
     pool = memPool;
     notifications = new InMemoryNotificationRepo();
+    deviceTokens = new InMemoryDeviceTokenRepo();
 
     // Seed demo data (in-memory only)
     void seedDemoPlayers(memAuth, memPlayers, memAvailability).then(() => {
@@ -94,10 +103,10 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   }
 
   // Tournament engine (created before routes so routes can trigger activation)
-  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, logger });
+  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, deviceTokens, logger });
   engine.start();
-  process.on("SIGTERM", () => engine.stop());
-  process.on("SIGINT", () => engine.stop());
+  process.on("SIGTERM", () => { engine.stop(); closePushSession(); });
+  process.on("SIGINT", () => { engine.stop(); closePushSession(); });
 
   // Frontend-compatible routes (work with live Supabase schema)
   // Must be mounted BEFORE /v1 so /v1/fe/* isn't caught by the /v1 auth middleware

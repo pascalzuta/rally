@@ -7,6 +7,7 @@ import { PlayerProfile, TrophyTier } from './types'
 import { analytics } from './analytics'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
+import { setNavigateRef, consumePendingDeepLink, handleDeepLink, initNativeApp } from './native'
 import './styles.css'
 
 // Critical path: loaded eagerly (landing page + home + auth)
@@ -83,6 +84,20 @@ export default function App() {
   const [victoryAnim, setVictoryAnim] = useState<{ tier: TrophyTier; name: string } | null>(null)
   const [focusMatchId, setFocusMatchId] = useState<string | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Set up native deep linking navigate ref + process any pending deep link
+  useEffect(() => {
+    setNavigateRef(navigate)
+    const pending = consumePendingDeepLink()
+    if (pending) handleDeepLink(pending)
+  }, [navigate])
+
+  // Initialize native app (Capacitor) when user is authenticated
+  useEffect(() => {
+    if (user?.id && profile) {
+      initNativeApp(user.id)
+    }
+  }, [user?.id, profile?.id])
 
   // Redirect legacy hash URLs (e.g. /#bracket -> /bracket) on first load
   useEffect(() => {

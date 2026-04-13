@@ -38,3 +38,21 @@ apps/grp/assets/originals/*.jpg
 apps/grp/assets/originals/*.png
 .vercel
 apps/play-tennis/test-results/
+
+# Capacitor — generated web assets (rebuilt by `npx cap sync`)
+apps/play-tennis/ios/App/App/public/
+
+# Xcode
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# CocoaPods (Capacitor manages via cap sync)
+apps/play-tennis/ios/App/Pods/
+
+# Android (not used yet)
+apps/play-tennis/android/app/src/main/assets/public/

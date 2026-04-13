@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
-import type { AuthRepo, AvailabilityRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
+import type { AuthRepo, AvailabilityRepo, DeviceToken, DeviceTokenRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
 // ── AuthUser mapping ────────────────────────────────────────────────────────────
 
@@ -574,5 +574,40 @@ export class SupabaseNotificationRepo implements NotificationRepo {
       .gte("created_at", since);
     if (error) throw error;
     return (data || []).map(rowToNotification);
+  }
+}
+
+// ── Device Token Repository ──────────────────────────────────────────────────
+
+function rowToDeviceToken(row: Record<string, unknown>): DeviceToken {
+  return {
+    id: row.id as string,
+    playerId: row.player_id as string,
+    token: row.token as string,
+    platform: row.platform as DeviceToken["platform"],
+    appVersion: row.app_version as string | undefined,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export class SupabaseDeviceTokenRepo implements DeviceTokenRepo {
+  constructor(private readonly db: SupabaseClient) {}
+
+  async findByPlayerId(playerId: string): Promise<DeviceToken[]> {
+    const { data, error } = await this.db
+      .from("device_tokens")
+      .select("*")
+      .eq("player_id", playerId);
+    if (error) throw error;
+    return (data || []).map(rowToDeviceToken);
+  }
+
+  async deleteByToken(token: string): Promise<void> {
+    const { error } = await this.db
+      .from("device_tokens")
+      .delete()
+      .eq("token", token);
+    if (error) throw error;
   }
 }
