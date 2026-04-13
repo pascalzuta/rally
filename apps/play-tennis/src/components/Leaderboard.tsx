@@ -40,7 +40,7 @@ export default function Leaderboard({ county, currentPlayerId, currentPlayerName
         <span className="lb-row-info">
           <span className="lb-row-name">
             {entry.name}
-            {champion && <span className="lb-champion-badge" title="Defending Champion">🏆</span>}
+            {champion && <span className="lb-champion-badge" title="Won the last tournament">🏆</span>}
           </span>
           {record && <span className="lb-row-record">{record}</span>}
         </span>

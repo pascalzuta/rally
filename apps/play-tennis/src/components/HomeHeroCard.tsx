@@ -313,12 +313,12 @@ export default function HomeHeroCard({
       <div className="card formation-hero">
         <div className="card-status-row">
           <div className="card-status-label card-status-label--slate">Your Tournament</div>
-          <div className="card-meta-chip">{progressPctActive}% complete</div>
+          <div className="card-meta-chip">{completedMatches} of {totalMatches} matches</div>
         </div>
         <div className="card-summary-main">
           <div className="card-title">{activeTournament.name}</div>
           <div className="card-supporting">
-            {activeTournament.players.length} players · {activeTournament.format === 'single-elimination' ? 'Playoffs' : activeTournament.format === 'group-knockout' ? 'Group + Playoffs' : 'Round robin'} · {completedMatches} of {totalMatches} matches played
+            {activeTournament.players.length} players · {activeTournament.format === 'single-elimination' ? 'Elimination' : activeTournament.format === 'group-knockout' ? 'Round robin + Playoffs' : 'Round robin'} · {completedMatches} of {totalMatches} matches played
           </div>
         </div>
         <div className="tournament-progress-bar">
@@ -329,8 +329,8 @@ export default function HomeHeroCard({
           <div className="hero-next-step hero-next-step--warning">
             <span className="hero-step-icon">&#9888;</span>
             <div className="hero-step-text">
-              <strong>Your matches can't be scheduled yet</strong>
-              <span>Add your availability so Rally can find times that work for you</span>
+              <strong>Set your availability to get matches scheduled</strong>
+              <span>Rally uses your weekly availability to auto-schedule match times</span>
             </div>
           </div>
         )}
@@ -346,7 +346,7 @@ export default function HomeHeroCard({
         {heroState === 'active' && actionCardCount === 0 && (
           <>
             <div className="hero-all-clear">
-              <span className="hero-check">&#10003;</span> You're all caught up
+              <span className="hero-check">&#10003;</span> All set — check back after your next match
             </div>
             <div className="hero-invite-nudge">
               <span>Know someone who'd enjoy Rally?</span>
@@ -423,11 +423,11 @@ export default function HomeHeroCard({
         </div>
 
         {tournamentReady && spotsLeft > 0 && (
-          <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before bracket is full</p>
+          <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before the tournament is full</p>
         )}
 
         {!tournamentReady && heroState === 'new' && (
-          <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Tournament starts when it ends or {maxPlayers} join.</p>
+          <p className="formation-logic">At {targetPlayers} players, a 48-hour countdown begins. The tournament starts when it ends or {maxPlayers} players join.</p>
         )}
 
         {(heroState === 'joined-needs-availability' || heroState === 'countdown-needs-availability') && (
@@ -449,7 +449,7 @@ export default function HomeHeroCard({
         )}
 
         {!tournamentReady && heroState === 'joined-ready' && (
-          <p className="formation-logic">When {targetPlayers} players join, a 48-hour countdown begins. Your matches will auto-schedule.</p>
+          <p className="formation-logic">At {targetPlayers} players, a 48-hour countdown begins. Your matches will auto-schedule.</p>
         )}
 
         <div className="formation-actions">
@@ -470,7 +470,7 @@ export default function HomeHeroCard({
             <div className="formation-choice-options">
               <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>
                 <span className="formation-choice-label">Join Tournament</span>
-                <span className="formation-choice-desc">Get matched by location and rating</span>
+                <span className="formation-choice-desc">Play players near your skill level in your county</span>
               </button>
               <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
                 <span className="formation-choice-label">Create Free Tournament</span>
@@ -497,7 +497,7 @@ export default function HomeHeroCard({
                   {spotsLeft === 1 ? 'Invite One More Player' : `Invite ${spotsLeft} More Players`}
                 </button>
               ) : (
-                <p className="formation-logic">Bracket full — tournament starts when countdown ends.</p>
+                <p className="formation-logic">Tournament is full — starts when the countdown ends.</p>
               )}
             </>
           )}
@@ -527,8 +527,8 @@ export default function HomeHeroCard({
               <div className="card-meta-chip">{confidence.score}%</div>
             </div>
             <div className="card-summary-main">
-              <div className="card-title">How likely matches are to auto-schedule</div>
-              <div className="card-supporting">Based on {confidence.playersWithAvailability} players&apos; saved availability.</div>
+              <div className="card-title">How likely your matches will auto-schedule</div>
+              <div className="card-supporting">{confidence.playersWithAvailability} players have set their availability. Add more time slots to improve this.</div>
             </div>
             <div className="confidence-bar">
               <div

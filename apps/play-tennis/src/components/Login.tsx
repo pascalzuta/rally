@@ -49,7 +49,7 @@ export default function Login({ onSignUp }: Props) {
       const isRateLimit = err.includes('rate limit') || err.includes('once every 60 seconds') || result.status === 429
       setError(
         isRateLimit
-          ? 'Too many attempts. Please wait a few minutes.'
+          ? 'Too many sign-in attempts. Try again in a few minutes.'
           : 'Could not send verification code. Please try again.'
       )
     }

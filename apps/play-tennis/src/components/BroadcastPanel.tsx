@@ -129,7 +129,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
       setClaimingId(null)
       onMatchConfirmed()
     } else {
-      setFeedback('Slot already taken or no match available')
+      setFeedback('This player just matched with someone else. Try another slot.')
     }
     setTimeout(() => setFeedback(''), 2000)
     setTick(t => t + 1)

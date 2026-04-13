@@ -192,14 +192,14 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     try {
       await proposeScoreCorrection(tournament.id, match.id, currentPlayerId, scores.score1, scores.score2, winnerId)
       if (onActionComplete) {
-        onActionComplete('Correction submitted. Your opponent will review.', 'blue')
+        onActionComplete('Correction submitted. Your opponent has 48 hours to review.', 'blue')
       } else {
         onUpdated()
       }
     } catch (err) {
       console.warn('[Rally] Score correction failed:', err)
       if (onActionComplete) {
-        onActionComplete('Could not submit correction — please try again', 'red')
+        onActionComplete('Connection error — check your internet and try again', 'red')
       }
     } finally {
       setSaving(false)
@@ -219,7 +219,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     } catch (err) {
       console.warn('[Rally] Issue report failed:', err)
       if (onActionComplete) {
-        onActionComplete('Could not report issue — please try again', 'red')
+        onActionComplete('Connection error — check your internet and try again', 'red')
       }
     } finally {
       setSaving(false)
@@ -234,7 +234,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     } catch (err) {
       console.warn('[Rally] Dispute resolution failed:', err)
       if (onActionComplete) {
-        onActionComplete('Could not resolve dispute — please try again', 'red')
+        onActionComplete('Connection error — check your internet and try again', 'red')
       }
     } finally {
       setSaving(false)
@@ -267,8 +267,8 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     return (
       <div className="score-confirmation-panel" onClick={e => e.stopPropagation()}>
         <div className="dispute-review">
-          <div className="dispute-review-title">Score Dispute</div>
-          <div className="dispute-review-desc">{disputerName} disagrees with the reported score.</div>
+          <div className="dispute-review-title">Score Correction Request</div>
+          <div className="dispute-review-desc">{disputerName} submitted a different score.</div>
 
           <div className="dispute-compare">
             <div className="dispute-score-col">
@@ -283,19 +283,19 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
           </div>
 
           <div className="dispute-winner-compare">
-            <span>Their winner: <strong>{proposedWinnerName}</strong></span>
+            <span>They say <strong>{proposedWinnerName}</strong> won</span>
           </div>
 
           <div className="dispute-actions">
             <button className="btn" onClick={() => handleResolveDispute('reject')} disabled={saving}>
-              Reject (Split Decision)
+              Request Admin Review
             </button>
             <button className="btn btn-primary" onClick={() => handleResolveDispute('accept')} disabled={saving}>
               Accept Their Score
             </button>
           </div>
           <div className="dispute-note">
-            Split decision: match recorded as played but won't count toward standings.
+            If neither score is accepted, an admin will review. The match won't count toward standings until resolved.
           </div>
         </div>
       </div>
@@ -307,9 +307,9 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     return (
       <div className="score-confirmation-panel workflow-module" onClick={e => e.stopPropagation()}>
         <div className="workflow-header">
-          <div className="workflow-status workflow-status--slate">Dispute score</div>
-          <div className="schedule-panel-title">Correct the reported result</div>
-          <div className="schedule-panel-copy">Update the set scores below. If the problem is broader than the scoreline, report an issue instead.</div>
+          <div className="workflow-status workflow-status--slate">Correct score</div>
+          <div className="schedule-panel-title">Enter the correct score</div>
+          <div className="schedule-panel-copy">Update the set scores below. If the problem goes beyond the score, report an issue instead.</div>
         </div>
         <div className="score-confirm-summary-card">
           <div className="score-confirm-summary-row">
@@ -384,7 +384,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         <div className="workflow-header">
           <div className="workflow-status workflow-status--slate">Report issue</div>
           <div className="schedule-panel-title">Report an issue</div>
-          <div className="schedule-panel-copy">Use this when the reported score cannot be fixed with a simple correction.</div>
+          <div className="schedule-panel-copy">Use this when the issue goes beyond the score (e.g. match didn't happen, court problem, wrong opponent).</div>
         </div>
         <div className="score-confirm-summary-card">
           <div className="score-confirm-summary-row">
@@ -398,7 +398,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         </div>
         <textarea
           className="issue-text"
-          placeholder="What went wrong?"
+          placeholder="Describe the issue (e.g. wrong score, match didn't happen, court problem)"
           value={issueText}
           onChange={e => setIssueText(e.target.value)}
           rows={3}
@@ -406,7 +406,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         <div className="issue-actions">
           <button className="btn" onClick={() => setMode('options')}>Back</button>
           <button className="btn btn-primary" onClick={handleSubmitIssue} disabled={!issueText.trim() || saving}>
-            Submit Report
+            Send to Admin
           </button>
         </div>
       </div>
@@ -438,7 +438,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         </div>
         <div className="workflow-actions score-confirm-primary-actions">
           <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
-            Dispute Score
+            Correct Score
           </button>
           <button className="btn btn-primary confirm-option-btn" onClick={handleConfirm} disabled={saving}>
             Confirm Score

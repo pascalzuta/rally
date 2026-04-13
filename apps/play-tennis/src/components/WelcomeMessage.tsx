@@ -155,16 +155,16 @@ function SchedulingSection() {
         <div className="help-tier">
           <div className="help-tier-badge help-tier-badge--flex">Flex</div>
           <div>
-            <strong>Flex Match</strong>
-            <p>30&ndash;74 minutes overlap. One tap to confirm an adjusted time.</p>
+            <strong>Partially Flexible</strong>
+            <p>30&ndash;74 minutes overlap. Rally proposes a nearby time — one tap to confirm.</p>
           </div>
         </div>
 
         <div className="help-tier">
           <div className="help-tier-badge help-tier-badge--manual">Manual</div>
           <div>
-            <strong>Propose &amp; Pick</strong>
-            <p>No overlap. You propose 2&ndash;3 times, your opponent picks one.</p>
+            <strong>You Pick the Time</strong>
+            <p>No overlap. You propose 2&ndash;3 options, your opponent picks one.</p>
           </div>
         </div>
       </div>
@@ -217,7 +217,7 @@ function ScoringSection() {
 
       <h3 className="help-subheading">Rating</h3>
       <p className="help-intro">
-        Your Elo rating updates after each match. Decisive wins earn a bigger boost.
+        Your skill rating updates after each match. Decisive wins earn a bigger boost.
         New players start at 1000.
       </p>
     </div>
@@ -268,11 +268,11 @@ function DeadlinesSection() {
       <h3 className="help-subheading">Forfeits</h3>
       <div className="help-forfeits">
         <div className="help-forfeit">
-          <strong>No-show (one player)</strong>
-          <p>Unresponsive player forfeits — responsive player wins 6-0, 6-0.</p>
+          <strong>Forfeit (one player)</strong>
+          <p>If a player doesn't respond within the deadline, the other player wins 6-0, 6-0.</p>
         </div>
         <div className="help-forfeit">
-          <strong>Mutual no-show</strong>
+          <strong>Mutual forfeit</strong>
           <p>Neither player responds — no winner recorded.</p>
         </div>
       </div>
@@ -353,7 +353,7 @@ function FAQSection() {
 
   const items = [
     { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the waiting pool. Once enough players join (minimum 4), a tournament is automatically created.' },
-    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Elimination (single elimination), and Group Stage + Playoffs. The format is chosen based on player count.' },
+    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Elimination (single elimination), and Round Robin + Playoffs. The format is chosen based on player count.' },
     { q: 'How are matches scheduled?', a: 'Rally uses your availability preferences to find overlapping times. The system proposes slots automatically. You can also use "Quick Play" to broadcast availability for an immediate match.' },
     { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
     { q: 'How do I change my availability?', a: 'Go to the Profile tab, find the availability section, and tap "Edit". You can choose quick presets or set specific time slots.' },

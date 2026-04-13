@@ -204,11 +204,11 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
 
   const nextRankUp = rankInfo.rank > 1 ? rankInfo.rank - 1 : null
   const engagementPrompt = lastRatingChange > 0 && nextRankUp
-    ? `One more win could move you to #${nextRankUp}.`
+    ? `Win your next match to jump to #${nextRankUp}.`
     : lastRatingChange > 0
       ? 'Keep the momentum — play another match.'
       : totalMatches > 0
-        ? 'Play another match to climb the leaderboard.'
+        ? 'Play another match to climb the rankings.'
         : null
 
   function getTournamentResult(tournament: typeof tournaments[0]): string {
@@ -281,7 +281,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             )}
             <div className="rating-hero-actions">
               {onViewLeaderboard && rankInfo.total > 1 && (
-                <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View full leaderboard</button>
+                <button className="btn-link rating-hero-link" onClick={onViewLeaderboard}>View {titleCase(profile.county)} rankings</button>
               )}
             </div>
           </div>
@@ -324,8 +324,8 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             ) : (
               <div className="trophy-empty">
                 <div className="trophy-empty-icon">🏆</div>
-                <p className="trophy-empty-title">Your trophy case is empty — for now</p>
-                <p className="trophy-empty-desc">Win matches to earn tournament trophies and badges</p>
+                <p className="trophy-empty-title">No trophies yet</p>
+                <p className="trophy-empty-desc">Win tournaments to earn trophies and climb the leaderboard</p>
               </div>
             )}
           </div>
@@ -358,7 +358,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
                     <div key={t.id} className="history-card">
                       <div className="history-card-info">
                         <div className="history-card-name">{t.name}</div>
-                        <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Elimination' : t.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}</div>
+                        <div className="history-card-meta">{t.date} · {t.format === 'single-elimination' ? 'Elimination' : t.format === 'group-knockout' ? 'Round robin + Playoffs' : 'Round robin'}</div>
                       </div>
                       <span className={`history-card-result ${result === 'Won' ? 'won' : result === 'Lost' ? 'lost' : ''}`}>{result}</span>
                     </div>
@@ -436,7 +436,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
             </button>
             {showRatingInfo && (
               <div className="rating-explainer">
-                <p>Rally uses an <strong>Elo rating system</strong>, similar to chess. Every player starts at <strong>1000</strong>.</p>
+                <p>Rally uses a <strong>skill rating system</strong>, similar to chess rankings. Every player starts at <strong>1000</strong>.</p>
                 <p>Beat a stronger opponent for a bigger boost. Lose to a weaker one and you drop more. The system finds your true level over time.</p>
                 <div className="rating-tiers">
                   <div className="rating-tier"><span className="tier-range">2200+</span><span className="tier-label">Pro</span></div>
