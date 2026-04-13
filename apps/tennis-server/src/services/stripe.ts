@@ -61,12 +61,10 @@ export function handleWebhookEvent(
   signature: string,
   webhookSecret: string
 ): { type: string; data: Record<string, unknown> } | null {
-  if (!webhookSecret) return null;
-  // In production, verify signature with Stripe SDK
-  // For now, parse the event body
+  if (!webhookSecret || !stripe) return null;
   try {
-    const event = JSON.parse(rawBody) as { type: string; data: { object: Record<string, unknown> } };
-    return { type: event.type, data: event.data.object };
+    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    return { type: event.type, data: (event.data as { object: Record<string, unknown> }).object };
   } catch {
     return null;
   }
