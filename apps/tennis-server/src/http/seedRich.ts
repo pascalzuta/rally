@@ -123,7 +123,7 @@ export async function seedRichData(
   players: PlayerRepo,
   availability: AvailabilityRepo,
   tournaments: TournamentRepo,
-  _matches: MatchRepo
+  _matches: MatchRepo // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<{ counties: number; players: number; tournaments: number }> {
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;

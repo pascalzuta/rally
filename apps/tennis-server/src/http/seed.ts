@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AuthUser, AvailabilitySlot, Match, Player, Tournament } from "@rally/core";
+import type { AuthUser, AvailabilitySlot, Match, Player } from "@rally/core";
 import { generateRoundRobin, computeStandings } from "@rally/core";
 import type { AuthRepo, AvailabilityRepo, MatchRepo, PlayerRepo, TournamentRepo } from "../repo/interfaces.js";
 

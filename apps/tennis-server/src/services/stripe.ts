@@ -1,11 +1,13 @@
 import type { AppConfig } from "../config.js";
-import type { PlayerRepo } from "../repo/interfaces.js";
 
+// stripe is loaded dynamically since the package may not be installed
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let stripe: any = null;
 
 export function initStripe(config: AppConfig): void {
   if (config.STRIPE_SECRET_KEY) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Stripe = require("stripe");
       stripe = new Stripe(config.STRIPE_SECRET_KEY);
     } catch {

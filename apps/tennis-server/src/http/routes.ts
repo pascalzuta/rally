@@ -350,7 +350,7 @@ export function createRoutes(deps: RouteDeps): Router {
         matchCount: updatedRounds.reduce((sum, r) => sum + r.pairings.length, 0),
         players: playerInfo
       });
-    } catch (e) {
+    } catch {
       res.status(500).json({ error: "simulation_failed" });
     }
   });
@@ -1456,7 +1456,7 @@ export function createRoutes(deps: RouteDeps): Router {
       const winner = await deps.players.findById(winnerId);
       const loser = await deps.players.findById(loserId);
       if (winner && loser && !updatedMatch.result?.forfeit) { const { updatedWinner, updatedLoser } = applyEnhancedMatchResult(winner, loser, sets); await deps.players.upsert(updatedWinner); await deps.players.upsert(updatedLoser); }
-      const { [pendingKey]: _, ...remainingPending } = tournament.pendingResults;
+      const { [pendingKey]: _unused, ...remainingPending } = tournament.pendingResults; // eslint-disable-line @typescript-eslint/no-unused-vars
       const allMatches = await deps.matches.findByTournament(tournament.id);
       const completedMatches = allMatches.filter(m => m.status === "completed");
       const standings = computeStandings(tournament.playerIds, completedMatches);
