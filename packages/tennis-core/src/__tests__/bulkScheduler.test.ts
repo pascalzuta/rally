@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, type BulkScheduleResult } from "../bulkScheduler.js";
+import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule } from "../bulkScheduler.js";
 
 // Helper: create availability for a player
 function avail(...slots: Array<[string, number, number]>): SimpleAvailabilitySlot[] {

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AvailabilitySlot, Match, NearMiss, SchedulingResult, TimeProposal } from "@rally/core";
+import type { AvailabilitySlot, Match, SchedulingResult, TimeProposal } from "@rally/core";
 import { findNearMisses, findOverlaps, formatProposalLabel } from "./scheduler.js";
 
 /**

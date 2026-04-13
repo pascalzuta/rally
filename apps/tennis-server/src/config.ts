@@ -24,7 +24,7 @@ const configSchema = z.object({
 
 export type AppConfig = z.infer<typeof configSchema>;
 
-export function getConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export function getConfig(env: NodeJS.ProcessEnv = process.env): AppConfig { // eslint-disable-line no-undef
   const parsed = configSchema.safeParse(env);
   if (!parsed.success) {
     const details = parsed.error.issues

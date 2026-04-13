@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import prettier from "eslint-config-prettier";
+import globals from "globals";
 
 export default [
   js.configs.recommended,
@@ -12,6 +13,9 @@ export default [
       parserOptions: {
         project: false,
         sourceType: "module"
+      },
+      globals: {
+        ...globals.es2021
       }
     },
     plugins: {
@@ -21,6 +25,22 @@ export default [
       ...tseslint.configs.recommended.rules,
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/explicit-function-return-type": "off"
+    }
+  },
+  {
+    files: ["apps/tennis-server/**/*.ts"],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      }
+    }
+  },
+  {
+    files: ["**/*.test.ts", "**/*.spec.ts"],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      }
     }
   },
   {
