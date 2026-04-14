@@ -297,14 +297,12 @@ export default function App() {
       return (
         <div className="app">
           <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-            <div className="top-nav-logo top-nav-logo-large" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-              <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
+            <div className="top-nav-logo top-nav-logo-large">
+              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-              <button className="dgh-btn-text" onClick={() => navigate(ROUTES.LOGIN)} style={{ fontSize: 'var(--font-body-sm)', fontWeight: 500, background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', padding: '6px 12px' }}>
-                Log in
-              </button>
-            </div>
+            <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
+              Blog
+            </a>
           </nav>
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
           <Footer />
@@ -317,14 +315,6 @@ export default function App() {
     if (location.pathname === ROUTES.LOGIN) {
       return (
         <div className="app app-desktop-guest">
-          <nav className="dgh-nav" aria-label="Main navigation">
-            <div className="dgh-nav-inner">
-              <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" style={{ cursor: 'pointer' }} onClick={() => navigate('/')} />
-              <div className="dgh-nav-actions">
-                <button className="dgh-btn-primary" onClick={() => navigate(ROUTES.SIGNUP)}>Sign up free</button>
-              </div>
-            </div>
-          </nav>
           <Login onSignUp={() => navigate(ROUTES.SIGNUP)} />
           <Footer />
           {devTools}
