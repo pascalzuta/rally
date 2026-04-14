@@ -144,6 +144,12 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     try {
       await saveMatchScore(tournament.id, matchId, scores.score1, scores.score2, winnerId, currentPlayerId)
       analytics.track('ScoreSubmitted', { userId: currentPlayerId, properties: { tournamentId: tournament.id, matchId } })
+      // Signal the parent card to enter feedback phase BEFORE React processes
+      // the tournament state update (which would unmount this component).
+      // React 18 batches both state updates in the same microtask.
+      if (onActionComplete) {
+        onActionComplete('Score reported — waiting for opponent to confirm', 'blue')
+      }
       setSaveState('success')
       showSuccess('Score reported — waiting for opponent to confirm')
     } catch {
@@ -156,15 +162,14 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
     const opponentId = match.player1Id === currentPlayerId ? match.player2Id! : match.player1Id!
     return (
       <div className={`inline-score-entry workflow-module ${embedded ? 'inline-score-entry--embedded' : ''}`}>
-        {!embedded && (
+        {embedded ? (
+          <div className="schedule-panel-copy">Score reported. Your opponent has 48 hours to confirm.</div>
+        ) : (
           <div className="workflow-header">
             <div className="workflow-status workflow-status--green">Score Reported</div>
             <div className="schedule-panel-title">Waiting for opponent confirmation</div>
             <div className="schedule-panel-copy">Your opponent has 48 hours to confirm the result.</div>
           </div>
-        )}
-        {embedded && (
-          <div className="schedule-panel-copy">Score reported. Your opponent has 48 hours to confirm.</div>
         )}
         <PostMatchFeedbackInline
           matchId={matchId}
@@ -174,11 +179,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
           opponentName={opponentName}
           onDone={() => {
             clearPendingFeedback()
-            if (onActionComplete) {
-              onActionComplete('Score submitted. Your opponent has 48 hours to confirm.', 'blue')
-            } else {
-              onSaved()
-            }
+            onSaved()
           }}
         />
       </div>

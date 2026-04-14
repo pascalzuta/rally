@@ -1,12 +1,13 @@
 import { forwardRef, useState, useCallback, useRef } from 'react'
 import { Tournament, Match } from '../types'
-import { hasUnreadFrom } from '../store'
+import { hasUnreadFrom, getPlayerName, clearPendingFeedback } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { useToast, ConfirmationTone } from './Toast'
 import MessagePanel from './MessagePanel'
 import UpcomingMatchPanel from './UpcomingMatchPanel'
 import ScoreConfirmationPanel from './ScoreConfirmationPanel'
 import InlineScoreEntry from './InlineScoreEntry'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 interface Props {
   tournament: Tournament
@@ -42,6 +43,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
 ) {
   const { showConfirmation } = useToast()
   const [highlightTone, setHighlightTone] = useState<ConfirmationTone | null>(null)
+  const [feedbackPhase, setFeedbackPhase] = useState(false)
   const collapseTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const handleActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
@@ -58,15 +60,8 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
 
   const handleScoreActionComplete = useCallback((message: string, tone: ConfirmationTone) => {
     showConfirmation(message, tone)
-    setHighlightTone(tone)
-
-    if (collapseTimer.current) clearTimeout(collapseTimer.current)
-    collapseTimer.current = setTimeout(() => {
-      setHighlightTone(null)
-      const scoreCb = onScoreSaved ?? onUpdated
-      scoreCb()
-    }, 3000)
-  }, [showConfirmation, onUpdated, onScoreSaved])
+    setFeedbackPhase(true)
+  }, [showConfirmation])
 
   const view = getMatchCardView(tournament, match, currentPlayerId)
   const canToggleExpanded = Boolean(view.primaryActionLabel && view.expansionKind)
@@ -171,7 +166,30 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
         </div>
       )}
 
-      {isExpanded && view.expansionKind === 'score-confirmation' && (
+      {isExpanded && feedbackPhase && match.player1Id && match.player2Id && (() => {
+        const opponentId = match.player1Id === currentPlayerId ? match.player2Id : match.player1Id
+        const opponentName = getPlayerName(tournament, opponentId)
+        return (
+          <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
+            <div className="schedule-panel-copy">Score reported. Your opponent has 48 hours to confirm.</div>
+            <PostMatchFeedbackInline
+              matchId={match.id}
+              tournamentId={tournament.id}
+              playerId={currentPlayerId}
+              opponentId={opponentId}
+              opponentName={opponentName}
+              onDone={() => {
+                clearPendingFeedback()
+                setFeedbackPhase(false)
+                const scoreCb = onScoreSaved ?? onUpdated
+                scoreCb()
+              }}
+            />
+          </div>
+        )
+      })()}
+
+      {isExpanded && !feedbackPhase && view.expansionKind === 'score-confirmation' && (
         <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
           <ScoreConfirmationPanel
             tournament={tournament}
@@ -183,7 +201,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
         </div>
       )}
 
-      {isExpanded && view.expansionKind === 'score-correction' && (
+      {isExpanded && !feedbackPhase && view.expansionKind === 'score-correction' && (
         <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
           <InlineScoreEntry
             tournament={tournament}
@@ -196,7 +214,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
         </div>
       )}
 
-      {isExpanded && view.expansionKind === 'schedule' && match.schedule && (
+      {isExpanded && !feedbackPhase && view.expansionKind === 'schedule' && match.schedule && (
         <div className="action-card-expansion" onClick={event => event.stopPropagation()}>
           <UpcomingMatchPanel
             tournament={tournament}
