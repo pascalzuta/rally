@@ -470,7 +470,7 @@ export default function HomeHeroCard({
             <div className="formation-choice-options">
               <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>
                 <span className="formation-choice-label">Join Tournament</span>
-                <span className="formation-choice-desc">Play players near your skill level in your county</span>
+                <span className="formation-choice-desc">Matched by skill level and location</span>
               </button>
               <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
                 <span className="formation-choice-label">Create Free Tournament</span>
