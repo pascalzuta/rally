@@ -4461,3 +4461,25 @@ export async function checkAutoAcceptScores(): Promise<void> {
     }
   }
 }
+
+// ── Dev: Test notification ──────────────────────────────────────────────────
+
+export async function testNotification(channel: 'push' | 'sms' | 'both' = 'push'): Promise<{ ok: boolean; error?: string; push?: unknown; sms?: unknown }> {
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+  const profile = getProfile()
+  if (!profile) return { ok: false, error: 'no_profile' }
+
+  try {
+    const resp = await fetch(`${API_BASE}/v1/debug/test-notification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerId: profile.id,
+        channel,
+      }),
+    })
+    return await resp.json()
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
