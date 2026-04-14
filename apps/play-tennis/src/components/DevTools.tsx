@@ -14,6 +14,7 @@ import {
   simulateToFinal,
   testNotification,
 } from '../store'
+import { requestPushPermission, checkPushPermission } from '../native/push'
 import { PlayerProfile } from '../types'
 
 interface Props {
@@ -239,6 +240,19 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
         <div className="devbar-group">
           <span className="devbar-group-label">Notifications</span>
           <div className="devbar-row">
+            <button className="devbar-btn" onClick={() => run(async () => {
+              const status = await checkPushPermission()
+              if (status === 'granted') {
+                flash('Already granted!', 'info')
+                return
+              }
+              if (status === 'unavailable') {
+                flash('Push not available (web)', 'error')
+                return
+              }
+              const result = await requestPushPermission()
+              flash(result === 'granted' ? 'Permission granted + token registered!' : `Permission: ${result}`, result === 'granted' ? 'success' : 'error')
+            })} disabled={busy}>🔔 Grant</button>
             <button className="devbar-btn" onClick={() => run(async () => {
               const r = await testNotification('push')
               flash(r.ok ? 'Push sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')

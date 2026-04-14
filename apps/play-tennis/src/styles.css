@@ -15075,16 +15075,20 @@ main {
    Native App (Capacitor/iOS) Overrides
    Scoped to .native-app on <html> — does not affect web
    ================================================ */
+/* Logged-in: top nav clears Dynamic Island with generous breathing room */
 .native-app .top-nav {
   padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
-  padding-bottom: 12px;
+  padding-bottom: 16px;
   min-height: 64px;
 }
 
+/* Logged-out: registration/signup top nav */
 .native-app .top-nav-register {
   padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
+  padding-bottom: 16px;
 }
 
+/* Bottom tabs: clear home indicator with extra room */
 .native-app .bottom-tabs {
   height: auto;
   min-height: 72px;
@@ -15102,12 +15106,18 @@ main {
   height: 24px;
 }
 
+/* Hide web-only guest nav in native app */
+.native-app .dgh-nav {
+  display: none;
+}
+
+
 /* Native guest nav — only rendered in Capacitor, never on web */
 .native-guest-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top, 20px) + 16px) var(--space-lg) 12px;
+  padding: calc(env(safe-area-inset-top, 20px) + 16px) var(--space-lg) 16px;
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

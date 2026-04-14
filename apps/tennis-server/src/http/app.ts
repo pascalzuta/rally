@@ -174,7 +174,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
 
   app.use(
     "/v1",
-    createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine })
+    createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine, deviceTokens })
   );
 
   // Global error handler — catches sync errors and, with express-async-errors,

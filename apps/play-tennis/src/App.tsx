@@ -30,9 +30,11 @@ const Inbox = lazy(() => import('./components/Inbox'))
 const RatingPanel = lazy(() => import('./components/RatingPanel'))
 const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 
+// Native app detection: baked in at build time via CAPACITOR_BUILD=1
+const isNativeApp = !!import.meta.env.VITE_CAPACITOR_BUILD
+
 // DevTools: loaded in development, staging, and native app builds
 const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
-const isNativeApp = typeof window !== 'undefined' && (window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost')
 const DevTools = (import.meta.env.DEV || isStaging || isNativeApp)
   ? lazy(() => import('./components/DevTools'))
   : () => null
@@ -285,7 +287,7 @@ export default function App() {
   }
 
   if (!profile) {
-    const nativeGuestNav = isNative ? (
+    const nativeGuestNav = isNativeApp ? (
       <nav className="native-guest-nav">
         <img className="rally-logo" height="32" src="/rally-logo.svg" alt="Rally" onClick={() => navigate('/')} />
         <div className="native-guest-nav-actions">
