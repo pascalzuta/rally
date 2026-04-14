@@ -239,6 +239,38 @@ describe("bulkScheduleMatches", () => {
     expect(result.confirmed.length + result.needsAccept.length + result.needsNegotiation.length).toBe(15);
   });
 
+  it("needsAccept suggestions never conflict with confirmed assignments", () => {
+    // All 6 players only available Saturday 10-12 — very constrained.
+    // The scheduler can only fit 3 matches per week (6 players / 2 per match).
+    // With limited slots, some matches go to needsAccept. Those suggestions
+    // must not propose a same-day conflict with confirmed matches.
+    const players = ["p1", "p2", "p3", "p4", "p5", "p6"];
+    const matches = roundRobinMatches(players);
+    const availability: Record<string, SimpleAvailabilitySlot[]> = {};
+    for (const p of players) {
+      availability[p] = avail(["saturday", 10, 12]);
+    }
+
+    const result = bulkScheduleMatches(matches, availability);
+
+    // Build a set of (playerId, day, week) tuples from confirmed matches
+    const confirmedSlots = new Set<string>();
+    for (const c of result.confirmed) {
+      const m = matches.find(x => x.matchId === c.matchId)!;
+      confirmedSlots.add(`${m.player1Id}|${c.slot.day}|${c.slot.week}`);
+      confirmedSlots.add(`${m.player2Id}|${c.slot.day}|${c.slot.week}`);
+    }
+
+    // No needsAccept suggestion should overlap with a confirmed slot for the same player
+    for (const na of result.needsAccept) {
+      const m = matches.find(x => x.matchId === na.matchId)!;
+      const p1Key = `${m.player1Id}|${na.slot.day}|${na.slot.week}`;
+      const p2Key = `${m.player2Id}|${na.slot.day}|${na.slot.week}`;
+      expect(confirmedSlots.has(p1Key), `needsAccept ${na.matchId} conflicts with confirmed for ${m.player1Id} on ${na.slot.day} week ${na.slot.week}`).toBe(false);
+      expect(confirmedSlots.has(p2Key), `needsAccept ${na.matchId} conflicts with confirmed for ${m.player2Id} on ${na.slot.day} week ${na.slot.week}`).toBe(false);
+    }
+  });
+
   // Honest labeling: when player A has Monday-only and player B has Friday-only
   // availability, there is NO overlap. Suggesting Monday is dishonest because
   // player B is definitely not available — this should be needsNegotiation,

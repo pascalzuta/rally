@@ -698,7 +698,9 @@ function rankSlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
 
 export function generateMatchSchedule(
   player1Id: string,
-  player2Id: string
+  player2Id: string,
+  tournament?: Tournament,
+  matchId?: string
 ): MatchSchedule {
   const slots1 = getAvailability(player1Id)
   const slots2 = getAvailability(player2Id)
@@ -707,8 +709,16 @@ export function generateMatchSchedule(
   const windows = splitIntoMatchWindows(overlaps)
   const ranked = rankSlots(windows)
 
+  // Filter out days where either player already has a confirmed match
+  const filtered = tournament
+    ? ranked.filter(slot =>
+        !hasConfirmedMatchOnDay(tournament, player1Id, slot.day, matchId ?? '') &&
+        !hasConfirmedMatchOnDay(tournament, player2Id, slot.day, matchId ?? ''))
+    : ranked
+
   // Generate up to 3 system proposals from 2-hour match windows
-  const proposals: MatchProposal[] = ranked.slice(0, 3).map(slot => ({
+  const source = filtered.length > 0 ? filtered : ranked
+  const proposals: MatchProposal[] = source.slice(0, 3).map(slot => ({
     id: generateId(),
     proposedBy: 'system',
     day: slot.day,
@@ -720,7 +730,13 @@ export function generateMatchSchedule(
   // If no overlap, use one player's slots as suggestions
   if (proposals.length === 0) {
     const fallback = rankSlots(splitIntoMatchWindows([...slots1, ...slots2]))
-    for (const slot of fallback.slice(0, 3)) {
+    const fallbackFiltered = tournament
+      ? fallback.filter(slot =>
+          !hasConfirmedMatchOnDay(tournament, player1Id, slot.day, matchId ?? '') &&
+          !hasConfirmedMatchOnDay(tournament, player2Id, slot.day, matchId ?? ''))
+      : fallback
+    const fallbackSource = fallbackFiltered.length > 0 ? fallbackFiltered : fallback
+    for (const slot of fallbackSource.slice(0, 3)) {
       proposals.push({
         id: generateId(),
         proposedBy: 'system',
@@ -810,6 +826,17 @@ export function getRescheduleUiState(match: Match, currentPlayerId: string): Res
   return isRequester ? 'hard_request_sent' : 'hard_request_received'
 }
 
+/** Check if a player already has a confirmed match on a given day in this tournament */
+function hasConfirmedMatchOnDay(tournament: Tournament, playerId: string, day: string, excludeMatchId: string): boolean {
+  return tournament.matches.some(m =>
+    m.id !== excludeMatchId &&
+    !m.completed &&
+    m.schedule?.status === 'confirmed' &&
+    m.schedule.confirmedSlot?.day === day &&
+    (m.player1Id === playerId || m.player2Id === playerId)
+  )
+}
+
 export async function acceptProposal(
   tournamentId: string,
   matchId: string,
@@ -825,6 +852,12 @@ export async function acceptProposal(
 
   const proposal = match.schedule.proposals.find(p => p.id === proposalId)
   if (!proposal || proposal.status !== 'pending') return undefined
+
+  // Prevent same-day conflicts: reject if either player already has a confirmed match on this day
+  const player1 = match.player1Id
+  const player2 = match.player2Id
+  if (player1 && hasConfirmedMatchOnDay(t, player1, proposal.day, matchId)) return undefined
+  if (player2 && hasConfirmedMatchOnDay(t, player2, proposal.day, matchId)) return undefined
 
   // Mark this proposal as accepted, others as rejected
   for (const p of match.schedule.proposals) {
@@ -1666,7 +1699,7 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
   for (const { matchId } of scheduleResult.needsNegotiation) {
     const m = t.matches.find(x => x.id === matchId)
     if (m && m.player1Id && m.player2Id) {
-      m.schedule = generateMatchSchedule(m.player1Id, m.player2Id)
+      m.schedule = generateMatchSchedule(m.player1Id, m.player2Id, t, m.id)
       if (m.schedule) {
         m.schedule.schedulingTier = 'needs-negotiation'
       }
@@ -3313,6 +3346,13 @@ export async function claimBroadcast(
   )
 
   if (!match) return null
+
+  // Prevent same-day conflicts before claiming
+  const broadcastDay = (['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const)[
+    new Date(broadcast.date + 'T' + broadcast.startTime).getDay()
+  ]
+  if (hasConfirmedMatchOnDay(tournament, broadcast.playerId, broadcastDay, match.id)) return null
+  if (hasConfirmedMatchOnDay(tournament, claimingPlayerId, broadcastDay, match.id)) return null
 
   // Claim the broadcast
   broadcast.status = 'claimed'
