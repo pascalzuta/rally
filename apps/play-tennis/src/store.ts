@@ -2002,6 +2002,14 @@ export async function saveMatchScore(
             }
           }
 
+          // Persist pending feedback so the form shows after reporting
+          const rpcMatch = serverTournament.matches.find((m: Match) => m.id === matchId)
+          if (rpcMatch && reportedBy) {
+            const fbOpponentId = rpcMatch.player1Id === reportedBy ? rpcMatch.player2Id! : rpcMatch.player1Id!
+            const fbOpponentName = serverTournament.players.find(p => p.id === fbOpponentId)?.name ?? 'Opponent'
+            setPendingFeedback({ matchId, tournamentId, opponentId: fbOpponentId, opponentName: fbOpponentName })
+          }
+
           // Update local cache
           const idx = all.findIndex(x => x.id === tournamentId)
           if (idx >= 0) all[idx] = serverTournament
