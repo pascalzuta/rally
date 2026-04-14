@@ -19,7 +19,12 @@ const configSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   SUPABASE_JWT_SECRET: z.string().min(20).optional(),
   GATE_PASSWORD: z.string().min(8),
-  GATE_RESET_KEY: z.string().min(8)
+  GATE_RESET_KEY: z.string().min(8),
+  ONESIGNAL_APP_ID: z.string().optional().default(""),
+  ONESIGNAL_REST_API_KEY: z.string().optional().default(""),
+  TWILIO_ACCOUNT_SID: z.string().optional().default(""),
+  TWILIO_AUTH_TOKEN: z.string().optional().default(""),
+  TWILIO_PHONE_NUMBER: z.string().optional().default("")
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

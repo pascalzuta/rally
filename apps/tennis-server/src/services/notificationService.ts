@@ -4,6 +4,7 @@ import type { Notification, NotificationDelivery } from "@rally/core";
 import type { DeviceTokenRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo } from "../repo/interfaces.js";
 import { PACE_RULES } from "./paceRules.js";
 import { sendPush, isPushEnabled } from "./pushService.js";
+import { sendOneSignalPush, isOneSignalEnabled } from "./onesignalService.js";
 import { sendSms, isSmsEnabled } from "./smsService.js";
 import { getTier, isTier1, isPushDelivered } from "./notificationTiers.js";
 
@@ -142,23 +143,34 @@ export class NotificationService {
       return;
     }
 
-    // Tier 1 & 2: attempt push delivery
-    if (isPushEnabled() && this.deviceTokenRepo) {
+    const pushTitle = tierConfig.pushTitle || n.subject;
+    const pushBody = tierConfig.pushBody || n.body.replace(/<[^>]+>/g, "").slice(0, 150);
+    const pushData = {
+      type: n.type,
+      ...(n.matchId ? { matchId: n.matchId } : {}),
+      ...(n.tournamentId ? { tournamentId: n.tournamentId } : {}),
+      route: this.getRouteForType(n.type),
+    };
+
+    let pushSent = false;
+
+    // Strategy 1: OneSignal (web push + native, cross-platform)
+    if (isOneSignalEnabled()) {
+      const result = await sendOneSignalPush(n.playerId, pushTitle, pushBody, pushData, this.logger);
+      if (result.success && (result.recipients ?? 0) > 0) {
+        pushSent = true;
+      }
+    }
+
+    // Strategy 2: Direct APNs (iOS native fallback)
+    if (!pushSent && isPushEnabled() && this.deviceTokenRepo) {
       const tokens = await this.deviceTokenRepo.findByPlayerId(n.playerId);
       if (tokens.length > 0) {
-        const pushTitle = tierConfig.pushTitle || n.subject;
-        const pushBody = tierConfig.pushBody || n.body.replace(/<[^>]+>/g, "").slice(0, 150);
-
         const result = await sendPush(
           tokens.map((t) => t.token),
           pushTitle,
           pushBody,
-          {
-            type: n.type,
-            ...(n.matchId ? { matchId: n.matchId } : {}),
-            ...(n.tournamentId ? { tournamentId: n.tournamentId } : {}),
-            route: this.getRouteForType(n.type),
-          },
+          pushData,
           this.logger,
         );
 
@@ -170,35 +182,39 @@ export class NotificationService {
         }
 
         if (result.successCount > 0) {
-          n.channel = "push";
-
-          // Create delivery tracking record for Tier 1
-          if (tierConfig.tier === 1) {
-            const delivery: NotificationDelivery = {
-              id: randomUUID(),
-              notificationId: n.id,
-              channel: "push",
-              status: "push_sent",
-              pushSentAt: new Date().toISOString(),
-              createdAt: new Date().toISOString(),
-            };
-            await this.deliveryRepo.create(delivery);
-          }
-
-          this.logger.info(
-            { notificationId: n.id, type: n.type, tier: tierConfig.tier, channel: "push" },
-            "notification_push_sent",
-          );
-          await this.repo.markSent(n.id);
-          return;
+          pushSent = true;
         }
       }
+    }
+
+    if (pushSent) {
+      n.channel = "push";
+
+      // Create delivery tracking record for Tier 1
+      if (tierConfig.tier === 1) {
+        const delivery: NotificationDelivery = {
+          id: randomUUID(),
+          notificationId: n.id,
+          channel: "push",
+          status: "push_sent",
+          pushSentAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        await this.deliveryRepo.create(delivery);
+      }
+
+      this.logger.info(
+        { notificationId: n.id, type: n.type, tier: tierConfig.tier, channel: "push" },
+        "notification_push_sent",
+      );
+      await this.repo.markSent(n.id);
+      return;
     }
 
     // Push failed or not available
     if (tierConfig.tier === 1) {
       // Tier 1 with no push: go directly to SMS
-      await this.sendSmsForNotification(n, tierConfig.pushTitle, tierConfig.pushBody);
+      await this.sendSmsForNotification(n, pushTitle, pushBody);
     } else {
       // Tier 2 with no push: mark as sent (best effort, in-app will still show)
       this.logger.info(

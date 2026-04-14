@@ -30,6 +30,7 @@ import {
 } from "../repo/supabase.js";
 import type { AuthRepo, DeviceTokenRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
 import { initPush, closePushSession } from "../services/pushService.js";
+import { initOneSignal } from "../services/onesignalService.js";
 import { initSms } from "../services/smsService.js";
 import { TournamentEngine } from "../services/tournamentEngine.js";
 import { createRoutes } from "./routes.js";
@@ -95,8 +96,9 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   const httpLogger = (pinoHttp as unknown as (args: { logger: pino.Logger }) => express.RequestHandler)({ logger });
   app.use(httpLogger);
 
-  // Initialize push notification service (APNs)
+  // Initialize push notification services
   await initPush(logger);
+  initOneSignal(logger);
 
   // Repos — use Supabase if configured, otherwise fall back to in-memory
   let auth: AuthRepo;
