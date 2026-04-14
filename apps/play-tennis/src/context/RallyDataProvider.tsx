@@ -116,6 +116,8 @@ async function fetchLobby(county: string): Promise<LobbyEntry[]> {
     playerName: row.player_name,
     county: row.county?.toLowerCase() ?? county.toLowerCase(),
     joinedAt: row.joined_at,
+    gender: row.sex ?? undefined,
+    skillLevel: row.experience_level ?? undefined,
   }))
 }
 
