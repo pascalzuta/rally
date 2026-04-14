@@ -162,11 +162,36 @@ export async function getSession(): Promise<{ userId: string; email: string } | 
 
 /**
  * Sign in with Google OAuth.
- * Redirects the user to Google's consent screen, then back to the app.
+ * On web: redirects in-page to Google, then back to the current origin.
+ * On native (Capacitor): opens SFSafariViewController via @capacitor/browser,
+ * then redirects back to the app via Universal Links (play-rally.com/auth/callback).
  */
 export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string }> {
   if (!client) return { ok: false, error: 'supabase_not_initialized' }
 
+  const { Capacitor } = await import('@capacitor/core')
+
+  if (Capacitor.isNativePlatform()) {
+    // Native: open OAuth in SFSafariViewController and redirect back via Universal Links
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://play-rally.com/auth/callback',
+        skipBrowserRedirect: true, // get the URL instead of auto-redirecting
+      },
+    })
+    if (error) {
+      console.warn('[Rally] Google sign-in failed:', error.message)
+      return { ok: false, error: error.message }
+    }
+    if (data?.url) {
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.open({ url: data.url, presentationStyle: 'popover' })
+    }
+    return { ok: true }
+  }
+
+  // Web: standard redirect flow
   const { error } = await client.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -181,6 +206,43 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
   return { ok: true }
 }
 
+
+/**
+ * Handle an OAuth callback URL from a Universal Link redirect.
+ * Extracts the auth tokens from the URL hash and sets the session.
+ * Called from the appUrlOpen listener when the URL matches /auth/callback.
+ */
+export async function handleOAuthCallback(url: string): Promise<boolean> {
+  if (!client) return false
+  try {
+    // Supabase appends tokens as hash fragments: #access_token=...&refresh_token=...
+    const hashIndex = url.indexOf('#')
+    if (hashIndex < 0) return false
+
+    const params = new URLSearchParams(url.substring(hashIndex + 1))
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    if (!accessToken || !refreshToken) return false
+
+    const { error } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
+    if (error) {
+      console.warn('[Rally] OAuth callback setSession failed:', error.message)
+      return false
+    }
+
+    // Close the in-app browser now that auth is complete
+    const { Browser } = await import('@capacitor/browser')
+    await Browser.close()
+
+    return true
+  } catch (err) {
+    console.warn('[Rally] OAuth callback error:', err)
+    return false
+  }
+}
 
 /**
  * Get the current auth user ID, or null if not authenticated.
