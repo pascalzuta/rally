@@ -1,17 +1,17 @@
 {
   "applinks": {
-    "apps": [],
     "details": [
       {
-        "appID": "RTNLY3UZSV.com.playrally.app",
-        "paths": [
-          "/bracket*",
-          "/playnow*",
-          "/join*",
-          "/tournament*",
-          "/*"
+        "appIDs": ["RTNLY3UZSV.com.playrally.app"],
+        "components": [
+          { "/": "/join/*", "comment": "Invite deep links open in app" },
+          { "/": "/tournament/*/match/*", "comment": "Push notification match links open in app" },
+          { "/": "/*", "exclude": true, "comment": "Everything else stays in the browser" }
         ]
       }
     ]
+  },
+  "webcredentials": {
+    "apps": ["RTNLY3UZSV.com.playrally.app"]
   }
 }
