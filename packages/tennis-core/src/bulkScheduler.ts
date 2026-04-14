@@ -256,17 +256,22 @@ export function bulkScheduleMatches(
     } else if (candidates.length > 0) {
       // Has overlap but couldn't fit due to constraints — suggest best non-conflicting slot
       const nonConflicting = candidates.find(c => !hasConflict(c, m.player1Id, m.player2Id, assignments, constraints))
-      const best = nonConflicting ?? candidates[0]!
 
-      result.needsAccept.push({
-        matchId,
-        slot: {
-          day: best.day,
-          startHour: best.startHour,
-          endHour: best.endHour,
-          week: best.week,
-        },
-      })
+      if (nonConflicting) {
+        result.needsAccept.push({
+          matchId,
+          slot: {
+            day: nonConflicting.day,
+            startHour: nonConflicting.startHour,
+            endHour: nonConflicting.endHour,
+            week: nonConflicting.week,
+          },
+        })
+      } else {
+        // All slots conflict with confirmed assignments — don't suggest a
+        // same-day collision. Move to negotiation so players coordinate manually.
+        result.needsNegotiation.push({ matchId })
+      }
     }
   }
 

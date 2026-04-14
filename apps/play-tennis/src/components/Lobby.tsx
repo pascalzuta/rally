@@ -102,7 +102,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   }, [setupTournament])
 
   function checkForSetupTournament() {
-    const t = getSetupTournamentForCounty(profile.county)
+    const t = getSetupTournamentForCounty(profile.county, profile.gender, profile.skillLevel)
     setSetupTournament(t ?? null)
   }
 
@@ -114,7 +114,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
       setJoined(true)
       analytics.track('LobbyJoined', { userId: profile.id, properties: { county: profile.county } })
 
-      if (updated.length >= 6 || getSetupTournamentForCounty(profile.county)) {
+      if (updated.length >= 6 || getSetupTournamentForCounty(profile.county, profile.gender, profile.skillLevel)) {
         const tournament = await startTournamentFromLobby(profile.county)
         if (tournament) {
           if (tournament.status === 'in-progress') {

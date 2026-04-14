@@ -164,6 +164,8 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
     playerName: profile.name,
     county: profile.county,
     joinedAt: new Date().toISOString(),
+    gender: profile.gender,
+    skillLevel: profile.skillLevel,
   }
   lobby.push(entry)
 
@@ -229,9 +231,11 @@ export function getCountdownRemaining(tournament: Tournament): number | null {
   return Math.max(0, COUNTDOWN_MS - elapsed)
 }
 
-export function getSetupTournamentForCounty(county: string): Tournament | undefined {
+export function getSetupTournamentForCounty(county: string, gender?: Gender, skillLevel?: SkillLevel): Tournament | undefined {
   return load().find(
     t => t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup'
+      && (t.genderGroup ?? undefined) === gender
+      && (t.skillGroup ?? undefined) === skillLevel
   )
 }
 
@@ -262,6 +266,8 @@ function getStartsAt(now: Date = new Date()): string {
 
 function createTournament(county: string, players: LobbyEntry[], extraTournaments: Tournament[] = []): Tournament {
   const num = getNextTournamentNumber(county, extraTournaments)
+  // Use the first player's gender/skill as the partition for this tournament
+  const refPlayer = players[0]
   return {
     id: generateId(),
     name: `${titleCase(county)} Open #${num}`,
@@ -274,6 +280,8 @@ function createTournament(county: string, players: LobbyEntry[], extraTournament
     createdAt: new Date().toISOString(),
     startsAt: getStartsAt(),
     countdownStartedAt: new Date().toISOString(),
+    genderGroup: refPlayer?.gender,
+    skillGroup: refPlayer?.skillLevel,
   }
 }
 
@@ -281,104 +289,119 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
   const lobby = loadLobby()
   const allCounty = lobby.filter(e => e.county.toLowerCase() === county.toLowerCase())
 
-  // Check if there's already a setup tournament for this county
-  const existing = getSetupTournamentForCounty(county)
+  if (allCounty.length === 0) return null
 
-  if (existing) {
-    // Add new lobby players to existing setup tournament
-    const existingIds = new Set(existing.players.map(p => p.id))
-    const newPlayers = allCounty.filter(e => !existingIds.has(e.playerId))
-
-    if (newPlayers.length > 0) {
-      const all = load()
-      const t = all.find(x => x.id === existing.id)!
-      const overflow: LobbyEntry[] = []
-      for (const e of newPlayers) {
-        if (t.players.length >= MAX_PLAYERS) {
-          overflow.push(e)
-        } else {
-          t.players.push({ id: e.playerId, name: e.playerName })
-        }
-      }
-
-      // If we hit max, start immediately
-      if (t.players.length >= MAX_PLAYERS) {
-        await saveAndSync(all, t)
-        await generateBracket(t.id)
-      } else {
-        await saveAndSync(all, t)
-      }
-
-      // Create overflow tournaments for remaining players
-      const takenIds = new Set(t.players.map(p => p.id))
-      if (overflow.length >= MIN_PLAYERS) {
-        const currentAll = load()
-        const newlyCreated: Tournament[] = []
-        while (overflow.length >= MIN_PLAYERS) {
-          const batch = overflow.splice(0, MAX_PLAYERS)
-          const newTournament = createTournament(county, batch, newlyCreated)
-          currentAll.unshift(newTournament)
-          newlyCreated.push(newTournament)
-          for (const e of batch) takenIds.add(e.playerId)
-          if (batch.length >= MAX_PLAYERS) {
-            await saveAndSync(currentAll, newTournament)
-            await generateBracket(newTournament.id)
-          }
-        }
-        save(currentAll)
-      }
-
-      // Remove all assigned players from lobby
-      const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
-      saveLobby(remainingLobby)
-
-      return getTournament(t.id) ?? t
-    }
-    return existing
+  // Partition players by gender + skill level so males play males,
+  // females play females, and skill bands (beginner/intermediate/advanced)
+  // stay separate.
+  const partitionKey = (e: LobbyEntry) =>
+    `${(e.gender ?? 'unknown').toLowerCase()}|${(e.skillLevel ?? 'unknown').toLowerCase()}`
+  const partitions = new Map<string, LobbyEntry[]>()
+  for (const e of allCounty) {
+    const key = partitionKey(e)
+    if (!partitions.has(key)) partitions.set(key, [])
+    partitions.get(key)!.push(e)
   }
 
-  // Need at least MIN_PLAYERS to create a tournament
-  if (allCounty.length < MIN_PLAYERS) return null
-
-  // Cluster players by availability overlap, then create tournaments per group
-  const all = load()
   let firstTournament: Tournament | null = null
   const takenIds = new Set<string>()
-  const newlyCreated: Tournament[] = []
 
-  // Fetch fresh availability from Supabase before clustering
-  if (getClient()) {
-    const remoteAvail = await fetchAvailabilityForPlayers(allCounty.map(e => e.playerId))
-    for (const [pid, slots] of Object.entries(remoteAvail)) {
-      const avail = loadAllAvailability()
-      avail[pid] = slots
-      saveAllAvailability(avail)
+  for (const [, partitionPlayers] of partitions) {
+    const refPlayer = partitionPlayers[0]
+
+    // Check if there's already a setup tournament for this partition
+    const existing = getSetupTournamentForCounty(county, refPlayer.gender, refPlayer.skillLevel)
+
+    if (existing) {
+      // Add new lobby players to existing setup tournament
+      const existingIds = new Set(existing.players.map(p => p.id))
+      const newPlayers = partitionPlayers.filter(e => !existingIds.has(e.playerId))
+
+      if (newPlayers.length > 0) {
+        const all = load()
+        const t = all.find(x => x.id === existing.id)!
+        const overflow: LobbyEntry[] = []
+        for (const e of newPlayers) {
+          if (t.players.length >= MAX_PLAYERS) {
+            overflow.push(e)
+          } else {
+            t.players.push({ id: e.playerId, name: e.playerName })
+            takenIds.add(e.playerId)
+          }
+        }
+
+        // If we hit max, start immediately
+        if (t.players.length >= MAX_PLAYERS) {
+          await saveAndSync(all, t)
+          await generateBracket(t.id)
+        } else {
+          await saveAndSync(all, t)
+        }
+
+        // Create overflow tournaments for remaining players
+        if (overflow.length >= MIN_PLAYERS) {
+          const currentAll = load()
+          const newlyCreated: Tournament[] = []
+          while (overflow.length >= MIN_PLAYERS) {
+            const batch = overflow.splice(0, MAX_PLAYERS)
+            const newTournament = createTournament(county, batch, newlyCreated)
+            currentAll.unshift(newTournament)
+            newlyCreated.push(newTournament)
+            for (const e of batch) takenIds.add(e.playerId)
+            if (batch.length >= MAX_PLAYERS) {
+              await saveAndSync(currentAll, newTournament)
+              await generateBracket(newTournament.id)
+            }
+          }
+          save(currentAll)
+        }
+
+        if (!firstTournament) firstTournament = getTournament(t.id) ?? t
+      } else if (!firstTournament) {
+        firstTournament = existing
+      }
+      continue
     }
+
+    // No existing tournament for this partition — need enough players to create one
+    if (partitionPlayers.length < MIN_PLAYERS) continue
+
+    // Fetch fresh availability from Supabase before clustering
+    if (getClient()) {
+      const remoteAvail = await fetchAvailabilityForPlayers(partitionPlayers.map(e => e.playerId))
+      for (const [pid, slots] of Object.entries(remoteAvail)) {
+        const avail = loadAllAvailability()
+        avail[pid] = slots
+        saveAllAvailability(avail)
+      }
+    }
+
+    const playerAvailabilities: PlayerAvailability[] = partitionPlayers.map(e => ({
+      playerId: e.playerId,
+      playerName: e.playerName,
+      slots: getAvailability(e.playerId),
+    }))
+
+    const clusterResult = clusterPlayersByAvailability(playerAvailabilities)
+    const all = load()
+    const newlyCreated: Tournament[] = []
+
+    for (const group of clusterResult.groups) {
+      if (group.players.length < MIN_PLAYERS) continue
+      const batch: LobbyEntry[] = group.players.map(p => {
+        const entry = partitionPlayers.find(e => e.playerId === p.playerId)!
+        return entry
+      })
+      const tournament = createTournament(county, batch, newlyCreated)
+      all.unshift(tournament)
+      newlyCreated.push(tournament)
+      for (const e of batch) takenIds.add(e.playerId)
+      if (!firstTournament) firstTournament = tournament
+    }
+
+    // Batch sync all new tournaments to Supabase
+    await saveAndSyncBatch(all, newlyCreated)
   }
-
-  const playerAvailabilities: PlayerAvailability[] = allCounty.map(e => ({
-    playerId: e.playerId,
-    playerName: e.playerName,
-    slots: getAvailability(e.playerId),
-  }))
-
-  const clusterResult = clusterPlayersByAvailability(playerAvailabilities)
-
-  for (const group of clusterResult.groups) {
-    if (group.players.length < MIN_PLAYERS) continue
-    const batch: LobbyEntry[] = group.players.map(p => {
-      const entry = allCounty.find(e => e.playerId === p.playerId)!
-      return entry
-    })
-    const tournament = createTournament(county, batch, newlyCreated)
-    all.unshift(tournament)
-    newlyCreated.push(tournament)
-    for (const e of batch) takenIds.add(e.playerId)
-    if (!firstTournament) firstTournament = tournament
-  }
-
-  // Batch sync all new tournaments to Supabase (single HTTP request)
-  await saveAndSyncBatch(all, newlyCreated)
 
   // Remove players who entered tournaments from lobby
   const remainingLobby = lobby.filter(e => !takenIds.has(e.playerId))
@@ -698,7 +721,9 @@ function rankSlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
 
 export function generateMatchSchedule(
   player1Id: string,
-  player2Id: string
+  player2Id: string,
+  tournament?: Tournament,
+  matchId?: string
 ): MatchSchedule {
   const slots1 = getAvailability(player1Id)
   const slots2 = getAvailability(player2Id)
@@ -707,8 +732,16 @@ export function generateMatchSchedule(
   const windows = splitIntoMatchWindows(overlaps)
   const ranked = rankSlots(windows)
 
+  // Filter out days where either player already has a confirmed match
+  const filtered = tournament
+    ? ranked.filter(slot =>
+        !hasConfirmedMatchOnDay(tournament, player1Id, slot.day, matchId ?? '') &&
+        !hasConfirmedMatchOnDay(tournament, player2Id, slot.day, matchId ?? ''))
+    : ranked
+
   // Generate up to 3 system proposals from 2-hour match windows
-  const proposals: MatchProposal[] = ranked.slice(0, 3).map(slot => ({
+  const source = filtered.length > 0 ? filtered : ranked
+  const proposals: MatchProposal[] = source.slice(0, 3).map(slot => ({
     id: generateId(),
     proposedBy: 'system',
     day: slot.day,
@@ -720,7 +753,13 @@ export function generateMatchSchedule(
   // If no overlap, use one player's slots as suggestions
   if (proposals.length === 0) {
     const fallback = rankSlots(splitIntoMatchWindows([...slots1, ...slots2]))
-    for (const slot of fallback.slice(0, 3)) {
+    const fallbackFiltered = tournament
+      ? fallback.filter(slot =>
+          !hasConfirmedMatchOnDay(tournament, player1Id, slot.day, matchId ?? '') &&
+          !hasConfirmedMatchOnDay(tournament, player2Id, slot.day, matchId ?? ''))
+      : fallback
+    const fallbackSource = fallbackFiltered.length > 0 ? fallbackFiltered : fallback
+    for (const slot of fallbackSource.slice(0, 3)) {
       proposals.push({
         id: generateId(),
         proposedBy: 'system',
@@ -810,6 +849,17 @@ export function getRescheduleUiState(match: Match, currentPlayerId: string): Res
   return isRequester ? 'hard_request_sent' : 'hard_request_received'
 }
 
+/** Check if a player already has a confirmed match on a given day in this tournament */
+function hasConfirmedMatchOnDay(tournament: Tournament, playerId: string, day: string, excludeMatchId: string): boolean {
+  return tournament.matches.some(m =>
+    m.id !== excludeMatchId &&
+    !m.completed &&
+    m.schedule?.status === 'confirmed' &&
+    m.schedule.confirmedSlot?.day === day &&
+    (m.player1Id === playerId || m.player2Id === playerId)
+  )
+}
+
 export async function acceptProposal(
   tournamentId: string,
   matchId: string,
@@ -825,6 +875,12 @@ export async function acceptProposal(
 
   const proposal = match.schedule.proposals.find(p => p.id === proposalId)
   if (!proposal || proposal.status !== 'pending') return undefined
+
+  // Prevent same-day conflicts: reject if either player already has a confirmed match on this day
+  const player1 = match.player1Id
+  const player2 = match.player2Id
+  if (player1 && hasConfirmedMatchOnDay(t, player1, proposal.day, matchId)) return undefined
+  if (player2 && hasConfirmedMatchOnDay(t, player2, proposal.day, matchId)) return undefined
 
   // Mark this proposal as accepted, others as rejected
   for (const p of match.schedule.proposals) {
@@ -1666,7 +1722,7 @@ export async function generateBracket(tournamentId: string): Promise<Tournament 
   for (const { matchId } of scheduleResult.needsNegotiation) {
     const m = t.matches.find(x => x.id === matchId)
     if (m && m.player1Id && m.player2Id) {
-      m.schedule = generateMatchSchedule(m.player1Id, m.player2Id)
+      m.schedule = generateMatchSchedule(m.player1Id, m.player2Id, t, m.id)
       if (m.schedule) {
         m.schedule.schedulingTier = 'needs-negotiation'
       }
@@ -2932,7 +2988,7 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
   for (const name of toAdd) {
     const id = generateId()
     const playerIdx = TEST_PLAYERS.indexOf(name)
-    const entry: LobbyEntry = { playerId: id, playerName: name, county, joinedAt: new Date().toISOString() }
+    const entry: LobbyEntry = { playerId: id, playerName: name, county, joinedAt: new Date().toISOString(), gender: 'male', skillLevel: 'intermediate' }
     lobby.push(entry)
 
     // Set up their rating (keyed by player ID)
@@ -3117,7 +3173,7 @@ export async function simulateToFinal(playerId: string, county: string): Promise
 
   // Create tournament from lobby if one doesn't exist yet
   await startTournamentFromLobby(county)
-  const setupT = getSetupTournamentForCounty(county)
+  const setupT = getSetupTournamentForCounty(county, profile.gender, profile.skillLevel)
   if (!setupT) {
     // Need to create tournament via lobby - join lobby first if not in it
     const inLobby = lobby.find(e => e.playerId === playerId)
@@ -3131,7 +3187,7 @@ export async function simulateToFinal(playerId: string, county: string): Promise
     }
     // Create the tournament from lobby entries
     await startTournamentFromLobby(county)
-    const st = getSetupTournamentForCounty(county)
+    const st = getSetupTournamentForCounty(county, profile.gender, profile.skillLevel)
     if (!st) return null
     const started = await forceStartTournament(st.id)
     if (!started) return null
@@ -3313,6 +3369,13 @@ export async function claimBroadcast(
   )
 
   if (!match) return null
+
+  // Prevent same-day conflicts before claiming
+  const broadcastDay = (['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const)[
+    new Date(broadcast.date + 'T' + broadcast.startTime).getDay()
+  ]
+  if (hasConfirmedMatchOnDay(tournament, broadcast.playerId, broadcastDay, match.id)) return null
+  if (hasConfirmedMatchOnDay(tournament, claimingPlayerId, broadcastDay, match.id)) return null
 
   // Claim the broadcast
   broadcast.status = 'claimed'
