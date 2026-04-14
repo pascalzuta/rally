@@ -455,10 +455,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             setExpandedMatchId(null)
             setMessagingMatchId(messagingMatchId === match.id ? null : match.id)
           }}
-          onUpdated={() => {
-            setExpandedMatchId(null)
-            refreshAndCheckFeedback()
-          }}
+          onUpdated={() => refreshAndCheckFeedback()}
           onScoreSaved={handleScoreSaved}
         />
       )
@@ -602,14 +599,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
-                  onUpdated={() => { setExpandedMatchId(null); refreshAndCheckFeedback() }}
+                  onUpdated={() => refreshAndCheckFeedback()}
                 />
               ) : match.scoreDispute?.status === 'pending' && match.scoreReportedBy === currentPlayerId ? (
                 <ScoreConfirmationPanel
                   tournament={tournament!}
                   match={match}
                   currentPlayerId={currentPlayerId}
-                  onUpdated={() => { setExpandedMatchId(null); refreshAndCheckFeedback() }}
+                  onUpdated={() => refreshAndCheckFeedback()}
                 />
               ) : !match.scoreReportedBy && match.schedule ? (
                 <UpcomingMatchPanel
