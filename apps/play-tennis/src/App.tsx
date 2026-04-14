@@ -8,6 +8,7 @@ import { analytics } from './analytics'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import { setNavigateRef, consumePendingDeepLink, handleDeepLink, initNativeApp } from './native'
+import { isNative } from './native/platform'
 import './styles.css'
 
 // Critical path: loaded eagerly (landing page + home + auth)
@@ -283,6 +284,16 @@ export default function App() {
   }
 
   if (!profile) {
+    const nativeGuestNav = isNative ? (
+      <nav className="native-guest-nav">
+        <img className="rally-logo" height="32" src="/rally-logo.svg" alt="Rally" onClick={() => navigate('/')} />
+        <div className="native-guest-nav-actions">
+          <button className="native-guest-nav-btn" onClick={() => navigate(ROUTES.LOGIN)}>Log in</button>
+          <button className="native-guest-nav-btn native-guest-nav-btn-primary" onClick={() => navigate(ROUTES.SIGNUP)}>Sign up</button>
+        </div>
+      </nav>
+    ) : null
+
     const devTools = (
       <DevTools
         onProfileSwitch={p => setProfile(p)}
@@ -296,14 +307,16 @@ export default function App() {
     if (location.pathname === ROUTES.SIGNUP) {
       return (
         <div className="app">
-          <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-            <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-            </div>
-            <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
-              Blog
-            </a>
-          </nav>
+          {nativeGuestNav || (
+            <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
+              <div className="top-nav-logo top-nav-logo-large">
+                <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
+              </div>
+              <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
+                Blog
+              </a>
+            </nav>
+          )}
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
           <Footer />
           {devTools}
@@ -315,6 +328,7 @@ export default function App() {
     if (location.pathname === ROUTES.LOGIN) {
       return (
         <div className="app app-desktop-guest">
+          {nativeGuestNav}
           <Login onSignUp={() => navigate(ROUTES.SIGNUP)} />
           <Footer />
           {devTools}
@@ -336,6 +350,7 @@ export default function App() {
     // / — marketing home page (default for unauthenticated visitors)
     return (
       <div className="app app-desktop-guest">
+        {nativeGuestNav}
         <DesktopGuestHomepage
           onGetStarted={() => navigate(ROUTES.SIGNUP)}
           onLogin={() => navigate(ROUTES.LOGIN)}
