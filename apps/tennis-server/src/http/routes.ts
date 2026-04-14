@@ -29,6 +29,8 @@ import { createCheckoutSession, createPortalSession, handleWebhookEvent, isStrip
 import { searchCities } from "../data/usCities.js";
 import { TOURNEY_TEST_PLAYERS } from "./seed.js";
 import { seedRichData } from "./seedRich.js";
+import { sendOneSignalPush, isOneSignalEnabled } from "../services/onesignalService.js";
+import { sendSms, isSmsEnabled } from "../services/smsService.js";
 import { findNearMisses, findOverlaps, formatProposalLabel } from "../services/scheduler.js";
 import type { TournamentEngine } from "../services/tournamentEngine.js";
 import { recordPlayerActivity } from "../services/paceRules.js";
@@ -656,6 +658,49 @@ export function createRoutes(deps: RouteDeps): Router {
           ? JSON.stringify(e)
           : String(e);
       _req.log?.error({ err: e }, "seed-rich error");
+      res.status(500).json({ error: "internal_error", message: msg });
+    }
+  });
+
+  router.post("/debug/test-notification", debugLimiter, async (req, res) => {
+    try {
+      const { playerId, channel, phone } = req.body as {
+        playerId?: string;
+        channel?: "push" | "sms" | "both";
+        phone?: string;
+      };
+
+      const results: Record<string, unknown> = {
+        onesignalEnabled: isOneSignalEnabled(),
+        smsEnabled: isSmsEnabled(),
+      };
+
+      const ch = channel ?? "push";
+
+      if ((ch === "push" || ch === "both") && isOneSignalEnabled() && playerId) {
+        const pushResult = await sendOneSignalPush(
+          playerId,
+          "Rally Tennis Test",
+          "If you see this, push notifications are working!",
+          { type: "test", timestamp: new Date().toISOString() },
+          req.log
+        );
+        results.push = pushResult;
+      }
+
+      if ((ch === "sms" || ch === "both") && isSmsEnabled() && phone) {
+        const smsResult = await sendSms(
+          phone,
+          "Rally Tennis Test: If you see this, SMS notifications are working!",
+          req.log
+        );
+        results.sms = smsResult;
+      }
+
+      res.json({ ok: true, ...results });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      req.log?.error({ err: e }, "test-notification error");
       res.status(500).json({ error: "internal_error", message: msg });
     }
   });

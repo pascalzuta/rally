@@ -12,6 +12,7 @@ import {
   escalateMatch,
   getTournament,
   simulateToFinal,
+  testNotification,
 } from '../store'
 import { PlayerProfile } from '../types'
 
@@ -233,6 +234,25 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
             </div>
           </div>
         )}
+
+        {/* Test notifications */}
+        <div className="devbar-group">
+          <span className="devbar-group-label">Notifications</span>
+          <div className="devbar-row">
+            <button className="devbar-btn" onClick={() => run(async () => {
+              const r = await testNotification('push')
+              flash(r.ok ? 'Push sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
+            })} disabled={busy}>Push</button>
+            <button className="devbar-btn" onClick={() => run(async () => {
+              const r = await testNotification('sms')
+              flash(r.ok ? 'SMS sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
+            })} disabled={busy}>SMS</button>
+            <button className="devbar-btn" onClick={() => run(async () => {
+              const r = await testNotification('both')
+              flash(r.ok ? 'Both sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
+            })} disabled={busy}>Both</button>
+          </div>
+        </div>
 
         {/* Profile switcher */}
         {profile && testProfiles.length > 0 && (
