@@ -7,10 +7,19 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'cache-bust-html',
       transformIndexHtml(html) {
-        return html.replace(
+        let result = html.replace(
           '</head>',
           `<!-- build: ${new Date().toISOString()} -->\n  </head>`
         )
+        // For native (Capacitor) builds, add native-app class and viewport-fit=cover
+        if (process.env.CAPACITOR_BUILD) {
+          result = result.replace('<html ', '<html class="native-app" ')
+          result = result.replace(
+            'user-scalable=no"',
+            'user-scalable=no, viewport-fit=cover"'
+          )
+        }
+        return result
       },
     },
   ],
