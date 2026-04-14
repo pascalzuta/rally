@@ -29,9 +29,10 @@ const Inbox = lazy(() => import('./components/Inbox'))
 const RatingPanel = lazy(() => import('./components/RatingPanel'))
 const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 
-// DevTools: loaded in development and on staging
+// DevTools: loaded in development, staging, and native app builds
 const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
-const DevTools = (import.meta.env.DEV || isStaging)
+const isNativeApp = typeof window !== 'undefined' && (window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost')
+const DevTools = (import.meta.env.DEV || isStaging || isNativeApp)
   ? lazy(() => import('./components/DevTools'))
   : () => null
 
