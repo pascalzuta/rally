@@ -31,11 +31,13 @@ import {
   getPlayerRating,
 } from '../store'
 import type { Tournament, AvailabilitySlot } from '../types'
+import { clear as clearMemoryStore } from '../memoryStore'
 
 const COUNTY = 'testville'
 
 function clearStorage() {
   localStorage.clear()
+  clearMemoryStore()
 }
 
 /** Build a simple 2h/day availability so clustering has something to chew on. */
@@ -98,7 +100,7 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('1. creates a profile and joins the lobby', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     expect(profile.name).toBe('Pascal Test')
     expect(profile.county).toBe(COUNTY)
     saveAvailability(profile.id, defaultAvail())
@@ -111,7 +113,7 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('2. seeds 5 more players and forms a 6-player lobby', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
 
@@ -122,7 +124,7 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('3. startTournamentFromLobby creates a setup tournament with all 6 players', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
@@ -131,7 +133,7 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
     // Depending on clustering, startTournamentFromLobby may return a tournament in setup
     // state, OR none (if cluster overlap is insufficient). Either way, we should find
     // a setup tournament after this call.
-    const setup = getSetupTournamentForCounty(COUNTY)
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')
     expect(setup, 'setup tournament created').toBeTruthy()
     if (setup) {
       expect(setup.players.length).toBeGreaterThanOrEqual(6)
@@ -145,12 +147,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('4. forceStartTournament generates the full round-robin bracket + schedules', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')
     expect(setup, 'setup tournament exists').toBeTruthy()
     if (!setup) return
 
@@ -188,12 +190,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('5. autoConfirmAllSchedules flips every pending proposal to confirmed', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)!
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')!
     const started = await forceStartTournament(setup.id)
     expect(started).toBeTruthy()
     if (!started) return
@@ -215,12 +217,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('6. simulateRoundScores completes the group phase and auto-generates knockouts', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)!
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')!
     const started = await forceStartTournament(setup.id)
     expect(started).toBeTruthy()
     if (!started) return
@@ -256,12 +258,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('7. simulateRoundScores advances semis and fills the final', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)!
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')!
     const started = await forceStartTournament(setup.id)
     if (!started) return
 
@@ -289,12 +291,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('8. simulateRoundScores finishes the final and marks tournament completed', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)!
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')!
     const started = await forceStartTournament(setup.id)
     if (!started) return
 
@@ -314,7 +316,7 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('9. switchProfile lets us act as a different seeded player', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
@@ -337,12 +339,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   // the real reportScore/confirmScore + updateRatings code path. This test
   // exercises the REAL flow and asserts ratings actually change.
   it('11. real reportScore + confirmScore flow updates both players ratings', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)!
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')!
     const started = await forceStartTournament(setup.id)
     expect(started).toBeTruthy()
     if (!started) return
@@ -390,12 +392,12 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
   })
 
   it('10. regression: tournament can be re-scored without corrupting prior matches', async () => {
-    const profile = createProfile('Pascal Test', COUNTY)
+    const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
     await seedLobby(COUNTY, 5)
     await startTournamentFromLobby(COUNTY)
-    const setup = getSetupTournamentForCounty(COUNTY)!
+    const setup = getSetupTournamentForCounty(COUNTY, 'male', 'intermediate')!
     const started = await forceStartTournament(setup.id)
     if (!started) return
 

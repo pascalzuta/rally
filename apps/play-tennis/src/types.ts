@@ -33,6 +33,8 @@ export interface LobbyEntry {
   playerName: string
   county: string
   joinedAt: string
+  gender?: Gender
+  skillLevel?: SkillLevel
 }
 
 // --- Availability ---
@@ -246,6 +248,8 @@ export interface Tournament {
   createdBy?: string              // player ID of creator (friend tournaments)
   inviteCode?: string             // unique code for invite URL (friend tournaments)
   maxPlayers?: number             // cap (default 8 for friend tournaments)
+  genderGroup?: Gender            // gender partition this tournament was created for
+  skillGroup?: SkillLevel         // skill partition this tournament was created for
 }
 
 // --- Match Broadcast ---

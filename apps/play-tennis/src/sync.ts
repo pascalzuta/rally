@@ -88,6 +88,8 @@ export async function syncLobbyEntry(entry: LobbyEntry): Promise<SyncResult> {
     county: entry.county.toLowerCase(),
     joined_at: entry.joinedAt,
     auth_id: authId,
+    sex: entry.gender ?? null,
+    experience_level: entry.skillLevel ?? null,
   }, { onConflict: 'player_id' })
 
   if (error) return { success: false, error: error.message }
