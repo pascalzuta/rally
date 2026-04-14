@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { titleCase } from '../dateUtils'
-import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList } from '../store'
+import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, getPendingFeedback, clearPendingFeedback, getPlayerName } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
 import { useStableOrder } from '../useStableOrder'
@@ -8,6 +8,7 @@ import HomeHeroCard from './HomeHeroCard'
 import FriendTournamentSection from './FriendTournamentSection'
 import MessagePanel from './MessagePanel'
 import MatchActionCard from './MatchActionCard'
+import PostMatchFeedbackInline from './PostMatchFeedbackInline'
 
 interface Props {
   profile: PlayerProfile
@@ -395,8 +396,51 @@ export default function Home({
         </div>
       )}
 
-      {/* Up Next Card */}
-      {upNext && upNext.match.schedule?.confirmedSlot && (() => {
+      {/* Post-match feedback — takes priority over Up Next card */}
+      {(() => {
+        const pf = getPendingFeedback()
+        if (!pf) return null
+        const fbTournament = activeTournaments.find(t => t.id === pf.tournamentId)
+        if (!fbTournament) return null
+        const fbMatch = fbTournament.matches.find(m => m.id === pf.matchId)
+        if (!fbMatch || !fbMatch.player1Id || !fbMatch.player2Id) return null
+        const opponentId = fbMatch.player1Id === profile.id ? fbMatch.player2Id : fbMatch.player1Id
+        const opponentName = getPlayerName(fbTournament, opponentId)
+        const isPlayer2 = fbMatch.player2Id === profile.id
+        const myScores = isPlayer2 ? fbMatch.score2 : fbMatch.score1
+        const oppScores = isPlayer2 ? fbMatch.score1 : fbMatch.score2
+        const score = myScores?.length > 0
+          ? myScores.map((s: number, i: number) => `${s}-${oppScores[i]}`).join(', ')
+          : null
+        return (
+          <div className="card action-card action-completed upnext-card">
+            <div className="action-card-status-row">
+              <div className="card-status-label card-status-label--green">Score Reported</div>
+            </div>
+            <div className="action-card-main">
+              <div className="action-card-opponent">vs {opponentName}</div>
+              {score && <div className="action-card-supporting">{score}</div>}
+            </div>
+            <div className="action-card-expansion">
+              <div className="schedule-panel-copy">Score reported. Your opponent has 48 hours to confirm.</div>
+              <PostMatchFeedbackInline
+                matchId={pf.matchId}
+                tournamentId={fbTournament.id}
+                playerId={profile.id}
+                opponentId={opponentId}
+                opponentName={opponentName}
+                onDone={() => {
+                  clearPendingFeedback()
+                  onDataChanged?.()
+                }}
+              />
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Up Next Card — hidden when pending feedback is showing */}
+      {!getPendingFeedback() && upNext && upNext.match.schedule?.confirmedSlot && (() => {
         const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
         const upNextExpanded = expandedCardKey === upNextKey
         const upNextMessaging = messagingCardKey === upNextKey
