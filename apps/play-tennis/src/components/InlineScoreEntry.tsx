@@ -134,7 +134,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
   const [saveState, setSaveState] = useState<'idle' | 'confirming' | 'saving' | 'success' | 'error'>('idle')
 
   function handleSaveClick() {
-    if (!scores || !winnerId) return
+    if (!scores || !winnerId || saveState === 'saving') return
     handleConfirm()
   }
 
@@ -287,8 +287,8 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
       })}
 
       <div className="workflow-actions">
-        <button className="btn btn-primary" onClick={handleSaveClick} disabled={!canSave} style={{ width: '100%' }}>
-          Report Score
+        <button className="btn btn-primary" onClick={handleSaveClick} disabled={!canSave || saveState === 'saving'} style={{ width: '100%' }}>
+          {saveState === 'saving' ? 'Saving…' : 'Report Score'}
         </button>
       </div>
     </div>

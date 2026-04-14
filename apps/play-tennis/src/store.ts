@@ -1284,7 +1284,7 @@ function load(): Tournament[] {
 }
 
 function save(tournaments: Tournament[]): void {
-  bridgeSetTournaments(tournaments)
+  bridgeSetTournaments([...tournaments])
 }
 
 /** Supabase-first save: syncs a specific tournament, then updates bridge */
@@ -1304,18 +1304,18 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
         }
       }
       // Conflict couldn't be resolved remotely — still save locally so UI updates
-      bridgeSetTournaments(all)
+      bridgeSetTournaments([...all])
       console.warn('[Rally] Tournament sync conflict could not be resolved', changedTournament.id)
       bridgeShowError('Changes saved locally but may not sync until you\'re back online')
       return { success: true }
     }
     // Network error: save locally + log warning
-    bridgeSetTournaments(all)
+    bridgeSetTournaments([...all])
     console.warn('[Rally] Failed to sync tournament to Supabase', changedTournament.id)
     bridgeShowError('Changes saved locally but may not sync until you\'re back online')
     return { success: true }
   }
-  bridgeSetTournaments(all)
+  bridgeSetTournaments([...all])
   bridgeNotifyOtherTabs()
   return { success: true }
 }
@@ -1337,7 +1337,7 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
       }
     }
   }
-  bridgeSetTournaments(all)
+  bridgeSetTournaments([...all])
 }
 
 export function getTournaments(): Tournament[] {
