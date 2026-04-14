@@ -8,7 +8,6 @@ import { analytics } from './analytics'
 import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import { setNavigateRef, consumePendingDeepLink, handleDeepLink, initNativeApp } from './native'
-import { isNative } from './native/platform'
 import './styles.css'
 
 // Critical path: loaded eagerly (landing page + home + auth)
