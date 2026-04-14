@@ -1,4 +1,4 @@
-import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
+import type { AuthUser, AvailabilitySlot, Match, Notification, NotificationDelivery, Player, PoolEntry, Tournament } from "@rally/core";
 
 export interface AuthRepo {
   findByEmail(email: string): Promise<AuthUser | null>;
@@ -47,10 +47,27 @@ export interface PoolRepo {
 export interface NotificationRepo {
   queue(notification: Notification): Promise<void>;
   findPending(limit?: number): Promise<Notification[]>;
+  /** Atomically claim pending notifications (uses UPDATE...RETURNING in Supabase). */
+  claimPending(limit?: number): Promise<Notification[]>;
   markSent(id: string): Promise<void>;
   markFailed(id: string): Promise<void>;
   findByMatchAndType(matchId: string, type: string): Promise<Notification[]>;
   findByPlayerSince(playerId: string, since: string): Promise<Notification[]>;
+}
+
+export interface NotificationDeliveryRepo {
+  create(delivery: NotificationDelivery): Promise<void>;
+  findByNotificationId(notificationId: string): Promise<NotificationDelivery | null>;
+  updateStatus(id: string, status: NotificationDelivery["status"], fields?: Partial<NotificationDelivery>): Promise<void>;
+  /** Find Tier 1 deliveries that are past their escalation window and haven't been acknowledged. */
+  findPendingEscalations(escalationMinutes: number): Promise<NotificationDelivery[]>;
+  /** Find delivery by notification ID for acknowledgment. */
+  acknowledge(notificationId: string): Promise<void>;
+}
+
+export interface PlayerPhoneRepo {
+  findByPlayerId(playerId: string): Promise<{ phoneNumber: string } | null>;
+  upsert(playerId: string, phoneNumber: string): Promise<void>;
 }
 
 export interface DeviceToken {

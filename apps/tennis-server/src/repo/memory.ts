@@ -1,5 +1,5 @@
-import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
-import type { AuthRepo, AvailabilityRepo, DeviceToken, DeviceTokenRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
+import type { AuthUser, AvailabilitySlot, Match, Notification, NotificationDelivery, Player, PoolEntry, Tournament } from "@rally/core";
+import type { AuthRepo, AvailabilityRepo, DeviceToken, DeviceTokenRepo, MatchRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
 export class InMemoryAuthRepo implements AuthRepo {
   private readonly byId = new Map<string, AuthUser>();
@@ -207,5 +207,71 @@ export class InMemoryNotificationRepo implements NotificationRepo {
     return [...this.byId.values()].filter(
       (n) => n.playerId === playerId && n.createdAt >= since
     );
+  }
+
+  async claimPending(limit = 50): Promise<Notification[]> {
+    const now = new Date().toISOString();
+    const pending = [...this.byId.values()]
+      .filter((n) => n.status === "queued" && n.scheduledFor <= now)
+      .sort((a, b) => a.scheduledFor.localeCompare(b.scheduledFor))
+      .slice(0, limit);
+    // Mark as processing (atomic claim simulation)
+    for (const n of pending) {
+      n.status = "processing";
+    }
+    return pending;
+  }
+}
+
+export class InMemoryNotificationDeliveryRepo implements NotificationDeliveryRepo {
+  private readonly byId = new Map<string, NotificationDelivery>();
+
+  async create(delivery: NotificationDelivery): Promise<void> {
+    this.byId.set(delivery.id, delivery);
+  }
+
+  async findByNotificationId(notificationId: string): Promise<NotificationDelivery | null> {
+    return [...this.byId.values()].find((d) => d.notificationId === notificationId) ?? null;
+  }
+
+  async updateStatus(id: string, status: NotificationDelivery["status"], fields?: Partial<NotificationDelivery>): Promise<void> {
+    const d = this.byId.get(id);
+    if (d) {
+      d.status = status;
+      if (fields?.pushSentAt) d.pushSentAt = fields.pushSentAt;
+      if (fields?.smsSentAt) d.smsSentAt = fields.smsSentAt;
+      if (fields?.acknowledgedAt) d.acknowledgedAt = fields.acknowledgedAt;
+      if (fields?.failureReason) d.failureReason = fields.failureReason;
+    }
+  }
+
+  async findPendingEscalations(escalationMinutes: number): Promise<NotificationDelivery[]> {
+    const cutoff = new Date(Date.now() - escalationMinutes * 60 * 1000).toISOString();
+    return [...this.byId.values()].filter(
+      (d) => d.status === "push_sent" && d.channel === "push" && d.pushSentAt && d.pushSentAt <= cutoff,
+    );
+  }
+
+  async acknowledge(notificationId: string): Promise<void> {
+    const d = [...this.byId.values()].find(
+      (d) => d.notificationId === notificationId && d.channel === "push",
+    );
+    if (d) {
+      d.status = "acknowledged";
+      d.acknowledgedAt = new Date().toISOString();
+    }
+  }
+}
+
+export class InMemoryPlayerPhoneRepo implements PlayerPhoneRepo {
+  private readonly byPlayerId = new Map<string, string>();
+
+  async findByPlayerId(playerId: string): Promise<{ phoneNumber: string } | null> {
+    const phone = this.byPlayerId.get(playerId);
+    return phone ? { phoneNumber: phone } : null;
+  }
+
+  async upsert(playerId: string, phoneNumber: string): Promise<void> {
+    this.byPlayerId.set(playerId, phoneNumber);
   }
 }

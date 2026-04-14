@@ -80,8 +80,23 @@ export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
       return;
     }
 
-    const { playerId, playerName, county } = parsed.data;
+    // Notification gate: player must have push token OR phone number
     const authId = req.authUser!.authId;
+    const [deviceCheck, phoneCheck] = await Promise.all([
+      supabase.from("device_tokens").select("id").eq("player_id", authId).eq("active", true).limit(1),
+      supabase.from("player_phones").select("id").eq("player_id", authId).limit(1),
+    ]);
+    const hasDevice = (deviceCheck.data?.length ?? 0) > 0;
+    const hasPhone = (phoneCheck.data?.length ?? 0) > 0;
+    if (!hasDevice && !hasPhone) {
+      res.status(403).json({
+        error: "notifications_required",
+        message: "Enable push notifications or provide a phone number to join tournaments. Rally needs to reach you when matches are scheduled.",
+      });
+      return;
+    }
+
+    const { playerId, playerName, county } = parsed.data;
 
     // Ownership check: prevent impersonating another player's lobby entry
     const { data: existing } = await supabase.from("lobby").select("auth_id").eq("player_id", playerId).maybeSingle();
@@ -291,6 +306,112 @@ export function createFrontendRoutes(deps: FrontendRouteDeps): Router {
     }
 
     res.json({ ok: true });
+  });
+
+  // ── Register Device Token ───────────────────────────────────────────────
+
+  const registerDeviceSchema = z.object({
+    token: z.string().min(1).max(500),
+    platform: z.enum(["ios", "android", "web"]),
+  });
+
+  router.post("/notifications/register-device", requireAuth, async (req, res) => {
+    const parsed = registerDeviceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_payload", details: parsed.error.flatten() });
+      return;
+    }
+
+    const authId = req.authUser!.authId;
+    const { token, platform } = parsed.data;
+
+    // Upsert: update existing token or create new one
+    const { error } = await supabase.from("device_tokens").upsert({
+      player_id: authId,
+      token,
+      platform,
+      active: true,
+      consecutive_failures: 0,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "token" });
+
+    if (error) {
+      res.status(500).json({ error: "device_registration_failed", message: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
+  });
+
+  // ── Save Phone Number ─────────────────────────────────────────────────
+
+  const savePhoneSchema = z.object({
+    phoneNumber: z.string().min(10).max(20),
+  });
+
+  router.post("/notifications/phone", requireAuth, async (req, res) => {
+    const parsed = savePhoneSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_payload", details: parsed.error.flatten() });
+      return;
+    }
+
+    const authId = req.authUser!.authId;
+    const { phoneNumber } = parsed.data;
+
+    const { error } = await supabase.from("player_phones").upsert({
+      player_id: authId,
+      phone_number: phoneNumber,
+    }, { onConflict: "player_id" });
+
+    if (error) {
+      res.status(500).json({ error: "phone_save_failed", message: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
+  });
+
+  // ── Acknowledge Notification ──────────────────────────────────────────
+
+  router.post("/notifications/:id/ack", requireAuth, async (req, res) => {
+    const notificationId = req.params.id;
+
+    // Mark the delivery as acknowledged (prevents SMS escalation)
+    const { error } = await supabase
+      .from("notification_deliveries")
+      .update({
+        status: "acknowledged",
+        acknowledged_at: new Date().toISOString(),
+      })
+      .eq("notification_id", notificationId)
+      .eq("channel", "push");
+
+    if (error) {
+      res.status(500).json({ error: "ack_failed", message: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
+  });
+
+  // ── Notification Capability Check ─────────────────────────────────────
+
+  router.get("/notifications/status", requireAuth, async (req, res) => {
+    const authId = req.authUser!.authId;
+
+    const [deviceCheck, phoneCheck] = await Promise.all([
+      supabase.from("device_tokens").select("id, platform").eq("player_id", authId).eq("active", true),
+      supabase.from("player_phones").select("phone_number").eq("player_id", authId).maybeSingle(),
+    ]);
+
+    res.json({
+      ok: true,
+      hasActiveDevice: (deviceCheck.data?.length ?? 0) > 0,
+      devices: deviceCheck.data?.map((d: Record<string, unknown>) => ({ id: d.id, platform: d.platform })) ?? [],
+      hasPhone: !!phoneCheck.data,
+      canJoinTournament: (deviceCheck.data?.length ?? 0) > 0 || !!phoneCheck.data,
+    });
   });
 
   // ── Health check for frontend routes ───────────────────────────────────

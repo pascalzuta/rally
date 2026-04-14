@@ -9,7 +9,9 @@ import {
   InMemoryAvailabilityRepo,
   InMemoryDeviceTokenRepo,
   InMemoryMatchRepo,
+  InMemoryNotificationDeliveryRepo,
   InMemoryNotificationRepo,
+  InMemoryPlayerPhoneRepo,
   InMemoryPlayerRepo,
   InMemoryPoolRepo,
   InMemoryTournamentRepo
@@ -19,13 +21,16 @@ import {
   SupabaseAvailabilityRepo,
   SupabaseDeviceTokenRepo,
   SupabaseMatchRepo,
+  SupabaseNotificationDeliveryRepo,
   SupabaseNotificationRepo,
+  SupabasePlayerPhoneRepo,
   SupabasePlayerRepo,
   SupabasePoolRepo,
   SupabaseTournamentRepo
 } from "../repo/supabase.js";
-import type { AuthRepo, DeviceTokenRepo, NotificationRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
+import type { AuthRepo, DeviceTokenRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
 import { initPush, closePushSession } from "../services/pushService.js";
+import { initSms } from "../services/smsService.js";
 import { TournamentEngine } from "../services/tournamentEngine.js";
 import { createRoutes } from "./routes.js";
 import { createFrontendRoutes } from "./frontendRoutes.js";
@@ -45,6 +50,47 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
       credentials: false
     })
   );
+  // Twilio webhook needs raw body for signature validation — mount BEFORE express.json()
+  app.post("/webhooks/twilio", express.raw({ type: "application/x-www-form-urlencoded" }), async (req, res) => {
+    try {
+      const { validateTwilioWebhook } = await import("../services/smsService.js");
+      const signature = req.header("X-Twilio-Signature") ?? "";
+      const url = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const rawBody = req.body as Buffer;
+      const params = Object.fromEntries(new URLSearchParams(rawBody.toString()));
+
+      if (!validateTwilioWebhook(url, params, signature)) {
+        logger.warn("[Webhook] Invalid Twilio signature");
+        res.status(403).send("Forbidden");
+        return;
+      }
+
+      const messageSid = params.MessageSid;
+      const messageStatus = params.MessageStatus;
+      logger.info({ messageSid, messageStatus }, "[Webhook] Twilio delivery status");
+
+      // Update delivery record if status is terminal failure
+      if (messageStatus === "failed" || messageStatus === "undelivered") {
+        if (useSupabase) {
+          const { createClient } = await import("@supabase/supabase-js");
+          const sb = createClient(config.SUPABASE_URL!, config.SUPABASE_SERVICE_ROLE_KEY!);
+          await sb
+            .from("notification_deliveries")
+            .update({
+              status: "delivery_failed",
+              failure_reason: `Twilio: ${messageStatus}`,
+            })
+            .eq("provider_message_id", messageSid);
+        }
+      }
+
+      res.status(200).send("OK");
+    } catch (err) {
+      logger.error({ err }, "[Webhook] Twilio webhook error");
+      res.status(500).send("Error");
+    }
+  });
+
   app.use(express.json({ limit: "64kb" }));
   const httpLogger = (pinoHttp as unknown as (args: { logger: pino.Logger }) => express.RequestHandler)({ logger });
   app.use(httpLogger);
@@ -60,6 +106,8 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   let tournaments: TournamentRepo;
   let pool: PoolRepo;
   let notifications: NotificationRepo;
+  let notificationDeliveries: NotificationDeliveryRepo;
+  let playerPhones: PlayerPhoneRepo;
   let deviceTokens: DeviceTokenRepo;
 
   const useSupabase = config.SUPABASE_URL && config.SUPABASE_SERVICE_ROLE_KEY;
@@ -76,6 +124,8 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     tournaments = new SupabaseTournamentRepo(supabase);
     pool = new SupabasePoolRepo(supabase);
     notifications = new SupabaseNotificationRepo(supabase);
+    notificationDeliveries = new SupabaseNotificationDeliveryRepo(supabase);
+    playerPhones = new SupabasePlayerPhoneRepo(supabase);
     deviceTokens = new SupabaseDeviceTokenRepo(supabase);
   } else {
     logger.info("Using in-memory database (no SUPABASE_URL set)");
@@ -94,6 +144,8 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     tournaments = memTournaments;
     pool = memPool;
     notifications = new InMemoryNotificationRepo();
+    notificationDeliveries = new InMemoryNotificationDeliveryRepo();
+    playerPhones = new InMemoryPlayerPhoneRepo();
     deviceTokens = new InMemoryDeviceTokenRepo();
 
     // Seed demo data (in-memory only)
@@ -103,7 +155,8 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
   }
 
   // Tournament engine (created before routes so routes can trigger activation)
-  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, deviceTokens, logger });
+  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, notificationDeliveries, playerPhones, deviceTokens, logger });
+  initSms(logger);
   engine.start();
   process.on("SIGTERM", () => { engine.stop(); closePushSession(); });
   process.on("SIGINT", () => { engine.stop(); closePushSession(); });

@@ -223,8 +223,8 @@ export interface Tournament {
 
 // ─── Notification ─────────────────────────────────────────────────────────────
 
-export type NotificationChannel = "email" | "push";
-export type NotificationStatus = "queued" | "sent" | "failed";
+export type NotificationChannel = "email" | "push" | "sms" | "in_app";
+export type NotificationStatus = "queued" | "processing" | "sent" | "failed";
 
 export interface Notification {
   id: string;
@@ -240,6 +240,19 @@ export interface Notification {
   sentAt?: string;
   createdAt: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface NotificationDelivery {
+  id: string;
+  notificationId: string;
+  channel: "push" | "sms";
+  providerMessageId?: string | undefined;
+  status: "pending" | "push_sent" | "sms_sent" | "acknowledged" | "delivery_failed";
+  pushSentAt?: string | undefined;
+  smsSentAt?: string | undefined;
+  acknowledgedAt?: string | undefined;
+  failureReason?: string | undefined;
+  createdAt: string;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

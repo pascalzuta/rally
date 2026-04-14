@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Match, Tournament } from "@rally/core";
 import { generateRoundRobin, computeStandings } from "@rally/core";
-import type { AvailabilityRepo, DeviceTokenRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "../repo/interfaces.js";
+import type { AvailabilityRepo, DeviceTokenRepo, MatchRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, PoolRepo, TournamentRepo } from "../repo/interfaces.js";
 import type { Logger } from "pino";
 import { autoScheduleTournament } from "./autoScheduler.js";
 import { findOverlaps, buildProposalsFromOverlaps } from "./scheduler.js";
@@ -36,6 +36,8 @@ interface EngineDeps {
   players: PlayerRepo;
   availability: AvailabilityRepo;
   notifications: NotificationRepo;
+  notificationDeliveries: NotificationDeliveryRepo;
+  playerPhones: PlayerPhoneRepo;
   deviceTokens?: DeviceTokenRepo;
   logger: Logger;
 }
@@ -46,7 +48,13 @@ export class TournamentEngine {
   private notificationService: NotificationService;
 
   constructor(private deps: EngineDeps, private intervalMs = DEFAULT_TICK_INTERVAL_MS) {
-    this.notificationService = new NotificationService(deps.notifications, deps.logger, deps.deviceTokens);
+    this.notificationService = new NotificationService({
+      repo: deps.notifications,
+      deliveryRepo: deps.notificationDeliveries,
+      deviceTokenRepo: deps.deviceTokens,
+      phoneRepo: deps.playerPhones,
+      logger: deps.logger,
+    });
   }
 
   start(): void {
