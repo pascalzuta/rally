@@ -69,7 +69,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showSuccess, showError, showInfo, showWarning, showConfirmation }}>
       {children}
       {toast && toast.variant === 'confirmation' && toast.tone ? (
-        <div className={`rally-toast-confirm rally-toast-confirm--${toast.tone}`} key={toast.id}>
+        <div className={`rally-toast-confirm rally-toast-confirm--${toast.tone}`} key={toast.id} onClick={() => setToast(null)} style={{ cursor: 'pointer' }}>
           <span className="rally-toast-confirm-icon">{TONE_ICONS[toast.tone]}</span>
           <span className="rally-toast-confirm-msg">{toast.message}</span>
         </div>

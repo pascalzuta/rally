@@ -344,17 +344,9 @@ export default function HomeHeroCard({
         )}
 
         {heroState === 'active' && actionCardCount === 0 && (
-          <>
-            <div className="hero-all-clear">
-              <span className="hero-check">&#10003;</span> All set — check back after your next match
-            </div>
-            <div className="hero-invite-nudge">
-              <span>Know someone who'd enjoy Rally?</span>
-              <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
-                Invite to Next Tournament
-              </button>
-            </div>
-          </>
+          <div className="hero-all-clear">
+            <span className="hero-check">&#10003;</span> You're all caught up. Your next match time will appear here once it's confirmed.
+          </div>
         )}
 
         {heroState === 'active' && actionCardCount > 0 && (
@@ -480,14 +472,9 @@ export default function HomeHeroCard({
           )}
 
           {heroState === 'joined-ready' && (
-            <>
-              <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>
-                Invite Friends
-              </button>
-              <button className="btn btn-large formation-cta-secondary" onClick={handleCopyLink}>
-                {copied ? 'Copied!' : 'Copy Invite Link'}
-              </button>
-            </>
+            <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>
+              Invite Friends
+            </button>
           )}
 
           {heroState === 'countdown-ready' && (

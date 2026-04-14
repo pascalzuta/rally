@@ -8,6 +8,7 @@ interface Props {
   profile: PlayerProfile
   onClose: () => void
   onViewLeaderboard?: () => void
+  embedded?: boolean
 }
 
 // --- Rating Chart ---
@@ -161,7 +162,7 @@ function BadgeIcon({ type }: { type: Badge['type'] }) {
 
 // --- Main Rating Panel ---
 
-export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Props) {
+export default function RatingPanel({ profile, onClose, onViewLeaderboard, embedded }: Props) {
   const rating = getPlayerRating(profile.id, profile.name)
   const tournaments = getPlayerTournaments(profile.id)
   const rankInfo = getPlayerRank(profile.name, profile.county)
@@ -223,6 +224,19 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
     return 'Draw'
   }
 
+  if (embedded) {
+    return (
+      <div className="rating-tab">
+        <div className="rating-panel-body">
+          {renderContent()}
+        </div>
+        {selectedTrophy && (
+          <TrophyDetailModal trophy={selectedTrophy} onClose={() => setSelectedTrophy(null)} />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="rating-panel-overlay">
       <div className="rating-panel">
@@ -232,6 +246,19 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
         </div>
 
         <div className="rating-panel-body">
+          {renderContent()}
+        </div>
+      </div>
+
+      {selectedTrophy && (
+        <TrophyDetailModal trophy={selectedTrophy} onClose={() => setSelectedTrophy(null)} />
+      )}
+    </div>
+  )
+
+  function renderContent() {
+    return (
+      <>
           {/* Rally Rating Hero Card */}
           <div className="card rating-hero">
             <div className="card-status-row">
@@ -451,12 +478,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard }: Pro
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {selectedTrophy && (
-        <TrophyDetailModal trophy={selectedTrophy} onClose={() => setSelectedTrophy(null)} />
-      )}
-    </div>
-  )
+      </>
+    )
+  }
 }
