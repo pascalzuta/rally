@@ -15075,26 +15075,80 @@ main {
    Native App (Capacitor/iOS) Overrides
    Scoped to .native-app on <html> — does not affect web
    ================================================ */
+/* Logged-in: top nav clears Dynamic Island with generous breathing room */
 .native-app .top-nav {
-  padding-top: calc(max(12px, env(safe-area-inset-top, 12px)) + 8px);
-  padding-bottom: 10px;
+  padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
+  padding-bottom: 16px;
+  min-height: 64px;
 }
 
+/* Logged-out: registration/signup top nav */
 .native-app .top-nav-register {
-  padding-top: calc(max(12px, env(safe-area-inset-top, 12px)) + 8px);
+  padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
+  padding-bottom: 16px;
 }
 
+/* Bottom tabs: clear home indicator with extra room */
 .native-app .bottom-tabs {
-  height: 64px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  height: auto;
+  min-height: 72px;
+  padding-top: 8px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 8px);
 }
 
 .native-app .bottom-tab {
-  gap: 4px;
+  gap: 5px;
   padding: 8px 0;
 }
 
 .native-app .tab-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Hide web-only guest nav in native app */
+.native-app .dgh-nav {
+  display: none;
+}
+
+/* Native guest nav — only rendered in Capacitor, never on web */
+.native-guest-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 20px) + 16px) var(--space-lg) 16px;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-divider);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.native-guest-nav .rally-logo {
+  cursor: pointer;
+}
+
+.native-guest-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.native-guest-nav-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-button);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  border: 1px solid var(--color-divider);
+  background: none;
+  color: var(--color-text-secondary);
+}
+
+.native-guest-nav-btn-primary {
+  background: var(--color-accent-primary);
+  color: #fff;
+  border-color: var(--color-accent-primary);
 }

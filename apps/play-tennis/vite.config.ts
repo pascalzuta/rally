@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => ({
   base: process.env.CAPACITOR_BUILD ? './' : '/',
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.1.0'),
+    'import.meta.env.VITE_CAPACITOR_BUILD': JSON.stringify(process.env.CAPACITOR_BUILD || ''),
   },
   build: {
     rollupOptions: {

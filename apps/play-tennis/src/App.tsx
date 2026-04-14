@@ -29,9 +29,11 @@ const Inbox = lazy(() => import('./components/Inbox'))
 const RatingPanel = lazy(() => import('./components/RatingPanel'))
 const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 
+// Native app detection: baked in at build time via CAPACITOR_BUILD=1
+const isNativeApp = !!import.meta.env.VITE_CAPACITOR_BUILD
+
 // DevTools: loaded in development, staging, and native app builds
 const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
-const isNativeApp = typeof window !== 'undefined' && (window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost')
 const DevTools = (import.meta.env.DEV || isStaging || isNativeApp)
   ? lazy(() => import('./components/DevTools'))
   : () => null
@@ -284,6 +286,16 @@ export default function App() {
   }
 
   if (!profile) {
+    const nativeGuestNav = isNativeApp ? (
+      <nav className="native-guest-nav">
+        <img className="rally-logo" height="32" src="/rally-logo.svg" alt="Rally" onClick={() => navigate('/')} />
+        <div className="native-guest-nav-actions">
+          <button className="native-guest-nav-btn" onClick={() => navigate(ROUTES.LOGIN)}>Log in</button>
+          <button className="native-guest-nav-btn native-guest-nav-btn-primary" onClick={() => navigate(ROUTES.SIGNUP)}>Sign up</button>
+        </div>
+      </nav>
+    ) : null
+
     const devTools = (
       <DevTools
         onProfileSwitch={p => setProfile(p)}
@@ -297,14 +309,16 @@ export default function App() {
     if (location.pathname === ROUTES.SIGNUP) {
       return (
         <div className="app">
-          <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-            <div className="top-nav-logo top-nav-logo-large">
-              <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-            </div>
-            <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
-              Blog
-            </a>
-          </nav>
+          {nativeGuestNav || (
+            <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
+              <div className="top-nav-logo top-nav-logo-large">
+                <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
+              </div>
+              <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
+                Blog
+              </a>
+            </nav>
+          )}
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
           <Footer />
           {devTools}

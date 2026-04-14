@@ -4,11 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { RallyDataProvider } from './context/RallyDataProvider'
-import { isNative } from './native/platform'
-
-if (isNative) {
+// CAPACITOR_BUILD is set at build time via env var. This avoids runtime detection
+// issues with Capacitor version mismatches between npm (8.x) and Swift PM (7.x).
+if (import.meta.env.VITE_CAPACITOR_BUILD) {
   document.documentElement.classList.add('native-app')
-  // Ensure safe-area-inset env vars activate in the native WKWebView
   const vp = document.querySelector('meta[name="viewport"]')
   if (vp && !vp.getAttribute('content')?.includes('viewport-fit')) {
     vp.setAttribute('content', vp.getAttribute('content') + ', viewport-fit=cover')
