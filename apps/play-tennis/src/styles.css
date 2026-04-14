@@ -279,7 +279,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(max(12px, env(safe-area-inset-top, 12px)) + 8px) var(--space-lg) 10px;
+  padding: max(12px, env(safe-area-inset-top, 12px)) var(--space-lg) 8px;
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -294,7 +294,7 @@ body {
 
 .top-nav-register {
   justify-content: center;
-  padding-top: calc(max(12px, env(safe-area-inset-top, 12px)) + 8px);
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
   padding-bottom: 4px;
 }
 
@@ -354,14 +354,14 @@ body {
 .bottom-tabs {
   flex-shrink: 0;
   width: 100%;
-  height: 64px;
+  height: 56px;
   display: flex;
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--color-divider);
   z-index: var(--z-dropdown);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .bottom-tab {
@@ -370,8 +370,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 3px;
+  padding: 4px 0;
   border: none;
   background: none;
   cursor: pointer;
@@ -404,8 +404,8 @@ body {
 }
 
 .tab-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .tab-text {
@@ -12527,7 +12527,6 @@ main {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-divider);
-  padding-top: calc(max(0px, env(safe-area-inset-top, 0px)) + 8px);
 }
 
 .dgh-nav-inner {
@@ -13238,7 +13237,7 @@ main {
   .dgh-nav-inner { height: 52px; padding: 0 var(--space-lg); }
   .dgh-nav-inner .rally-logo { height: 28px; }
   .dgh-nav-actions .dgh-btn-link { display: none; }
-  .dgh-nav-actions .dgh-btn-text { font-size: var(--font-caption); }
+  .dgh-nav-actions .dgh-btn-text { display: none; }
   .dgh-btn-primary { padding: 8px 18px; font-size: var(--font-caption); }
 
   .dgh-hero { padding-left: var(--space-lg); padding-right: var(--space-lg); }
@@ -15071,3 +15070,31 @@ main {
   transition: background 140ms ease;
 }
 .victory-replay:hover { background: #e3e6eb; }
+
+/* ================================================
+   Native App (Capacitor/iOS) Overrides
+   Scoped to .native-app on <html> — does not affect web
+   ================================================ */
+.native-app .top-nav {
+  padding-top: calc(max(12px, env(safe-area-inset-top, 12px)) + 8px);
+  padding-bottom: 10px;
+}
+
+.native-app .top-nav-register {
+  padding-top: calc(max(12px, env(safe-area-inset-top, 12px)) + 8px);
+}
+
+.native-app .bottom-tabs {
+  height: 64px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+}
+
+.native-app .bottom-tab {
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.native-app .tab-icon {
+  width: 22px;
+  height: 22px;
+}
