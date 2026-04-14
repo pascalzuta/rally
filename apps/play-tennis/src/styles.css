@@ -1415,7 +1415,7 @@ select:focus {
   border-radius: var(--radius-card);
   padding: 20px 24px;
   box-shadow: var(--shadow);
-  border-left: 5px solid var(--color-divider);
+  border-left: 6px solid var(--color-divider);
   transition: border-color var(--duration-fast) var(--ease-out-quart), transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-normal) var(--ease-out-quart);
   display: flex;
   flex-direction: column;
@@ -6037,7 +6037,7 @@ select:focus {
 }
 
 .action-card:hover::before {
-  width: 8px;
+  opacity: 0.85;
 }
 
 .action-card:active {
@@ -6175,7 +6175,7 @@ select:focus {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
   padding: 28px 24px 24px;
-  border-left: 8px solid var(--color-accent-primary);
+  border-left: 6px solid var(--color-accent-primary);
   box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 18px 48px -20px rgba(42, 91, 215, 0.35);
   transition: box-shadow var(--duration-normal) var(--ease-out-quart), transform var(--duration-fast) var(--ease-out-expo);
   animation: cardSlideIn 520ms var(--ease-out-expo) both;
@@ -7079,7 +7079,7 @@ select:focus {
   flex-direction: column;
   gap: var(--space-md);
   background: var(--color-bg-surface);
-  border-left: 5px solid var(--color-accent-primary);
+  border-left: 6px solid var(--color-accent-primary);
   box-shadow: 0 2px 6px rgba(0,0,0,0.05), 0 14px 36px -22px rgba(42, 91, 215, 0.22);
   transition: transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-normal) var(--ease-out-quart);
   animation: cardSlideIn 480ms var(--ease-out-expo) both;
@@ -11870,6 +11870,15 @@ main {
 @keyframes panel-slide-in {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Rating as embedded tab (not overlay) */
+.rating-tab {
+  animation: tabFadeIn var(--duration-normal) var(--ease-out-quart) both;
+}
+
+.rating-tab .rating-panel-body {
+  padding: 0;
 }
 
 .rating-panel-header {

@@ -135,7 +135,6 @@ export default function App() {
   }, [inviteTournamentCode])
 
   const [showInbox, setShowInbox] = useState(false)
-  const [showRatingPanel, setShowRatingPanel] = useState(false)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
 
   // Dismiss inbox on outside click
@@ -345,25 +344,14 @@ export default function App() {
             </span>
           )}
           <div className="top-nav-actions">
-            <button className="top-nav-icon" aria-label="Rating & Trophies" onClick={() => { setShowRatingPanel(!showRatingPanel); setShowInbox(false); setShowNotifications(false) }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 9H3V4h3"/>
-                <path d="M18 9h3V4h-3"/>
-                <path d="M6 4h12v6c0 3.31-2.69 6-6 6s-6-2.69-6-6V4z"/>
-                <path d="M12 16v2"/>
-                <path d="M8 22h8"/>
-                <path d="M8 22v-4"/>
-                <path d="M16 22v-4"/>
-              </svg>
-            </button>
-            <button className="top-nav-icon inbox-icon-btn" aria-label="Messages" onClick={() => { setShowInbox(!showInbox); setShowNotifications(false); setShowRatingPanel(false) }}>
+            <button className="top-nav-icon inbox-icon-btn" aria-label="Messages" onClick={() => { setShowInbox(!showInbox); setShowNotifications(false) }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M22 7l-10 7L2 7" />
               </svg>
               {unreadMsgCount > 0 && <span className="inbox-unread-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
-            <button className="top-nav-icon notif-wrapper" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); setShowRatingPanel(false) }}>
+            <button className="top-nav-icon notif-wrapper" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false) }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -520,6 +508,15 @@ export default function App() {
               />
             } />
 
+            <Route path={ROUTES.RATING} element={
+              <RatingPanel
+                profile={profile}
+                onClose={() => navigate(ROUTES.HOME)}
+                onViewLeaderboard={() => navigate(ROUTES.LEADERBOARD)}
+                embedded
+              />
+            } />
+
             <Route path={ROUTES.PROFILE} element={
               <Profile
                 profile={profile}
@@ -575,6 +572,18 @@ export default function App() {
             </svg>
             <span className="tab-text">Quick Play</span>
           </button>
+          <button className={`bottom-tab ${activeTab === 'rating' ? 'active' : ''}`} onClick={() => navigate(ROUTES.RATING)}>
+            <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9H3V4h3"/>
+              <path d="M18 9h3V4h-3"/>
+              <path d="M6 4h12v6c0 3.31-2.69 6-6 6s-6-2.69-6-6V4z"/>
+              <path d="M12 16v2"/>
+              <path d="M8 22h8"/>
+              <path d="M8 22v-4"/>
+              <path d="M16 22v-4"/>
+            </svg>
+            <span className="tab-text">Rating</span>
+          </button>
           <button className={`bottom-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigate(ROUTES.PROFILE)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -596,15 +605,6 @@ export default function App() {
           onClose={() => setShowInbox(false)}
         />
         </div>
-        </Suspense>
-      )}
-      {showRatingPanel && (
-        <Suspense fallback={null}>
-        <RatingPanel
-          profile={profile}
-          onClose={() => setShowRatingPanel(false)}
-          onViewLeaderboard={() => { setShowRatingPanel(false); navigate(ROUTES.LEADERBOARD) }}
-        />
         </Suspense>
       )}
       {showNotifications && (() => {
