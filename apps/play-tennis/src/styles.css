@@ -12527,6 +12527,7 @@ main {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-divider);
+  padding-top: calc(max(0px, env(safe-area-inset-top, 0px)) + 8px);
 }
 
 .dgh-nav-inner {
@@ -13237,7 +13238,7 @@ main {
   .dgh-nav-inner { height: 52px; padding: 0 var(--space-lg); }
   .dgh-nav-inner .rally-logo { height: 28px; }
   .dgh-nav-actions .dgh-btn-link { display: none; }
-  .dgh-nav-actions .dgh-btn-text { display: none; }
+  .dgh-nav-actions .dgh-btn-text { font-size: var(--font-caption); }
   .dgh-btn-primary { padding: 8px 18px; font-size: var(--font-caption); }
 
   .dgh-hero { padding-left: var(--space-lg); padding-right: var(--space-lg); }
