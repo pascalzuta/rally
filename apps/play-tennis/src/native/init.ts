@@ -11,6 +11,7 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 import { registerPushIfGranted } from './push'
 import { initPushListeners } from './push-listeners'
 import { handleDeepLink, parseUniversalLink } from './deep-link'
+import { handleOAuthCallback } from '../supabase'
 
 /**
  * Initialize all native features.
@@ -38,7 +39,12 @@ export async function initNativeApp(userId: string): Promise<void> {
   await registerPushIfGranted()
 
   // 4. Listen for Universal Links (play-rally.com URLs opening the app)
-  CapApp.addListener('appUrlOpen', (event) => {
+  CapApp.addListener('appUrlOpen', async (event) => {
+    // OAuth callback: /auth/callback#access_token=...
+    if (event.url.includes('/auth/callback')) {
+      await handleOAuthCallback(event.url)
+      return
+    }
     const data = parseUniversalLink(event.url)
     handleDeepLink(data)
   })

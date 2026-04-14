@@ -4,6 +4,7 @@
       {
         "appIDs": ["RTNLY3UZSV.com.playrally.app"],
         "components": [
+          { "/": "/auth/callback", "comment": "OAuth redirect opens in app" },
           { "/": "/join/*", "comment": "Invite deep links open in app" },
           { "/": "/tournament/*/match/*", "comment": "Push notification match links open in app" },
           { "/": "/*", "exclude": true, "comment": "Everything else stays in the browser" }
