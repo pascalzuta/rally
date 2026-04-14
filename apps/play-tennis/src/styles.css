@@ -15077,7 +15077,7 @@ main {
    ================================================ */
 .native-app .top-nav {
   padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
-  padding-bottom: 12px;
+  padding-bottom: 16px;
   min-height: 64px;
 }
 
@@ -15102,12 +15102,16 @@ main {
   height: 24px;
 }
 
+.native-app .dgh-nav {
+  display: none;
+}
+
 /* Native guest nav — only rendered in Capacitor, never on web */
 .native-guest-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top, 20px) + 16px) var(--space-lg) 12px;
+  padding: calc(env(safe-area-inset-top, 20px) + 16px) var(--space-lg) 16px;
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
