@@ -214,14 +214,8 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       setExpandedMatchId(null)
                       setMessagingMatchId(isMessaging ? null : match.id)
                     }}
-                    onUpdated={() => {
-                      setExpandedMatchId(null)
-                      onTournamentUpdated()
-                    }}
-                    onScoreSaved={() => {
-                      setExpandedMatchId(null)
-                      onTournamentUpdated()
-                    }}
+                    onUpdated={() => onTournamentUpdated()}
+                    onScoreSaved={() => onTournamentUpdated()}
                   />
                 )}
               </div>

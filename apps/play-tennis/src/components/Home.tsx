@@ -340,10 +340,7 @@ export default function Home({
                   setExpandedCardKey(null)
                   setMessagingCardKey(isMessaging ? null : cardKey)
                 }}
-                onUpdated={() => {
-                  setExpandedCardKey(null)
-                  onDataChanged?.()
-                }}
+                onUpdated={() => onDataChanged?.()}
               />
             )
           })}
@@ -440,7 +437,7 @@ export default function Home({
       })()}
 
       {/* Up Next Card — hidden when pending feedback is showing */}
-      {!getPendingFeedback() && upNext && upNext.match.schedule?.confirmedSlot && (() => {
+      {!getPendingFeedback() && upNext && (() => {
         const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
         const upNextExpanded = expandedCardKey === upNextKey
         const upNextMessaging = messagingCardKey === upNextKey
@@ -461,10 +458,7 @@ export default function Home({
               setExpandedCardKey(null)
               setMessagingCardKey(upNextMessaging ? null : upNextKey)
             }}
-            onUpdated={() => {
-              setExpandedCardKey(null)
-              onDataChanged?.()
-            }}
+            onUpdated={() => onDataChanged?.()}
           />
         )
       })()}

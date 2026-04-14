@@ -263,10 +263,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
               setExpandedMatchId(null)
               setMessagingMatchId(isMessaging ? null : nextMatch.id)
             }}
-            onUpdated={() => {
-              setExpandedMatchId(null)
-              onTournamentUpdated?.()
-            }}
+            onUpdated={() => onTournamentUpdated?.()}
           />
         )
       })()}
@@ -301,10 +298,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
                       setExpandedMatchId(null)
                       setMessagingMatchId(isMessaging ? null : match.id)
                     }}
-                    onUpdated={() => {
-                      setExpandedMatchId(null)
-                      onTournamentUpdated?.()
-                    }}
+                    onUpdated={() => onTournamentUpdated?.()}
                   />
                 )
               })}
