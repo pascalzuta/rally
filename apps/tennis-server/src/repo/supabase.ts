@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AuthUser, AvailabilitySlot, Match, Notification, Player, PoolEntry, Tournament } from "@rally/core";
-import type { AuthRepo, AvailabilityRepo, DeviceToken, DeviceTokenRepo, MatchRepo, NotificationRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
+import type { AuthUser, AvailabilitySlot, Match, Notification, NotificationDelivery, Player, PoolEntry, Tournament } from "@rally/core";
+import type { AuthRepo, AvailabilityRepo, DeviceToken, DeviceTokenRepo, MatchRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, PoolRepo, TournamentRepo } from "./interfaces.js";
 
 // ── AuthUser mapping ────────────────────────────────────────────────────────────
 
@@ -575,6 +575,31 @@ export class SupabaseNotificationRepo implements NotificationRepo {
     if (error) throw error;
     return (data || []).map(rowToNotification);
   }
+
+  async claimPending(limit = 50): Promise<Notification[]> {
+    const { data, error } = await this.db.rpc("claim_pending_notifications", {
+      batch_size: limit,
+    });
+    if (error) throw error;
+    return (data || []).map(rowToNotification);
+  }
+}
+
+// ── NotificationDelivery mapping ────────────────────────────────────────────
+
+function rowToDelivery(row: Record<string, unknown>): NotificationDelivery {
+  return {
+    id: row.id as string,
+    notificationId: row.notification_id as string,
+    channel: row.channel as NotificationDelivery["channel"],
+    providerMessageId: row.provider_message_id as string | undefined,
+    status: row.status as NotificationDelivery["status"],
+    pushSentAt: row.push_sent_at ? String(row.push_sent_at) : undefined,
+    smsSentAt: row.sms_sent_at ? String(row.sms_sent_at) : undefined,
+    acknowledgedAt: row.acknowledged_at ? String(row.acknowledged_at) : undefined,
+    failureReason: row.failure_reason as string | undefined,
+    createdAt: String(row.created_at),
+  };
 }
 
 // ── Device Token Repository ──────────────────────────────────────────────────
@@ -608,6 +633,104 @@ export class SupabaseDeviceTokenRepo implements DeviceTokenRepo {
       .from("device_tokens")
       .delete()
       .eq("token", token);
+    if (error) throw error;
+  }
+}
+
+export class SupabaseNotificationDeliveryRepo implements NotificationDeliveryRepo {
+  constructor(private readonly db: SupabaseClient) {}
+
+  async create(delivery: NotificationDelivery): Promise<void> {
+    const { error } = await this.db
+      .from("notification_deliveries")
+      .insert({
+        id: delivery.id,
+        notification_id: delivery.notificationId,
+        channel: delivery.channel,
+        provider_message_id: delivery.providerMessageId ?? null,
+        status: delivery.status,
+        push_sent_at: delivery.pushSentAt ?? null,
+        sms_sent_at: delivery.smsSentAt ?? null,
+        acknowledged_at: delivery.acknowledgedAt ?? null,
+        failure_reason: delivery.failureReason ?? null,
+        created_at: delivery.createdAt,
+      });
+    if (error) throw error;
+  }
+
+  async findByNotificationId(notificationId: string): Promise<NotificationDelivery | null> {
+    const { data, error } = await this.db
+      .from("notification_deliveries")
+      .select("*")
+      .eq("notification_id", notificationId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? rowToDelivery(data) : null;
+  }
+
+  async updateStatus(id: string, status: NotificationDelivery["status"], fields?: Partial<NotificationDelivery>): Promise<void> {
+    const update: Record<string, unknown> = { status };
+    if (fields?.pushSentAt) update.push_sent_at = fields.pushSentAt;
+    if (fields?.smsSentAt) update.sms_sent_at = fields.smsSentAt;
+    if (fields?.acknowledgedAt) update.acknowledged_at = fields.acknowledgedAt;
+    if (fields?.failureReason) update.failure_reason = fields.failureReason;
+    if (fields?.providerMessageId) update.provider_message_id = fields.providerMessageId;
+
+    const { error } = await this.db
+      .from("notification_deliveries")
+      .update(update)
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  async findPendingEscalations(escalationMinutes: number): Promise<NotificationDelivery[]> {
+    const cutoff = new Date(Date.now() - escalationMinutes * 60 * 1000).toISOString();
+    const { data, error } = await this.db
+      .from("notification_deliveries")
+      .select("*")
+      .eq("status", "push_sent")
+      .eq("channel", "push")
+      .lte("push_sent_at", cutoff)
+      .limit(50);
+    if (error) throw error;
+    return (data || []).map(rowToDelivery);
+  }
+
+  async acknowledge(notificationId: string): Promise<void> {
+    const { error } = await this.db
+      .from("notification_deliveries")
+      .update({
+        status: "acknowledged",
+        acknowledged_at: new Date().toISOString(),
+      })
+      .eq("notification_id", notificationId)
+      .eq("channel", "push");
+    if (error) throw error;
+  }
+}
+
+export class SupabasePlayerPhoneRepo implements PlayerPhoneRepo {
+  constructor(private readonly db: SupabaseClient) {}
+
+  async findByPlayerId(playerId: string): Promise<{ phoneNumber: string } | null> {
+    const { data, error } = await this.db
+      .from("player_phones")
+      .select("phone_number")
+      .eq("player_id", playerId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? { phoneNumber: data.phone_number as string } : null;
+  }
+
+  async upsert(playerId: string, phoneNumber: string): Promise<void> {
+    const { error } = await this.db
+      .from("player_phones")
+      .upsert({
+        player_id: playerId,
+        phone_number: phoneNumber,
+      }, { onConflict: "player_id" });
     if (error) throw error;
   }
 }
