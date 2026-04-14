@@ -148,6 +148,7 @@ export default function Home({
 }: Props) {
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
+  const pendingFeedback = getPendingFeedback()
 
   async function handleLogout() {
     onLogout?.()
@@ -188,12 +189,24 @@ export default function Home({
       pinnedUpNextKey = latestUpNext ? `${latestUpNext.tournament.id}-${latestUpNext.match.id}` : null
       return latestUpNext
     }
-    if (pinnedUpNextKey === null) return null
+    if (pinnedUpNextKey === null) {
+      // Re-check: a new match may have become available (new tournament, etc.)
+      if (latestUpNext) {
+        pinnedUpNextKey = `${latestUpNext.tournament.id}-${latestUpNext.match.id}`
+        return latestUpNext
+      }
+      return null
+    }
     // Keep using the originally pinned upNext card
     const match = activeTournaments
       .flatMap(t => t.matches.map(m => ({ tournament: t, match: m })))
       .find(({ tournament, match }) => `${tournament.id}-${match.id}` === pinnedUpNextKey)
-    return match ?? null
+    if (!match) {
+      // Pinned match gone (completed, tournament ended). Reset and pick next available.
+      pinnedUpNextKey = latestUpNext ? `${latestUpNext.tournament.id}-${latestUpNext.match.id}` : null
+      return latestUpNext
+    }
+    return match
   }, [latestUpNext, activeTournaments])
 
   const actionCards = useMemo(
@@ -395,7 +408,7 @@ export default function Home({
 
       {/* Post-match feedback — takes priority over Up Next card */}
       {(() => {
-        const pf = getPendingFeedback()
+        const pf = pendingFeedback
         if (!pf) return null
         const fbTournament = activeTournaments.find(t => t.id === pf.tournamentId)
         if (!fbTournament) return null
@@ -437,7 +450,7 @@ export default function Home({
       })()}
 
       {/* Up Next Card — hidden when pending feedback is showing */}
-      {!getPendingFeedback() && upNext && (() => {
+      {!pendingFeedback && upNext && (() => {
         const upNextKey = `${upNext.tournament.id}-${upNext.match.id}`
         const upNextExpanded = expandedCardKey === upNextKey
         const upNextMessaging = messagingCardKey === upNextKey
