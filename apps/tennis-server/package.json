@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@onesignal/node-onesignal": "^5.4.0",
+    "@parse/node-apn": "^8.1.0",
     "@rally/core": "0.1.0",
     "@supabase/supabase-js": "^2.98.0",
     "cors": "^2.8.5",
@@ -19,6 +20,7 @@
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^8.3.2",
+    "firebase-admin": "^13.8.0",
     "helmet": "^8.0.0",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",

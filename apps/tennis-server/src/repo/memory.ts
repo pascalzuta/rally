@@ -159,8 +159,17 @@ export class InMemoryPoolRepo implements PoolRepo {
 export class InMemoryDeviceTokenRepo implements DeviceTokenRepo {
   private readonly tokens: DeviceToken[] = [];
 
+  async findActiveByPlayerId(playerId: string): Promise<DeviceToken[]> {
+    return this.tokens.filter((t) => t.playerId === playerId && t.active);
+  }
+
   async findByPlayerId(playerId: string): Promise<DeviceToken[]> {
     return this.tokens.filter((t) => t.playerId === playerId);
+  }
+
+  async deactivate(token: string): Promise<void> {
+    const t = this.tokens.find((dt) => dt.token === token);
+    if (t) t.active = false;
   }
 
   async deleteByToken(token: string): Promise<void> {
@@ -195,6 +204,16 @@ export class InMemoryNotificationRepo implements NotificationRepo {
   async markFailed(id: string): Promise<void> {
     const n = this.byId.get(id);
     if (n) n.status = "failed";
+  }
+
+  async requeue(id: string, retryCount: number, scheduledFor: string): Promise<void> {
+    const n = this.byId.get(id);
+    if (n) {
+      n.status = "queued";
+      n.retryCount = retryCount;
+      n.scheduledFor = scheduledFor;
+      delete n.claimedAt;
+    }
   }
 
   async findByMatchAndType(matchId: string, type: string): Promise<Notification[]> {

@@ -15,9 +15,10 @@ import {
   determineFault,
 } from "./paceRules.js";
 import { NOTIFICATION_TEMPLATES } from "./notificationTemplates.js";
+import type { NotificationServiceInterface } from "./notificationService.js";
 
-/** Stub notification service — queues are no-ops until notification infrastructure is rebuilt. */
-const NoopNotificationService = {
+/** Stub notification service — used when no real push service is configured. */
+const NoopNotificationService: NotificationServiceInterface = {
   async queueNotification(_params: { playerId: string; matchId?: string; tournamentId?: string; type: string; subject: string; body: string }): Promise<void> {},
   async processQueue(): Promise<void> {},
 };
@@ -44,15 +45,18 @@ interface EngineDeps {
   notificationDeliveries: NotificationDeliveryRepo;
   playerPhones: PlayerPhoneRepo;
   deviceTokens?: DeviceTokenRepo;
+  notificationService?: NotificationServiceInterface;
   logger: Logger;
 }
 
 export class TournamentEngine {
   private timer: ReturnType<typeof setInterval> | null = null;
   private ticking = false;
-  private notificationService = NoopNotificationService;
+  private notificationService: NotificationServiceInterface;
 
-  constructor(private deps: EngineDeps, private intervalMs = DEFAULT_TICK_INTERVAL_MS) {}
+  constructor(private deps: EngineDeps, private intervalMs = DEFAULT_TICK_INTERVAL_MS) {
+    this.notificationService = deps.notificationService ?? NoopNotificationService;
+  }
 
   start(): void {
     this.timer = setInterval(() => void this.tick(), this.intervalMs);

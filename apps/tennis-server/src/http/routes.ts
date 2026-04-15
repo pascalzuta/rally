@@ -662,40 +662,7 @@ export function createRoutes(deps: RouteDeps): Router {
 
   router.post("/debug/test-notification", debugLimiter, async (req, res) => {
     try {
-      const { playerId, channel, phone } = req.body as {
-        playerId?: string;
-        channel?: "push" | "sms" | "both";
-        phone?: string;
-      };
-
-      const results: Record<string, unknown> = {
-        onesignalEnabled: isOneSignalEnabled(),
-        smsEnabled: isSmsEnabled(),
-      };
-
-      const ch = channel ?? "push";
-
-      if ((ch === "push" || ch === "both") && isOneSignalEnabled() && playerId) {
-        const pushResult = await sendOneSignalPush(
-          playerId,
-          "Rally Tennis Test",
-          "If you see this, push notifications are working!",
-          { type: "test", timestamp: new Date().toISOString() },
-          req.log
-        );
-        results.push = pushResult;
-      }
-
-      if ((ch === "sms" || ch === "both") && isSmsEnabled() && phone) {
-        const smsResult = await sendSms(
-          phone,
-          "Rally Tennis Test: If you see this, SMS notifications are working!",
-          req.log
-        );
-        results.sms = smsResult;
-      }
-
-      res.json({ ok: true, ...results });
+      res.json({ ok: true, message: "Use DevTools panel or POST /v1/fe/notifications/test for push testing" });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       req.log?.error({ err: e }, "test-notification error");

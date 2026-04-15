@@ -24,7 +24,18 @@ const configSchema = z.object({
   ONESIGNAL_REST_API_KEY: z.string().optional().default(""),
   TWILIO_ACCOUNT_SID: z.string().optional().default(""),
   TWILIO_AUTH_TOKEN: z.string().optional().default(""),
-  TWILIO_PHONE_NUMBER: z.string().optional().default("")
+  TWILIO_PHONE_NUMBER: z.string().optional().default(""),
+  // Push notifications (FCM + APNs)
+  FCM_PROJECT_ID: z.string().optional().default(""),
+  FCM_CLIENT_EMAIL: z.string().optional().default(""),
+  FCM_PRIVATE_KEY: z.string().optional().default(""),
+  APNS_KEY_BASE64: z.string().optional().default(""),
+  APNS_KEY_ID: z.string().optional().default(""),
+  APNS_TEAM_ID: z.string().optional().default(""),
+  APNS_BUNDLE_ID: z.string().optional().default(""),
+  APNS_PRODUCTION: z.preprocess((v) => v === "true" || v === "1", z.boolean().default(false)),
+  VAPID_PUBLIC_KEY: z.string().optional().default(""),
+  VAPID_PRIVATE_KEY: z.string().optional().default("")
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

@@ -238,6 +238,9 @@ export interface Notification {
   status: NotificationStatus;
   scheduledFor: string;
   sentAt?: string;
+  claimedAt?: string;
+  retryCount: number;
+  tier?: number;
   createdAt: string;
   metadata?: Record<string, unknown>;
 }
