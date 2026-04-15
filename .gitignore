@@ -56,3 +56,5 @@ apps/play-tennis/ios/App/Pods/
 
 # Android (not used yet)
 apps/play-tennis/android/app/src/main/assets/public/
+.env*.local
+.gstack/

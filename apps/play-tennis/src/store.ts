@@ -4461,23 +4461,3 @@ export async function checkAutoAcceptScores(): Promise<void> {
     }
   }
 }
-
-// ── Dev: Test notification ──────────────────────────────────────────────────
-
-export async function testNotification(channel: 'push' | 'sms' | 'both' = 'push'): Promise<{ ok: boolean; error?: string; details?: unknown }> {
-  const profile = getProfile()
-  if (!profile) return { ok: false, error: 'no_profile' }
-
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://rally-tennis-server.onrender.com'
-  try {
-    const resp = await fetch(`${API_BASE}/v1/debug/test-notification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId: profile.id, channel }),
-    })
-    const data = await resp.json()
-    return { ok: resp.ok, details: data }
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) }
-  }
-}

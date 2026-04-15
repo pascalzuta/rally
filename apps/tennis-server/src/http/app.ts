@@ -29,9 +29,6 @@ import {
   SupabaseTournamentRepo
 } from "../repo/supabase.js";
 import type { AuthRepo, DeviceTokenRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
-import { initPush, closePushSession } from "../services/pushService.js";
-import { initOneSignal } from "../services/onesignalService.js";
-import { initSms } from "../services/smsService.js";
 import { TournamentEngine } from "../services/tournamentEngine.js";
 import { createRoutes } from "./routes.js";
 import { createFrontendRoutes } from "./frontendRoutes.js";
@@ -51,54 +48,9 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
       credentials: false
     })
   );
-  // Twilio webhook needs raw body for signature validation — mount BEFORE express.json()
-  app.post("/webhooks/twilio", express.raw({ type: "application/x-www-form-urlencoded" }), async (req, res) => {
-    try {
-      const { validateTwilioWebhook } = await import("../services/smsService.js");
-      const signature = req.header("X-Twilio-Signature") ?? "";
-      const url = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-      const rawBody = req.body as Buffer;
-      const params = Object.fromEntries(new URLSearchParams(rawBody.toString()));
-
-      if (!validateTwilioWebhook(url, params, signature)) {
-        logger.warn("[Webhook] Invalid Twilio signature");
-        res.status(403).send("Forbidden");
-        return;
-      }
-
-      const messageSid = params.MessageSid;
-      const messageStatus = params.MessageStatus;
-      logger.info({ messageSid, messageStatus }, "[Webhook] Twilio delivery status");
-
-      // Update delivery record if status is terminal failure
-      if (messageStatus === "failed" || messageStatus === "undelivered") {
-        if (useSupabase) {
-          const { createClient } = await import("@supabase/supabase-js");
-          const sb = createClient(config.SUPABASE_URL!, config.SUPABASE_SERVICE_ROLE_KEY!);
-          await sb
-            .from("notification_deliveries")
-            .update({
-              status: "delivery_failed",
-              failure_reason: `Twilio: ${messageStatus}`,
-            })
-            .eq("provider_message_id", messageSid);
-        }
-      }
-
-      res.status(200).send("OK");
-    } catch (err) {
-      logger.error({ err }, "[Webhook] Twilio webhook error");
-      res.status(500).send("Error");
-    }
-  });
-
   app.use(express.json({ limit: "64kb" }));
   const httpLogger = (pinoHttp as unknown as (args: { logger: pino.Logger }) => express.RequestHandler)({ logger });
   app.use(httpLogger);
-
-  // Initialize push notification services
-  await initPush(logger);
-  initOneSignal(logger);
 
   // Repos — use Supabase if configured, otherwise fall back to in-memory
   let auth: AuthRepo;
@@ -158,10 +110,9 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
 
   // Tournament engine (created before routes so routes can trigger activation)
   const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, notificationDeliveries, playerPhones, deviceTokens, logger });
-  initSms(logger);
   engine.start();
-  process.on("SIGTERM", () => { engine.stop(); closePushSession(); });
-  process.on("SIGINT", () => { engine.stop(); closePushSession(); });
+  process.on("SIGTERM", () => { engine.stop(); });
+  process.on("SIGINT", () => { engine.stop(); });
 
   // Frontend-compatible routes (work with live Supabase schema)
   // Must be mounted BEFORE /v1 so /v1/fe/* isn't caught by the /v1 auth middleware
@@ -174,7 +125,7 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
 
   app.use(
     "/v1",
-    createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine, deviceTokens })
+    createRoutes({ config, auth, players, availability, matches, tournaments, pool, engine })
   );
 
   // Global error handler — catches sync errors and, with express-async-errors,

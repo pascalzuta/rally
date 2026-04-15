@@ -8,8 +8,6 @@ import { Capacitor } from '@capacitor/core'
 import { App as CapApp } from '@capacitor/app'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
-import { registerPushIfGranted } from './push'
-import { initPushListeners } from './push-listeners'
 import { handleDeepLink, parseUniversalLink } from './deep-link'
 import { handleOAuthCallback } from '../supabase'
 
@@ -31,14 +29,7 @@ export async function initNativeApp(userId: string): Promise<void> {
     // StatusBar not available (e.g., older device)
   }
 
-  // 2. Set up push notification listeners (token registration + tap handling)
-  initPushListeners(userId)
-
-  // 3. Silently register for push if permission was already granted
-  // (handles app restart / token refresh — no prompt shown)
-  await registerPushIfGranted()
-
-  // 4. Listen for Universal Links (play-rally.com URLs opening the app)
+  // 2. Listen for Universal Links (play-rally.com URLs opening the app)
   CapApp.addListener('appUrlOpen', async (event) => {
     // OAuth callback: /auth/callback#access_token=...
     if (event.url.includes('/auth/callback')) {
@@ -49,7 +40,7 @@ export async function initNativeApp(userId: string): Promise<void> {
     handleDeepLink(data)
   })
 
-  // 5. Listen for app state changes (foreground/background)
+  // 3. Listen for app state changes (foreground/background)
   CapApp.addListener('appStateChange', (state) => {
     if (state.isActive) {
       // App came to foreground — refresh data
@@ -57,6 +48,6 @@ export async function initNativeApp(userId: string): Promise<void> {
     }
   })
 
-  // 6. Hide splash screen now that everything is initialized
+  // 4. Hide splash screen now that everything is initialized
   await SplashScreen.hide({ fadeOutDuration: 300 })
 }
