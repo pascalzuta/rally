@@ -28,6 +28,7 @@ type Status = { text: string; type: 'info' | 'success' | 'error' } | null
 
 export default function DevTools({ onProfileSwitch, activeTournamentId, onTournamentUpdated, onTournamentCreated }: Props) {
   const [expanded, setExpanded] = useState(false)
+  const [smsPhone, setSmsPhone] = useState('')
   const [status, setStatus] = useState<Status>(null)
   const [busy, setBusy] = useState(false)
   const statusTimer = useRef<ReturnType<typeof setTimeout>>()
@@ -258,17 +259,24 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
               flash(r.ok ? 'Push sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
             })} disabled={busy}>Push</button>
             <button className="devbar-btn" onClick={() => run(async () => {
-              const phone = window.prompt('Phone number (e.g. +1234567890):')
-              if (!phone) { flash('Cancelled', 'info'); return }
-              const r = await testNotification('sms', phone)
+              if (!smsPhone.trim()) { flash('Enter phone number below first', 'error'); return }
+              const r = await testNotification('sms', smsPhone.trim())
               flash(r.ok ? 'SMS sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
             })} disabled={busy}>SMS</button>
             <button className="devbar-btn" onClick={() => run(async () => {
-              const phone = window.prompt('Phone number (e.g. +1234567890):')
-              if (!phone) { flash('Cancelled', 'info'); return }
-              const r = await testNotification('both', phone)
+              if (!smsPhone.trim()) { flash('Enter phone number below first', 'error'); return }
+              const r = await testNotification('both', smsPhone.trim())
               flash(r.ok ? 'Both sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
             })} disabled={busy}>Both</button>
+          </div>
+          <div className="devbar-row" style={{ marginTop: 4 }}>
+            <input
+              type="tel"
+              placeholder="+1234567890"
+              value={smsPhone}
+              onChange={e => setSmsPhone(e.target.value)}
+              style={{ flex: 1, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border, #ccc)', fontSize: 13, fontFamily: 'monospace' }}
+            />
           </div>
         </div>
 
