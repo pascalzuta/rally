@@ -29,10 +29,6 @@ import { createCheckoutSession, createPortalSession, handleWebhookEvent, isStrip
 import { searchCities } from "../data/usCities.js";
 import { TOURNEY_TEST_PLAYERS } from "./seed.js";
 import { seedRichData } from "./seedRich.js";
-import { sendOneSignalPush, isOneSignalEnabled } from "../services/onesignalService.js";
-import { sendSms, isSmsEnabled } from "../services/smsService.js";
-import { sendPush, isPushEnabled } from "../services/pushService.js";
-import type { DeviceTokenRepo } from "../repo/interfaces.js";
 import { findNearMisses, findOverlaps, formatProposalLabel } from "../services/scheduler.js";
 import type { TournamentEngine } from "../services/tournamentEngine.js";
 import { recordPlayerActivity } from "../services/paceRules.js";
@@ -46,7 +42,6 @@ interface RouteDeps {
   tournaments: TournamentRepo;
   pool: PoolRepo;
   engine: TournamentEngine;
-  deviceTokens: DeviceTokenRepo;
 }
 
 /**
@@ -666,71 +661,6 @@ export function createRoutes(deps: RouteDeps): Router {
   });
 
   } // end debug routes (development only)
-
-  // ── Test notification endpoint (available in all environments) ────────────
-  router.post("/debug/test-notification", debugLimiter, async (req, res) => {
-    try {
-      const { playerId, channel, phone } = req.body as {
-        playerId?: string;
-        channel?: "push" | "sms" | "both";
-        phone?: string;
-      };
-
-      const results: Record<string, unknown> = {
-        apnsEnabled: isPushEnabled(),
-        onesignalEnabled: isOneSignalEnabled(),
-        smsEnabled: isSmsEnabled(),
-      };
-
-      const ch = channel ?? "push";
-
-      if ((ch === "push" || ch === "both") && playerId) {
-        // Try direct APNs first (native iOS)
-        if (isPushEnabled()) {
-          const tokens = await deps.deviceTokens.findByPlayerId(playerId);
-          const tokenStrings = tokens.map(t => t.token);
-          if (tokenStrings.length > 0) {
-            const apnsResult = await sendPush(
-              tokenStrings,
-              "Rally Tennis Test",
-              "If you see this, push notifications are working! 🎾",
-              { type: "test", timestamp: new Date().toISOString() },
-              req.log
-            );
-            results.apns = apnsResult;
-          } else {
-            results.apns = { error: "no_device_tokens", message: "No device tokens registered for this player. Grant push permission in the app first." };
-          }
-        }
-        // Also try OneSignal (web push)
-        if (isOneSignalEnabled()) {
-          const pushResult = await sendOneSignalPush(
-            playerId,
-            "Rally Tennis Test",
-            "If you see this, push notifications are working!",
-            { type: "test", timestamp: new Date().toISOString() },
-            req.log
-          );
-          results.onesignal = pushResult;
-        }
-      }
-
-      if ((ch === "sms" || ch === "both") && isSmsEnabled() && phone) {
-        const smsResult = await sendSms(
-          phone,
-          "Rally Tennis Test: If you see this, SMS notifications are working!",
-          req.log
-        );
-        results.sms = smsResult;
-      }
-
-      res.json({ ok: true, ...results });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      req.log?.error({ err: e }, "test-notification error");
-      res.status(500).json({ error: "internal_error", message: msg });
-    }
-  });
 
   // ── All routes below require auth ──────────────────────────────────────────
 

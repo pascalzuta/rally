@@ -14,8 +14,13 @@ import {
   daysSince,
   determineFault,
 } from "./paceRules.js";
-import { NotificationService } from "./notificationService.js";
 import { NOTIFICATION_TEMPLATES } from "./notificationTemplates.js";
+
+/** Stub notification service — queues are no-ops until notification infrastructure is rebuilt. */
+const NoopNotificationService = {
+  async queueNotification(_params: { playerId: string; matchId?: string; tournamentId?: string; type: string; subject: string; body: string }): Promise<void> {},
+  async processQueue(): Promise<void> {},
+};
 
 /** Default engine tick interval in milliseconds */
 const DEFAULT_TICK_INTERVAL_MS = 30_000;
@@ -45,17 +50,9 @@ interface EngineDeps {
 export class TournamentEngine {
   private timer: ReturnType<typeof setInterval> | null = null;
   private ticking = false;
-  private notificationService: NotificationService;
+  private notificationService = NoopNotificationService;
 
-  constructor(private deps: EngineDeps, private intervalMs = DEFAULT_TICK_INTERVAL_MS) {
-    this.notificationService = new NotificationService({
-      repo: deps.notifications,
-      deliveryRepo: deps.notificationDeliveries,
-      deviceTokenRepo: deps.deviceTokens,
-      phoneRepo: deps.playerPhones,
-      logger: deps.logger,
-    });
-  }
+  constructor(private deps: EngineDeps, private intervalMs = DEFAULT_TICK_INTERVAL_MS) {}
 
   start(): void {
     this.timer = setInterval(() => void this.tick(), this.intervalMs);
