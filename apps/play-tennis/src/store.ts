@@ -4464,7 +4464,7 @@ export async function checkAutoAcceptScores(): Promise<void> {
 
 // ── Dev: Test notification ──────────────────────────────────────────────────
 
-export async function testNotification(channel: 'push' | 'sms' | 'both' = 'push'): Promise<{ ok: boolean; error?: string; details?: unknown }> {
+export async function testNotification(channel: 'push' | 'sms' | 'both' = 'push', phone?: string): Promise<{ ok: boolean; error?: string; details?: unknown }> {
   const profile = getProfile()
   if (!profile) return { ok: false, error: 'no_profile' }
 
@@ -4473,7 +4473,7 @@ export async function testNotification(channel: 'push' | 'sms' | 'both' = 'push'
     const resp = await fetch(`${API_BASE}/v1/debug/test-notification`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId: profile.id, channel }),
+      body: JSON.stringify({ playerId: profile.id, channel, ...(phone ? { phone } : {}) }),
     })
     const data = await resp.json()
     return { ok: resp.ok, details: data }

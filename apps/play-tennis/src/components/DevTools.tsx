@@ -258,11 +258,15 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
               flash(r.ok ? 'Push sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
             })} disabled={busy}>Push</button>
             <button className="devbar-btn" onClick={() => run(async () => {
-              const r = await testNotification('sms')
+              const phone = window.prompt('Phone number (e.g. +1234567890):')
+              if (!phone) { flash('Cancelled', 'info'); return }
+              const r = await testNotification('sms', phone)
               flash(r.ok ? 'SMS sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
             })} disabled={busy}>SMS</button>
             <button className="devbar-btn" onClick={() => run(async () => {
-              const r = await testNotification('both')
+              const phone = window.prompt('Phone number (e.g. +1234567890):')
+              if (!phone) { flash('Cancelled', 'info'); return }
+              const r = await testNotification('both', phone)
               flash(r.ok ? 'Both sent!' : `Failed: ${r.error}`, r.ok ? 'success' : 'error')
             })} disabled={busy}>Both</button>
           </div>
