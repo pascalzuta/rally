@@ -2,13 +2,32 @@
 <html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <script>
-      // Native OAuth callback bridge: when SFSafariViewController loads this page
-      // after Google auth, redirect to the custom URL scheme so iOS routes back to the app.
-      // JavaScript redirects to custom schemes work in SFSafariViewController
-      // (unlike server-side 302 redirects which don't trigger Universal Links).
-      if (window.location.pathname === '/auth/callback' && window.location.search.includes('code=')) {
-        window.location.href = 'com.playrally.app://auth/callback' + window.location.search + window.location.hash;
-      }
+      // Native OAuth callback bridge. When SFSafariViewController loads this page
+      // after Google auth, try to jump back to the native app via the custom URL scheme.
+      // iOS 17+ silently blocks JS-initiated custom scheme navigation without a user
+      // gesture, so we also render a visible "Open Rally" button as a guaranteed fallback.
+      (function() {
+        if (window.location.pathname !== '/auth/callback' || !window.location.search.includes('code=')) return;
+        var schemeUrl = 'com.playrally.app://auth/callback' + window.location.search + window.location.hash;
+        // Best-effort auto-redirect (works on older iOS and web-browser flows).
+        try { window.location.href = schemeUrl; } catch (e) {}
+        // Render a visible fallback so the user can always complete the handoff.
+        document.addEventListener('DOMContentLoaded', function() {
+          document.documentElement.innerHTML =
+            '<head><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>' +
+            '<title>Return to Rally</title></head>' +
+            '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+            'background:#F8F7F5;font-family:-apple-system,system-ui,sans-serif;color:#1a1a1a;">' +
+            '<div style="text-align:center;padding:24px;max-width:320px;">' +
+            '<div style="font-size:48px;margin-bottom:16px;">🎾</div>' +
+            '<h1 style="font-size:22px;font-weight:600;margin:0 0 8px;">Signed in!</h1>' +
+            '<p style="font-size:15px;color:#666;margin:0 0 24px;line-height:1.4;">Tap below to return to the Rally app.</p>' +
+            '<a href="' + schemeUrl + '" style="display:inline-block;background:#0066ff;color:#fff;' +
+            'padding:14px 28px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;' +
+            '-webkit-tap-highlight-color:transparent;">Open Rally</a>' +
+            '</div></body>';
+        });
+      })();
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />

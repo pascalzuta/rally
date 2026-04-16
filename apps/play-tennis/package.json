@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --port 5180",
-    "build:native": "CAPACITOR_BUILD=1 vite build && npx cap sync",
+    "build:native": "VITE_CAPACITOR_BUILD=1 vite build && npx cap sync",
     "cap:sync": "npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
