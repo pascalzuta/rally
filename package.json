@@ -14,7 +14,9 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "ci": "npm run typecheck && npm run test"
+    "ci": "npm run typecheck && npm run test",
+    "ios:test": "bash scripts/ios-test.sh",
+    "ios:ship": "bash scripts/ios-ship.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

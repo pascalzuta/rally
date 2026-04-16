@@ -153,27 +153,59 @@ npm run dev:tennis-server   # Backend on port 8788
 
 ## Native iOS Build (Capacitor)
 
-### CRITICAL: Capacitor must stay on 7.x
-Capacitor 8.x has a known Swift PM incompatibility — `capacitor-swift-pm` 8.x removed APIs (`call.reject()`, etc.) that the 8.x plugins still use, causing Xcode build failures. **All `@capacitor/*` packages are pinned to 7.x with `~` (tilde) ranges.** Never upgrade to 8.x.
+### iOS deployment — READ THIS FIRST
 
-### How to build for iOS
+**The iOS app is the primary product.** Rally's mental model for deploys:
+
+| Environment | Web | iOS |
+|---|---|---|
+| Dev / personal testing | `npm run dev:play-tennis` (localhost — rarely used) | `npm run ios:test` — builds + opens Xcode → user hits Play → app on their iPhone |
+| Staging (testers) | staging.play-rally.com (auto-deploy on push to `staging`) | `npm run ios:ship` — builds + archives + uploads to App Store Connect → TestFlight distributes to testers within ~15 min |
+| Live (public) | play-rally.com (auto-deploy on push to `main`) | Promote current TestFlight build in App Store Connect → Apple reviews → App Store |
+
+### The two commands (work from any Conductor workspace)
+
 ```bash
-# 1. Build web assets (from monorepo root)
-npm run build:play-tennis
-
-# 2. Sync to iOS project (from apps/play-tennis/)
-cd apps/play-tennis && npx cap sync ios
-
-# 3. Open in Xcode
-open ios/App/App.xcodeproj
-
-# 4. Select your device in Xcode and hit Play (▶)
+npm run ios:test    # Dev build on user's iPhone (personal testing)
+npm run ios:ship    # Upload to TestFlight + App Store Connect (staging for iOS)
 ```
+
+**Both commands build from the current workspace's branch.** That's the whole point — if the user is in the `pascalzuta/smart-notifications` workspace and says "deploy to my phone," the notifications code is what lands on their phone.
+
+### CRITICAL RULES
+
+1. **NEVER use `/tmp/rally-bugfix`** — that directory was a temporary workaround from April 13 that got stuck and caused 2+ weeks of stale iOS builds (push notifications, OAuth bridge, tab bar fixes all failed to appear on device because Xcode was building from there). It's been archived as `/tmp/rally-bugfix-archived-2026-04-16`. Do not build from it. Do not pull from it. If you find yourself told to use it, stop and tell the user.
+
+2. **Build from the Conductor workspace the user is currently in.** Every workspace has its own full iOS project (checked into git) and its own node_modules. The `ios:test` / `ios:ship` scripts resolve paths from their own location, so they always build from the workspace they live in.
+
+3. **Capacitor must stay on 7.x.** Capacitor 8.x has a known Swift PM incompatibility — `capacitor-swift-pm` 8.x removed APIs (`call.reject()`, etc.) that the 8.x plugins still use, causing Xcode build failures. All `@capacitor/*` packages are pinned to 7.x with `~` (tilde) ranges. Never upgrade to 8.x.
+
+4. **Xcode can only show one workspace at a time.** If the user opens a different Conductor workspace and runs `ios:test`/`ios:ship`, they should quit Xcode first (or close the old project window). The scripts open Xcode on the current workspace's project — two Xcode windows on different projects is confusing and a recipe for building the wrong branch.
+
+### What each command does
+
+**`npm run ios:test`** (in `scripts/ios-test.sh`):
+1. Resolves the current monorepo root from the script's location
+2. `npm install` if node_modules missing
+3. `CAPACITOR_BUILD=1 npm run build:play-tennis` (builds web with `.native-app` CSS class injected)
+4. `npx cap sync ios` (copies `dist/` into iOS project)
+5. Opens `apps/play-tennis/ios/App/App.xcodeproj`
+6. Prints next-step instructions for Xcode
+
+**`npm run ios:ship`** (in `scripts/ios-ship.sh`):
+1. Same as `ios:test` through step 5
+2. Prints Xcode distribution steps: "Any iOS Device" → Product → Archive → Organizer → Distribute → Upload to App Store Connect
+
+### First-time App Store Connect setup (one-time, user does this)
+See `docs/ios-app-store-setup.md` for the step-by-step checklist.
 
 ### OAuth redirect (custom URL scheme)
 - The iOS app uses `com.playrally.app://auth/callback` for Google OAuth redirect
 - Registered in `Info.plist` as `CFBundleURLTypes` and in Supabase redirect URLs
 - The `appUrlOpen` listener in `native/init.ts` handles the callback
+
+### Native-only CSS
+Use `.native-app` class on `<html>` (injected at build time by `vite.config.ts` when `CAPACITOR_BUILD=1`). **Never change web styles to fix app-only layout issues** — scope everything to `.native-app`.
 
 ## Git Hooks
 - **pre-commit**: Runs `tsc --noEmit` on play-tennis (type check only, no build)
