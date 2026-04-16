@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { titleCase } from '../dateUtils'
+import { checkPushPermission, requestPushPermission, registerDeviceToken, hasActiveToken } from '../pushRegistration'
 import {
   seedLobby,
   getProfile,
@@ -230,6 +231,29 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
               <button className="devbar-btn" onClick={() => run(doScoreRound)} disabled={busy}>Score</button>
               <button className="devbar-btn" onClick={() => run(doConfirmAll)} disabled={busy}>Confirm</button>
               <button className="devbar-btn" onClick={() => run(doEscalateAll)} disabled={busy}>Escalate</button>
+            </div>
+          </div>
+        )}
+
+        {/* Push notifications */}
+        {profile && (
+          <div className="devbar-group">
+            <span className="devbar-group-label">Push</span>
+            <div className="devbar-row">
+              <button className="devbar-btn" onClick={() => run(async () => {
+                const perm = await checkPushPermission()
+                const tokenOk = await hasActiveToken(profile.id)
+                flash(`Permission: ${perm}, Token: ${tokenOk ? 'yes' : 'no'}`)
+              })} disabled={busy}>Status</button>
+              <button className="devbar-btn devbar-btn--accent" onClick={() => run(async () => {
+                const result = await requestPushPermission()
+                if (result === 'granted') {
+                  const ok = await registerDeviceToken(profile.id)
+                  flash(ok ? 'Token registered!' : 'Permission granted, token failed', ok ? 'success' : 'error')
+                } else {
+                  flash(`Permission: ${result}`, 'error')
+                }
+              })} disabled={busy}>Register</button>
             </div>
           </div>
         )}

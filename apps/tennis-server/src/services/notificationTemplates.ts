@@ -5,6 +5,10 @@
 interface NotificationContent {
   subject: string;
   body: string;
+  /** Plain-text title for push notifications (max ~50 chars). Falls back to subject if missing. */
+  pushTitle?: string;
+  /** Plain-text body for push notifications (max ~150 chars). Falls back to stripped body if missing. */
+  pushBody?: string;
 }
 
 // ---- Tournament Lifecycle -------------------------------------------------
@@ -18,6 +22,8 @@ function tournamentActivated(p: {
     subject: `Your ${p.county} tournament has started!`,
     body: `<p>Hi <b>${p.playerName}</b>,</p>
 <p>The <b>${p.tournamentName}</b> in ${p.county} is now active. Check your dashboard for your first match-ups and start scheduling!</p>`,
+    pushTitle: `${p.county} tournament started!`,
+    pushBody: `${p.tournamentName} is live. Check your matches and start scheduling.`,
   };
 }
 
@@ -98,6 +104,8 @@ function tier2FinalWarning(p: {
     subject: "Last chance \u2014 auto-scheduled tomorrow",
     body: `<p>Hi <b>${p.playerName}</b>,</p>
 <p>This is your <b>last chance</b> to schedule your match against <b>${p.opponentName}</b>. If no action is taken by tomorrow, the system will auto-schedule it for you.</p>`,
+    pushTitle: "Last chance to schedule",
+    pushBody: `Match vs ${p.opponentName} will be auto-scheduled tomorrow. Act now.`,
   };
 }
 
@@ -215,6 +223,24 @@ function matchScheduledByPlayer(p: {
     subject: `Match confirmed: ${p.datetime} vs ${p.opponentName}`,
     body: `<p>Hi <b>${p.playerName}</b>,</p>
 <p>Your match against <b>${p.opponentName}</b> is locked in for <b>${p.datetime}</b>. Good luck out there!</p>`,
+    pushTitle: "Match confirmed",
+    pushBody: `${p.datetime} vs ${p.opponentName}. Good luck!`,
+  };
+}
+
+// ---- Match Reminders ------------------------------------------------------
+
+function matchTomorrow(p: {
+  playerName: string;
+  opponentName: string;
+  datetime: string;
+}): NotificationContent {
+  return {
+    subject: `Match tomorrow vs ${p.opponentName}`,
+    body: `<p>Hi <b>${p.playerName}</b>,</p>
+<p>Reminder: your match against <b>${p.opponentName}</b> is tomorrow at <b>${p.datetime}</b>. Don't forget to show up!</p>`,
+    pushTitle: "Match tomorrow",
+    pushBody: `You play ${p.opponentName} tomorrow at ${p.datetime}. Don't miss it!`,
   };
 }
 
@@ -228,6 +254,8 @@ function scoreReminder(p: {
     subject: "How'd it go? Submit your score",
     body: `<p>Hi <b>${p.playerName}</b>,</p>
 <p>Your match against <b>${p.opponentName}</b> was yesterday. Head to your dashboard to submit the score so standings stay up to date.</p>`,
+    pushTitle: "Submit your score",
+    pushBody: `How'd your match vs ${p.opponentName} go? Tap to submit the score.`,
   };
 }
 
@@ -250,6 +278,8 @@ function scoreSubmitted(p: {
     subject: `${p.opponentName} reported the score \u2014 confirm?`,
     body: `<p>Hi <b>${p.playerName}</b>,</p>
 <p><b>${p.opponentName}</b> has submitted a score for your match. Please review and confirm it from your dashboard.</p>`,
+    pushTitle: "Score reported",
+    pushBody: `${p.opponentName} submitted a score. Tap to confirm or dispute.`,
   };
 }
 
@@ -341,6 +371,9 @@ export const NOTIFICATION_TEMPLATES = {
   // Match confirmed
   "N-30": matchScheduledByPlayer,
 
+  // Match reminders
+  "N-61": matchTomorrow,
+
   // Scores
   "N-40": scoreReminder,
   "N-41": scoreMissing,
@@ -355,3 +388,13 @@ export const NOTIFICATION_TEMPLATES = {
 } as const;
 
 export type NotificationType = keyof typeof NOTIFICATION_TEMPLATES;
+
+/** Phase 1: only these 6 templates produce real push notifications. Others are silently dropped. */
+export const PHASE1_TEMPLATES: ReadonlySet<NotificationType> = new Set([
+  "N-01", // Tournament Activated
+  "N-13", // Final Scheduling Warning
+  "N-30", // Match Confirmed
+  "N-40", // Score Reminder
+  "N-42", // Score Submitted
+  "N-61", // Match Tomorrow
+]);

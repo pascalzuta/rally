@@ -4,6 +4,8 @@ import { getLobbyByCounty, joinLobby, leaveLobby, isInLobby, startTournamentFrom
 import { useRallyData } from '../context/RallyDataProvider'
 import { PlayerProfile, LobbyEntry, Tournament } from '../types'
 import { analytics } from '../analytics'
+import { hasActiveToken } from '../pushRegistration'
+import NotificationPermission from './NotificationPermission'
 
 interface Props {
   profile: PlayerProfile
@@ -36,6 +38,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   const [countdown, setCountdown] = useState<string | null>(null)
   const [showShareSheet, setShowShareSheet] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoJoinedRef = useRef(false)
   const joiningRef = useRef(false)
@@ -62,7 +65,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
   useEffect(() => {
     if (autoJoin && !autoJoinedRef.current && !joined && !isInSetupTournament) {
       autoJoinedRef.current = true
-      handleJoin()
+      handleJoinClick()
       onAutoJoinConsumed?.()
     }
   }, [autoJoin, joined])
@@ -106,7 +109,17 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
     setSetupTournament(t ?? null)
   }
 
-  async function handleJoin() {
+  async function handleJoinClick() {
+    // Check if player already has an active push token
+    const tokenExists = await hasActiveToken(profile.id)
+    if (!tokenExists) {
+      setShowNotificationPrompt(true)
+      return
+    }
+    await doJoin()
+  }
+
+  async function doJoin() {
     joiningRef.current = true
     try {
       const updated = await joinLobby(profile)
@@ -198,6 +211,16 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
 
   return (
     <div className="lobby-section">
+      {showNotificationPrompt && (
+        <NotificationPermission
+          playerId={profile.id}
+          onComplete={() => {
+            setShowNotificationPrompt(false)
+            doJoin()
+          }}
+          onDismiss={() => setShowNotificationPrompt(false)}
+        />
+      )}
       {/* Tournament Formation Card */}
       {(
         <div className="card formation-hero">
@@ -236,7 +259,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
                 <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before bracket is full</p>
               )}
               <div className="formation-actions">
-                <button className="btn btn-primary btn-large formation-cta-primary" onClick={!isUserInvolved ? handleJoin : handleShareInvite}>
+                <button className="btn btn-primary btn-large formation-cta-primary" onClick={!isUserInvolved ? handleJoinClick : handleShareInvite}>
                   {!isUserInvolved ? 'Join Tournament' : 'Invite Players'}
                 </button>
                 {isUserInvolved && spotsLeft > 0 && (
@@ -261,7 +284,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
               <div className="formation-actions">
                 {!isUserInvolved ? (
                   <div className="formation-choice-options">
-                    <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>
+                    <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoinClick}>
                       <span className="formation-choice-label">Join Tournament</span>
                       <span className="formation-choice-desc">Get matched by location and rating</span>
                     </button>

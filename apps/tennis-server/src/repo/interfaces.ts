@@ -51,6 +51,8 @@ export interface NotificationRepo {
   claimPending(limit?: number): Promise<Notification[]>;
   markSent(id: string): Promise<void>;
   markFailed(id: string): Promise<void>;
+  /** Requeue a notification for retry with incremented retry_count and future scheduled_for. */
+  requeue(id: string, retryCount: number, scheduledFor: string): Promise<void>;
   findByMatchAndType(matchId: string, type: string): Promise<Notification[]>;
   findByPlayerSince(playerId: string, since: string): Promise<Notification[]>;
 }
@@ -76,11 +78,15 @@ export interface DeviceToken {
   token: string;
   platform: "ios" | "android" | "web";
   appVersion?: string | undefined;
+  active: boolean;
+  consecutiveFailures: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface DeviceTokenRepo {
+  findActiveByPlayerId(playerId: string): Promise<DeviceToken[]>;
   findByPlayerId(playerId: string): Promise<DeviceToken[]>;
+  deactivate(token: string): Promise<void>;
   deleteByToken(token: string): Promise<void>;
 }

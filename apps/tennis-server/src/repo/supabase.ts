@@ -489,6 +489,9 @@ function notificationToRow(n: Notification): Record<string, unknown> {
     status: n.status,
     scheduled_for: n.scheduledFor,
     sent_at: n.sentAt ?? null,
+    claimed_at: n.claimedAt ?? null,
+    retry_count: n.retryCount ?? 0,
+    tier: n.tier ?? null,
     created_at: n.createdAt,
     metadata: n.metadata ? JSON.stringify(n.metadata) : JSON.stringify({}),
   };
@@ -504,11 +507,14 @@ function rowToNotification(row: Record<string, unknown>): Notification {
     channel: (row.channel as Notification["channel"]) || "email",
     status: (row.status as Notification["status"]) || "queued",
     scheduledFor: String(row.scheduled_for),
+    retryCount: (row.retry_count as number) ?? 0,
     createdAt: String(row.created_at),
   };
   if (row.match_id) n.matchId = row.match_id as string;
   if (row.tournament_id) n.tournamentId = row.tournament_id as string;
   if (row.sent_at) n.sentAt = String(row.sent_at);
+  if (row.claimed_at) n.claimedAt = String(row.claimed_at);
+  if (row.tier != null) n.tier = row.tier as number;
   if (row.metadata) {
     const parsed = typeof row.metadata === "string" ? JSON.parse(row.metadata) : row.metadata;
     if (parsed && typeof parsed === "object" && Object.keys(parsed as object).length > 0) {
@@ -552,6 +558,14 @@ export class SupabaseNotificationRepo implements NotificationRepo {
     const { error } = await this.db
       .from("notifications")
       .update({ status: "failed" })
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  async requeue(id: string, retryCount: number, scheduledFor: string): Promise<void> {
+    const { error } = await this.db
+      .from("notifications")
+      .update({ status: "queued", retry_count: retryCount, scheduled_for: scheduledFor, claimed_at: null })
       .eq("id", id);
     if (error) throw error;
   }
@@ -611,6 +625,8 @@ function rowToDeviceToken(row: Record<string, unknown>): DeviceToken {
     token: row.token as string,
     platform: row.platform as DeviceToken["platform"],
     appVersion: row.app_version as string | undefined,
+    active: row.active as boolean,
+    consecutiveFailures: (row.consecutive_failures as number) ?? 0,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
@@ -619,6 +635,16 @@ function rowToDeviceToken(row: Record<string, unknown>): DeviceToken {
 export class SupabaseDeviceTokenRepo implements DeviceTokenRepo {
   constructor(private readonly db: SupabaseClient) {}
 
+  async findActiveByPlayerId(playerId: string): Promise<DeviceToken[]> {
+    const { data, error } = await this.db
+      .from("device_tokens")
+      .select("*")
+      .eq("player_id", playerId)
+      .eq("active", true);
+    if (error) throw error;
+    return (data || []).map(rowToDeviceToken);
+  }
+
   async findByPlayerId(playerId: string): Promise<DeviceToken[]> {
     const { data, error } = await this.db
       .from("device_tokens")
@@ -626,6 +652,14 @@ export class SupabaseDeviceTokenRepo implements DeviceTokenRepo {
       .eq("player_id", playerId);
     if (error) throw error;
     return (data || []).map(rowToDeviceToken);
+  }
+
+  async deactivate(token: string): Promise<void> {
+    const { error } = await this.db
+      .from("device_tokens")
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq("token", token);
+    if (error) throw error;
   }
 
   async deleteByToken(token: string): Promise<void> {

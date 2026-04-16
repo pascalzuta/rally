@@ -30,6 +30,8 @@ import {
 } from "../repo/supabase.js";
 import type { AuthRepo, DeviceTokenRepo, NotificationDeliveryRepo, NotificationRepo, PlayerPhoneRepo, PlayerRepo, AvailabilityRepo, MatchRepo, TournamentRepo, PoolRepo } from "../repo/interfaces.js";
 import { TournamentEngine } from "../services/tournamentEngine.js";
+import { createNotificationService } from "../services/notificationService.js";
+import { createPushService, createNoopPushService } from "../services/pushService.js";
 import { createRoutes } from "./routes.js";
 import { createFrontendRoutes } from "./frontendRoutes.js";
 import { seedDemoPlayers, seedDemoTournaments } from "./seed.js";
@@ -108,8 +110,22 @@ export async function createApp(config: AppConfig): Promise<ReturnType<typeof ex
     });
   }
 
+  // Push notification service (real if credentials configured, noop otherwise)
+  const hasPushCredentials = !!(config.FCM_PROJECT_ID || config.APNS_KEY_BASE64);
+  const pushService = hasPushCredentials
+    ? createPushService(config, logger)
+    : createNoopPushService(logger);
+
+  const notificationService = createNotificationService({
+    notifications,
+    notificationDeliveries,
+    deviceTokens,
+    pushService,
+    logger,
+  });
+
   // Tournament engine (created before routes so routes can trigger activation)
-  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, notificationDeliveries, playerPhones, deviceTokens, logger });
+  const engine = new TournamentEngine({ pool, tournaments, matches, players, availability, notifications, notificationDeliveries, playerPhones, deviceTokens, notificationService, logger });
   engine.start();
   process.on("SIGTERM", () => { engine.stop(); });
   process.on("SIGINT", () => { engine.stop(); });
