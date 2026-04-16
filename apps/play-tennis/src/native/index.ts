@@ -6,4 +6,4 @@
  */
 export { isNative, isIOS, isAndroid, isWeb, platform } from './platform'
 export { setNavigateRef, handleDeepLink, consumePendingDeepLink, parseUniversalLink } from './deep-link'
-export { initNativeApp } from './init'
+export { initNativeApp, initNativeListeners } from './init'

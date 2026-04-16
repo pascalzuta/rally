@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { RallyDataProvider } from './context/RallyDataProvider'
+import { initNativeListeners } from './native'
+
+// Register appUrlOpen listener BEFORE React renders, so OAuth Universal Link
+// callbacks are caught even when the user is not yet authenticated.
+initNativeListeners()
 // CAPACITOR_BUILD is set at build time via env var. This avoids runtime detection
 // issues with Capacitor version mismatches between npm (8.x) and Swift PM (7.x).
 if (import.meta.env.VITE_CAPACITOR_BUILD) {

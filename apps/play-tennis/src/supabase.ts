@@ -172,12 +172,14 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
   const { Capacitor } = await import('@capacitor/core')
 
   if (Capacitor.isNativePlatform()) {
-    // Native: open OAuth in SFSafariViewController and redirect back via Universal Links
+    // Native: open OAuth in SFSafariViewController, redirect back via Universal Links.
+    // Uses PKCE flow (Supabase v2 default) — the code_verifier is stored in the app's
+    // localStorage by signInWithOAuth(), then used by exchangeCodeForSession() in the callback.
     const { data, error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: 'https://play-rally.com/auth/callback',
-        skipBrowserRedirect: true, // get the URL instead of auto-redirecting
+        skipBrowserRedirect: true,
       },
     })
     if (error) {
@@ -209,35 +211,48 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
 
 /**
  * Handle an OAuth callback URL from a Universal Link redirect.
- * Extracts the auth tokens from the URL hash and sets the session.
+ * Supports both PKCE flow (?code=...) and implicit flow (#access_token=...).
  * Called from the appUrlOpen listener when the URL matches /auth/callback.
  */
 export async function handleOAuthCallback(url: string): Promise<boolean> {
   if (!client) return false
   try {
-    // Supabase appends tokens as hash fragments: #access_token=...&refresh_token=...
-    const hashIndex = url.indexOf('#')
-    if (hashIndex < 0) return false
-
-    const params = new URLSearchParams(url.substring(hashIndex + 1))
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-    if (!accessToken || !refreshToken) return false
-
-    const { error } = await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    })
-    if (error) {
-      console.warn('[Rally] OAuth callback setSession failed:', error.message)
-      return false
+    // PKCE flow: Supabase v2 default — redirect has ?code=XXXX
+    const codeMatch = url.match(/[?&]code=([^&#]+)/)
+    if (codeMatch) {
+      const { error } = await client.auth.exchangeCodeForSession(codeMatch[1])
+      if (error) {
+        console.warn('[Rally] OAuth PKCE exchange failed:', error.message)
+        return false
+      }
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.close()
+      return true
     }
 
-    // Close the in-app browser now that auth is complete
-    const { Browser } = await import('@capacitor/browser')
-    await Browser.close()
+    // Implicit flow fallback: tokens in hash fragment #access_token=...&refresh_token=...
+    const hashIndex = url.indexOf('#')
+    if (hashIndex >= 0) {
+      const params = new URLSearchParams(url.substring(hashIndex + 1))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      if (accessToken && refreshToken) {
+        const { error } = await client.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        if (error) {
+          console.warn('[Rally] OAuth callback setSession failed:', error.message)
+          return false
+        }
+        const { Browser } = await import('@capacitor/browser')
+        await Browser.close()
+        return true
+      }
+    }
 
-    return true
+    console.warn('[Rally] OAuth callback: no code or tokens found in URL')
+    return false
   } catch (err) {
     console.warn('[Rally] OAuth callback error:', err)
     return false

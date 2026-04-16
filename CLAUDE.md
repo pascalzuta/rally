@@ -151,6 +151,30 @@ npm run dev:tennis-server   # Backend on port 8788
 ```
 **Note:** `npm run dev` is only useful for local debugging during development. The user works through Conductor and cannot access local dev servers. To show the user changes, always deploy to staging (merge to `staging` branch + push).
 
+## Native iOS Build (Capacitor)
+
+### CRITICAL: Capacitor must stay on 7.x
+Capacitor 8.x has a known Swift PM incompatibility — `capacitor-swift-pm` 8.x removed APIs (`call.reject()`, etc.) that the 8.x plugins still use, causing Xcode build failures. **All `@capacitor/*` packages are pinned to 7.x with `~` (tilde) ranges.** Never upgrade to 8.x.
+
+### How to build for iOS
+```bash
+# 1. Build web assets (from monorepo root)
+npm run build:play-tennis
+
+# 2. Sync to iOS project (from apps/play-tennis/)
+cd apps/play-tennis && npx cap sync ios
+
+# 3. Open in Xcode
+open ios/App/App.xcodeproj
+
+# 4. Select your device in Xcode and hit Play (▶)
+```
+
+### OAuth redirect (custom URL scheme)
+- The iOS app uses `com.playrally.app://auth/callback` for Google OAuth redirect
+- Registered in `Info.plist` as `CFBundleURLTypes` and in Supabase redirect URLs
+- The `appUrlOpen` listener in `native/init.ts` handles the callback
+
 ## Git Hooks
 - **pre-commit**: Runs `tsc --noEmit` on play-tennis (type check only, no build)
 - **pre-push**: Runs full `build:play-tennis` (ensures deployable code)
