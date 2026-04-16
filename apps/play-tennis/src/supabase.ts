@@ -178,10 +178,12 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
     const { data, error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Use www directly. The apex play-rally.com 308-redirects to www, and Apple's
-        // AASA fetcher does not follow redirects — Universal Links only trigger on
-        // the *initial* navigation URL, so redirecting to apex breaks the handoff.
-        redirectTo: 'https://www.play-rally.com/auth/callback',
+        // Point at staging while the bridge + Universal Link fixes are still in
+        // development. staging.play-rally.com serves the new /auth/callback page
+        // with a visible "Open Rally" fallback button, and is in the entitlement's
+        // applinks list. Switch to https://www.play-rally.com/auth/callback once
+        // main is updated.
+        redirectTo: 'https://staging.play-rally.com/auth/callback',
         skipBrowserRedirect: true,
       },
     })
