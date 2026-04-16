@@ -2,52 +2,71 @@
 <html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <script>
-      // Native OAuth callback bridge. On /auth/callback?code=... try to jump the
-      // user back to the native app via the custom URL scheme. iOS 17+ silently
-      // blocks JS-initiated custom-scheme navigation from SFSafariViewController
-      // without a user gesture, so we also render a visible "Open Rally" button
-      // as a guaranteed fallback once the page has loaded.
+      // Native OAuth callback bridge. On /auth/callback?code=... we must hand the
+      // code off to the native app — NOT let the web app consume it. If the web
+      // Supabase client runs and sees `code=`, it will exchange the code for a
+      // web session and navigate away, leaving the user logged in on the browser
+      // instead of in the app.
       //
-      // Important: this script runs at HTML parse time (before <body> exists), so
-      // it must NOT contain any HTML tags as string literals. Vite's HTML
-      // transform scans for closing tags even inside JS strings and can inject
-      // its bundle scripts at the wrong spot, breaking the whole page with
-      // SyntaxError at startup. Build the fallback DOM with createElement only.
+      // So on the callback page we abort normal page loading with window.stop(),
+      // then replace the entire document via document.write with a minimal
+      // "Open Rally" page that holds the code in a custom-scheme link. Tapping
+      // the button (user gesture required on iOS 17+) launches the native app
+      // with the code. Nothing else loads — no React, no Supabase client.
+      //
+      // Caveats:
+      //   - Script must be parser-synchronous and have no HTML close-tag
+      //     literals anywhere, even in comments. Vite's HTML transform scans
+      //     for the closing HEAD/BODY sequences and will inject bundle scripts
+      //     at the wrong spot if they appear, breaking the page at boot.
+      //   - document.write is used here intentionally; it is the only way to
+      //     replace an in-progress HTML parse before module scripts run.
       (function () {
         if (window.location.pathname !== '/auth/callback') return;
         if (window.location.search.indexOf('code=') === -1) return;
         var schemeUrl = 'com.playrally.app://auth/callback'
           + window.location.search + window.location.hash;
+        // Best-effort silent handoff (works on web + older iOS). iOS 17+
+        // SFSafariViewController silently blocks this without a user gesture,
+        // which is why the button below exists.
         try { window.location.href = schemeUrl; } catch (e) {}
-        window.addEventListener('DOMContentLoaded', function () {
-          document.body.style.margin = '0';
-          document.body.style.minHeight = '100vh';
-          document.body.style.display = 'flex';
-          document.body.style.alignItems = 'center';
-          document.body.style.justifyContent = 'center';
-          document.body.style.background = '#F8F7F5';
-          document.body.style.fontFamily = '-apple-system,system-ui,sans-serif';
-          document.body.style.color = '#1a1a1a';
-          var wrap = document.createElement('div');
-          wrap.style.cssText = 'text-align:center;padding:24px;max-width:320px;';
-          var h = document.createElement('h1');
-          h.textContent = 'Signed in';
-          h.style.cssText = 'font-size:22px;font-weight:600;margin:0 0 8px;';
-          var p = document.createElement('p');
-          p.textContent = 'Tap below to return to the Rally app.';
-          p.style.cssText = 'font-size:15px;color:#666;margin:0 0 24px;line-height:1.4;';
-          var a = document.createElement('a');
-          a.href = schemeUrl;
-          a.textContent = 'Open Rally';
-          a.style.cssText = 'display:inline-block;background:#0066ff;color:#fff;'
-            + 'padding:14px 28px;border-radius:12px;font-size:16px;font-weight:600;'
-            + 'text-decoration:none;-webkit-tap-highlight-color:transparent;';
-          wrap.appendChild(h);
-          wrap.appendChild(p);
-          wrap.appendChild(a);
-          document.body.innerHTML = '';
-          document.body.appendChild(wrap);
-        });
+        // Halt further resource loading so Supabase/React never see the code.
+        try { window.stop(); } catch (e) {}
+        // Replace the whole document with a minimal handoff page. Build the
+        // markup piece-by-piece to avoid any suspicious tag sequences in JS
+        // strings. Using document.write is safe here because the page is still
+        // parsing; doing this in an event handler would no-op.
+        var OPEN = String.fromCharCode(60);
+        var CLOSE = String.fromCharCode(62);
+        function tag(name, attrs, inner) {
+          var s = OPEN + name;
+          if (attrs) { for (var k in attrs) s += ' ' + k + '="' + attrs[k] + '"'; }
+          s += CLOSE + (inner == null ? '' : inner) + OPEN + '/' + name + CLOSE;
+          return s;
+        }
+        var bodyStyle = 'margin:0;min-height:100vh;display:flex;'
+          + 'align-items:center;justify-content:center;background:#F8F7F5;'
+          + 'font-family:-apple-system,system-ui,sans-serif;color:#1a1a1a;';
+        var wrapStyle = 'text-align:center;padding:24px;max-width:320px;';
+        var hStyle = 'font-size:22px;font-weight:600;margin:0 0 8px;';
+        var pStyle = 'font-size:15px;color:#666;margin:0 0 24px;line-height:1.4;';
+        var aStyle = 'display:inline-block;background:#0066ff;color:#fff;'
+          + 'padding:14px 28px;border-radius:12px;font-size:16px;font-weight:600;'
+          + 'text-decoration:none;-webkit-tap-highlight-color:transparent;';
+        var inner = tag('h1', { style: hStyle }, 'Signed in')
+          + tag('p', { style: pStyle }, 'Tap below to return to the Rally app.')
+          + tag('a', { href: schemeUrl, style: aStyle }, 'Open Rally');
+        var doc = OPEN + '!doctype html' + CLOSE
+          + tag('html', null,
+              tag('head', null, tag('meta', { charset: 'utf-8' }, '')
+                + tag('meta', { name: 'viewport',
+                  content: 'width=device-width,initial-scale=1,user-scalable=no' }, '')
+                + tag('title', null, 'Return to Rally'))
+              + tag('body', { style: bodyStyle },
+                tag('div', { style: wrapStyle }, inner)));
+        document.open();
+        document.write(doc);
+        document.close();
       })();
     </script>
     <meta charset="UTF-8" />
