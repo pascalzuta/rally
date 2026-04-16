@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
+    <script>
+      // Native OAuth callback bridge: when SFSafariViewController loads this page
+      // after Google auth, redirect to the custom URL scheme so iOS routes back to the app.
+      // JavaScript redirects to custom schemes work in SFSafariViewController
+      // (unlike server-side 302 redirects which don't trigger Universal Links).
+      if (window.location.pathname === '/auth/callback' && window.location.search.includes('code=')) {
+        window.location.href = 'com.playrally.app://auth/callback' + window.location.search + window.location.hash;
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
@@ -297,7 +306,7 @@
       };
 
       // Load Meta Pixel after first paint
-      requestIdleCallback(function() {
+      (window.requestIdleCallback || function(cb) { setTimeout(cb, 1) })(function() {
         var fb = document.createElement('script');
         fb.async = true;
         fb.src = 'https://connect.facebook.net/en_US/fbevents.js';
