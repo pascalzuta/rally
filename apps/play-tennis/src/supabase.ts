@@ -178,7 +178,10 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
     const { data, error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://play-rally.com/auth/callback',
+        // Use www directly. The apex play-rally.com 308-redirects to www, and Apple's
+        // AASA fetcher does not follow redirects — Universal Links only trigger on
+        // the *initial* navigation URL, so redirecting to apex breaks the handoff.
+        redirectTo: 'https://www.play-rally.com/auth/callback',
         skipBrowserRedirect: true,
       },
     })

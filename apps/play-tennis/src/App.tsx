@@ -95,12 +95,14 @@ export default function App() {
     if (pending) handleDeepLink(pending)
   }, [navigate])
 
-  // Initialize native app (Capacitor) when user is authenticated
+  // Initialize native app (Capacitor) once auth state has resolved.
+  // Must fire for logged-out users too — otherwise the splash screen never hides
+  // and the user can't reach the login screen.
   useEffect(() => {
-    if (user?.id && profile) {
-      initNativeApp(user.id)
+    if (!authLoading) {
+      initNativeApp(user?.id ?? '')
     }
-  }, [user?.id, profile?.id])
+  }, [authLoading, user?.id])
 
   // Redirect legacy hash URLs (e.g. /#bracket -> /bracket) on first load
   useEffect(() => {
