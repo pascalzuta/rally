@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { RallyDataProvider } from './context/RallyDataProvider'
@@ -9,14 +10,28 @@ import { initNativeListeners } from './native'
 // Register appUrlOpen listener BEFORE React renders, so OAuth Universal Link
 // callbacks are caught even when the user is not yet authenticated.
 initNativeListeners()
-// CAPACITOR_BUILD is set at build time via env var. This avoids runtime detection
-// issues with Capacitor version mismatches between npm (8.x) and Swift PM (7.x).
-if (import.meta.env.VITE_CAPACITOR_BUILD) {
+
+// Native-only init. Use Capacitor's runtime detection — previous build-time env
+// var (VITE_CAPACITOR_BUILD) gets tree-shaken out by Vite when the flag isn't
+// inlined by define:, so the whole block silently disappeared from the iOS bundle.
+if (Capacitor.isNativePlatform()) {
   document.documentElement.classList.add('native-app')
   const vp = document.querySelector('meta[name="viewport"]')
   if (vp && !vp.getAttribute('content')?.includes('viewport-fit')) {
     vp.setAttribute('content', vp.getAttribute('content') + ', viewport-fit=cover')
   }
+
+  // Emergency splash hide: if React/auth hangs for any reason, force the splash
+  // down after 4s so the user is never trapped on the blue-logo screen. Safe
+  // because normal flow hides it ~instantly via initNativeApp once auth resolves.
+  setTimeout(async () => {
+    try {
+      const { SplashScreen } = await import('@capacitor/splash-screen')
+      await SplashScreen.hide({ fadeOutDuration: 200 })
+    } catch {
+      // plugin unavailable — fine
+    }
+  }, 4000)
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
