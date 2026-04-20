@@ -1,0 +1,114 @@
+/* ───────────────────────────────────────────────────────────
+ * Rally design tokens — drop-in theme file.
+ *
+ * How to use:
+ *   1. Import this file once at the root of your app (e.g. index.css)
+ *   2. Replace any hard-coded color / radius / spacing values in your
+ *      component styles with var(--token-name) references.
+ *   3. The existing app's Polymarket-orange accent is aliased to the
+ *      new court-green so straggler references still render correctly
+ *      — but you should migrate them over time.
+ * ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* ═══ BRAND ═══
+   * Primary accent. Court-green reads as brand AND as "go/ready/confirmed"
+   * — we intentionally use the same hue for both so screens have one
+   * dominant color, not two competing ones.
+   */
+  --rally-green:        #1F7A4D;   /* primary — buttons, active tabs, confirmed state */
+  --rally-green-tint:   #E6F2EC;   /* subtle fills — chip backgrounds, confirmed rows */
+  --rally-green-deep:   #16603A;   /* emphasis numbers, deep hover */
+  --rally-green-soft:   #C9E4D5;   /* secondary fills */
+
+  /* Legacy aliases — keep until all --rally-orange refs are removed. */
+  --rally-orange:       var(--rally-green);
+  --rally-orange-tint:  var(--rally-green-tint);
+  --rally-orange-deep:  var(--rally-green-deep);
+
+  /* ═══ INK (text) ═══ */
+  --ink:    #0E1421;   /* primary text — near-black, slight blue undertone */
+  --ink-2:  #3A4151;   /* body text */
+  --ink-3:  #6B7280;   /* secondary, meta, eyebrows */
+  --ink-4:  #9AA0AB;   /* tertiary, disabled */
+
+  /* ═══ SURFACE & HAIRLINES ═══ */
+  --canvas:     #F7F5F2;   /* page background — warm off-white, NOT grey */
+  --surface:    #FFFFFF;   /* card background */
+  --hairline:   #E6E4DF;   /* stronger border — inputs, primary dividers */
+  --hairline-2: #EFEDE8;   /* faint border — card edges, row separators */
+
+  /* ═══ STATUS ═══
+   * Only FOUR states. Don't add more without discussion.
+   *   confirmed  → green   (match is locked in)
+   *   response   → blue    (opponent is waiting on you, non-urgent)
+   *   warn       → slate   (informational warning; neutral, not amber)
+   *   urgent     → red     (action required NOW — deadline approaching)
+   */
+  --confirmed:      var(--rally-green);
+  --confirmed-tint: var(--rally-green-tint);
+  --response:       #2F6FEB;
+  --response-tint:  #E8F0FE;
+  --warn:           #4B5563;
+  --warn-tint:      #EEF0F3;
+  --warn-ink:       #1F2937;
+  --urgent:         #D92D20;
+  --urgent-tint:    #FBE9E7;
+
+  /* ═══ TYPOGRAPHY ═══ */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "Menlo", monospace;
+
+  /* Type scale (unitless — multiply by 1px)
+   * 11 eyebrow (uppercase 0.08em tracking)
+   * 12 meta
+   * 13 secondary body
+   * 14 body
+   * 15 primary body / card title
+   * 17 section title
+   * 22 page subtitle
+   * 28 page title (weight 800, letter-spacing -0.8)
+   * 44 hero numbers (times, scores — weight 800, letter-spacing -2)
+   */
+
+  /* ═══ RADII ═══ */
+  --radius-chip:   10px;   /* time chips */
+  --radius-input:  12px;
+  --radius-button: 14px;
+  --radius-card:   18px;
+  --radius-hero:   22px;   /* hero cards */
+  --radius-pill:   999px;
+
+  /* ═══ SPACING SCALE (4px grid) ═══
+   * 4, 8, 12, 16, 20, 24, 32, 48, 62 (top-inset), 80
+   * Use via px literals; tokens listed here for reference. */
+
+  /* ═══ SHADOWS ═══
+   * Low-key, warm. Never blue-black like Material. Always paired with an
+   * inset white highlight for the "porcelain card" feel.
+   */
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.6) inset, 0 10px 24px -18px rgba(14,20,33,0.35);
+  --shadow-hero: 0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 36px -20px rgba(14,20,33,0.3);
+  --shadow-tabbar: 0 20px 40px -16px rgba(14,20,33,0.2);
+}
+
+/* ═══ UTILITIES ═══ */
+
+/* Tabular nums — use on ANY numeric display (scores, times, elo, counts) */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* Eyebrow text — section labels */
+.eyebrow {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Hide scrollbar (for horizontally-scrollable strips) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Tap feedback */
+.tappable { transition: transform 120ms ease, filter 120ms ease; cursor: pointer; }
+.tappable:active { transform: scale(0.97); filter: brightness(0.96); }

@@ -1,0 +1,86 @@
+/* Rally — direction note
+ * ───────────────────────────────────────────────
+ * Broadcast-bold but Linear-restrained. NOT Polymarket (too cold),
+ * NOT Strava (too feed-first), NOT ESPN (too noisy).
+ *
+ * Moves:
+ *  • Rally orange (#F15A29) as primary accent — the brand already has it
+ *  • Deep navy ink (#0E1421) for emphasis text; near-black (#231f20) from brand
+ *  • Court-green status (#15B76B) for confirmed/ready; blue for response-needed; amber for warning; red for urgent
+ *  • Warm off-white canvas (#F7F5F2) — friendlier than Polymarket grey
+ *  • Tight, tall display type (Inter Display tracking tight) for opponent names + time
+ *  • Tabular nums everywhere numbers appear (times, scores, elo)
+ *  • 18–24px radii on primary cards, 999px pills, 12px on inputs
+ *  • One hero action per screen, thumb-reach sized (56px tall)
+ *  • Scheduling lives in big tappable time-chip grids, not dropdowns
+ *
+ *  Rally's wedge is KILLING scheduling friction — so the Home tab is
+ *  designed around a single affordance: tap a slot, you're done.
+ */
+
+:root {
+  /* Rally court green — primary accent (replaces orange).
+   * A deep tennis-court green that reads as "go / ready" and doubles
+   * as our "confirmed" status signal. Near-black stays the ink color.
+   */
+  --rally-green: #1F7A4D;
+  --rally-green-tint: #E6F2EC;
+  --rally-green-deep: #16603A;
+  --rally-green-soft: #C9E4D5;
+
+  /* Legacy aliases — the old `--rally-orange` vars now point at the
+   * green so any straggler references still render correctly. */
+  --rally-orange: var(--rally-green);
+  --rally-orange-tint: var(--rally-green-tint);
+  --rally-orange-deep: var(--rally-green-deep);
+
+  --ink: #0E1421;
+  --ink-2: #3A4151;
+  --ink-3: #6B7280;
+  --ink-4: #9AA0AB;
+  --hairline: #E6E4DF;
+  --hairline-2: #EFEDE8;
+  --canvas: #F7F5F2;
+  --surface: #FFFFFF;
+
+  /* Status — "confirmed" shares the rally-green color; we differentiate
+   * it from the brand accent via context, not a separate hue. */
+  --confirmed: var(--rally-green);
+  --confirmed-tint: var(--rally-green-tint);
+  --response: #2F6FEB;
+  --response-tint: #E8F0FE;
+  /* Warn: neutral slate instead of amber — keeps green the only warm hue. */
+  --warn: #4B5563;
+  --warn-tint: #EEF0F3;
+  --warn-ink: #1F2937;
+  --urgent: #D92D20;
+  --urgent-tint: #FBE9E7;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "Menlo", monospace;
+}
+
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+html, body { margin: 0; padding: 0; font-family: var(--font-text); color: var(--ink); background: var(--canvas); }
+
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Rally logo mark — reusable */
+.rally-mark {
+  display: inline-block; width: 36px; height: 36px;
+  background-repeat: no-repeat; background-position: center;
+  background-size: contain;
+}
+
+/* hide scrollbar in iframes */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* tap feedback */
+.tappable { transition: transform 120ms ease, filter 120ms ease; cursor: pointer; }
+.tappable:active { transform: scale(0.97); filter: brightness(0.96); }

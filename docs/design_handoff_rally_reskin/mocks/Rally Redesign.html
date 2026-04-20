@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rally — Redesign Exploration</title>
+  <link rel="stylesheet" href="src/styles.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="frames/ios-frame.jsx"></script>
+  <script type="text/babel" src="frames/design-canvas.jsx"></script>
+  <script type="text/babel" src="src/brand.jsx"></script>
+  <script type="text/babel" src="src/LoggedOutHome.jsx"></script>
+  <script type="text/babel" src="src/HomeTab.jsx"></script>
+  <script type="text/babel" src="src/RatingTab.jsx"></script>
+  <script type="text/babel" src="src/BracketTab.jsx"></script>
+  <script type="text/babel" src="src/MatchDetailSheet.jsx"></script>
+  <script type="text/babel" src="src/PostMatchVictory.jsx"></script>
+  <script type="text/babel" src="src/Onboarding.jsx"></script>
+  <script type="text/babel" src="src/ProfileTab.jsx"></script>
+  <script type="text/babel" src="src/ProfileTabV4.jsx"></script>
+  <script type="text/babel" src="src/MyMatches.jsx"></script>
+
+  <script type="text/babel">
+    function App() {
+      return (
+        <DesignCanvas>
+          {/* Header block */}
+          <div style={{ padding: '0 60px 24px', maxWidth: 900 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+              padding: '8px 14px 8px 10px',
+              background: '#fff', borderRadius: 999,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+              marginBottom: 20,
+            }}>
+              <RallyWordmark size={18} />
+              <span style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: 0.08 * 10,
+                textTransform: 'uppercase', color: 'var(--rally-green)',
+                padding: '3px 7px', background: 'var(--rally-green-tint)',
+                borderRadius: 5,
+              }}>Redesign v3</span>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-sans)', fontSize: 40, fontWeight: 800,
+              letterSpacing: -1.4, color: 'var(--ink)', lineHeight: 1.05,
+              textWrap: 'balance',
+            }}>
+              Broadcast-bold, Linear-restrained.<br/>
+              Scheduling in one tap.
+            </div>
+            <div style={{
+              marginTop: 12, fontSize: 16, color: 'var(--ink-2)', lineHeight: 1.5,
+              maxWidth: 680,
+            }}>
+              Seven surfaces spanning first-touch → onboarding → daily use → bracket → victory. Built on a shared system:
+              near-black ink, warm off-white canvas, court-green accent, SF-stack type, and a single obvious action per screen.
+            </div>
+
+            <div style={{ display: 'flex', gap: 28, marginTop: 22, flexWrap: 'wrap' }}>
+              <Principle title="Court-green accent" body="Deep tennis-court green (#1F7A4D) carries brand AND status — it reads as 'go / ready / confirmed' without a second hue." />
+              <Principle title="One action per screen" body="Every screen has a single obvious affordance at thumb-reach. Secondary actions stay secondary, shown as text links or ghosted buttons." />
+              <Principle title="Scheduling-first" body="Pending matches surface 3 time chips with 'both free' labels. Tap = confirmed. When no overlap exists, a full-sheet calendar handles the edge case." />
+              <Principle title="iOS feel in React" body="SF-stack type, safe-area insets, glass tab bar, 16–24px radii, tabular nums for all times/scores, 44px+ tap targets." />
+            </div>
+          </div>
+
+          {/* SECTION 0 — Profile v4, the synthesis (lifted to the top) */}
+          <DCSection
+            title="Profile v4 · the synthesis"
+            subtitle="C's hero + A's rivals + B's chart + C's trophy shelf + A's year-in-Rally closer. Fully expanded — no scroll required."
+            gap={80}
+          >
+            <DCArtboard label="Profile v4 · combined (full surface)">
+              <IOSDevice width={390} height={1820}>
+                <ProfileTabV4 />
+              </IOSDevice>
+              <DCPostIt top={20} right={-220} rotate={2} width={240}>
+                <b>The brand moment up top, the utility below.</b><br/><br/>
+                <b>1 · Hero</b> (from C): gradient, ringed avatar, bio, pills, 4-up stats strip with micro-deltas.<br/>
+                <b>2 · Rivals</b> (from A): leaderboard rows with flavor tags and H2H bars.<br/>
+                <b>3 · Season chart</b> (from B): single-metric focus — +92 this season, W3 chip.<br/>
+                <b>4 · Trophy shelf</b> (from C): the shareable brand tile.<br/>
+                <b>5 · Year in Rally</b> (from A): editorial closer.
+              </DCPostIt>
+            </DCArtboard>
+          </DCSection>
+
+          {/* SECTION 1 — the 3 core screens you asked for */}
+          <DCSection
+            title="Core screens"
+            subtitle="Logged-out home · Home tab · Rating tab"
+            gap={80}
+          >
+            <DCArtboard label="Logged-out home · first-time visitor">
+              <IOSDevice width={390} height={844}>
+                <LoggedOutHome />
+              </IOSDevice>
+            </DCArtboard>
+
+            <DCArtboard label="Home tab · active tournament">
+              <IOSDevice width={390} height={844}>
+                <HomeTab />
+              </IOSDevice>
+              <DCPostIt top={60} left={-150} rotate={-3} width={200}>
+                The scheduling wedge: three time chips with "both free" labels. Tap one = done. No calendar, no dropdown, no back-and-forth.
+              </DCPostIt>
+            </DCArtboard>
+
+            <DCArtboard label="Rating tab · progression & trophies">
+              <IOSDevice width={390} height={844}>
+                <RatingTab />
+              </IOSDevice>
+              <DCPostIt top={-10} right={-160} rotate={2} width={190}>
+                Elo on a black scoreboard-style hero card. Trophies as a horizontal strip — empty slots visible on purpose, to invite progression.
+              </DCPostIt>
+            </DCArtboard>
+          </DCSection>
+
+          {/* SECTION 2 — onboarding */}
+          <DCSection
+            title="Onboarding · 30 seconds"
+            subtitle="Four steps. The magic is step 3 — availability up front means Rally can schedule autonomously from match 1."
+            gap={48}
+          >
+            <DCArtboard label="1 · Welcome">
+              <IOSDevice width={390} height={844}>
+                <OnboardingWelcome />
+              </IOSDevice>
+            </DCArtboard>
+            <DCArtboard label="2 · Pick a county">
+              <IOSDevice width={390} height={844}>
+                <OnboardingCounty />
+              </IOSDevice>
+            </DCArtboard>
+            <DCArtboard label="3 · Availability">
+              <IOSDevice width={390} height={844}>
+                <OnboardingAvailability />
+              </IOSDevice>
+              <DCPostIt top={-30} right={-160} rotate={2} width={200}>
+                <b>The friction-killer.</b> Tapping 3 blocks beats a calendar every time. "Based on this we can schedule 87% of matches without asking you."
+              </DCPostIt>
+            </DCArtboard>
+            <DCArtboard label="4 · You're in">
+              <IOSDevice width={390} height={844}>
+                <OnboardingLobby />
+              </IOSDevice>
+            </DCArtboard>
+          </DCSection>
+
+          {/* SECTION 3 — tournament + match flow */}
+          <DCSection
+            title="In-tournament"
+            subtitle="Bracket view · the scheduling edge case · the celebratory moment"
+            gap={80}
+          >
+            <DCArtboard label="Bracket tab · swim-lane layout">
+              <IOSDevice width={390} height={844}>
+                <BracketTab />
+              </IOSDevice>
+              <DCPostIt top={40} left={-180} rotate={-2} width={220}>
+                <b>Swim lanes, not a tree.</b> Each player is a horizontal row. Columns = rounds (QF · SF · Final). Cells are the match slots. Your path is green, eliminated players fade. Live matches pulse.<br/><br/>
+                <b>Tap behavior:</b><br/>
+                • <b>Completed cell</b> → scoreline + stats<br/>
+                • <b>Upcoming cell</b> → match detail sheet (right)<br/>
+                • <b>TBD cell</b> → "waiting on Round X"<br/>
+                • <b>Player name</b> → their profile peek
+              </DCPostIt>
+            </DCArtboard>
+
+            <DCArtboard label="Match detail sheet · tap an upcoming match">
+              <IOSDevice width={390} height={844}>
+                <MatchDetailSheet />
+              </IOSDevice>
+              <DCPostIt top={-10} right={-180} rotate={2} width={220}>
+                <b>What happens on tap.</b> Confirmed time + court at the top (reassurance), head-to-head and recent form in the middle (storytelling), and only 3 scheduling controls at the bottom — "move earlier / later / can't make it". No big calendar, no sheet inception.
+              </DCPostIt>
+            </DCArtboard>
+
+            <DCArtboard label="Post-match · you won">
+              <IOSDevice width={390} height={844}>
+                <PostMatchVictory />
+              </IOSDevice>
+              <DCPostIt top={140} left={-160} rotate={-3} width={210}>
+                Scoreline as a broadcast-style tile. Elo swing called out with "best day this month" tagging. Next match pre-scheduled at the bottom — momentum, not a dead-end.
+              </DCPostIt>
+            </DCArtboard>
+          </DCSection>
+
+          {/* SECTION 4 — Profile tab, three directions */}
+          <DCSection
+            title="Profile tab · three directions"
+            subtitle="Same IA — identity, rivals, trophies, progression — refracted through three editorial lenses. Each is a full surface, not a sketch."
+            gap={80}
+          >
+            <DCArtboard label="A · The Dossier — restrained, dense">
+              <IOSDevice width={390} height={844}>
+                <ProfileTabA />
+              </IOSDevice>
+              <DCPostIt top={40} left={-180} rotate={-2} width={220}>
+                <b>Linear-style density.</b> Identity card with 4 vital stats, rivals as a leaderboard with H2H bars, trophy cabinet as a 3-col grid (empty slots visible to invite), closes with a "Your year in Rally" dark tile. No heroics. High information per pixel.
+              </DCPostIt>
+            </DCArtboard>
+
+            <DCArtboard label="B · The Scoreboard — broadcast-bold">
+              <IOSDevice width={390} height={844}>
+                <ProfileTabB />
+              </IOSDevice>
+              <DCPostIt top={-10} right={-180} rotate={2} width={220}>
+                <b>Stats-first, broadcast feel.</b> Dark hero tile fuses identity + 4-up scoreboard + hot-streak chip. Rivalries become landscape cards with flavor tags (HOT, SWEEP, EVEN). Season chart. Achievements as a progress grid. Closest to the existing Rating tab's DNA.
+              </DCPostIt>
+            </DCArtboard>
+
+            <DCArtboard label="C · The Clubhouse — social, personable">
+              <IOSDevice width={390} height={844}>
+                <ProfileTabC />
+              </IOSDevice>
+              <DCPostIt top={40} left={-180} rotate={-2} width={220}>
+                <b>Warm + shareable.</b> Gradient header, ringed avatar, bio in quotes, hobby pills. Trophy <i>shelf</i> (not cabinet) on dark wood-look tile with glow. Rivals get 2-up cards with flavor tags ("Nemesis", "Sweep"). Ends with "Your Rally story" — milestone cards built to screenshot-and-share.
+              </DCPostIt>
+            </DCArtboard>
+          </DCSection>
+
+          {/* Footer: next steps */}
+          <div style={{ padding: '20px 60px 60px', maxWidth: 900 }}>
+            <div style={{
+              fontFamily: 'var(--font-sans)', fontSize: 22, fontWeight: 700,
+              letterSpacing: -0.4, color: 'var(--ink)', marginBottom: 14,
+            }}>
+              What I'd explore next
+            </div>
+            <Bullet>
+              <b>Match scoring flow</b> — the in-the-moment court-side flow. Big-buttoned, one-thumb, works with sweaty hands. The most-used surface after the four tabs.
+            </Bullet>
+            <Bullet>
+              <b>Walkover escalation UI</b> — the moment a scheduled match hasn't been confirmed 24h out. Tension + escalation pathway without being punitive.
+            </Bullet>
+            <Bullet>
+              <b>Post-match (loss)</b> — the counterpart to the victory screen. Graceful, not consolation-trophy-shaped. Focus on progression and the next fixture.
+            </Bullet>
+            <Bullet>
+              <b>Notifications &amp; push copy</b> — Rally's daily touchpoint. A whole design system for the push drawer.
+            </Bullet>
+          </div>
+        </DesignCanvas>
+      );
+    }
+
+    function Principle({ title, body }) {
+      return (
+        <div style={{ maxWidth: 240 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6,
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: 3, background: 'var(--rally-green)',
+            }}/>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', letterSpacing: -0.2 }}>
+              {title}
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            {body}
+          </div>
+        </div>
+      );
+    }
+
+    function Bullet({ children }) {
+      return (
+        <div style={{
+          display: 'flex', gap: 10, padding: '10px 0',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          fontSize: 14, lineHeight: 1.5, color: 'var(--ink-2)',
+        }}>
+          <span style={{ color: 'var(--rally-green)', fontWeight: 800 }}>→</span>
+          <div>{children}</div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
