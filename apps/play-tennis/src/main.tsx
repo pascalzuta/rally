@@ -6,6 +6,12 @@ import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { RallyDataProvider } from './context/RallyDataProvider'
 import { initNativeListeners } from './native'
+import { consumeUrlOverrides } from './featureFlags'
+
+// Capture any feature-flag overrides in the URL (e.g. ?newhome=1) into
+// localStorage immediately, so the flag survives auth-redirect navigations
+// that strip the query string before the relevant route mounts.
+consumeUrlOverrides()
 
 // Register appUrlOpen listener BEFORE React renders, so OAuth Universal Link
 // callbacks are caught even when the user is not yet authenticated.

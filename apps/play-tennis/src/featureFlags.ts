@@ -73,3 +73,17 @@ export function isEnabled(name: FlagName): boolean {
 
   return def.default
 }
+
+/**
+ * Eagerly consume any flag overrides present in the current URL, persisting
+ * them to localStorage. Call this once at app boot so a `?newhome=1` visit
+ * activates the flag even if the user is bounced through a login redirect
+ * before the route that checks the flag ever mounts.
+ */
+export function consumeUrlOverrides(): void {
+  for (const name of Object.keys(FLAGS) as FlagName[]) {
+    const def = FLAGS[name]
+    const urlOverride = readUrlOverride(def.urlParam)
+    if (urlOverride !== null) writeStorage(name, urlOverride)
+  }
+}
