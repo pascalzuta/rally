@@ -18,6 +18,7 @@ import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
 import Footer from './components/Footer'
 import HomeTabNew from './components/HomeTabNew'
+import ProfileTabNew from './components/ProfileTabNew'
 import { isEnabled as isFlagEnabled } from './featureFlags'
 
 // Lazy-loaded: only fetched when user navigates to these tabs
@@ -34,9 +35,11 @@ const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 // Native app detection: baked in at build time via CAPACITOR_BUILD=1
 const isNativeApp = !!import.meta.env.VITE_CAPACITOR_BUILD
 
-// DevTools: loaded in development, staging, and native app builds
-const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
-const DevTools = (import.meta.env.DEV || isStaging || isNativeApp)
+// DevTools: loaded in development, staging, Vercel preview deploys, and native app builds
+const hostname = typeof window !== 'undefined' ? window.location.hostname : ''
+const isStaging = hostname === 'staging.play-rally.com'
+const isVercelPreview = hostname.endsWith('.vercel.app') && hostname !== 'rally-play-tennis.vercel.app'
+const DevTools = (import.meta.env.DEV || isStaging || isVercelPreview || isNativeApp)
   ? lazy(() => import('./components/DevTools'))
   : () => null
 
@@ -568,19 +571,35 @@ export default function App() {
             } />
 
             <Route path={ROUTES.PROFILE} element={
-              <Profile
-                profile={profile}
-                onLogout={signOut}
-                onNavigate={(tab) => {
-                  if (tab === 'home') setAutoJoinLobby(true)
-                  const path = tab === 'home' ? ROUTES.HOME
-                    : tab === 'bracket' ? ROUTES.BRACKET
-                    : tab === 'playnow' ? ROUTES.PLAYNOW
-                    : ROUTES.HOME
-                  navigate(path)
-                }}
-                onViewHelp={() => navigate(ROUTES.HELP)}
-              />
+              isFlagEnabled('newHome') ? (
+                <ProfileTabNew
+                  profile={profile}
+                  onLogout={signOut}
+                  onNavigate={(tab) => {
+                    if (tab === 'home') setAutoJoinLobby(true)
+                    const path = tab === 'home' ? ROUTES.HOME
+                      : tab === 'bracket' ? ROUTES.BRACKET
+                      : tab === 'playnow' ? ROUTES.PLAYNOW
+                      : ROUTES.HOME
+                    navigate(path)
+                  }}
+                  onViewHelp={() => navigate(ROUTES.HELP)}
+                />
+              ) : (
+                <Profile
+                  profile={profile}
+                  onLogout={signOut}
+                  onNavigate={(tab) => {
+                    if (tab === 'home') setAutoJoinLobby(true)
+                    const path = tab === 'home' ? ROUTES.HOME
+                      : tab === 'bracket' ? ROUTES.BRACKET
+                      : tab === 'playnow' ? ROUTES.PLAYNOW
+                      : ROUTES.HOME
+                    navigate(path)
+                  }}
+                  onViewHelp={() => navigate(ROUTES.HELP)}
+                />
+              )
             } />
 
             <Route path={ROUTES.HELP} element={

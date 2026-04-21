@@ -6,12 +6,20 @@ import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { RallyDataProvider } from './context/RallyDataProvider'
 import { initNativeListeners } from './native'
-import { consumeUrlOverrides } from './featureFlags'
+import { consumeUrlOverrides, isEnabled as isFlagEnabled } from './featureFlags'
 
 // Capture any feature-flag overrides in the URL (e.g. ?newhome=1) into
 // localStorage immediately, so the flag survives auth-redirect navigations
 // that strip the query string before the relevant route mounts.
 consumeUrlOverrides()
+
+// Toggle the reskin class on <html> based on the newHome flag. Doing it
+// here means the whole app — including existing screens — picks up the
+// reskin token re-map before the first paint, so the user sees a
+// consistent warm canvas + court-green accent everywhere the flag is on.
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.toggle('rally-reskin', isFlagEnabled('newHome'))
+}
 
 // Register appUrlOpen listener BEFORE React renders, so OAuth Universal Link
 // callbacks are caught even when the user is not yet authenticated.

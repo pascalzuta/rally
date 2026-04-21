@@ -15235,3 +15235,124 @@ main {
   80%  { transform: scale(2.4); opacity: 0;   }
   100% { transform: scale(2.4); opacity: 0;   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * Rally reskin — GLOBAL re-map.
+ *
+ * When `html.rally-reskin` is on (toggled at app boot by
+ * featureFlags.isEnabled('newHome')), the legacy --color-* and
+ * radius/shadow tokens remap to the reskin palette. Every
+ * existing component automatically inherits the new look —
+ * warm off-white canvas, court-green accent, softer shadows —
+ * without rewriting markup.
+ *
+ * Surfaces that got a purpose-built reskinned component
+ * (HomeTabNew, ProfileTabNew) override further, but fall back
+ * to this re-map elsewhere.
+ * ═══════════════════════════════════════════════════════════ */
+
+html.rally-reskin {
+  /* Backgrounds & text */
+  --color-bg-primary:        var(--canvas);
+  --color-bg-surface:        var(--surface);
+  --color-text-primary:      var(--ink);
+  --color-text-secondary:    var(--ink-3);
+  --color-text-muted:        var(--ink-4);
+
+  /* Dividers */
+  --color-divider:           var(--hairline);
+
+  /* Positive / confirm / success */
+  --color-positive-primary:  var(--rally-green);
+  --color-positive-bg:       var(--rally-green-tint);
+
+  /* Negative / danger / urgent */
+  --color-negative-primary:  var(--urgent);
+  --color-negative-bg:       var(--urgent-tint);
+
+  /* Neutral */
+  --color-neutral-primary:   var(--ink-2);
+  --color-neutral-bg:        var(--hairline-2);
+
+  /* Accent — in reskin the primary brand accent is court-green, not blue.
+     --color-accent-primary is Rally's dominant CTA color (marketing hero
+     button, blog links, leaderboard highlights) so it has to be green.
+     Components that need "response/info blue" should use --color-accent-*
+     only where semantically correct; the handful of mis-uses are overridden
+     below as they come up. */
+  --color-accent-primary:    var(--rally-green);
+  --color-accent-bg:         var(--rally-green-tint);
+
+  /* Warning — reskin uses slate, not amber */
+  --color-warning-primary:   var(--warn);
+  --color-warning-bg:        var(--warn-tint);
+
+  /* Purple (pending) — remap to response blue to keep the palette tight */
+  --color-purple-primary:    var(--response);
+  --color-purple-bg:         var(--response-tint);
+
+  /* Radii bumped to reskin values */
+  --radius-card:             18px;
+  --radius-button:           14px;
+  --radius-lg:               22px;
+  --radius-md:               14px;
+}
+
+/* Reskin — the app shell uses the warm canvas, not the cool grey */
+html.rally-reskin body,
+html.rally-reskin .app,
+html.rally-reskin .content,
+html.rally-reskin .tab-content {
+  background: var(--canvas);
+}
+
+/* Reskin — top nav on a warm surface with softer border */
+html.rally-reskin .top-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline-2);
+}
+
+/* Reskin — bottom nav with blur + soft surface */
+html.rally-reskin .bottom-tabs {
+  background: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border-top: 1px solid var(--hairline-2);
+  box-shadow: var(--rally-shadow-tabbar);
+}
+html.rally-reskin .bottom-tab.active { color: var(--rally-green); }
+
+/* Reskin — generic card surfaces get the soft hero/card shadow */
+html.rally-reskin .card {
+  background: var(--surface);
+  border: 1px solid var(--hairline-2);
+  border-radius: 18px;
+  box-shadow: var(--rally-shadow-card);
+}
+
+/* Reskin — buttons pick up the reskin radius + softer shadows */
+html.rally-reskin .btn {
+  border-radius: 14px;
+}
+
+/* Reskin — status label colors align with the four-state palette */
+html.rally-reskin .card-status-label--green,
+html.rally-reskin .card-status-label--positive {
+  color: var(--rally-green);
+  background: var(--rally-green-tint);
+}
+html.rally-reskin .card-status-label--blue,
+html.rally-reskin .card-status-label--purple {
+  color: var(--response);
+  background: var(--response-tint);
+}
+html.rally-reskin .card-status-label--red,
+html.rally-reskin .card-status-label--urgent {
+  color: var(--urgent);
+  background: var(--urgent-tint);
+}
+html.rally-reskin .card-status-label--orange,
+html.rally-reskin .card-status-label--warning {
+  color: var(--warn);
+  background: var(--warn-tint);
+}
