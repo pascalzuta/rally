@@ -17,6 +17,8 @@ import JoinLanding from './components/JoinLanding'
 import DesktopGuestHomepage from './components/DesktopGuestHomepage'
 import Home from './components/Home'
 import Footer from './components/Footer'
+import HomeTabNew from './components/HomeTabNew'
+import { isEnabled as isFlagEnabled } from './featureFlags'
 
 // Lazy-loaded: only fetched when user navigates to these tabs
 const BracketTab = lazy(() => import('./components/BracketTab'))
@@ -489,28 +491,42 @@ export default function App() {
           <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', opacity: 0.5, fontSize: 'var(--font-label)' }}>Loading...</div>}>
           <Routes>
             <Route path={ROUTES.HOME} element={
-              <Home
-                profile={profile}
-                tournaments={tournaments}
-                autoJoin={autoJoinLobby}
-                onAutoJoinConsumed={() => setAutoJoinLobby(false)}
-                onTournamentCreated={id => {
-                  rallyData.refresh()
-                  navigate(ROUTES.BRACKET)
-                }}
-                onViewTournament={() => navigate(ROUTES.BRACKET)}
-                onViewMatch={(tournamentId, matchId) => {
-                  setFocusMatchId(matchId)
-                  navigate(ROUTES.BRACKET)
-                }}
-                onViewLeaderboard={() => navigate(ROUTES.LEADERBOARD)}
-                onViewOffers={() => navigate(ROUTES.PLAYNOW)}
-                onDataChanged={() => setRefreshKey(r => r + 1)}
-                onJoinLobby={() => setAutoJoinLobby(true)}
-                onSetAvailability={() => navigate(ROUTES.PROFILE)}
-                onFindMatch={() => navigate(ROUTES.BRACKET)}
-                onLogout={signOut}
-              />
+              isFlagEnabled('newHome') ? (
+                <HomeTabNew
+                  profile={profile}
+                  tournaments={tournaments}
+                  onViewTournament={() => navigate(ROUTES.BRACKET)}
+                  onViewMatch={(tournamentId, matchId) => {
+                    setFocusMatchId(matchId)
+                    navigate(ROUTES.BRACKET)
+                  }}
+                  onViewOffers={() => navigate(ROUTES.PLAYNOW)}
+                  onLogout={signOut}
+                />
+              ) : (
+                <Home
+                  profile={profile}
+                  tournaments={tournaments}
+                  autoJoin={autoJoinLobby}
+                  onAutoJoinConsumed={() => setAutoJoinLobby(false)}
+                  onTournamentCreated={id => {
+                    rallyData.refresh()
+                    navigate(ROUTES.BRACKET)
+                  }}
+                  onViewTournament={() => navigate(ROUTES.BRACKET)}
+                  onViewMatch={(tournamentId, matchId) => {
+                    setFocusMatchId(matchId)
+                    navigate(ROUTES.BRACKET)
+                  }}
+                  onViewLeaderboard={() => navigate(ROUTES.LEADERBOARD)}
+                  onViewOffers={() => navigate(ROUTES.PLAYNOW)}
+                  onDataChanged={() => setRefreshKey(r => r + 1)}
+                  onJoinLobby={() => setAutoJoinLobby(true)}
+                  onSetAvailability={() => navigate(ROUTES.PROFILE)}
+                  onFindMatch={() => navigate(ROUTES.BRACKET)}
+                  onLogout={signOut}
+                />
+              )
             } />
 
             <Route path={ROUTES.BRACKET} element={

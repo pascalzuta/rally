@@ -15153,3 +15153,85 @@ main {
   color: #fff;
   border-color: var(--color-accent-primary);
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * Rally reskin design tokens (ported from
+ * docs/design_handoff_rally_reskin/tokens.css).
+ *
+ * Namespaced (--rally-green, --ink-*, --canvas, ...) so they
+ * coexist with existing --color-* tokens. Only the reskinned
+ * Home tab (behind the `newHome` feature flag) uses them today.
+ * ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* BRAND */
+  --rally-green:        #1F7A4D;
+  --rally-green-tint:   #E6F2EC;
+  --rally-green-deep:   #16603A;
+  --rally-green-soft:   #C9E4D5;
+
+  /* INK (text) */
+  --ink:    #0E1421;
+  --ink-2:  #3A4151;
+  --ink-3:  #6B7280;
+  --ink-4:  #9AA0AB;
+
+  /* SURFACE & HAIRLINES */
+  --canvas:     #F7F5F2;
+  --surface:    #FFFFFF;
+  --hairline:   #E6E4DF;
+  --hairline-2: #EFEDE8;
+
+  /* STATUS (four states only) */
+  --confirmed:      var(--rally-green);
+  --confirmed-tint: var(--rally-green-tint);
+  --response:       #2F6FEB;
+  --response-tint:  #E8F0FE;
+  --warn:           #4B5563;
+  --warn-tint:      #EEF0F3;
+  --warn-ink:       #1F2937;
+  --urgent:         #D92D20;
+  --urgent-tint:    #FBE9E7;
+
+  /* TYPOGRAPHY (reskin-only) */
+  --rally-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --rally-font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+
+  /* RADII (reskin-only; existing --radius-card etc. are unchanged) */
+  --rally-radius-chip:   10px;
+  --rally-radius-input:  12px;
+  --rally-radius-button: 14px;
+  --rally-radius-card:   18px;
+  --rally-radius-hero:   22px;
+  --rally-radius-pill:   999px;
+
+  /* SHADOWS (reskin-only) */
+  --rally-shadow-card:   0 1px 0 rgba(255,255,255,0.6) inset, 0 10px 24px -18px rgba(14,20,33,0.35);
+  --rally-shadow-hero:   0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 36px -20px rgba(14,20,33,0.3);
+  --rally-shadow-tabbar: 0 20px 40px -16px rgba(14,20,33,0.2);
+}
+
+/* Tabular nums — apply to numeric text (scores, times, elo, counts) */
+.rally-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* Eyebrow text */
+.rally-eyebrow {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Hide scrollbar (horizontally-scrollable strips) */
+.rally-no-scrollbar::-webkit-scrollbar { display: none; }
+.rally-no-scrollbar { scrollbar-width: none; }
+
+/* Tap feedback */
+.rally-tappable { transition: transform 120ms ease, filter 120ms ease; cursor: pointer; }
+.rally-tappable:active { transform: scale(0.97); filter: brightness(0.96); }
+
+/* Urgent pulse for the reskin hero card */
+@keyframes rallyPulse {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  80%  { transform: scale(2.4); opacity: 0;   }
+  100% { transform: scale(2.4); opacity: 0;   }
+}
