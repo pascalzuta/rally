@@ -239,6 +239,12 @@ export function getSetupTournamentForCounty(county: string, gender?: Gender, ski
   )
 }
 
+export function getAnySetupTournamentForCounty(county: string): Tournament | undefined {
+  return load().find(
+    t => t.county.toLowerCase() === county.toLowerCase() && t.status === 'setup'
+  )
+}
+
 function getNextTournamentNumber(county: string, extraTournaments: Tournament[] = []): number {
   const persisted = load()
   const all = [...persisted, ...extraTournaments]

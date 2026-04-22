@@ -9,7 +9,8 @@ import {
   simulateRoundScores,
   autoConfirmAllSchedules,
   forceStartTournament,
-  getSetupTournamentForCounty,
+  getAnySetupTournamentForCounty,
+  getCountdownRemaining,
   escalateMatch,
   getTournament,
   simulateToFinal,
@@ -25,23 +26,41 @@ interface Props {
 
 type Status = { text: string; type: 'info' | 'success' | 'error' } | null
 
+function formatCountdown(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
+
 export default function DevTools({ onProfileSwitch, activeTournamentId, onTournamentUpdated, onTournamentCreated }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [status, setStatus] = useState<Status>(null)
   const [busy, setBusy] = useState(false)
+  const [, setTick] = useState(0)
   const statusTimer = useRef<ReturnType<typeof setTimeout>>()
   const panelRef = useRef<HTMLDivElement>(null)
 
   const profile = getProfile()
   const county = profile?.county ?? ''
   const testProfiles = county ? getTestProfiles(county) : []
-  const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
+  const setupTournament = county ? getAnySetupTournamentForCounty(county) : undefined
 
   function flash(text: string, type: 'info' | 'success' | 'error' = 'success') {
     clearTimeout(statusTimer.current)
     setStatus({ text, type })
     statusTimer.current = setTimeout(() => setStatus(null), 2500)
   }
+
+  // Live-tick the countdown label while panel is open
+  useEffect(() => {
+    if (!expanded || !setupTournament?.countdownStartedAt) return
+    const id = setInterval(() => setTick(x => x + 1), 1000)
+    return () => clearInterval(id)
+  }, [expanded, setupTournament?.countdownStartedAt])
 
   // Close panel on outside click
   useEffect(() => {
@@ -202,16 +221,22 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
         </div>
 
         {/* Tournament setup */}
-        {setupTournament && (
-          <div className="devbar-group">
-            <span className="devbar-group-label">Setup · {setupTournament.players.length}p</span>
-            <div className="devbar-row">
-              <button className="devbar-btn devbar-btn--accent" onClick={() => run(doForceStart)} disabled={busy}>
-                Start Now
-              </button>
+        {setupTournament && (() => {
+          const remaining = getCountdownRemaining(setupTournament)
+          return (
+            <div className="devbar-group">
+              <span className="devbar-group-label">
+                Setup · {setupTournament.players.length}p
+                {remaining != null ? ` · ${formatCountdown(remaining)}` : ''}
+              </span>
+              <div className="devbar-row">
+                <button className="devbar-btn devbar-btn--accent" onClick={() => run(doForceStart)} disabled={busy}>
+                  Skip countdown
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Quick sim */}
         <div className="devbar-group">
