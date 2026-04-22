@@ -14,6 +14,14 @@ export function initSupabase(): SupabaseClient | null {
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       detectSessionInUrl: true,
+      // Disable navigator.locks-based serialization. Supabase v2 acquires a
+      // Web Lock around session reads to coordinate across tabs; in practice
+      // we hit deadlocks where INITIAL_SESSION never fires (the user sees the
+      // 8s "Auth loading timeout" warning and lands back on the signup form
+      // because the auth state never resolves). Rally is a single-tab user
+      // app — we don't need cross-tab serialization, and the cost of a stuck
+      // tab is far worse than the rare race a lock would prevent.
+      lock: async (_name, _acquireTimeout, fn) => fn(),
     },
   })
   return client
@@ -80,7 +88,10 @@ export async function sendOtp(email: string): Promise<{ ok: boolean; error?: str
 
   const { error } = await client.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
+    // No emailRedirectTo — we want the OTP-only email template. Setting a redirect
+    // makes Supabase render a magic link alongside the code; clicking the link (or
+    // an email client prefetching it) auto-logs the user in without entering the code.
+    options: { shouldCreateUser: true },
   })
 
   if (error) {
@@ -178,7 +189,12 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
     const { data, error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://play-rally.com/auth/callback',
+        // Point at staging while the bridge + Universal Link fixes are still in
+        // development. staging.play-rally.com serves the new /auth/callback page
+        // with a visible "Open Rally" fallback button, and is in the entitlement's
+        // applinks list. Switch to https://www.play-rally.com/auth/callback once
+        // main is updated.
+        redirectTo: 'https://staging.play-rally.com/auth/callback',
         skipBrowserRedirect: true,
       },
     })
@@ -304,7 +320,14 @@ export async function fetchPlayerProfile(userId: string): Promise<{
     .eq('auth_id', userId)
     .not('email', 'is', null)
     .limit(1)
-  if (error || !rows || rows.length === 0) return null
+  if (error) {
+    console.warn('[Rally] fetchPlayerProfile error for', userId, '—', error.message, error)
+    return null
+  }
+  if (!rows || rows.length === 0) {
+    console.info('[Rally] fetchPlayerProfile: no row for auth_id', userId)
+    return null
+  }
   const data = rows[0]
   return {
     name: data.player_name,

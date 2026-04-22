@@ -39,6 +39,11 @@ const PROFILE_KEY = 'play-tennis-profile'
 function clearAuthLocalStorage() {
   clearMemoryStore()
   PROFILE_STORAGE.remove(PROFILE_KEY) // also clear the real localStorage profile
+  // Also clear sessionStorage flow state so a new login doesn't resume the previous user's signup.
+  try {
+    sessionStorage.removeItem('rally-auth-flow')
+    sessionStorage.removeItem('rally-invite-tournament')
+  } catch { /* ignore */ }
 }
 
 function buildProfile(userId: string, email: string, data: Awaited<ReturnType<typeof fetchPlayerProfile>>): PlayerProfile | null {
@@ -137,25 +142,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const client = getClient()
     if (!client) { setLoading(false); return }
 
-    // Use onAuthStateChange exclusively — INITIAL_SESSION fires on every page load
-    // (with session if one exists, null if not) and is the correct Supabase v2 pattern.
-    // This avoids the getSession() + onAuthStateChange race condition that caused
-    // infinite loading on refresh.
-    // Safety timeout: if INITIAL_SESSION never fires or hangs, force loading to false
+    // Subscribe to onAuthStateChange for live updates (INITIAL_SESSION, SIGNED_IN, etc.).
+    // We *also* race a getSession() call below, because in practice INITIAL_SESSION
+    // sometimes never fires (Supabase navigator.locks deadlock) and we'd be stuck on
+    // a loading spinner. Whichever resolves first wins via the `resolved` flag.
+    let resolved = false
+
+    // Safety timeout: if neither path resolves, force loading off so the UI doesn't hang.
     const loadingTimeout = setTimeout(() => {
+      if (resolved) return
       setLoading(false)
-      console.warn('[Rally] Auth loading timeout — forced loading=false after 8s')
-    }, 8000)
+      console.warn('[Rally] Auth loading timeout — forced loading=false after 4s')
+    }, 4000)
+
+    // Fallback: directly fetch the session. If INITIAL_SESSION is hung, this still
+    // gets us a user. If it succeeds first, the listener's INITIAL_SESSION becomes a no-op.
+    client.auth.getSession().then(async ({ data }) => {
+      if (resolved) return
+      resolved = true
+      clearTimeout(loadingTimeout)
+      try {
+        if (data.session?.user) {
+          const u = data.session.user
+          console.info('[Rally] AuthContext getSession() resolved with user', u.id, u.email)
+          setUser(u)
+          const profileData = await fetchPlayerProfile(u.id)
+          console.info('[Rally] AuthContext getSession() profileData', profileData ? 'found' : 'null')
+          const restored = buildProfile(u.id, u.email ?? '', profileData)
+          if (restored) {
+            PROFILE_STORAGE.set(PROFILE_KEY, JSON.stringify(restored))
+            setProfileState(restored)
+            const county = restored.county.toLowerCase()
+            refreshLobbyFromRemote(county)
+            refreshAvailabilityFromRemote(county)
+          } else {
+            const recovered = recoverAndAdoptProfile(u.id, u.email ?? '')
+            if (recovered) {
+              setProfileState(recovered)
+              const county = recovered.county.toLowerCase()
+              refreshLobbyFromRemote(county)
+              refreshAvailabilityFromRemote(county)
+            }
+          }
+        } else {
+          console.info('[Rally] AuthContext getSession() resolved with no session')
+          if (profile) {
+            PROFILE_STORAGE.remove(PROFILE_KEY)
+            setProfileState(null)
+          }
+        }
+      } finally {
+        setLoading(false)
+      }
+    }).catch(err => {
+      console.warn('[Rally] AuthContext getSession() failed:', err)
+      if (!resolved) { resolved = true; clearTimeout(loadingTimeout); setLoading(false) }
+    })
 
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === 'INITIAL_SESSION') {
+        if (resolved) {
+          // getSession() already handled this — skip the duplicate work.
+          return
+        }
+        resolved = true
         clearTimeout(loadingTimeout)
         // Fires once on mount. Resolves loading regardless of outcome.
         try {
           if (session?.user) {
             const u = session.user
+            console.info('[Rally] AuthContext INITIAL_SESSION user', u.id, u.email)
             setUser(u)
             const profileData = await fetchPlayerProfile(u.id)
+            console.info('[Rally] AuthContext INITIAL_SESSION profileData', profileData ? 'found' : 'null')
             const restored = buildProfile(u.id, u.email ?? '', profileData)
             if (restored) {
               PROFILE_STORAGE.set(PROFILE_KEY, JSON.stringify(restored))

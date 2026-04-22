@@ -34,20 +34,39 @@ async function apiFetch<T = unknown>(
     body?: unknown
   } = {}
 ): Promise<{ ok: boolean; data?: T; error?: string }> {
-  const token = await getAccessToken()
+  let token = await getAccessToken()
   if (!token) {
     return { ok: false, error: 'not_authenticated' }
   }
 
-  try {
-    const response = await fetch(`${API_BASE}/v1/fe${path}`, {
+  async function doFetch(authToken: string): Promise<Response> {
+    return fetch(`${API_BASE}/v1/fe${path}`, {
       method: options.method || 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${authToken}`,
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     })
+  }
+
+  try {
+    let response = await doFetch(token)
+
+    // If the access token expired between getSession() and the request, refresh
+    // once and retry. Without this, the user gets a spurious "not authenticated"
+    // until they reload the page.
+    if (response.status === 401) {
+      const client = getClient()
+      if (client) {
+        const { data: refreshed } = await client.auth.refreshSession()
+        const newToken = refreshed.session?.access_token
+        if (newToken) {
+          token = newToken
+          response = await doFetch(newToken)
+        }
+      }
+    }
 
     const data = await response.json() as T & { error?: string }
 

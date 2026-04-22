@@ -12,7 +12,12 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchAutoHide: false, // hide manually after auth state resolves
+      // Auto-hide from native code so the splash can never stick (was `false`,
+      // which relied on JS calling SplashScreen.hide() and silently hung when
+      // that call never fired). JS can still hide it sooner via .hide().
+      launchAutoHide: true,
+      launchShowDuration: 2000,
+      launchFadeOutDuration: 300,
       backgroundColor: '#ffffff',
       showSpinner: false,
     },
