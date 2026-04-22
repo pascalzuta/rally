@@ -80,7 +80,10 @@ export async function sendOtp(email: string): Promise<{ ok: boolean; error?: str
 
   const { error } = await client.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
+    // No emailRedirectTo — we want the OTP-only email template. Setting a redirect
+    // makes Supabase render a magic link alongside the code; clicking the link (or
+    // an email client prefetching it) auto-logs the user in without entering the code.
+    options: { shouldCreateUser: true },
   })
 
   if (error) {
