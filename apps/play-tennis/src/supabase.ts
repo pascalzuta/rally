@@ -5,13 +5,15 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJ
 
 let client: SupabaseClient | null = null
 
-// Initialize immediately so magic link hash tokens are picked up on page load
 export function initSupabase(): SupabaseClient | null {
   if (client) return client
 
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      detectSessionInUrl: true,
+      // OTP-only flow: never auto-consume a session from a URL hash. Without this,
+      // clicking (or an email client prefetching) the magic link in the OTP email
+      // logs the user in without ever entering the code.
+      detectSessionInUrl: false,
     },
   })
   return client
@@ -33,7 +35,10 @@ export async function sendOtp(email: string): Promise<{ ok: boolean; error?: str
 
   const { error } = await client.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
+    // No emailRedirectTo on purpose — we want OTP-only emails. Setting a redirect
+    // causes Supabase to render a magic-link email which can be used to bypass
+    // OTP entry entirely.
+    options: { shouldCreateUser: true },
   })
 
   if (error) {
