@@ -4,7 +4,7 @@ import { setItem } from '../memoryStore'
 import { createProfile, saveAvailability, getLobbyByCounty, getAvailability } from '../store'
 import { PlayerProfile, AvailabilitySlot, DayOfWeek, SkillLevel, Gender } from '../types'
 import { searchCounties } from '../counties'
-import { sendOtp, verifyOtp, savePlayerProfile, signInWithGoogle, isTestEmail } from '../supabase'
+import { sendOtp, verifyOtp, savePlayerProfile, signInWithGoogle, isTestEmail, getClient } from '../supabase'
 import { analytics } from '../analytics'
 import { useAuth } from '../context/AuthContext'
 
@@ -138,7 +138,16 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
   const [otpSending, setOtpSending] = useState(false)
   const [otpVerifying, setOtpVerifying] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
-  const [resendCountdown, setResendCountdown] = useState(0)
+  // Persist resend deadline so a page refresh doesn't reset the countdown to 0,
+  // letting the user spam Supabase's 60s rate limit and see "rate limited" instead
+  // of a friendly timer.
+  const [resendCountdown, setResendCountdown] = useState(() => {
+    try {
+      const until = Number(sessionStorage.getItem('rally-resend-until') || 0)
+      const remaining = Math.ceil((until - Date.now()) / 1000)
+      return remaining > 0 ? remaining : 0
+    } catch { return 0 }
+  })
   const [authUserId, setAuthUserId] = useState<string | null>(savedFlow?.authUserId ?? null)
 
   // React to auth state from AuthContext — handles magic link, OTP verify, and page refresh
@@ -380,6 +389,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
           return
         }
         setResendCountdown(60)
+        try { sessionStorage.setItem('rally-resend-until', String(Date.now() + 60_000)) } catch { /* ignore */ }
         saveAuthFlow({ step: 'verify', email: email.trim().toLowerCase() })
         setStep('verify')
       } else {
@@ -490,6 +500,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
       const result = await sendOtp(email.trim().toLowerCase())
       if (result.ok) {
         setResendCountdown(60)
+        try { sessionStorage.setItem('rally-resend-until', String(Date.now() + 60_000)) } catch { /* ignore */ }
       } else {
         setOtpError('Could not resend code. Please wait a moment.')
       }
@@ -549,7 +560,21 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
               >
                 {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
               </button>
-              <button className="btn-link" onClick={() => { setStep('email'); setOtpCode(''); setOtpError(null) }}>
+              <button className="btn-link" onClick={async () => {
+                // Sign out any partial session first so the new email starts truly fresh.
+                // Without this a returning user (already-created auth row) would skip OTP
+                // because their previous session is still active.
+                try {
+                  const client = getClient()
+                  if (client) await client.auth.signOut()
+                } catch { /* best-effort */ }
+                setEmail('')
+                setOtpCode('')
+                setOtpError(null)
+                setAuthUserId(null)
+                clearAuthFlow()
+                setStep('email')
+              }}>
                 Use a different email
               </button>
             </div>

@@ -312,7 +312,14 @@ export async function fetchPlayerProfile(userId: string): Promise<{
     .eq('auth_id', userId)
     .not('email', 'is', null)
     .limit(1)
-  if (error || !rows || rows.length === 0) return null
+  if (error) {
+    console.warn('[Rally] fetchPlayerProfile error for', userId, '—', error.message, error)
+    return null
+  }
+  if (!rows || rows.length === 0) {
+    console.info('[Rally] fetchPlayerProfile: no row for auth_id', userId)
+    return null
+  }
   const data = rows[0]
   return {
     name: data.player_name,

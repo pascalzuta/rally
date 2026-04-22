@@ -39,6 +39,11 @@ const PROFILE_KEY = 'play-tennis-profile'
 function clearAuthLocalStorage() {
   clearMemoryStore()
   PROFILE_STORAGE.remove(PROFILE_KEY) // also clear the real localStorage profile
+  // Also clear sessionStorage flow state so a new login doesn't resume the previous user's signup.
+  try {
+    sessionStorage.removeItem('rally-auth-flow')
+    sessionStorage.removeItem('rally-invite-tournament')
+  } catch { /* ignore */ }
 }
 
 function buildProfile(userId: string, email: string, data: Awaited<ReturnType<typeof fetchPlayerProfile>>): PlayerProfile | null {
@@ -154,8 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           if (session?.user) {
             const u = session.user
+            console.info('[Rally] AuthContext INITIAL_SESSION user', u.id, u.email)
             setUser(u)
             const profileData = await fetchPlayerProfile(u.id)
+            console.info('[Rally] AuthContext INITIAL_SESSION profileData', profileData ? 'found' : 'null')
             const restored = buildProfile(u.id, u.email ?? '', profileData)
             if (restored) {
               PROFILE_STORAGE.set(PROFILE_KEY, JSON.stringify(restored))
