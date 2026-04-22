@@ -14,6 +14,14 @@ export function initSupabase(): SupabaseClient | null {
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       detectSessionInUrl: true,
+      // Disable navigator.locks-based serialization. Supabase v2 acquires a
+      // Web Lock around session reads to coordinate across tabs; in practice
+      // we hit deadlocks where INITIAL_SESSION never fires (the user sees the
+      // 8s "Auth loading timeout" warning and lands back on the signup form
+      // because the auth state never resolves). Rally is a single-tab user
+      // app — we don't need cross-tab serialization, and the cost of a stuck
+      // tab is far worse than the rare race a lock would prevent.
+      lock: async (_name, _acquireTimeout, fn) => fn(),
     },
   })
   return client
