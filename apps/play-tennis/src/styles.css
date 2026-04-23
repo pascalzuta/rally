@@ -348,6 +348,56 @@ body {
   transition-duration: 0.06s;
 }
 
+.user-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.user-avatar-btn {
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.user-avatar-btn:hover {
+  background: var(--color-surface-pressed, var(--color-neutral-bg));
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-hover);
+  z-index: var(--z-overlay);
+  overflow: hidden;
+  animation: notifSlide var(--duration-normal) var(--ease-out-expo);
+}
+
+.user-menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: var(--font-body-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background var(--duration-instant) var(--ease-out-quart);
+}
+
+.user-menu-item:hover {
+  background: var(--color-neutral-bg);
+}
+
 /* ================================================
    Bottom Navigation
    ================================================ */
