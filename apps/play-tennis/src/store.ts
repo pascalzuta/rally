@@ -11,7 +11,7 @@ import { titleCase } from './dateUtils'
 import { getItem, setItem } from './memoryStore'
 import { getClient } from './supabase'
 import { apiJoinLobby, apiLeaveLobby, isApiConfigured } from './api'
-import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability } from '@rally/core'
+import { bulkScheduleMatches, type SimpleAvailabilitySlot, type MatchToSchedule, clusterPlayersByAvailability, type PlayerAvailability, type ClusterGroup } from '@rally/core'
 import {
   bridgeGetTournaments, bridgeSetTournaments,
   bridgeGetLobby, bridgeSetLobby,
@@ -264,6 +264,37 @@ function getStartsAt(now: Date = new Date()): string {
   return monday.toISOString().split('T')[0]
 }
 
+/**
+ * Split a partition of players (same gender + skill) into rating-adjacent
+ * chunks sized for one tournament each. Chunks are balanced so none drops
+ * below MIN_PLAYERS — if splitting would orphan players, we keep the
+ * partition whole and let availability clustering decide.
+ */
+function splitByRating(players: LobbyEntry[]): LobbyEntry[][] {
+  if (players.length <= MAX_PLAYERS) return [players]
+
+  const numChunks = Math.ceil(players.length / MAX_PLAYERS)
+  const chunkSize = Math.ceil(players.length / numChunks)
+  if (chunkSize < MIN_PLAYERS) return [players]
+
+  const sorted = [...players].sort((a, b) => {
+    const ra = getPlayerRating(a.playerId, a.playerName).rating
+    const rb = getPlayerRating(b.playerId, b.playerName).rating
+    return ra - rb
+  })
+
+  const chunks: LobbyEntry[][] = []
+  for (let i = 0; i < sorted.length; i += chunkSize) {
+    chunks.push(sorted.slice(i, i + chunkSize))
+  }
+  // Guard: if the final chunk got undersized, merge it into the previous one.
+  if (chunks.length > 1 && chunks[chunks.length - 1]!.length < MIN_PLAYERS) {
+    const tail = chunks.pop()!
+    chunks[chunks.length - 1]!.push(...tail)
+  }
+  return chunks
+}
+
 function createTournament(county: string, players: LobbyEntry[], extraTournaments: Tournament[] = []): Tournament {
   const num = getNextTournamentNumber(county, extraTournaments)
   // Use the first player's gender/skill as the partition for this tournament
@@ -376,17 +407,26 @@ export async function startTournamentFromLobby(county: string): Promise<Tourname
       }
     }
 
-    const playerAvailabilities: PlayerAvailability[] = partitionPlayers.map(e => ({
-      playerId: e.playerId,
-      playerName: e.playerName,
-      slots: getAvailability(e.playerId),
-    }))
+    // Split the partition into rating-adjacent chunks before clustering so
+    // players with similar ELO end up in the same tournament. Within a chunk,
+    // availability clustering still decides the final grouping.
+    const ratingChunks = splitByRating(partitionPlayers)
 
-    const clusterResult = clusterPlayersByAvailability(playerAvailabilities)
     const all = load()
     const newlyCreated: Tournament[] = []
 
-    for (const group of clusterResult.groups) {
+    const clusterGroups: ClusterGroup[] = []
+    for (const chunk of ratingChunks) {
+      const playerAvailabilities: PlayerAvailability[] = chunk.map(e => ({
+        playerId: e.playerId,
+        playerName: e.playerName,
+        slots: getAvailability(e.playerId),
+      }))
+      const clusterResult = clusterPlayersByAvailability(playerAvailabilities)
+      clusterGroups.push(...clusterResult.groups)
+    }
+
+    for (const group of clusterGroups) {
       if (group.players.length < MIN_PLAYERS) continue
       const batch: LobbyEntry[] = group.players.map(p => {
         const entry = partitionPlayers.find(e => e.playerId === p.playerId)!
@@ -851,13 +891,19 @@ export function getRescheduleUiState(match: Match, currentPlayerId: string): Res
 
 /** Check if a player already has a confirmed match on a given day in this tournament */
 function hasConfirmedMatchOnDay(tournament: Tournament, playerId: string, day: string, excludeMatchId: string): boolean {
-  return tournament.matches.some(m =>
-    m.id !== excludeMatchId &&
-    !m.completed &&
-    m.schedule?.status === 'confirmed' &&
-    m.schedule.confirmedSlot?.day === day &&
-    (m.player1Id === playerId || m.player2Id === playerId)
-  )
+  return tournament.matches.some(m => {
+    if (m.id === excludeMatchId || m.completed) return false
+    if (m.player1Id !== playerId && m.player2Id !== playerId) return false
+    const schedule = m.schedule
+    if (!schedule) return false
+    if (schedule.status === 'confirmed' && schedule.confirmedSlot?.day === day) return true
+    // Block days held by pending proposals on any other match so we don't
+    // double-book a player before a proposal is accepted.
+    if (schedule.status === 'proposed') {
+      return schedule.proposals.some(p => p.status === 'pending' && p.day === day)
+    }
+    return false
+  })
 }
 
 export async function acceptProposal(
