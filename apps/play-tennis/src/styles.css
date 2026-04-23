@@ -15203,3 +15203,183 @@ main {
   color: #fff;
   border-color: var(--color-accent-primary);
 }
+
+/* ================================================
+   Needs You block (Home pending-actions inbox)
+   ================================================ */
+.needs-you {
+  margin: 12px 0;
+  padding: 10px 12px 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--color-accent-primary);
+  transition: border-color var(--duration-fast) var(--ease-out-quart);
+}
+
+.needs-you--urgent {
+  border-left-color: var(--color-warning-primary);
+}
+
+.needs-you-heading {
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.needs-you-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.needs-you-rows li {
+  margin: 0;
+}
+
+.needs-you-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-primary);
+  text-align: left;
+  font-family: inherit;
+  font-size: var(--font-body);
+  transition: background-color var(--duration-fast) var(--ease-out-quart);
+}
+
+.needs-you-row:hover {
+  background: var(--color-surface-hover);
+}
+
+.needs-you-row:active {
+  background: var(--color-surface-pressed);
+}
+
+.needs-you-row--urgent .needs-you-count,
+.needs-you-row--urgent .needs-you-meta {
+  color: var(--color-warning-primary);
+}
+
+.needs-you-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-primary);
+  font-size: var(--font-body);
+}
+
+.needs-you-label {
+  flex: 1 1 auto;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.needs-you-meta {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+.needs-you-dest {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* ================================================
+   Score Confirm Banner (urgency strip)
+   ================================================ */
+.score-confirm-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px 12px;
+  min-height: 44px;
+  background: var(--color-warning-subtle, #FFF4E5);
+  border: 1px solid var(--color-warning-primary);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--duration-fast) var(--ease-out-quart);
+}
+
+.score-confirm-banner:hover {
+  background: #FFEBCC;
+}
+
+.score-confirm-banner-icon {
+  flex: 0 0 auto;
+  color: var(--color-warning-primary);
+  font-size: 16px;
+}
+
+.score-confirm-banner-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-confirm-banner-time {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-warning-primary);
+  font-weight: var(--weight-semibold);
+}
+
+/* ================================================
+   Bottom tab badge
+   ================================================ */
+.tab-badge {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(6px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--color-negative-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.tab-badge--dot {
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  transform: translateX(8px);
+}

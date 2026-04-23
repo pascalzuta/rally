@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { useAuth } from './context/AuthContext'
 import { useRallyData } from './context/RallyDataProvider'
 import { joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
+import { usePendingActions } from './hooks/usePendingActions'
 import { PlayerProfile, TrophyTier } from './types'
 import { analytics } from './analytics'
 import { ToastProvider } from './components/Toast'
@@ -215,6 +216,10 @@ export default function App() {
   const unreadNotifCount = profile ? getUnreadNotificationCount(profile.id) : 0
   const unreadMsgCount = profile ? getUnreadMessageCount(profile.id) : 0
   const pendingActionCount = matchActionCount + incomingOfferCount + unreadNotifCount
+
+  // Bracket tab badge: bracket-actionable pending items only (excludes messages,
+  // which have their own top-icon badge). Hook is memoized, cheap to call here.
+  const pendingActions = usePendingActions(profile?.id ?? '')
 
   // Find the user's active tournament (prefer in-progress, then setup)
   const activeTournament = tournaments.find(t =>
@@ -549,6 +554,11 @@ export default function App() {
                 onJoinLobby={() => setAutoJoinLobby(true)}
                 onSetAvailability={() => navigate(ROUTES.PROFILE)}
                 onFindMatch={() => navigate(ROUTES.BRACKET)}
+                onGoToBracket={(focusMatchId?: string) => {
+                  if (focusMatchId) setFocusMatchId(focusMatchId)
+                  navigate(ROUTES.BRACKET)
+                }}
+                onOpenMessages={() => setShowInbox(true)}
                 onLogout={signOut}
               />
             } />
@@ -633,12 +643,23 @@ export default function App() {
             </svg>
             <span className="tab-text">Home</span>
           </button>
-          <button className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`} onClick={() => navigate(ROUTES.BRACKET)}>
+          <button
+            className={`bottom-tab ${activeTab === 'bracket' ? 'active' : ''}`}
+            onClick={() => navigate(ROUTES.BRACKET)}
+            aria-label={pendingActions.bracketBadgeCount > 0
+              ? `Tournament, ${pendingActions.bracketBadgeCount} actions needed`
+              : 'Tournament'}
+          >
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="8" r="7"/>
               <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
             </svg>
             <span className="tab-text">Tournament</span>
+            {pendingActions.bracketBadgeCount > 0 && (
+              <span className="tab-badge" aria-hidden="true">
+                {pendingActions.bracketBadgeCount > 99 ? '99+' : pendingActions.bracketBadgeCount}
+              </span>
+            )}
           </button>
           <button className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`} onClick={() => navigate(ROUTES.PLAYNOW)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
