@@ -120,12 +120,12 @@ export default function HomeHeroCard({
     const countyLobby = providerLobby.filter(
       e => e.county.toLowerCase() === profile.county.toLowerCase()
     )
-    const alreadyHasSetup = providerTournaments.some(
-      t => (t.status === 'setup' || t.status === 'in-progress') &&
-           t.county.toLowerCase() === profile.county.toLowerCase()
-    )
     const userInLobby = countyLobby.some(e => e.playerId === profile.id)
-    if (userInLobby && countyLobby.length >= 6 && !alreadyHasSetup) {
+    // Re-run even when a setup tournament already exists: startTournamentFromLobby
+    // handles both "create new" and "add to existing partition" paths, and also
+    // runs the >=MAX_PLAYERS auto-start loop. Gating on !alreadyHasSetup meant
+    // lobby growth past 6 never promoted players into the live tournament.
+    if (userInLobby && countyLobby.length >= 6) {
       autoTriggerRef.current = true
       startTournamentFromLobby(profile.county).then(tournament => {
         if (tournament) {
@@ -153,12 +153,16 @@ export default function HomeHeroCard({
     if (!setupTournament) { setCountdown(null); return }
 
     function tick() {
-      const fresh = getSetupTournamentForCounty(profile.county)
-      if (!fresh) { setCountdown(null); return }
-      const remaining = getCountdownRemaining(fresh)
+      // Use the setupTournament already in state rather than re-looking-up by
+      // (county, gender, skillLevel). getSetupTournamentForCounty's partition
+      // filter means a call missing the partition args always returns undefined,
+      // which silently killed the countdown. The state reference is fresh enough
+      // because RallyDataProvider pushes updates whenever the tournament changes.
+      if (!setupTournament) { setCountdown(null); return }
+      const remaining = getCountdownRemaining(setupTournament)
       if (remaining === null) { setCountdown(null); return }
       if (remaining <= 0) {
-        checkCountdownExpired(fresh.id).then(started => {
+        checkCountdownExpired(setupTournament.id).then(started => {
           if (started && started.status === 'in-progress') {
             onTournamentCreated(started.id)
           }

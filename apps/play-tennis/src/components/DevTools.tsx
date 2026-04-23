@@ -9,6 +9,7 @@ import {
   simulateRoundScores,
   autoConfirmAllSchedules,
   forceStartTournament,
+  getSetupTournamentForCounty,
   getAnySetupTournamentForCounty,
   getCountdownRemaining,
   escalateMatch,
@@ -47,7 +48,15 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
   const profile = getProfile()
   const county = profile?.county ?? ''
   const testProfiles = county ? getTestProfiles(county) : []
-  const setupTournament = county ? getAnySetupTournamentForCounty(county) : undefined
+  // Prefer the user's own partition tournament so Skip-countdown starts a
+  // tournament the user is a member of (Bracket tab filters by membership).
+  // Fall back to any setup tournament in the county when the user isn't a
+  // member — useful for testing on accounts that haven't joined.
+  const setupTournament = county
+    ? (getSetupTournamentForCounty(county, profile?.gender, profile?.skillLevel)
+       ?? getAnySetupTournamentForCounty(county))
+    : undefined
+  const setupIsMine = !!(profile && setupTournament?.players.some(p => p.id === profile.id))
 
   function flash(text: string, type: 'info' | 'success' | 'error' = 'success') {
     clearTimeout(statusTimer.current)
@@ -228,6 +237,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
               <span className="devbar-group-label">
                 Setup · {setupTournament.players.length}p
                 {remaining != null ? ` · ${formatCountdown(remaining)}` : ''}
+                {!setupIsMine ? ' · not yours' : ''}
               </span>
               <div className="devbar-row">
                 <button className="devbar-btn devbar-btn--accent" onClick={() => run(doForceStart)} disabled={busy}>

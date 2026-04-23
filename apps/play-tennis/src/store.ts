@@ -3034,6 +3034,14 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
   }
 
   saveLobby(lobby)
+
+  // Run the tournament-formation pass so seeded players actually populate
+  // setup tournaments (create a new one at MIN_PLAYERS, add to an existing
+  // matching-partition tournament, and trigger the >=MAX_PLAYERS auto-start).
+  // Without this, DevTools seeding only moves the lobby counter and never
+  // promotes players — making "seed to 8" look broken.
+  await startTournamentFromLobby(normalizedCounty)
+
   return getLobbyByCounty(normalizedCounty)
 }
 
