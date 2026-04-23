@@ -156,6 +156,22 @@ export default function App() {
 
   const [showInbox, setShowInbox] = useState(false)
   const inboxWrapperRef = useRef<HTMLDivElement>(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuWrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleMouseDown(e: MouseEvent) {
+      if (
+        showUserMenu &&
+        userMenuWrapperRef.current &&
+        !userMenuWrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowUserMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [showUserMenu])
 
   // Dismiss inbox on outside click
   useEffect(() => {
@@ -482,6 +498,30 @@ export default function App() {
                   </div>
                 )
               })()}
+              <div className="user-menu-wrapper" ref={userMenuWrapperRef}>
+                <button
+                  className="top-nav-icon user-avatar-btn"
+                  aria-label="Account menu"
+                  onClick={() => { setShowUserMenu(!showUserMenu); setShowInbox(false); setShowNotifications(false) }}
+                >
+                  {(() => {
+                    const parts = (profile?.name ?? '').trim().split(/\s+/)
+                    const first = parts[0]?.[0] ?? ''
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+                    return (first + last).toUpperCase() || '?'
+                  })()}
+                </button>
+                {showUserMenu && (
+                  <div className="user-menu-dropdown">
+                    <button
+                      className="user-menu-item"
+                      onClick={() => { setShowUserMenu(false); signOut() }}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
         </nav>
 
