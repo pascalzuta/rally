@@ -35,10 +35,18 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 const PROFILE_KEY = 'play-tennis-profile'
+const LAST_COUNTY_KEY = 'rally-dev-last-county'
+
+function rememberLastCounty(county: string | undefined | null) {
+  if (!county) return
+  try { localStorage.setItem(LAST_COUNTY_KEY, county) } catch { /* ignore */ }
+}
 
 function clearAuthLocalStorage() {
   clearMemoryStore()
   PROFILE_STORAGE.remove(PROFILE_KEY) // also clear the real localStorage profile
+  // NOTE: intentionally keep LAST_COUNTY_KEY so DevTools can re-enter as a
+  // seeded test profile after sign-out for multi-user manual testing.
   // Also clear sessionStorage flow state so a new login doesn't resume the previous user's signup.
   try {
     sessionStorage.removeItem('rally-auth-flow')
@@ -119,6 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
   // Skip the loading spinner if we already have a cached profile
   const [loading, setLoading] = useState(!profile)
+
+  // Remember the last-known county across sign-outs so DevTools can re-enter
+  // as a seeded test profile after the user signs out of their real account.
+  useEffect(() => {
+    if (profile?.county) rememberLastCounty(profile.county)
+  }, [profile?.county])
 
   useEffect(() => {
     // Dev-only bootstrap: if the "play-tennis-dev-bypass" flag is set in

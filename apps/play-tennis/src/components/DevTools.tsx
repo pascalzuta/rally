@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { titleCase } from '../dateUtils'
 import { checkPushPermission, requestPushPermission, registerDeviceToken, hasActiveToken } from '../pushRegistration'
 import {
@@ -14,7 +14,39 @@ import {
   getTournament,
   simulateToFinal,
 } from '../store'
+import { getClient } from '../supabase'
 import { PlayerProfile } from '../types'
+
+const LAST_COUNTY_KEY = 'rally-dev-last-county'
+
+function readLastCounty(): string {
+  try { return localStorage.getItem(LAST_COUNTY_KEY) ?? '' } catch { return '' }
+}
+
+// When signed out, RallyDataProvider clears the in-memory lobby, so
+// getTestProfiles() comes back with placeholder IDs. Fetch the lobby directly
+// from Supabase for the last-known county so the profile switcher works
+// without requiring the user to sign back in.
+async function fetchLobbyIds(county: string): Promise<Map<string, string>> {
+  const result = new Map<string, string>()
+  if (!county) return result
+  const client = getClient()
+  if (!client) return result
+  try {
+    const { data } = await client
+      .from('lobby')
+      .select('player_id, player_name')
+      .eq('county', county.toLowerCase())
+    if (data) {
+      for (const row of data) {
+        if (row.player_id && row.player_name) {
+          result.set(String(row.player_name).toLowerCase(), String(row.player_id))
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return result
+}
 
 interface Props {
   onProfileSwitch: (profile: PlayerProfile) => void
@@ -33,9 +65,34 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
   const panelRef = useRef<HTMLDivElement>(null)
 
   const profile = getProfile()
-  const county = profile?.county ?? ''
-  const testProfiles = county ? getTestProfiles(county) : []
-  const setupTournament = county ? getSetupTournamentForCounty(county) : undefined
+  const lastCounty = useMemo(() => readLastCounty(), [expanded, profile?.county])
+  const county = profile?.county ?? lastCounty
+  const [remoteLobbyIds, setRemoteLobbyIds] = useState<Map<string, string>>(new Map())
+
+  // When signed out (no profile) but we know the county, fetch lobby IDs from
+  // Supabase so the profile switcher can list real seeded players.
+  useEffect(() => {
+    if (profile || !county || !expanded) return
+    let cancelled = false
+    fetchLobbyIds(county).then(ids => { if (!cancelled) setRemoteLobbyIds(ids) })
+    return () => { cancelled = true }
+  }, [profile?.id, county, expanded])
+
+  const testProfiles = useMemo<PlayerProfile[]>(() => {
+    if (!county) return []
+    const base = getTestProfiles(county)
+    if (profile) return base
+    // No profile → fill in real IDs from Supabase-fetched lobby so switching
+    // into a test player lands on the correct account.
+    return base
+      .map(p => {
+        const realId = remoteLobbyIds.get(p.name.toLowerCase())
+        return realId ? { ...p, id: realId } : null
+      })
+      .filter((p): p is PlayerProfile => p !== null)
+  }, [county, profile?.id, remoteLobbyIds])
+
+  const setupTournament = county && profile ? getSetupTournamentForCounty(county) : undefined
 
   function flash(text: string, type: 'info' | 'success' | 'error' = 'success') {
     clearTimeout(statusTimer.current)
@@ -176,7 +233,7 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
       {/* Header */}
       <div className="devbar-head">
         <span className="devbar-title">Dev</span>
-        {profile && <span className="devbar-user">{profile.name.split(' ')[0]}</span>}
+        <span className="devbar-user">{profile ? profile.name.split(' ')[0] : 'Guest'}</span>
         <button className="devbar-close" onClick={() => setExpanded(false)} aria-label="Close">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -258,15 +315,18 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
           </div>
         )}
 
-        {/* Profile switcher */}
-        {profile && testProfiles.length > 0 && (
+        {/* Profile switcher — works signed-in AND signed-out (so you can
+            re-enter as a seeded test player after signing out of your real account) */}
+        {testProfiles.length > 0 && (
           <div className="devbar-group">
-            <span className="devbar-group-label">Profile</span>
+            <span className="devbar-group-label">
+              Profile {!profile && county && `· ${titleCase(county)}`}
+            </span>
             <div className="devbar-row devbar-row--wrap">
               {testProfiles.map(tp => (
                 <button
                   key={tp.id}
-                  className={`devbar-btn ${tp.id === profile.id ? 'devbar-btn--active' : ''}`}
+                  className={`devbar-btn ${profile && tp.id === profile.id ? 'devbar-btn--active' : ''}`}
                   onClick={() => doSwitch(tp)}
                 >
                   {tp.name.split(' ')[0]}
