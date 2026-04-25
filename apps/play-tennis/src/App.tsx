@@ -10,6 +10,7 @@ import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import { setNavigateRef, consumePendingDeepLink, handleDeepLink, initNativeApp } from './native'
 import './styles.css'
+import './baseline.css'
 
 // Critical path: loaded eagerly (landing page + home + auth)
 import Register from './components/Register'

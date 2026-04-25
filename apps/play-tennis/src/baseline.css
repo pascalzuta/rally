@@ -1,0 +1,520 @@
+/* ================================================================
+   Rally — Baseline Design System
+   Source of truth: apps/play-tennis/docs/DESIGN-SYSTEM.md
+
+   This file is loaded AFTER styles.css and overrides the legacy
+   Polymarket-inspired tokens with the Baseline tokens. Token-level
+   overrides cascade across every component that consumes them.
+
+   Then a focused set of component overrides flatten the legacy
+   visual atoms (left-rail accents, eyebrow text, box-in-box,
+   colored backgrounds) to the Baseline white-card / dot-and-pill
+   pattern.
+   ================================================================ */
+
+/* ---------- 1. TOKENS (override styles.css :root) ---------- */
+
+:root {
+  /* Baseline palette */
+  --bg:        #ffffff;
+  --bg-2:      #f6f7f9;
+  --ink:       #0b0d10;
+  --ink-2:     #6a7079;
+  --line:      #e7e9ec;
+  --blue:      #2563ff;
+  --blue-soft: #eaf0ff;
+  --amber:     #a86a0a;
+  --amber-soft:#fbf1de;
+  --danger:    #c0392b;
+
+  /* Override the legacy color tokens so every component already
+     consuming `var(--color-*)` immediately picks up Baseline. */
+  --color-bg-primary:        var(--bg-2);
+  --color-bg-surface:        var(--bg);
+  --color-bg:                var(--bg-2);
+  --color-bg-secondary:      var(--bg-2);
+  --color-surface:           var(--bg);
+  --color-surface-alt:       var(--bg-2);
+  --color-surface-primary:   var(--bg);
+  --color-surface-raised:    var(--bg);
+  --color-surface-hover:     var(--bg-2);
+  --color-surface-pressed:   #eef0f3;
+
+  --color-text-primary:      var(--ink);
+  --color-text-secondary:    var(--ink-2);
+  --color-text-muted:        var(--ink-2);
+  --color-text-inverse:      #ffffff;
+
+  --color-divider:           var(--line);
+  --color-border:            var(--line);
+  --color-border-secondary:  var(--line);
+
+  /* All "system color" roles collapse to blue or amber.
+     This is the most important token override — it kills the
+     red/green/purple palette across every existing component. */
+  --color-positive-bg:       var(--blue-soft);
+  --color-positive-primary:  var(--blue);
+  --color-negative-bg:       var(--amber-soft);
+  --color-negative-primary:  var(--danger);
+  --color-neutral-bg:        var(--bg-2);
+  --color-neutral-primary:   var(--ink-2);
+  --color-accent-bg:         var(--blue-soft);
+  --color-accent-primary:    var(--blue);
+  --color-accent-blue:       var(--blue);
+  --color-warning-bg:        var(--amber-soft);
+  --color-warning-primary:   var(--amber);
+  --color-purple-bg:         var(--blue-soft);
+  --color-purple-primary:    var(--blue);
+  --color-primary:           var(--blue);
+
+  /* Type scale (Baseline) */
+  --font-h1:      44px;
+  --font-h2:      28px;
+  --font-h3:      22px;
+  --font-body:    14px;
+  --font-micro:   11px;
+
+  --font-title-lg: var(--font-h2);
+  --font-title-md: var(--font-h3);
+  --font-title-sm: 18px;
+  --font-body-lg:  16px;
+  --font-body-md:  var(--font-body);
+  --font-body-sm:  12px;
+  --font-caption:  13px;
+  --font-label:    var(--font-body);
+
+  --weight-regular:  500;
+  --weight-normal:   500;
+  --weight-medium:   500;
+  --weight-semibold: 700;
+  --weight-bold:     700;
+
+  /* Radii */
+  --radius-card:   16px;
+  --radius-button: 12px;
+  --radius-chip:   999px;
+  --radius-sm:     6px;
+  --radius-md:     12px;
+  --radius-lg:     16px;
+
+  /* Shadow — softer than legacy */
+  --shadow:        0 1px 2px rgba(11,13,16,0.04);
+  --shadow-sm:     0 1px 2px rgba(11,13,16,0.04);
+  --shadow-md:     0 4px 16px rgba(11,13,16,0.06);
+  --shadow-lg:     0 8px 32px rgba(11,13,16,0.10);
+  --shadow-hover:  0 4px 16px rgba(11,13,16,0.08);
+  --shadow-focus:  0 0 0 3px rgba(37,99,255,0.18);
+}
+
+/* ---------- 2. BASE / TYPOGRAPHY ---------- */
+
+html, body {
+  background: var(--bg-2);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-size: var(--font-body);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6,
+.text-title-lg, .text-title-md, .text-title-sm,
+.section-title, .card-title, .screen-title, .header h1,
+.welcome-title, .home-hero-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+h1, .text-title-lg          { font-size: var(--font-h2); line-height: 1.05; letter-spacing: -0.03em; }
+h2, .text-title-md          { font-size: var(--font-h3); line-height: 1.10; letter-spacing: -0.025em; }
+h3, .text-title-sm          { font-size: 18px;          line-height: 1.15; letter-spacing: -0.02em; }
+
+.text-body-lg               { font-size: 16px; font-weight: 500; line-height: 1.5; }
+.text-body-md, .text-body   { font-size: var(--font-body); font-weight: 500; line-height: 1.5; color: var(--ink-2); }
+.text-body-sm, .text-caption{ font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--ink-2); }
+.text-muted                 { color: var(--ink-2); }
+
+/* Marketing hero size only on the public landing page */
+.home-hero-title,
+.marketing-hero-title       { font-size: var(--font-h1); line-height: 1.02; letter-spacing: -0.035em; font-weight: 700; }
+
+/* Italic emphasis class — the Baseline signature.
+   Use inline within headings / body to highlight names, scores, totals. */
+.bg-em,
+em.bg-em,
+.text-em                    { font-style: italic; color: var(--blue); font-weight: inherit; }
+
+/* Kill all eyebrow / uppercase label patterns globally */
+.eyebrow,
+.label-eyebrow,
+.section-eyebrow,
+.text-eyebrow,
+[class*="-eyebrow"],
+[class*="-label-uppercase"] { text-transform: none !important; letter-spacing: -0.005em !important; font-size: var(--font-micro) !important; color: var(--ink-2) !important; font-weight: 500 !important; }
+
+/* No monospace anywhere */
+.tabular-nums, .font-mono, [class*="-mono"], [class*="-num"] {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 3. APP SHELL ---------- */
+
+.app                        { background: var(--bg-2); }
+.screen                     { background: var(--bg-2); padding: 0; }
+.screen > *                 { background: transparent; }
+
+/* Top bar */
+.top-nav, .header, .app-header, .screen-header {
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  padding: 12px 14px !important;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.top-nav-logo img.rally-logo { height: 22px !important; width: auto; }
+.top-nav-actions             { display: flex; align-items: center; gap: 8px; }
+
+.top-nav-icon, .icon-btn-circle {
+  width: 38px; height: 38px; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-2); cursor: pointer; padding: 0;
+}
+.top-nav-icon svg, .icon-btn-circle svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+/* Notification badge on icons */
+.inbox-unread-badge, .notif-badge {
+  position: absolute; top: -3px; right: -3px;
+  background: var(--blue) !important; color: #fff !important;
+  font-size: 10px; font-weight: 700;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+}
+
+/* Avatar circle */
+.user-avatar, .avatar, .profile-avatar, .player-avatar {
+  background: var(--ink) !important; color: #fff !important;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; letter-spacing: -0.01em;
+  border: none !important;
+}
+
+/* Bottom tabs */
+.bottom-tabs, .bottom-nav, .tab-bar {
+  background: var(--bg) !important;
+  border-top: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  display: flex; justify-content: space-around;
+  position: sticky; bottom: 0;
+}
+.bottom-tab, .tab-btn, .nav-item {
+  background: transparent !important; border: none !important;
+  color: var(--ink-2) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  padding: 6px 10px !important;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.bottom-tab.active, .tab-btn.active, .nav-item.active,
+.bottom-tab[aria-current="page"], .tab-btn[aria-current="page"] {
+  color: var(--blue) !important;
+}
+.bottom-tab svg, .tab-btn svg, .nav-item svg { width: 20px; height: 20px; stroke-width: 1.8; }
+
+/* ---------- 4. CARDS — flatten everything ---------- */
+
+.card, .b-card, .action-card, .auth-card, .activation-card,
+.welcome-card, .home-hero-card, .match-card, .calendar-match,
+.notif-dropdown, .availability-card, .availability-slots-card,
+.availability-custom-card, .broadcast-card, .offer-card,
+.chat-card, .schedule-summary, .standings-card, .leaderboard-card,
+.profile-card, .rating-card, .help-card, .faq-card, .lobby-card,
+.tournament-card, .friend-card {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-left: 1px solid var(--line) !important; /* kill colored left rails */
+  border-radius: var(--radius-card) !important;
+  box-shadow: none !important;
+  padding: 20px 18px !important;
+  margin: 10px 14px !important;
+}
+/* Direct children of .screen / list containers stack with consistent gap */
+.screen > .card, .screen > .action-card,
+.action-cards > .action-card,
+.card-stack > .card { margin-top: 0 !important; margin-bottom: 10px !important; }
+
+/* Kill all colored left-rail variants */
+[class*="--highlight-"], [class*="--accent-"],
+.action-card--highlight-blue, .action-card--highlight-green,
+.action-card--highlight-orange, .action-card--highlight-red,
+.action-card--highlight-purple, .action-card--highlight-yellow {
+  border-left: 1px solid var(--line) !important;
+}
+
+/* No box-in-box: nested bordered containers go transparent */
+.card .card, .b-card .b-card, .action-card .card,
+.action-card .action-card-expansion,
+.card .nested-card, .auth-card .form-section {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* In-card divider — full bleed within Baseline padding */
+.card-divider, .section-divider, .b-divider, hr.in-card {
+  height: 1px; background: var(--line); border: none;
+  margin: 14px -18px;
+}
+
+/* ---------- 5. PILLS / STATUS DOTS / BADGES ---------- */
+
+.b-pill, .pill, .badge, .chip, .tag,
+[class*="badge-"], [class*="pill-"], [class*="-pill"],
+.broadcast-badge, .activation-step-check {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: var(--font-micro) !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.005em !important;
+  padding: 4px 9px !important;
+  border-radius: 999px !important;
+  border: none !important;
+  text-transform: none !important;
+  background: var(--bg-2) !important;
+  color: var(--ink-2) !important;
+  box-shadow: none !important;
+}
+.b-pill--blue, .pill--blue, .badge--blue,
+.badge-confirmed, .badge-live, .badge-proposed,
+.broadcast-badge { background: var(--blue-soft) !important; color: var(--blue) !important; }
+.b-pill--amber, .pill--amber, .badge--amber,
+.badge-escalated, .badge-unscheduled, .badge-walkover { background: var(--amber-soft) !important; color: var(--amber) !important; }
+.b-pill--ink, .pill--ink, .badge--ink, .badge-done {
+  background: var(--ink) !important; color: #fff !important;
+}
+
+.b-status-dot, .status-dot, .dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 999px; background: var(--blue);
+  flex-shrink: 0;
+}
+.b-status-dot--amber, .status-dot--amber, .dot--amber { background: var(--amber); }
+.b-status-dot--ink,   .status-dot--ink,   .dot--ink   { background: var(--ink); }
+
+/* ---------- 6. BUTTONS ---------- */
+
+button, .btn, [class*="-btn"]:not(.top-nav-icon):not(.bottom-tab):not(.tab-btn):not(.icon-btn-circle) {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: var(--font-body);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  border-radius: var(--radius-button);
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 13px 18px;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+/* Primary */
+.btn-primary, .primary-btn, .btn--primary,
+button[type="submit"]:not(.btn-secondary):not(.btn-ghost):not(.btn-outline),
+.cta-btn, .auth-cta, .submit-btn,
+.action-confirm-score, .action-respond, .action-schedule,
+.confirm-btn, .accept-btn {
+  background: var(--blue) !important;
+  color: #fff !important;
+  border-color: var(--blue) !important;
+}
+.btn-primary:hover, .primary-btn:hover, .btn--primary:hover,
+.cta-btn:hover, .auth-cta:hover { background: #1f56e0 !important; border-color: #1f56e0 !important; }
+
+/* Secondary / ghost — soft blue */
+.btn-secondary, .secondary-btn, .btn--secondary, .btn-soft,
+.action-message, .corrected-score-btn, .correct-score-btn,
+.btn-ghost {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border-color: transparent !important;
+}
+
+/* Outline / tertiary */
+.btn-outline, .btn--outline, .tertiary-btn, .btn-tertiary,
+.cancel-btn, .skip-btn {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* Destructive */
+.btn-danger, .destructive-btn, .signout-btn, .leave-btn {
+  background: var(--bg) !important;
+  color: var(--danger) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* Pill / segmented buttons */
+.segmented-control, .segment-tabs, .pill-tabs,
+.bracket-view-toggle, .avail-segmented-control, .avail-mode-toggle {
+  display: inline-flex !important;
+  background: var(--bg-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+  gap: 0 !important;
+}
+.segment-tab, .segmented-btn,
+.bracket-view-toggle-btn, .avail-segment-btn, .avail-mode-btn {
+  background: transparent !important;
+  color: var(--ink-2) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 7px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+.segment-tab.active, .segmented-btn.active,
+.bracket-view-toggle-btn.active, .avail-segment-btn.active, .avail-mode-btn.active,
+.segment-tab[aria-selected="true"], .segmented-btn[aria-selected="true"] {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 1px 2px rgba(11,13,16,0.06) !important;
+}
+
+/* ---------- 7. FORM INPUTS ---------- */
+
+input[type="text"], input[type="email"], input[type="password"],
+input[type="number"], input[type="tel"], input[type="search"],
+textarea, select,
+.auth-input, .form-input, .input {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: var(--font-body) !important;
+  font-weight: 500 !important;
+  color: var(--ink) !important;
+  width: 100%;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+input:focus, textarea:focus, select:focus,
+.auth-input:focus, .form-input:focus {
+  outline: none !important;
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,255,0.15) !important;
+}
+::placeholder { color: var(--ink-2); opacity: 1; }
+
+/* ---------- 8. NOTIFICATIONS DROPDOWN ---------- */
+
+.notif-dropdown {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: 0 12px 40px rgba(11,13,16,0.10) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.notif-header {
+  padding: 16px 18px !important;
+  border-bottom: 1px solid var(--line) !important;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg) !important;
+}
+.notif-list { padding: 6px 0 !important; }
+.notif-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 18px !important;
+  border-left: 3px solid transparent !important;
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-top: none !important; border-right: none !important;
+}
+.notif-item:last-child { border-bottom: none !important; }
+.notif-item.notif-unread,
+.notif-item.urgent, .notif-item.high, .notif-item.medium {
+  border-left-color: var(--blue) !important;
+  background: var(--bg) !important;
+}
+.notif-item.warn, .notif-item.amber {
+  border-left-color: var(--amber) !important;
+}
+.notif-icon {
+  width: 36px; height: 36px; border-radius: 999px;
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 16px;
+}
+.notif-action { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.notif-opponent, .notif-time { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.notif-empty { padding: 32px 18px; text-align: center; color: var(--ink-2); }
+.notif-close-btn {
+  background: transparent; border: none; color: var(--ink-2);
+  font-size: 22px; cursor: pointer; padding: 0; width: 28px; height: 28px;
+}
+
+/* ---------- 9. TOAST ---------- */
+
+.toast, .toast-container, .toast-message {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-left: 3px solid var(--blue) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 24px rgba(11,13,16,0.08) !important;
+  color: var(--ink) !important;
+  padding: 12px 16px !important;
+}
+
+/* ---------- 10. PROFILE / LEADERBOARD specifics ---------- */
+
+.profile-avatar, .avatar-large {
+  width: 68px; height: 68px; font-size: 26px;
+}
+.leaderboard-row, .standings-row {
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--line) !important;
+  padding: 14px 18px !important;
+}
+.leaderboard-rank, .standings-rank { color: var(--ink-2); font-weight: 500; }
+.leaderboard-rating, .standings-rating { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ---------- 11. KILL legacy decorative styles ---------- */
+
+/* No gradients */
+[style*="gradient"], .gradient-bg, [class*="gradient"] {
+  background-image: none !important;
+}
+
+/* Flatten any "raised" panel / glass / blur effects */
+[class*="glass"], [class*="raised"], [class*="elevated"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ---------- 12. UTILITIES (Baseline-only, for new code) ---------- */
+
+.b-stack-2 { display: flex; flex-direction: column; gap: 2px; }
+.b-stack-4 { display: flex; flex-direction: column; gap: 4px; }
+.b-stack-6 { display: flex; flex-direction: column; gap: 6px; }
+.b-stack-8 { display: flex; flex-direction: column; gap: 8px; }
+.b-stack-10 { display: flex; flex-direction: column; gap: 10px; }
+.b-stack-14 { display: flex; flex-direction: column; gap: 14px; }
+.b-stack-20 { display: flex; flex-direction: column; gap: 20px; }
+.b-row { display: flex; align-items: center; gap: 8px; }
+.b-row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.b-ink-2 { color: var(--ink-2); }
+.b-ink { color: var(--ink); }
+.b-blue { color: var(--blue); }
+.b-italic { font-style: italic; }
