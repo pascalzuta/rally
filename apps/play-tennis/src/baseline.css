@@ -294,8 +294,10 @@ em.bg-em,
   border-radius: var(--radius-card) !important;
   box-shadow: none !important;
   padding: 20px 18px !important;
-  margin: 10px 14px !important;
+  margin: 10px 10px !important;
 }
+/* Tighter side gutters on logged-in screens — cards span more of the phone width */
+.screen { padding: 0 4px !important; }
 /* Direct children of .screen / list containers stack with consistent gap */
 .screen > .card, .screen > .action-card,
 .action-cards > .action-card,
@@ -2730,4 +2732,289 @@ input:focus, textarea:focus, select:focus,
   background: var(--blue-soft) !important;
   color: var(--blue) !important;
   border: none !important;
+}
+
+/* === RATING PANEL — production retrofit (screens 13/14/15) === */
+.baseline-rating .rating-hero-number {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: clamp(72px, 22vw, 104px) !important;
+  font-weight: 700 !important;
+  font-style: italic !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
+  color: var(--blue) !important;
+  text-align: center !important;
+  margin: 18px 0 6px !important;
+}
+.baseline-rating .rating-hero-top {
+  display: flex !important; justify-content: center !important;
+}
+.baseline-rating .rating-hero-label {
+  font-size: 11px !important; font-weight: 500 !important;
+  letter-spacing: 0.08em !important; text-transform: uppercase !important;
+  color: var(--ink-2) !important; text-align: center !important;
+  margin: 0 0 14px !important;
+}
+.baseline-rating .rating-level-bar {
+  height: 3px !important; background: var(--bg-2) !important;
+  border-radius: 999px !important; overflow: hidden !important;
+  margin: 0 0 18px !important;
+}
+.baseline-rating .rating-level-fill {
+  height: 100% !important; background: var(--blue) !important;
+  border-radius: 999px !important;
+}
+.baseline-rating .rating-hero-rank {
+  font-size: 14px !important; font-weight: 700 !important;
+  color: var(--ink) !important; text-align: center !important;
+  display: block !important; margin-bottom: 8px !important;
+}
+.baseline-rating .rating-hero-details {
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; gap: 4px !important;
+}
+.baseline-rating .rating-hero-explanation {
+  text-align: center !important; max-width: 280px;
+  margin: 4px auto 0 !important;
+}
+.baseline-rating .rating-hero-actions { display: flex !important; justify-content: center !important; margin-top: 14px !important; }
+.baseline-rating .rating-hero-link, .baseline-rating .btn-link {
+  color: var(--blue) !important; font-weight: 700 !important;
+  font-style: italic !important; text-decoration: none !important;
+}
+
+/* TROPHIES card */
+.baseline-trophies .trophy-empty {
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; padding: 32px 16px 14px !important;
+  gap: 10px !important;
+}
+.baseline-trophies .trophy-empty-icon { font-size: 0 !important; }
+.baseline-trophies .trophy-empty-title {
+  font-size: 16px !important; font-weight: 700 !important;
+  color: var(--ink) !important; margin: 6px 0 0 !important;
+  letter-spacing: -0.015em !important;
+}
+.baseline-trophies .trophy-empty-desc {
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important; text-align: center !important;
+  max-width: 240px; margin: 0 !important; line-height: 1.5 !important;
+}
+
+/* "How ratings work" — collapsible explainer (screen 15) */
+.rating-explainer-toggle {
+  width: 100% !important; display: flex !important;
+  justify-content: space-between !important; align-items: center !important;
+  background: none !important; border: none !important; padding: 14px 0 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 14px !important; font-weight: 700 !important;
+  color: var(--blue) !important; cursor: pointer !important;
+}
+.rating-explainer-toggle-text { letter-spacing: -0.005em !important; }
+.rating-explainer-toggle-chevron {
+  font-size: 20px !important; color: var(--blue) !important;
+  transition: transform 160ms cubic-bezier(0.16,1,0.3,1) !important;
+  transform: rotate(90deg) !important;
+}
+.rating-explainer-toggle[aria-expanded="true"] .rating-explainer-toggle-chevron {
+  transform: rotate(-90deg) !important;
+}
+.rating-explainer { padding: 0 0 8px !important; }
+.rating-explainer p {
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink) !important; line-height: 1.5 !important;
+  margin: 0 0 12px !important;
+}
+.rating-tiers {
+  display: flex !important; flex-direction: column !important;
+  border-top: 1px solid var(--line) !important;
+}
+.rating-tier {
+  display: flex !important; justify-content: space-between !important;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+.tier-range {
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.005em !important;
+}
+.tier-label {
+  font-size: 12px !important; font-weight: 700 !important;
+  color: var(--ink-2) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* === PROFILE / AVAILABILITY — production retrofit (screens 17/18) === */
+.profile-edit-card .profile-avail-header {
+  display: flex !important; justify-content: space-between !important;
+  align-items: flex-start !important; margin-bottom: 14px !important;
+}
+.profile-edit-card .profile-edit-title {
+  font-size: 22px !important; font-weight: 700 !important;
+  letter-spacing: -0.025em !important; color: var(--ink) !important;
+  line-height: 1.1 !important; margin: 0 !important;
+}
+.profile-edit-card .profile-edit-subtitle {
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important; line-height: 1.4 !important;
+  margin: 4px 0 0 !important;
+}
+.profile-edit-card .btn.btn-small {
+  background: var(--bg) !important; color: var(--ink) !important;
+  border: 1px solid var(--line) !important; border-radius: 999px !important;
+  padding: 6px 14px !important; font-size: 13px !important; font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important; cursor: pointer;
+}
+.profile-edit-card .btn.btn-small:hover { background: var(--bg-2) !important; }
+
+/* Segmented control: Custom times | Quick presets */
+.avail-mode-toggle {
+  display: inline-flex !important;
+  background: var(--bg-2) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+  margin: 0 0 14px !important;
+  border: 1px solid var(--line) !important;
+}
+.avail-mode-btn {
+  background: transparent !important; border: none !important;
+  padding: 8px 16px !important; border-radius: 999px !important;
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  font-family: 'Inter', system-ui, sans-serif !important; cursor: pointer;
+}
+.avail-mode-btn.active {
+  background: var(--bg) !important; color: var(--ink) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(11,13,16,0.08) !important;
+}
+
+/* Helper above presets */
+.quick-presets-hint {
+  font-size: 13px !important; color: var(--ink-2) !important;
+  font-weight: 500 !important; margin: 0 0 10px !important;
+}
+
+/* Preset row list */
+.quick-slots-v2 {
+  display: flex !important; flex-direction: column !important;
+  gap: 8px !important; margin: 0 !important;
+}
+.quick-slot-v2 {
+  display: flex !important; align-items: center !important; gap: 10px !important;
+  width: 100% !important; padding: 14px 16px !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink) !important; cursor: pointer; text-align: left !important;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.quick-slot-v2:hover { background: var(--bg-2) !important; }
+.quick-slot-v2.selected {
+  background: var(--blue-soft) !important;
+  border-color: var(--blue) !important;
+  color: var(--blue) !important; font-weight: 700 !important;
+}
+.quick-slot-v2-check {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  width: 18px !important; color: var(--blue) !important;
+  font-weight: 700 !important;
+}
+
+/* Custom add row — Mon | 9am | 12pm | Add */
+.detailed-add-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr auto !important;
+  gap: 8px !important; align-items: center !important;
+  margin: 0 0 14px !important;
+}
+.detailed-add-row > span { display: none !important; }
+.detailed-add-row select {
+  -webkit-appearance: none !important; appearance: none !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 10px 14px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink) !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%236a7079' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;
+  background-repeat: no-repeat !important; background-position: right 10px center !important;
+  padding-right: 26px !important;
+}
+.detailed-add-row .btn.btn-small {
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+  border: none !important; padding: 10px 18px !important;
+  font-weight: 700 !important;
+}
+
+/* Saved slot rows */
+.availability-current {
+  display: flex !important; flex-direction: column !important;
+  gap: 6px !important; margin: 0 0 14px !important;
+}
+.availability-slot-item {
+  display: flex !important; align-items: center !important;
+  justify-content: space-between !important;
+  background: var(--bg-2) !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  font-size: 14px !important;
+}
+.availability-slot-day {
+  font-weight: 700 !important; color: var(--ink) !important;
+  font-size: 14px !important;
+}
+.availability-slot-hours {
+  font-weight: 500 !important; color: var(--ink-2) !important;
+  font-size: 14px !important;
+  font-variant-numeric: tabular-nums !important;
+  margin-left: auto !important;
+}
+.availability-slot-item .btn-icon {
+  background: none !important; border: none !important;
+  color: var(--ink-2) !important; padding: 4px 8px !important;
+  cursor: pointer; font-size: 14px;
+}
+.availability-slot-item .btn-icon:hover { color: var(--ink) !important; }
+
+/* Save / Cancel button row */
+.profile-edit-card .btn-row {
+  display: grid !important; grid-template-columns: 1fr auto !important;
+  gap: 10px !important; margin-top: 14px !important;
+}
+.profile-edit-card .btn-row .btn-primary {
+  background: var(--blue) !important; color: #fff !important;
+  border: none !important; border-radius: 999px !important;
+  padding: 13px 18px !important; font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+.profile-edit-card .btn-row .btn:not(.btn-primary) {
+  background: var(--bg) !important; color: var(--ink) !important;
+  border: 1px solid var(--line) !important; border-radius: 999px !important;
+  padding: 13px 18px !important; font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* Help link / sign-out at bottom of profile */
+.help-link-btn {
+  width: 100% !important; margin-top: 14px !important;
+  background: var(--bg) !important; color: var(--ink) !important;
+  border: 1px solid var(--line) !important; border-radius: 999px !important;
+  padding: 13px 18px !important; font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  text-align: center !important;
+}
+.logout-btn {
+  width: 100% !important; margin-top: 8px !important;
+  background: var(--bg) !important; color: var(--danger) !important;
+  border: 1px solid var(--line) !important; border-radius: 999px !important;
+  padding: 13px 18px !important; font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  text-align: center !important;
 }

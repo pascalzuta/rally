@@ -260,15 +260,15 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
     return (
       <>
           {/* Rally Rating Hero Card */}
-          <div className="card rating-hero">
+          <div className="card rating-hero baseline-rating">
             <div className="card-status-row">
-              <div className="card-status-label card-status-label--slate">Rally Rating</div>
+              <div className="card-status-label card-status-label--slate">Rally rating</div>
               {rankInfo.total > 1 && (
-                <div className="card-meta-chip card-meta-chip--blue">Rank #{rankInfo.rank}</div>
+                <div className="card-meta-chip card-meta-chip--blue"><em className="bg-em">Rank #{rankInfo.rank}</em></div>
               )}
             </div>
             <div className="card-summary-main rating-hero-summary">
-              <div className="card-title">Your current rating</div>
+              <div className="card-title">Your current <em className="bg-em">rating.</em></div>
               <div className="card-supporting">Ratings adjust after each match and help keep matchups fair.</div>
             </div>
             <div className="rating-hero-top">
@@ -281,13 +281,13 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 )}
               </div>
             </div>
-            <div className="rating-hero-label">Your Rally Rating</div>
+            <div className="rating-hero-label">Your Rally rating</div>
             <div className="rating-level-bar">
               <div className="rating-level-fill" style={{ width: `${Math.min(100, Math.max(5, ((rating.rating - 800) / 1600) * 100))}%` }} />
             </div>
             <div className="rating-hero-details">
               {rankInfo.total > 1 && (
-                <span className="rating-hero-rank">Rank #{rankInfo.rank} in {titleCase(profile.county)}</span>
+                <span className="rating-hero-rank">Rank <em className="bg-em">#{rankInfo.rank}</em> in {titleCase(profile.county)}</span>
               )}
               {lastRatingChange !== 0 && (
                 <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
@@ -337,8 +337,10 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
           </div>
 
           {/* Trophy Cabinet */}
-          <div className="card profile-section">
-            <h3 className="profile-section-title"><span>Trophies</span></h3>
+          <div className="card profile-section baseline-trophies">
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Trophies</div>
+            </div>
             {trophies.length > 0 ? (
               <div className="trophy-grid">
                 {trophies.map(trophy => (
@@ -350,9 +352,15 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
               </div>
             ) : (
               <div className="trophy-empty">
-                <div className="trophy-empty-icon">🏆</div>
+                <div className="trophy-empty-icon" aria-hidden="true">
+                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                    <path d="M14 10h16v6c0 6-3 10-8 11.5C17 26 14 22 14 16v-6z" stroke="var(--ink-2)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M14 12H10c0 4 2 6 4 6.5M30 12h4c0 4-2 6-4 6.5" stroke="var(--ink-2)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d="M22 27.5V32M17 34h10" stroke="var(--ink-2)" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </div>
                 <p className="trophy-empty-title">No trophies yet</p>
-                <p className="trophy-empty-desc">Win tournaments to earn trophies and climb the leaderboard</p>
+                <p className="trophy-empty-desc">Win tournaments to earn trophies and climb the leaderboard.</p>
               </div>
             )}
           </div>
