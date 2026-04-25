@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import '../dev/css/baseline-info.css'
 
 /**
  * Help Center (Baseline reskin — screen 27).

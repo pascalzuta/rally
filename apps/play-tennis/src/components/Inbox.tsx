@@ -3,7 +3,6 @@ import { getConversationList, markConversationRead, RALLY_SYSTEM_ID } from '../s
 import { Tournament } from '../types'
 import MessagePanel from './MessagePanel'
 import WelcomeMessage from './WelcomeMessage'
-import '../dev/css/baseline-messages.css'
 
 interface Props {
   currentPlayerId: string

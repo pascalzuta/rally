@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { titleCase } from '../dateUtils'
-import '../dev/css/baseline-info.css'
 
 export interface ActivationStep {
   label: string

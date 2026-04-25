@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getConversation, sendMessage, markConversationRead } from '../store'
 import { DirectMessage } from '../types'
-import '../dev/css/baseline-messages.css'
 
 interface Props {
   currentPlayerId: string
