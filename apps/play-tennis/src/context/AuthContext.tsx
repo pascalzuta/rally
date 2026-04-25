@@ -32,7 +32,8 @@ interface AuthContextValue {
   setProfile: (p: PlayerProfile | null) => void
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+export const AuthContext = createContext<AuthContextValue | null>(null)
+export type { AuthContextValue }
 
 const PROFILE_KEY = 'play-tennis-profile'
 const LAST_COUNTY_KEY = 'rally-dev-last-county'
