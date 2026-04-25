@@ -329,7 +329,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <span className="card-status-label card-status-label--green">Quick Play</span>
           </span>
           <span className="action-card-main">
-            <span className="action-card-opponent">I&apos;m Free to Play</span>
+            <span className="action-card-opponent">I&apos;m <span className="bg-em">free to play.</span></span>
             <span className="action-card-supporting">Broadcast your availability so nearby tournament players can send a request.</span>
           </span>
         </button>

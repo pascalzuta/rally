@@ -869,3 +869,614 @@ input:focus, textarea:focus, select:focus,
 .b-ink { color: var(--ink); }
 .b-blue { color: var(--blue); }
 .b-italic { font-style: italic; }
+
+/* ================================================================
+   === profile/availability/quickplay additions ===
+   Retrofit live components (Profile.tsx, PlayNowTab.tsx,
+   BroadcastPanel.tsx) to the Baseline pattern. These rules target
+   the existing class names produced by the live components.
+   ================================================================ */
+
+/* ---------- Profile content wrapper ---------- */
+.profile-content {
+  padding: 14px !important;
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--bg-2);
+}
+.profile-content > * { margin: 0 !important; }
+
+/* ---------- Profile hero card (blue band + centered avatar) ---------- */
+.profile-hero-card {
+  position: relative;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  padding: 0 0 20px !important;
+  margin: 0 !important;
+}
+.profile-hero-banner {
+  height: 110px !important;
+  background: var(--blue) !important;
+  background-image: none !important;
+}
+.profile-hero-photo {
+  width: 76px !important; height: 76px !important;
+  margin: -38px auto 0 !important;
+  position: relative;
+  cursor: pointer;
+}
+.profile-hero-photo-img,
+.profile-hero-avatar {
+  width: 76px !important; height: 76px !important;
+  border-radius: 999px !important;
+  background: var(--blue) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border: 4px solid var(--bg) !important;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 32px; letter-spacing: -0.02em;
+  object-fit: cover;
+}
+.profile-hero-info {
+  text-align: center;
+  padding: 14px 18px 0 !important;
+}
+.profile-hero-name {
+  font-size: 22px !important; font-weight: 700 !important;
+  letter-spacing: -0.025em !important; color: var(--ink) !important;
+  margin: 0 0 4px !important;
+  line-height: 1.1 !important;
+}
+/* Italic blue last name (split via space) using ::after is impossible,
+   but the live component renders the entire profile.name verbatim.
+   To match the screenshot's "pili rilph" italic blue treatment, we
+   style the last word via a span if present; otherwise the whole name
+   stays bold ink. The Baseline em hook is .bp-em — but for the live
+   component we approximate by styling .profile-hero-name strong, em.
+   Live name has no inner span, so leave whole-name bold ink. */
+
+.profile-hero-county {
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  margin: 0 0 12px !important;
+  text-transform: capitalize;
+}
+.profile-hero-tags {
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  gap: 16px !important;
+  margin: 0 !important;
+}
+.profile-hero-level {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+}
+.profile-hero-joined {
+  font-size: 11px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stats strip — three columns separated by 1px lines */
+.profile-hero-stats {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  border-top: 1px solid var(--line) !important;
+  margin: 16px 0 0 !important;
+  padding: 16px 0 0 !important;
+}
+.profile-hero-stat {
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; gap: 6px !important;
+  padding: 0 4px !important;
+}
+.profile-hero-stat:not(:last-child)::after {
+  content: none !important;
+}
+.profile-hero-stat + .profile-hero-stat {
+  border-left: 1px solid var(--line);
+}
+.profile-hero-stat-value {
+  font-size: 26px !important; font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ink) !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1 !important;
+}
+/* First stat = Rating, render italic blue per screenshot */
+.profile-hero-stat:first-child .profile-hero-stat-value {
+  font-style: italic;
+  color: var(--blue) !important;
+}
+/* W-L should also be italic for the dash readability per screenshot */
+.profile-hero-stat:nth-child(2) .profile-hero-stat-value {
+  font-style: italic;
+}
+.profile-hero-stat-sep {
+  font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  font-style: normal;
+  margin: 0 2px;
+}
+.profile-hero-stat-label {
+  font-size: 10px !important; font-weight: 700 !important;
+  color: var(--ink-2) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin: 0 !important;
+}
+
+/* ---------- Availability card ---------- */
+.profile-edit-card { padding: 18px !important; margin: 0 !important; }
+.profile-avail-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.profile-edit-title {
+  font-size: 22px !important; font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--ink) !important;
+  margin: 0 0 4px !important;
+  line-height: 1.1 !important;
+}
+.profile-edit-subtitle {
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  margin: 0 !important;
+}
+.profile-avail-header .btn-small,
+.profile-avail-header .btn {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 6px 14px !important;
+  font-size: 13px !important; font-weight: 500 !important;
+  cursor: pointer;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Segmented control (Custom times / Quick presets) */
+.avail-mode-toggle {
+  display: inline-flex !important; align-items: center !important;
+  background: var(--bg-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+  margin: 14px auto 6px !important;
+  width: auto !important;
+  align-self: center;
+}
+.avail-mode-btn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--ink-2) !important;
+  font-size: 13px !important; font-weight: 500 !important;
+  padding: 8px 18px !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+.avail-mode-btn.active {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 1px 2px rgba(11,13,16,0.06) !important;
+}
+
+/* Quick presets list */
+.quick-presets-hint {
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  margin: 12px 0 10px !important;
+}
+.quick-slots-v2 {
+  display: flex !important; flex-direction: column !important;
+  gap: 10px !important;
+  margin-top: 6px;
+}
+.quick-slot-v2 {
+  display: flex !important; align-items: center !important; gap: 8px !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+  text-align: left !important;
+  width: 100% !important;
+  box-shadow: none !important;
+}
+.quick-slot-v2.selected {
+  background: var(--blue-soft) !important;
+  border-color: var(--blue) !important;
+  color: var(--blue) !important;
+}
+.quick-slot-v2-check {
+  width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--blue);
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.quick-slot-v2-label {
+  font-size: 14px !important; font-weight: 500 !important;
+  letter-spacing: -0.005em;
+}
+.quick-slot-v2-copy,
+.quick-slot-v2-time { display: none !important; }
+
+/* Custom day/time row of pills */
+.detailed-add-row {
+  display: flex !important; align-items: center !important;
+  gap: 8px !important;
+  margin: 14px 0 14px !important;
+  flex-wrap: wrap !important;
+}
+.detailed-add-row select,
+.detailed-add-row .btn {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  height: auto !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+.detailed-add-row > span {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+.detailed-add-row .btn {
+  color: var(--ink-2) !important;
+}
+
+/* Saved slot list (custom mode) */
+.availability-current {
+  display: flex !important; flex-direction: column !important;
+  gap: 8px !important;
+  margin: 12px 0 0 !important;
+}
+.availability-slot-item {
+  display: flex !important; align-items: center !important;
+  justify-content: space-between !important;
+  background: var(--bg-2) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+}
+.availability-slot-day {
+  font-size: 14px !important; font-weight: 700 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.01em;
+}
+.availability-slot-hours {
+  font-size: 13px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto; margin-right: 12px;
+}
+.availability-slot-item .btn-icon {
+  background: transparent !important;
+  border: none !important;
+  color: var(--ink-2) !important;
+  font-size: 14px !important;
+  width: 22px !important; height: 22px !important;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0 !important;
+}
+
+/* Save / Cancel button row */
+.profile-edit-card .btn-row {
+  display: flex !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+.profile-edit-card .btn-row .btn {
+  flex: 1 !important;
+  border-radius: 12px !important;
+  padding: 13px 18px !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+.profile-edit-card .btn-row .btn-primary {
+  background: var(--blue) !important;
+  color: #fff !important;
+  border: none !important;
+}
+.profile-edit-card .btn-row .btn:not(.btn-primary) {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* Help / Sign out CTAs at bottom of profile */
+.help-link-btn {
+  display: block !important;
+  width: calc(100% - 0px) !important;
+  text-align: center !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--blue) !important;
+  cursor: pointer;
+  margin: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+.logout-btn {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--danger) !important;
+  cursor: pointer;
+  margin: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Quick Play tab ---------- */
+.playnow-tab {
+  padding: 14px !important;
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--bg-2);
+}
+.playnow-tab > * { margin: 0 !important; }
+
+/* Info banner (top) */
+.pn-info-banner {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+.pn-info-banner-content {
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.pn-info-banner-icon {
+  flex-shrink: 0;
+  width: 28px; height: 28px; border-radius: 999px;
+  border: 1px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-2) !important;
+  font-style: italic; font-weight: 700; font-size: 13px;
+  font-family: 'Inter', serif;
+  background: var(--bg) !important;
+  cursor: pointer;
+}
+.pn-info-banner-text {
+  font-size: 14px !important; font-weight: 500 !important;
+  line-height: 1.5 !important;
+  color: var(--ink-2) !important;
+}
+
+/* Quick Play "I'm Free to Play" CTA card */
+.broadcast-play-now-btn,
+.broadcast-play-now-btn.action-card {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 20px 18px !important;
+  margin: 0 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+.broadcast-play-now-btn .action-card-status-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 0 10px !important;
+}
+.broadcast-play-now-btn .action-card-status-row::before {
+  content: '';
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--blue);
+  display: inline-block; flex-shrink: 0;
+}
+.broadcast-play-now-btn .card-status-label {
+  display: inline-flex !important;
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  padding: 3px 9px !important;
+  border-radius: 999px !important;
+  text-transform: none !important;
+  letter-spacing: -0.005em !important;
+  border: none !important;
+}
+.broadcast-play-now-btn .action-card-main {
+  display: block !important;
+}
+.broadcast-play-now-btn .action-card-opponent {
+  font-size: 22px !important; font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--ink) !important;
+  margin: 0 0 6px !important;
+  line-height: 1.1 !important;
+  display: block !important;
+}
+.broadcast-play-now-btn .action-card-opponent .bg-em {
+  font-style: italic;
+  color: var(--blue);
+}
+.broadcast-play-now-btn .action-card-supporting {
+  font-size: 14px !important; font-weight: 500 !important;
+  line-height: 1.5 !important;
+  color: var(--ink-2) !important;
+  display: block !important;
+}
+
+/* Active broadcast card */
+.pn-my-broadcast,
+.pn-my-broadcast-active {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 20px 18px !important;
+  box-shadow: none !important;
+}
+.pn-active-indicator {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--blue);
+  display: inline-block; margin-right: 6px;
+}
+.broadcast-card-details {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 10px 0;
+}
+.broadcast-detail {
+  background: var(--bg-2) !important;
+  color: var(--ink) !important;
+  font-size: 12px !important; font-weight: 500 !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+}
+.pn-broadcast-expiry {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-2);
+  margin: 6px 0 12px;
+}
+.broadcast-cancel-btn {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink) !important;
+  border-radius: 999px !important;
+  padding: 6px 14px !important;
+  font-size: 13px !important; font-weight: 500 !important;
+}
+
+/* Sections (Who's Free) */
+.pn-section { margin: 0 !important; }
+.pn-section .section-header,
+.pn-date-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700;
+  color: var(--ink); letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 12px 4px 8px;
+}
+.pn-section .section-header::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--blue);
+  display: inline-block;
+}
+
+/* Opponent rows */
+.pn-opponent-list {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.pn-opponent-row,
+.pn-opponent-actionable {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 16px 16px 18px !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+.pn-opponent-card-main {
+  display: flex; align-items: center; gap: 12px;
+  margin: 8px 0 10px;
+}
+.pn-opponent-avatar {
+  width: 38px; height: 38px; border-radius: 999px;
+  background: var(--blue-soft); color: var(--blue);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+.pn-opponent-info { display: flex; flex-direction: column; gap: 2px; }
+.pn-opponent-row .action-card-opponent {
+  font-size: 16px !important; font-weight: 700 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.015em !important;
+  margin: 0 !important;
+}
+.pn-opponent-row .action-card-supporting {
+  font-size: 14px !important; font-weight: 500 !important;
+  line-height: 1.5 !important;
+  color: var(--ink-2) !important;
+  margin: 0 !important;
+}
+
+/* Empty state */
+.pn-empty-state {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+}
+.pn-empty-title {
+  font-size: 16px; font-weight: 700; color: var(--ink);
+  margin: 0 0 6px;
+}
+.pn-empty-desc {
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  margin: 0 0 14px;
+}
+
+/* Feedback toast inline */
+.broadcast-feedback {
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 13px; font-weight: 500;
+  padding: 10px 14px; border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+/* Avail social-proof / nudge text */
+.avail-social-proof {
+  display: flex; align-items: baseline; gap: 6px;
+  margin-top: 10px;
+}
+.avail-social-proof-count {
+  font-size: 16px; font-weight: 700; color: var(--blue);
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+}
+.avail-social-proof-label {
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+}
+.avail-profile-nudge {
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  margin: 8px 0 0;
+}
+.profile-avail-warning {
+  font-size: 13px; font-weight: 500; color: var(--amber);
+  margin: 6px 0 0;
+}
+

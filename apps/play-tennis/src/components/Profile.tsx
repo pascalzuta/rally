@@ -239,7 +239,12 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
           />
         </div>
         <div className="profile-hero-info">
-          <h2 className="profile-hero-name">{profile.name}</h2>
+          <h2 className="profile-hero-name">{(() => {
+            const parts = profile.name.trim().split(/\s+/)
+            if (parts.length < 2) return profile.name
+            const last = parts.pop() as string
+            return <>{parts.join(' ')} <span className="bg-em">{last}</span></>
+          })()}</h2>
           <p className="profile-hero-county">{titleCase(profile.county)}</p>
           <div className="profile-hero-tags">
             {profile.skillLevel && (
