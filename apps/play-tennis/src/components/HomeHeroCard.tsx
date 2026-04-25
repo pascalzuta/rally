@@ -30,6 +30,8 @@ interface Props {
   onJoinLobby?: () => void
   onFindMatch?: () => void
   actionCardCount: number
+  /** When true, the embedded WelcomeCard is suppressed so the parent can render it as a sibling card. */
+  hideOnboarding?: boolean
 }
 
 function getInviteLink(county: string): string {
@@ -77,6 +79,7 @@ export default function HomeHeroCard({
   onJoinLobby,
   onFindMatch,
   actionCardCount,
+  hideOnboarding,
 }: Props) {
   const { lobby: providerLobby, tournaments: providerTournaments } = useRallyData()
   const [entries, setEntries] = useState<LobbyEntry[]>([])
@@ -367,7 +370,7 @@ export default function HomeHeroCard({
           </div>
         )}
 
-        {showOnboarding && (
+        {showOnboarding && !hideOnboarding && (
           <div style={{ marginTop: 'var(--space-md)', borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-md)' }}>
             <WelcomeCard
               activationSteps={activationSteps}
@@ -502,7 +505,7 @@ export default function HomeHeroCard({
           )}
         </div>
 
-        {showOnboarding && (
+        {showOnboarding && !hideOnboarding && (
           <div style={{ marginTop: 'var(--space-md)', borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-md)' }}>
             <WelcomeCard
               activationSteps={activationSteps}

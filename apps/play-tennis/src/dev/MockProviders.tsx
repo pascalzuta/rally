@@ -7,9 +7,10 @@
  * the dev-only route guard in main.tsx.
  */
 
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { RallyDataContext } from '../context/RallyDataProvider'
+import { registerBridge, unregisterBridge } from '../storeBridge'
 import {
   MOCK_PROFILE, MOCK_TOURNAMENT, MOCK_NOTIFICATIONS, MOCK_MESSAGES, MOCK_TROPHIES,
 } from './mockData'
@@ -19,6 +20,54 @@ export function MockProviders({ children }: { children: ReactNode }) {
   const [tournaments, setTournaments] = useState([MOCK_TOURNAMENT])
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
   const [messages, setMessages] = useState(MOCK_MESSAGES)
+  const mockAvailability = {
+    'mock-pr': [{ day: 'saturday' as const, startHour: 9, endHour: 12 }],
+  }
+
+  // Register a minimal store bridge so non-React code in store.ts (e.g.
+  // getAvailability) returns seeded data instead of empty defaults.
+  useEffect(() => {
+    registerBridge({
+      getLobby: () => [],
+      getTournaments: () => tournaments,
+      getRatings: () => ({}),
+      getAvailability: () => mockAvailability,
+      getTrophies: () => MOCK_TROPHIES,
+      getBadges: () => [],
+      getRatingHistory: () => ({}),
+      getFeedback: () => [],
+      getEtiquetteScores: () => ({}),
+      getBroadcasts: () => [],
+      getMatchOffers: () => [],
+      getNotifications: () => notifications,
+      getMessages: () => messages,
+      getReactions: () => [],
+      getReliabilityScores: () => ({}),
+      getPendingVictories: () => [],
+      getPendingFeedback: () => null,
+      setLobby: (() => {}) as any,
+      setTournaments: setTournaments as any,
+      setRatings: (() => {}) as any,
+      setAvailability: (() => {}) as any,
+      setTrophies: (() => {}) as any,
+      setBadges: (() => {}) as any,
+      setRatingHistory: (() => {}) as any,
+      setFeedback: (() => {}) as any,
+      setEtiquetteScores: (() => {}) as any,
+      setBroadcasts: (() => {}) as any,
+      setMatchOffers: (() => {}) as any,
+      setNotifications: setNotifications as any,
+      setMessages: setMessages as any,
+      setReactions: (() => {}) as any,
+      setReliabilityScores: (() => {}) as any,
+      setPendingVictories: (() => {}) as any,
+      setPendingFeedback: (() => {}) as any,
+      refresh: async () => {},
+      showError: () => {},
+      showSuccess: () => {},
+    })
+    return () => unregisterBridge()
+  }, [tournaments, notifications, messages])
 
   const auth = {
     user: { id: 'mock-pr', email: 'pascal@example.com' } as any,
