@@ -55,10 +55,16 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
   if (saved) {
     return (
       <div className="post-match-feedback workflow-module" onClick={e => e.stopPropagation()}>
-        <div className="workflow-header">
-          <div className="workflow-status workflow-status--green">Feedback Saved</div>
-          <div className="schedule-panel-title">Thanks for your feedback</div>
-          <div className="schedule-panel-copy">This information is only for us at Play Rally.</div>
+        <div className="b-feedback-saved">
+          <span className="b-feedback-saved-check" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8.5l3 3 6.5-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <div className="b-feedback-saved-body">
+            <div className="b-feedback-saved-title">Thanks for your <em className="bg-em">feedback.</em></div>
+            <div className="b-feedback-saved-copy">This information is only for us at Rally.</div>
+          </div>
         </div>
       </div>
     )

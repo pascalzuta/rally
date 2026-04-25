@@ -1,285 +1,151 @@
 import { useState } from 'react'
+import '../dev/css/baseline-info.css'
 
-type Section = 'overview' | 'scheduling' | 'scoring' | 'deadlines' | 'faq'
+/**
+ * Help Center (Baseline reskin — screen 27).
+ *
+ * Marketing-style top nav + "How can we help?" headline + four contact cards
+ * + Frequently Asked Questions block. Mirrors the design handoff at
+ *   handoff 3/screenshots/27-Help-Center.png
+ */
 
-const TABS: { id: Section; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'scheduling', label: 'Scheduling' },
-  { id: 'scoring', label: 'Scoring' },
-  { id: 'deadlines', label: 'Deadlines' },
-  { id: 'faq', label: 'FAQ' },
+interface FaqItem { q: string; a: string }
+
+const FAQS: FaqItem[] = [
+  { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the player pool for your county. Once 6+ players join, a tournament is automatically created.' },
+  { q: 'What tournament formats are available?', a: 'Rally currently runs round-robin tournaments — everyone plays everyone. The top players advance to single-elimination playoffs.' },
+  { q: 'How are matches scheduled?', a: 'Rally finds overlapping availability and proposes match times automatically. You can also use Play Now to broadcast availability for an immediate match.' },
+  { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
+  { q: 'How do I change my availability?', a: 'Go to the Availability tab and tap "Edit". Choose quick presets or set specific time slots.' },
+  { q: 'What happens if I can\'t make a match?', a: 'You\'ll get reminders before the deadline. If neither player responds, the match is recorded as a mutual no-show.' },
 ]
 
 export default function Help({ onBack }: { onBack: () => void }) {
-  const [active, setActive] = useState<Section>('overview')
-
   return (
-    <div className="help-content">
-      <div className="help-header">
-        <button className="score-fs-close" onClick={onBack}>&#10005;</button>
-        <h2>How Rally Works</h2>
-      </div>
+    <div className="b-page bi-help-page">
+      <nav className="b-page-nav bi-marketing-nav" aria-label="Main">
+        <div className="bi-marketing-nav-left">
+          <span className="bi-marketing-logo">Rally</span>
+          <span className="bi-marketing-nav-tag">Help</span>
+        </div>
+        <div className="bi-marketing-nav-right">
+          <a href="/blog/" className="bi-marketing-nav-link">Blog</a>
+          <button className="bi-marketing-cta" onClick={onBack}>Play Rally</button>
+        </div>
+      </nav>
 
-      <div className="help-tabs">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`help-tab ${active === t.id ? 'help-tab--active' : ''}`}
-            onClick={() => setActive(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="b-page-content bi-help-content">
+        <header className="bi-help-hero">
+          <h1 className="bi-help-title">
+            How can we <em className="bg-em">help?</em>
+          </h1>
+          <p className="bi-help-sub">
+            Find answers below or send us a message — we'll get back within 24 hours.
+          </p>
+        </header>
 
-      <div className="help-body">
-        {active === 'overview' && <OverviewSection />}
-        {active === 'scheduling' && <SchedulingSection />}
-        {active === 'scoring' && <ScoringSection />}
-        {active === 'deadlines' && <DeadlinesSection />}
-        {active === 'faq' && <FAQSection />}
+        <div className="bi-help-list">
+          <HelpLink
+            href="#faq"
+            label="Common questions"
+            icon={<HelpIcon />}
+          />
+          <HelpLink
+            href="mailto:hello@play-rally.com"
+            label="Contact support"
+            icon={<MailIcon />}
+          />
+          <HelpLink
+            href="https://instagram.com/playrally"
+            label="DM us on Instagram"
+            icon={<InstagramIcon />}
+          />
+          <HelpLink
+            href="https://facebook.com/playrally"
+            label="Message on Facebook"
+            icon={<FacebookIcon />}
+          />
+        </div>
+
+        <section className="bi-help-faq" id="faq">
+          <h2 className="bi-help-faq-title">
+            Frequently Asked <em className="bg-em">Questions.</em>
+          </h2>
+          <FaqList items={FAQS} />
+        </section>
       </div>
     </div>
   )
 }
 
-function OverviewSection() {
+function HelpLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   return (
-    <div className="help-section">
-      <p className="help-intro">
-        Rally runs monthly tennis tournaments in your county — and schedules every match automatically.
-        Play everyone, climb the rankings, and compete in the finals.
-      </p>
-
-      <div className="help-phases">
-        <div className="help-phase help-phase--lobby">
-          <div className="help-phase-bar" />
-          <div className="help-phase-content">
-            <div className="help-phase-step">1</div>
-            <div>
-              <strong>Join the Lobby</strong>
-              <p>Sign up and join the player pool for your county. Invite friends to start the tournament sooner.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="help-phase help-phase--form">
-          <div className="help-phase-bar" />
-          <div className="help-phase-content">
-            <div className="help-phase-step">2</div>
-            <div>
-              <strong>Tournament Starts</strong>
-              <span className="help-phase-detail">When 6+ players join</span>
-              <p>A round-robin tournament is automatically created. You'll play every other player once.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="help-phase help-phase--play">
-          <div className="help-phase-bar" />
-          <div className="help-phase-content">
-            <div className="help-phase-step">3</div>
-            <div>
-              <strong>Play Your Matches</strong>
-              <span className="help-phase-detail">~3 weeks</span>
-              <p>Rally auto-schedules matches based on when you and your opponent are both free. Just show up, play, and report your score.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="help-phase help-phase--finals">
-          <div className="help-phase-bar" />
-          <div className="help-phase-content">
-            <div className="help-phase-step">4</div>
-            <div>
-              <strong>Playoffs</strong>
-              <span className="help-phase-detail">Top 4 compete</span>
-              <p>The top 4 players advance to single-elimination playoffs. Win the championship and see your rating soar.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <a href={href} className="bi-help-link b-card">
+      <span className="bi-help-link-icon">{icon}</span>
+      <span className="bi-help-link-label">{label}</span>
+    </a>
   )
 }
 
-function SchedulingSection() {
-  return (
-    <div className="help-section">
-      <p className="help-intro">
-        Rally auto-schedules matches using your weekly availability.
-        The more slots you add, the smoother it works.
-      </p>
-
-      <div className="help-tiers">
-        <div className="help-tier">
-          <div className="help-tier-badge help-tier-badge--auto">Auto</div>
-          <div>
-            <strong>Auto-Scheduled</strong>
-            <p>75+ minutes of overlap with your opponent &mdash; match is booked automatically.</p>
-          </div>
-        </div>
-
-        <div className="help-tier">
-          <div className="help-tier-badge help-tier-badge--flex">Flex</div>
-          <div>
-            <strong>Flex Match</strong>
-            <p>30&ndash;74 minutes overlap. One tap to confirm a slightly adjusted time.</p>
-          </div>
-        </div>
-
-        <div className="help-tier">
-          <div className="help-tier-badge help-tier-badge--manual">Manual</div>
-          <div>
-            <strong>Propose &amp; Pick</strong>
-            <p>No overlap found. You propose 2&ndash;3 times, your opponent picks one.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="help-tip">
-        Add 3+ availability slots across different days to maximize auto-scheduled matches.
-      </div>
-    </div>
-  )
-}
-
-function ScoringSection() {
-  return (
-    <div className="help-section">
-      <p className="help-intro">
-        After playing, both players confirm the score.
-      </p>
-
-      <div className="help-steps-list">
-        <div className="help-step-item">
-          <span className="help-step-num">1</span>
-          <div>
-            <strong>Report</strong>
-            <p>Either player enters the set scores after the match.</p>
-          </div>
-        </div>
-        <div className="help-step-item">
-          <span className="help-step-num">2</span>
-          <div>
-            <strong>Confirm</strong>
-            <p>The opponent confirms. If it matches, the result is recorded.</p>
-          </div>
-        </div>
-        <div className="help-step-item">
-          <span className="help-step-num">3</span>
-          <div>
-            <strong>Auto-confirm</strong>
-            <p>If no response within 48 hours, the score auto-confirms.</p>
-          </div>
-        </div>
-      </div>
-
-      <h3 className="help-subheading">Tiebreakers</h3>
-      <p className="help-intro">When players have the same number of wins:</p>
-      <ol className="help-tiebreak-list">
-        <li><strong>Head-to-Head</strong> &mdash; who won the direct match</li>
-        <li><strong>Set Difference</strong> &mdash; sets won minus sets lost</li>
-        <li><strong>Game Difference</strong> &mdash; games won minus games lost</li>
-      </ol>
-
-      <h3 className="help-subheading">Rating</h3>
-      <p className="help-intro">
-        Your Elo rating updates after each match. Decisive wins earn a bigger boost.
-        New players start at 1000. Forfeits affect standings but not your rating.
-      </p>
-    </div>
-  )
-}
-
-function DeadlinesSection() {
-  return (
-    <div className="help-section">
-      <p className="help-intro">
-        Rally keeps things moving with automatic reminders and deadlines.
-        You always get multiple reminders before any auto-action.
-      </p>
-
-      <div className="help-deadlines">
-        <div className="help-deadline-item">
-          <div className="help-deadline-days">7 days</div>
-          <div>
-            <strong>Schedule your match</strong>
-            <p>After a match is created, you have 7 days to schedule it. Reminders at day 3, 5, and 6.</p>
-          </div>
-        </div>
-
-        <div className="help-deadline-item">
-          <div className="help-deadline-days">5 days</div>
-          <div>
-            <strong>Accept a proposal</strong>
-            <p>When times are proposed, the opponent has 5 days to pick one.</p>
-          </div>
-        </div>
-
-        <div className="help-deadline-item">
-          <div className="help-deadline-days">3 days</div>
-          <div>
-            <strong>Submit scores</strong>
-            <p>After a match date, both players have 3 days to report the score.</p>
-          </div>
-        </div>
-
-        <div className="help-deadline-item">
-          <div className="help-deadline-days">48 hrs</div>
-          <div>
-            <strong>Confirm scores</strong>
-            <p>Once one player reports, the other has 48 hours to confirm.</p>
-          </div>
-        </div>
-      </div>
-
-      <h3 className="help-subheading">Forfeits</h3>
-      <div className="help-forfeits">
-        <div className="help-forfeit">
-          <strong>No-show (one player)</strong>
-          <p>If one player is unresponsive, the responsive player wins 6-0, 6-0.</p>
-        </div>
-        <div className="help-forfeit">
-          <strong>Mutual no-show</strong>
-          <p>If neither player responds, no winner is recorded.</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FAQSection() {
-  const [openItems, setOpenItems] = useState<Set<number>>(new Set())
-
+function FaqList({ items }: { items: FaqItem[] }) {
+  const [open, setOpen] = useState<Set<number>>(new Set())
   function toggle(i: number) {
-    const next = new Set(openItems)
+    const next = new Set(open)
     if (next.has(i)) next.delete(i)
     else next.add(i)
-    setOpenItems(next)
+    setOpen(next)
   }
-
-  const items = [
-    { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the waiting pool. Once enough players join (minimum 4), a tournament is automatically created.' },
-    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Elimination (single elimination), and Group Stage + Playoffs. The format is chosen based on player count.' },
-    { q: 'How are matches scheduled?', a: 'Rally uses your availability preferences to find overlapping times. The system proposes slots automatically. You can also use "Play Now" to broadcast availability for an immediate match.' },
-    { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
-    { q: 'How do I change my availability?', a: 'Go to the Profile tab, find the availability section, and tap "Edit". You can choose quick presets or set specific time slots.' },
-    { q: 'Can I leave a tournament?', a: 'Yes. From the Tournament tab, tap the overflow menu and select "Leave". Your remaining matches will be forfeited.' },
-    { q: 'What happens if I can\'t make a match?', a: 'The scheduling system escalates with reminders, then a final deadline. If neither player responds, the match may be resolved as a walkover or cancellation.' },
-  ]
-
   return (
-    <div className="help-section">
-      {items.map((item, i) => (
-        <div key={i} className="faq-item">
-          <button className="faq-question" onClick={() => toggle(i)}>
-            <span>{item.q}</span>
-            <span className={`faq-chevron ${openItems.has(i) ? 'open' : ''}`}>&rsaquo;</span>
-          </button>
-          {openItems.has(i) && <div className="faq-answer">{item.a}</div>}
-        </div>
-      ))}
+    <div className="bi-faq-list">
+      {items.map((item, i) => {
+        const isOpen = open.has(i)
+        return (
+          <div key={i} className={`bi-faq-item ${isOpen ? 'bi-faq-item--open' : ''}`}>
+            <button className="bi-faq-q" onClick={() => toggle(i)} aria-expanded={isOpen}>
+              <span>{item.q}</span>
+              <span className="bi-faq-chev" aria-hidden="true">{isOpen ? '–' : '+'}</span>
+            </button>
+            {isOpen && <div className="bi-faq-a">{item.a}</div>}
+          </div>
+        )
+      })}
     </div>
+  )
+}
+
+function HelpIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5V14" />
+      <circle cx="12" cy="17" r="0.6" fill="currentColor" />
+    </svg>
+  )
+}
+
+function MailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </svg>
+  )
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 4h-2.5A3.5 3.5 0 0 0 8 7.5V10H6v3h2v8h3v-8h2.4l.6-3H11V7.5A.5.5 0 0 1 11.5 7H14V4z" />
+    </svg>
   )
 }

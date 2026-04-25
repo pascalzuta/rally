@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { titleCase } from '../dateUtils'
+import '../dev/css/baseline-info.css'
 
 export interface ActivationStep {
   label: string
@@ -13,6 +14,8 @@ interface Props {
   onSetAvailability: () => void
   onFindMatch: () => void
   hideAction?: boolean
+  /** Pre-expand the "How does Rally work?" section. Used by /dev/screens preview. */
+  initialHiwExpanded?: boolean
 }
 
 type HiwSection = 'overview' | 'scheduling' | 'scoring' | 'deadlines' | 'faq'
@@ -25,8 +28,8 @@ const HIW_TABS: { id: HiwSection; label: string }[] = [
   { id: 'faq', label: 'FAQ' },
 ]
 
-export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSetAvailability, onFindMatch, hideAction }: Props) {
-  const [hiwExpanded, setHiwExpanded] = useState(false)
+export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSetAvailability, onFindMatch, hideAction, initialHiwExpanded }: Props) {
+  const [hiwExpanded, setHiwExpanded] = useState(!!initialHiwExpanded)
   const [hiwTab, setHiwTab] = useState<HiwSection>('overview')
 
   const completed = activationSteps.filter(s => s.completed).length

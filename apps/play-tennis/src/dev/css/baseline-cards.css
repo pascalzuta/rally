@@ -1,0 +1,304 @@
+/* ================================================================
+   Baseline match-card overrides (batch 2: screens 06–11).
+
+   Loaded after baseline.css. Targets the score-report, rate-match,
+   feedback-saved, needs-response, time-confirmed and suggest-time
+   card surfaces — flattens nested borders, kills uppercase eyebrows
+   on workflow modules, and re-styles the sentiment + time-option
+   rows to match the Baseline white-card / dot-and-pill pattern.
+   ================================================================ */
+
+/* ---------- 1. WORKFLOW MODULES ----------
+   The legacy .workflow-status renders as uppercase eyebrow text.
+   Hide it inside any expansion — Baseline conveys status via the
+   card head (dot + pill), not a second eyebrow inside the card. */
+.action-card-expansion .workflow-status,
+.action-card-expansion .workflow-divider {
+  display: none !important;
+}
+
+/* The workflow header (title + subtitle) inside the expansion takes
+   the b-card-title / b-card-supporting role. */
+.action-card-expansion .workflow-header {
+  gap: 6px !important;
+  margin-top: 4px;
+}
+.action-card-expansion .workflow-header .schedule-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+}
+.action-card-expansion .workflow-header .schedule-panel-copy {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  color: var(--ink-2) !important;
+  margin: 0 !important;
+}
+
+/* ---------- 2. SCORE GRID — flat in card ---------- */
+.action-card-expansion .score-grid,
+.b-score-grid {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+.action-card-expansion .score-header,
+.b-score-grid .score-header {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--ink-2) !important;
+  text-align: center !important;
+}
+.action-card-expansion .score-row-label,
+.b-score-grid .score-row-label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+}
+.action-card-expansion .score-row-label--you,
+.b-score-grid .score-row-label--you .score-row-label-name {
+  /* "You" half is blue, name in parens stays ink-2 */
+  color: var(--ink) !important;
+}
+.action-card-expansion .score-row-label--you .b-em,
+.b-score-grid .score-row-label--you .b-em {
+  color: var(--blue) !important;
+  font-style: normal !important;
+  font-weight: 500 !important;
+}
+.action-card-expansion .score-row-label--opponent,
+.b-score-grid .score-row-label--opponent {
+  color: var(--ink) !important;
+}
+.action-card-expansion .score-input,
+.b-score-grid .score-input {
+  width: 60px !important;
+  height: 44px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: var(--bg-2) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.02em !important;
+}
+.action-card-expansion .score-input:focus,
+.b-score-grid .score-input:focus {
+  border-color: var(--blue) !important;
+  background: var(--bg) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,255,0.15) !important;
+}
+
+/* The "Report Score" CTA in the embedded entry → Baseline soft-blue pill */
+.action-card-expansion .inline-score-entry .workflow-actions .btn,
+.action-card-expansion .inline-score-entry .workflow-actions .btn-primary {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  width: 100% !important;
+  padding: 13px 18px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+.action-card-expansion .inline-score-entry .workflow-actions .btn:disabled {
+  opacity: 0.55 !important;
+}
+
+/* Section divider above the inner score panel — match Baseline full-bleed */
+.action-card-expansion {
+  border-top: 1px solid var(--line) !important;
+  margin: 16px -18px 0 !important;
+  padding: 16px 18px 0 !important;
+  background: var(--bg) !important;
+}
+
+/* ---------- 3. FEEDBACK SENTIMENT (rate-match) ---------- */
+.feedback-sentiment-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px !important;
+}
+.feedback-sentiment-btn {
+  background: var(--bg-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  color: var(--ink-2) !important;
+  padding: 18px 10px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 92px;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+.feedback-sentiment-btn:hover,
+.feedback-sentiment-btn.selected,
+.feedback-sentiment--positive:hover,
+.feedback-sentiment--positive.selected,
+.feedback-sentiment--neutral:hover,
+.feedback-sentiment--neutral.selected,
+.feedback-sentiment--negative:hover,
+.feedback-sentiment--negative.selected {
+  border-color: var(--blue) !important;
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+}
+.feedback-sentiment-icon {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 20px !important;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--ink-2) !important;
+}
+.feedback-sentiment-btn.selected .feedback-sentiment-icon,
+.feedback-sentiment-btn:hover .feedback-sentiment-icon {
+  color: var(--blue) !important;
+}
+
+/* ---------- 4. FEEDBACK SAVED (screen 08) ----------
+   The "Thanks for your feedback" success row — checkmark circle +
+   italic-blue emphasis on "feedback". */
+.b-feedback-saved {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 4px;
+}
+.b-feedback-saved-check {
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px; font-weight: 700;
+  margin-top: 2px;
+}
+.b-feedback-saved-body {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.b-feedback-saved-title {
+  font-size: 16px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.015em; line-height: 1.3;
+}
+.b-feedback-saved-title .bg-em { font-style: italic; color: var(--blue); }
+.b-feedback-saved-copy {
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* Hide legacy uppercase / verbose copy in saved state when used in a
+   composition that supplies its own .b-feedback-saved row */
+.b-feedback-saved + .feedback-issue-summary-card { display: none; }
+
+/* ---------- 5. NEEDS-RESPONSE PROPOSAL ROW (screens 10/11) ---------- */
+.b-time-options-title {
+  font-size: 18px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.02em; line-height: 1.2;
+  margin: 0 0 4px;
+}
+.b-time-options-title .bg-em { font-style: italic; color: var(--blue); }
+.b-time-options-copy {
+  font-size: 14px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.5; margin: 0 0 14px;
+}
+.b-proposal-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+.b-proposal-row:last-of-type { border-bottom: 1px solid var(--line); }
+.b-proposal-time {
+  font-size: 15px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+.b-proposal-time-meta {
+  display: block;
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  margin-top: 2px;
+  letter-spacing: -0.005em;
+}
+.b-proposal-confirm {
+  background: var(--blue); color: #fff;
+  border: none; border-radius: 999px;
+  padding: 9px 22px;
+  font-size: 14px; font-weight: 500;
+  font-family: 'Inter', system-ui, sans-serif;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.b-proposal-confirm:hover { background: #1f56e0; }
+
+.b-suggest-link {
+  display: block; width: 100%;
+  background: none; border: none;
+  color: var(--blue); font-size: 14px; font-weight: 500;
+  font-family: 'Inter', system-ui, sans-serif;
+  text-align: center; padding: 14px 0 4px;
+  cursor: pointer;
+}
+.b-suggest-link:hover { opacity: 0.8; }
+
+/* Suggest-time inline form (screen 11) */
+.b-propose-form {
+  display: flex; gap: 8px;
+  margin: 14px 0 12px;
+}
+.b-propose-form select {
+  flex: 1;
+  height: 44px;
+  padding: 0 12px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: var(--bg) !important;
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 14px;
+  font-weight: 500;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.b-propose-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.b-propose-actions button {
+  width: 100%;
+  border-radius: 999px !important;
+  padding: 13px 18px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  cursor: pointer;
+}
+.b-propose-actions .b-propose-send {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border: none !important;
+}
+.b-propose-actions .b-propose-cancel {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+}
