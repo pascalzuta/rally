@@ -254,6 +254,48 @@
    dedicated mock — pill + headline + segmented control + numbered list.
    Tweak the existing welcome-hiw + help-* classes lightly. */
 
+/* Screen-05 wrapper: focused HIW view. Hide activation list and the
+   "How does Rally work?" toggle row so the screen reads as a clean HIW
+   composition that matches the handoff target. */
+.bi-hiw-only .b-step,
+.bi-hiw-only .welcome-hiw-toggle {
+  display: none !important;
+}
+/* Restyle the "Getting started" eyebrow as a blue-soft pill with leading
+   bullet dot, matching the target. The eyebrow is the first inline span
+   inside the b-card top row. */
+.bi-hiw-only .b-card > div:first-child > span:first-child {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  padding: 4px 10px 4px 8px !important;
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  font-style: italic !important;
+  letter-spacing: -0.005em !important;
+  line-height: 1.2 !important;
+}
+.bi-hiw-only .b-card > div:first-child > span:first-child::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--blue);
+  border-radius: 999px;
+}
+/* Hide the progress fraction (kept as visual whitespace via the eyebrow row).
+   The handoff target only shows the eyebrow on this screen. */
+.bi-hiw-only .b-card > div:first-child > .b-progress-row {
+  display: none !important;
+}
+/* Limit segmented tabs to first 3 (Overview / Scheduling / Scoring) to
+   match the target — Deadlines and FAQ remain functional in production. */
+.bi-hiw-only .help-tabs .help-tab:nth-child(n+4) {
+  display: none !important;
+}
+
 .welcome-hiw-content.expanded { margin-top: 16px; }
 .welcome-hiw-inner {
   padding-top: 14px;

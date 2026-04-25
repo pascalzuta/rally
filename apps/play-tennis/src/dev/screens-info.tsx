@@ -72,7 +72,7 @@ export const INFO_SCREENS: ScreenDef[] = [
           </div>
         </nav>
 
-        <div className="screen" style={{ paddingBottom: 24 }}>
+        <div className="screen bi-hiw-only" style={{ paddingBottom: 24 }}>
           <Suspense fallback={null}>
             <WelcomeCard
               activationSteps={ALL_DONE}
