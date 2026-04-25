@@ -40,55 +40,49 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
   }
 
   return (
-    <div className="dgh">
-      {/* Nav */}
-      <nav className="dgh-nav" aria-label="Main navigation">
-        <div className="dgh-nav-inner">
-          <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
-          <div className="dgh-nav-actions">
-            <a href="/blog/" className="dgh-btn-link">Blog</a>
-            <a href="/support/" className="dgh-btn-link">Help</a>
-            <button className="dgh-btn-text" onClick={handleLogin}>Log in</button>
-            <button className="dgh-btn-primary" onClick={onGetStarted}>Sign up free</button>
-          </div>
+    <div className="dgh b-page" style={{ background: 'var(--bg)' }}>
+      {/* Nav — Baseline */}
+      <nav className="b-page-nav" aria-label="Main navigation">
+        <div className="b-page-nav-logo">
+          <img src="/rally-logo.svg" alt="Rally" />
+        </div>
+        <div className="b-page-nav-right" style={{ gap: 18 }}>
+          <a href="/blog/">Blog</a>
+          <a href="/support/">Help</a>
+          <button className="b-link" onClick={handleLogin}>Log in</button>
+          <button
+            onClick={onGetStarted}
+            style={{
+              background: 'var(--blue)', color: '#fff', border: 'none',
+              borderRadius: 999, padding: '10px 18px',
+              fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500,
+              cursor: 'pointer', letterSpacing: '-0.005em'
+            }}
+          >
+            Sign up
+          </button>
         </div>
       </nav>
 
-      {/* Hero — left-aligned, asymmetric */}
-      <section className="dgh-hero">
-        <div className="dgh-hero-inner">
-          <div className="dgh-hero-content">
-            <p className="dgh-hero-eyebrow">Local tennis, zero hassle</p>
-            <h1 className="dgh-hero-title">
-              Stop texting.<br />Start playing.
-            </h1>
-            <p className="dgh-hero-subtitle">
-              Rally auto-schedules local tennis matches based on your availability.
-              No group chats, no back-and-forth — just show up and play.
-            </p>
-            <div className="dgh-hero-cta">
-              <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted}>
-                Get started — it's free
-              </button>
-              <button className="dgh-btn-text dgh-btn-large" onClick={handleLogin}>
-                I already have an account
-              </button>
-            </div>
-          </div>
-          <div className="dgh-hero-aside">
-            <div className="dgh-hero-stat">
-              <span className="dgh-hero-stat-number">2,400+</span>
-              <span className="dgh-hero-stat-label">players on Rally</span>
-            </div>
-            <div className="dgh-hero-stat">
-              <span className="dgh-hero-stat-number">50</span>
-              <span className="dgh-hero-stat-label">states covered</span>
-            </div>
-            <div className="dgh-hero-stat">
-              <span className="dgh-hero-stat-number">100%</span>
-              <span className="dgh-hero-stat-label">free to play</span>
-            </div>
-          </div>
+      {/* Hero — Baseline (left-aligned, single-column) */}
+      <section className="dgh-hero" style={{ background: 'var(--bg)', padding: '36px 22px 32px' }}>
+        <div className="dgh-hero-inner" style={{ display: 'block', maxWidth: 480, margin: '0 auto' }}>
+          <p className="b-hero-eyebrow">
+            <span className="b-status-dot b-status-dot--blue" /> Local tennis, zero hassle
+          </p>
+          <h1 className="b-hero-title">
+            Stop texting.<br /><em className="bg-em">Start playing.</em>
+          </h1>
+          <p className="b-hero-body">
+            Rally auto-schedules local tennis matches based on your availability.
+            No group chats, no back-and-forth — just show up and play.
+          </p>
+          <button className="b-btn-block" onClick={onGetStarted}>
+            Get started — it's free
+          </button>
+          <button className="b-btn-text" onClick={handleLogin}>
+            I already have an account
+          </button>
         </div>
       </section>
 

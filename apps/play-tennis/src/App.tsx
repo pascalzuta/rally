@@ -329,28 +329,18 @@ export default function App() {
       />
     )
 
-    // /signup — registration flow
+    // /signup — registration flow (Register provides its own b-page-nav)
     if (location.pathname === ROUTES.SIGNUP) {
       return (
         <div className="app">
-          {nativeGuestNav || (
-            <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-              <div className="top-nav-logo top-nav-logo-large">
-                <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-              </div>
-              <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
-                Blog
-              </a>
-            </nav>
-          )}
+          {nativeGuestNav}
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
-          <Footer />
           {devTools}
         </div>
       )
     }
 
-    // /login — dedicated login page (Strava-style dual column)
+    // /login — dedicated login page (Login provides its own b-page-nav)
     if (location.pathname === ROUTES.LOGIN) {
       return (
         <div className="app app-desktop-guest">
