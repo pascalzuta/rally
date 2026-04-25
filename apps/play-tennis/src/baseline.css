@@ -148,12 +148,13 @@ h3, .text-title-sm          { font-size: 18px;          line-height: 1.15; lette
 em.bg-em,
 .text-em                    { font-style: italic; color: var(--blue); font-weight: inherit; }
 
-/* Kill all eyebrow / uppercase label patterns globally */
+/* Kill legacy eyebrow / uppercase label patterns globally.
+   Excludes Baseline-native classes (.b-*) which set their own values. */
 .eyebrow,
 .label-eyebrow,
 .section-eyebrow,
 .text-eyebrow,
-[class*="-eyebrow"],
+[class*="-eyebrow"]:not([class*="b-hero-eyebrow"]):not([class^="b-"]),
 [class*="-label-uppercase"] { text-transform: none !important; letter-spacing: -0.005em !important; font-size: var(--font-micro) !important; color: var(--ink-2) !important; font-weight: 500 !important; }
 
 /* No monospace anywhere */
@@ -559,7 +560,7 @@ input:focus, textarea:focus, select:focus,
   text-transform: none; letter-spacing: -0.005em;
 }
 .b-hero-title {
-  font-size: clamp(36px, 8vw, 44px);
+  font-size: clamp(40px, 11vw, 48px);
   font-weight: 700; line-height: 1.02; letter-spacing: -0.035em;
   margin: 0 0 18px; color: var(--ink);
 }
