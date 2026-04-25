@@ -41,15 +41,12 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
 
   return (
     <div className="dgh b-page" style={{ background: 'var(--bg)' }}>
-      {/* Nav — Baseline */}
+      {/* Nav — Baseline (target: logo left, single Sign up CTA right) */}
       <nav className="b-page-nav" aria-label="Main navigation">
         <div className="b-page-nav-logo">
           <img src="/rally-logo.svg" alt="Rally" />
         </div>
-        <div className="b-page-nav-right" style={{ gap: 18 }}>
-          <a href="/blog/">Blog</a>
-          <a href="/support/">Help</a>
-          <button className="b-link" onClick={handleLogin}>Log in</button>
+        <div className="b-page-nav-right">
           <button
             onClick={onGetStarted}
             style={{
