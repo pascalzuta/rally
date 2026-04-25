@@ -89,7 +89,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
           <div className="dgh-problem-text">
             <span className="dgh-section-number">01</span>
             <h2 className="dgh-section-heading">Scheduling tennis shouldn't take 20 messages</h2>
-            <p className="dgh-section-desc">You want to play. Not manage calendars. Rally eliminates the back-and-forth.</p>
+            <p className="dgh-section-desc">You want to play, not manage calendars. Rally cuts the back-and-forth.</p>
           </div>
           <div className="dgh-problem-chat dgh-anim-chat">
             <div className="dgh-story-bubble dgh-story-bubble-out" style={{'--i': 0} as React.CSSProperties}>Can you play Tuesday?</div>
@@ -175,7 +175,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
         <div className="dgh-final-cta-inner dgh-anim-cta">
           <h2 className="dgh-cta-title">Ready to play?</h2>
           <p className="dgh-cta-subtitle">
-            Join Rally today and never waste time scheduling again.
+            Join Rally and never waste another night texting about tennis.
           </p>
           <div className="dgh-cta-actions">
             <button className="dgh-cta-btn-primary" onClick={onGetStarted}>
