@@ -1,0 +1,393 @@
+/* ================================================================
+   Baseline tournament + leaderboard preview styles
+   Scoped to /dev/screens previews for screens 19, 24, 25.
+   Names start with `bt-` (tournament) or `bl-` (leaderboard) to avoid
+   colliding with the live app's classes.
+   ================================================================ */
+
+/* ---------- Shared shell inside PhoneFrame ---------- */
+.bt-shell {
+  background: var(--bg-2);
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bt-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+.bt-topbar-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.bt-topbar-back {
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.bt-topbar-back:hover { color: var(--ink-2); }
+
+.bt-content {
+  flex: 1;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-screen-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 4px 0 14px;
+}
+.bt-screen-title em {
+  font-style: italic;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* ---------- Segmented control (My / All) ---------- */
+.bt-segmented {
+  display: inline-flex;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 0;
+  align-self: flex-start;
+}
+.bt-segmented-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+}
+.bt-segmented-btn.active {
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(11,13,16,0.06);
+}
+
+/* ---------- Eyebrow row above grouped cards ---------- */
+.bt-eyebrow {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
+  padding: 4px 4px 0;
+}
+
+/* ---------- Match card (Baseline) ---------- */
+.bt-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-card-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bt-card-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 4px 0 0;
+}
+.bt-card-title em {
+  font-style: italic;
+  color: var(--blue);
+  font-weight: 700;
+}
+.bt-card-body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.bt-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.bt-btn-soft {
+  background: var(--blue-soft);
+  color: var(--blue);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+}
+.bt-btn-soft:hover { background: #dde7ff; }
+
+.bt-icon-btn {
+  background: var(--bg);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.bt-icon-btn svg { width: 16px; height: 16px; stroke-width: 1.8; }
+
+/* ---------- Messages section (screen 19) ---------- */
+.bt-messages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  margin-top: 6px;
+}
+.bt-messages-eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
+}
+.bt-messages-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.bt-messages-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.bt-message-thread {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 180px;
+}
+.bt-bubble-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.bt-bubble-row--in {
+  align-items: flex-start;
+}
+.bt-bubble {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.bt-bubble--out {
+  background: var(--blue);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+.bt-bubble--in {
+  background: var(--bg-2);
+  color: var(--ink);
+  border-bottom-left-radius: 6px;
+}
+.bt-bubble-time {
+  font-size: 11px;
+  color: var(--ink-2);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.bt-message-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 6px 6px 16px;
+}
+.bt-message-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  background: transparent;
+  padding: 8px 0;
+}
+.bt-message-input input::placeholder { color: var(--ink-2); }
+.bt-message-send {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.bt-message-send svg { width: 14px; height: 14px; stroke-width: 2; }
+
+/* ---------- Leaderboard rows (screen 25) ---------- */
+.bl-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bl-row {
+  display: grid;
+  grid-template-columns: 24px 16px 32px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.bl-row:last-child { border-bottom: none; }
+
+.bl-row-warn {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.bl-row-warn--placeholder { visibility: hidden; }
+
+.bl-row-rank {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.bl-row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.bl-row-name {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+
+.bl-row-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.bl-row-rating {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.bl-row-record {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+}
+
+.bl-gap {
+  display: grid;
+  grid-template-columns: 24px 16px 32px 1fr auto;
+  gap: 12px;
+  padding: 6px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.bl-gap-dots {
+  grid-column: 2 / 3;
+  color: var(--ink-2);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
