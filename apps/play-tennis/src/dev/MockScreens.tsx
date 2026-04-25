@@ -15,6 +15,13 @@ import { MockProviders } from './MockProviders'
 import { MOCK_PROFILE, MOCK_TOURNAMENT } from './mockData'
 import WelcomeCard, { ActivationStep } from '../components/WelcomeCard'
 
+const ACTIVATION_DONE: ActivationStep[] = [
+  { label: 'Set up your profile', completed: true },
+  { label: 'Join the Mineral County, CO lobby', completed: true },
+  { label: 'Set your availability', completed: true },
+  { label: 'Play your first match', completed: false },
+]
+
 // Batch-2 screen registries — each module side-effect imports its own
 // dev/css/baseline-*.css, so we just import the array and spread it.
 import { CARDS_SCREENS } from './screens-cards'
@@ -33,13 +40,6 @@ interface ScreenDef {
   number: string
   render: () => JSX.Element
 }
-
-const ACTIVATION_DONE: ActivationStep[] = [
-  { label: 'Set up your profile', completed: true },
-  { label: 'Join the Mineral County, CO lobby', completed: true },
-  { label: 'Set your availability', completed: true },
-  { label: 'Play your first match', completed: false },
-]
 
 /** A phone-shaped frame so previews mimic the target screenshots (~375px wide). */
 function PhoneFrame({ children }: { children: React.ReactNode }) {
@@ -96,16 +96,18 @@ const SCREENS: ScreenDef[] = [
               onSetAvailability={() => {}}
               onJoinLobby={() => {}}
               onFindMatch={() => {}}
+              hideOnboarding
             />
           </Suspense>
 
-          {/* Welcome card via real component */}
+          {/* Welcome card via real component — sibling card per target screenshot */}
           <WelcomeCard
             activationSteps={ACTIVATION_DONE}
             county="mineral county, co"
             onJoinLobby={() => {}}
             onSetAvailability={() => {}}
             onFindMatch={() => {}}
+            hideAction
           />
         </div>
       </PhoneFrame>

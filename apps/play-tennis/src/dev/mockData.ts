@@ -56,6 +56,21 @@ function mkMatch(id: string, p1: string, p2: string, opts: Partial<Match> = {}):
   }
 }
 
+function generateRoundRobinMatches(): Match[] {
+  const out: Match[] = []
+  let n = 1
+  for (let i = 0; i < PLAYERS.length; i++) {
+    for (let j = i + 1; j < PLAYERS.length; j++) {
+      out.push(
+        mkMatch(`m${n++}`, PLAYERS[i].id, PLAYERS[j].id, {
+          schedule: mkSchedule('unscheduled'),
+        })
+      )
+    }
+  }
+  return out
+}
+
 export const MOCK_TOURNAMENT: Tournament = {
   id: 't-mock-1',
   name: 'Mineral County, CO Open #2',
@@ -66,16 +81,7 @@ export const MOCK_TOURNAMENT: Tournament = {
   createdAt: '2026-04-15T00:00:00.000Z',
   startsAt: '2026-04-20',
   players: PLAYERS,
-  matches: [
-    mkMatch('m1', 'mock-pr', 'casey', { schedule: mkSchedule('confirmed', { day: 'saturday', startHour: 9, endHour: 11 }) }),
-    mkMatch('m2', 'mock-pr', 'taylor', { schedule: mkSchedule('proposed') }),
-    mkMatch('m3', 'mock-pr', 'alex', { schedule: mkSchedule('unscheduled') }),
-    mkMatch('m4', 'casey', 'taylor', { schedule: mkSchedule('confirmed', { day: 'sunday', startHour: 10, endHour: 12 }) }),
-    mkMatch('m5', 'casey', 'alex', { schedule: mkSchedule('unscheduled') }),
-    mkMatch('m6', 'taylor', 'alex', { schedule: mkSchedule('escalated') }),
-    mkMatch('m7', 'mock-pr', 'jordan', { schedule: mkSchedule('confirmed', { day: 'monday', startHour: 18, endHour: 20 }), completed: true, score1: [6,6], score2: [4,4], winnerId: 'mock-pr' }),
-    mkMatch('m8', 'mock-pr', 'sam', { schedule: mkSchedule('confirmed', { day: 'tuesday', startHour: 18, endHour: 20 }), completed: true, score1: [6,6], score2: [3,2], winnerId: 'mock-pr' }),
-  ],
+  matches: generateRoundRobinMatches(),
 }
 
 export const MOCK_NOTIFICATIONS: RallyNotification[] = [
