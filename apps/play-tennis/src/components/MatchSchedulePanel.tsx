@@ -886,7 +886,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 className="btn btn-primary btn-small"
                 onClick={(e) => { e.stopPropagation(); handleAccept(p.id) }}
               >
-                Confirm Time
+                Confirm time
               </button>
             </div>
           ))}

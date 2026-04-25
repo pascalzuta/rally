@@ -438,10 +438,10 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
         </div>
         <div className="workflow-actions score-confirm-primary-actions">
           <button className="btn confirm-option-btn" onClick={() => setMode('correction')}>
-            Correct Score
+            Correct score
           </button>
           <button className="btn btn-primary confirm-option-btn" onClick={handleConfirm} disabled={saving}>
-            Confirm Score
+            Confirm score
           </button>
         </div>
     </div>

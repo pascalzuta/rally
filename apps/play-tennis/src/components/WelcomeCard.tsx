@@ -35,11 +35,11 @@ export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSe
 
   // CTA matches the first incomplete step
   const nextAction = !activationSteps[1].completed
-    ? { label: 'Join the Lobby', action: onJoinLobby }
+    ? { label: 'Join the lobby', action: onJoinLobby }
     : !activationSteps[2].completed
-    ? { label: 'Set Your Availability', action: onSetAvailability }
+    ? { label: 'Set your availability', action: onSetAvailability }
     : !activationSteps[3].completed
-    ? { label: 'Find a Match', action: onFindMatch }
+    ? { label: 'Find a match', action: onFindMatch }
     : null
 
   const total = activationSteps.length
@@ -214,7 +214,7 @@ function SchedulingSection() {
       </div>
 
       <div className="help-tip">
-        Add 3+ availability slots across different days to maximize auto-scheduled matches.
+        Add 3+ time slots across different days to maximize auto-scheduled matches.
       </div>
     </div>
   )
@@ -335,13 +335,13 @@ function FAQSection() {
   }
 
   const items = [
-    { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the waiting pool. Once enough players join (minimum 4), a tournament is automatically created.' },
-    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Elimination (single elimination), and Round Robin + Playoffs. The format is chosen based on player count.' },
-    { q: 'How are matches scheduled?', a: 'Rally uses your availability preferences to find overlapping times. The system proposes slots automatically. You can also use "Quick Play" to broadcast availability for an immediate match.' },
-    { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
-    { q: 'How do I change my availability?', a: 'Go to the Profile tab, find the availability section, and tap "Edit". You can choose quick presets or set specific time slots.' },
-    { q: 'Can I leave a tournament?', a: 'Yes. From the Tournament tab, tap the overflow menu and select "Leave". Your remaining matches will be forfeited.' },
-    { q: 'What happens if I can\'t make a match?', a: 'The scheduling system escalates with reminders, then a final deadline. If neither player responds, the match may be resolved as a walkover or cancellation.' },
+    { q: 'How do I join a tournament?', a: 'On Home, tap "Join the lobby" to enter your county pool. Once 6+ players join, a tournament starts automatically.' },
+    { q: 'What formats does Rally use?', a: 'Round-robin (everyone plays everyone), with the top players advancing to single-elimination playoffs. Format depends on player count.' },
+    { q: 'How are matches scheduled?', a: 'Rally finds overlapping availability and proposes times automatically. You can also use Quick Play to find a same-day pickup match.' },
+    { q: 'Can I play someone from a different county?', a: 'Tournaments are county-based to keep matches local. You can only join your registered county.' },
+    { q: 'How do I change my availability?', a: 'Go to the Availability tab and tap "Edit". Pick presets or add custom times.' },
+    { q: 'Can I leave a tournament?', a: 'Yes. On the Tournament tab, open the menu and tap "Leave". Remaining matches are forfeited.' },
+    { q: "What if I can't make a match?", a: "You'll get reminders before the deadline. If neither player responds, the match is recorded as a mutual no-show." },
   ]
 
   return (

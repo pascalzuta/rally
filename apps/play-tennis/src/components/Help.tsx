@@ -11,12 +11,12 @@ import { useState } from 'react'
 interface FaqItem { q: string; a: string }
 
 const FAQS: FaqItem[] = [
-  { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the player pool for your county. Once 6+ players join, a tournament is automatically created.' },
-  { q: 'What tournament formats are available?', a: 'Rally currently runs round-robin tournaments — everyone plays everyone. The top players advance to single-elimination playoffs.' },
-  { q: 'How are matches scheduled?', a: 'Rally finds overlapping availability and proposes match times automatically. You can also use Play Now to broadcast availability for an immediate match.' },
-  { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
-  { q: 'How do I change my availability?', a: 'Go to the Availability tab and tap "Edit". Choose quick presets or set specific time slots.' },
-  { q: 'What happens if I can\'t make a match?', a: 'You\'ll get reminders before the deadline. If neither player responds, the match is recorded as a mutual no-show.' },
+  { q: 'How do I join a tournament?', a: 'On Home, tap "Join the lobby" to enter your county pool. Once 6+ players join, a tournament starts automatically.' },
+  { q: 'What formats does Rally use?', a: 'Round-robin: everyone plays everyone. Top players advance to single-elimination playoffs.' },
+  { q: 'How are matches scheduled?', a: 'Rally finds overlapping availability and proposes times automatically. Use Quick Play to find a same-day pickup match.' },
+  { q: 'Can I play someone from a different county?', a: 'Tournaments are county-based to keep matches local. You can only join your registered county.' },
+  { q: 'How do I change my availability?', a: 'Go to the Availability tab and tap "Edit". Pick presets or add custom times.' },
+  { q: "What if I can't make a match?", a: "You'll get reminders before the deadline. If neither player responds, the match is recorded as a mutual no-show." },
 ]
 
 export default function Help({ onBack }: { onBack: () => void }) {

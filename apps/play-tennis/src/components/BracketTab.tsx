@@ -526,14 +526,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           {match.resolution && (
             <div className={`resolution-indicator resolution-${match.resolution.type}`}>
               {match.resolution.type === 'walkover' ? 'Walkover' :
-               match.resolution.type === 'forced-match' ? 'Final Match Assigned' :
-               'Match Canceled'}
+               match.resolution.type === 'forced-match' ? 'Final match assigned' :
+               'Match canceled'}
             </div>
           )}
 
           {/* Action row: action button + message button */}
           <div className="match-card-actions-row">
-            {(cardView.primaryActionLabel === 'Confirm Score' || cardView.primaryActionLabel === 'Review Dispute') ? (
+            {(cardView.primaryActionLabel === 'Confirm score' || cardView.primaryActionLabel === 'Review dispute') ? (
               <button className="match-card-action-btn" onClick={e => {
                 e.stopPropagation()
                 setMessagingMatchId(null)
