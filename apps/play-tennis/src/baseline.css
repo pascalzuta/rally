@@ -201,12 +201,60 @@ em.bg-em,
 }
 
 /* Avatar circle */
-.user-avatar, .avatar, .profile-avatar, .player-avatar {
+.user-avatar, .avatar, .profile-avatar, .player-avatar,
+.user-avatar-btn, .top-nav-icon.user-avatar-btn {
   background: var(--ink) !important; color: #fff !important;
+  border-radius: 999px !important;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700 !important; letter-spacing: -0.01em !important;
+  border: none !important;
+  font-size: 12px !important;
+  width: 32px !important; height: 32px !important;
+}
+
+/* Position notification badge top-right of icon button */
+.top-nav-icon { position: relative; }
+.notif-badge, .inbox-unread-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--blue) !important; color: #fff !important;
+  font-size: 10px !important; font-weight: 700 !important;
+  min-width: 18px; height: 18px; padding: 0 4px;
   border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-weight: 700; letter-spacing: -0.01em;
-  border: none !important;
+  border: 2px solid var(--bg);
+  line-height: 1;
+}
+
+/* Two-column wrapping header pattern (matches target tournament card):
+   left "eyebrow" stacks, right meta stacks right-aligned. */
+.b-card-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.b-card-head-left, .b-card-head-right {
+  font-size: 12px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.25; letter-spacing: -0.005em;
+  max-width: 80px;
+}
+.b-card-head-left { text-align: left; }
+.b-card-head-right { text-align: right; font-variant-numeric: tabular-nums; }
+.b-card-title {
+  font-size: 22px; font-weight: 700; line-height: 1.1;
+  letter-spacing: -0.025em; color: var(--ink); margin: 0 0 6px;
+}
+.b-card-title .bg-em { font-style: italic; color: var(--blue); }
+.b-card-supporting {
+  font-size: 14px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.5; margin: 0;
+}
+.b-card-divider {
+  height: 1px; background: var(--line); border: none;
+  margin: 16px -18px;
+}
+.b-card-attention-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 500; color: var(--ink);
 }
 
 /* Bottom tabs */

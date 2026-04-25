@@ -311,51 +311,59 @@ export default function HomeHeroCard({
   if (activeTournament) {
     const totalMatches = activeTournament.matches.filter(m => m.player1Id && m.player2Id).length
     const completedMatches = activeTournament.matches.filter(m => m.completed).length
-    const progressPctActive = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0
+
+    // Split tournament name so "Open #N" (or trailing portion after the city) renders in italic blue
+    // matching screenshot 04: "Mineral County, CO Open #2" → "Open #2" italic blue.
+    const tName = activeTournament.name
+    const tMatch = tName.match(/^(.*?)(\s)(Open\s+#?\d+|Tournament|League|Season.*|Cup.*|Championship.*)$/i)
+    const tBase = tMatch ? tMatch[1] : tName
+    const tEm = tMatch ? tMatch[3] : ''
+    const formatLabel = activeTournament.format === 'single-elimination'
+      ? 'Elimination'
+      : activeTournament.format === 'group-knockout'
+        ? 'Round robin + Playoffs'
+        : 'Round robin'
 
     return (
-      <div className="card formation-hero">
-        <div className="card-status-row">
-          <div className="card-status-label card-status-label--slate">Your Tournament</div>
-          <div className="card-meta-chip">{completedMatches} of {totalMatches} matches</div>
+      <div className="b-card" style={{ margin: '10px 14px' }}>
+        <div className="b-card-head">
+          <span className="b-card-head-left">Your tournament</span>
+          <span className="b-card-head-right">{completedMatches} / {totalMatches} matches</span>
         </div>
-        <div className="card-summary-main">
-          <div className="card-title">{activeTournament.name}</div>
-          <div className="card-supporting">
-            {activeTournament.players.length} players · {activeTournament.format === 'single-elimination' ? 'Elimination' : activeTournament.format === 'group-knockout' ? 'Round robin + Playoffs' : 'Round robin'} · {completedMatches} of {totalMatches} matches played
-          </div>
-        </div>
-        <div className="tournament-progress-bar">
-          <div className="tournament-progress-fill" style={{ width: `${progressPctActive}%` }} />
-        </div>
+        <h3 className="b-card-title">
+          {tBase}{tEm ? <> <em className="bg-em">{tEm}</em></> : null}
+        </h3>
+        <p className="b-card-supporting">
+          {activeTournament.players.length} players · {formatLabel}
+        </p>
 
-        {heroState === 'active-needs-availability' && (
-          <div className="hero-next-step hero-next-step--warning">
-            <span className="hero-step-icon">&#9888;</span>
-            <div className="hero-step-text">
-              <strong>Set your availability to get matches scheduled</strong>
-              <span>Rally uses your weekly availability to auto-schedule match times</span>
-            </div>
-          </div>
+        {(heroState === 'active-needs-availability' || (heroState === 'active' && actionCardCount > 0) || (heroState === 'active' && actionCardCount === 0)) && (
+          <hr className="b-card-divider" />
         )}
 
         {heroState === 'active-needs-availability' && (
-          <div className="formation-actions">
-            <button className="btn btn-primary btn-large formation-cta-primary" onClick={onSetAvailability}>
+          <>
+            <div className="b-card-attention-row">
+              <span className="b-status-dot b-status-dot--amber" />
+              <span>Set your availability to get matches scheduled</span>
+            </div>
+            <button className="b-btn-block" style={{ marginTop: 14 }} onClick={onSetAvailability}>
               Set Your Availability
             </button>
-          </div>
+          </>
         )}
 
         {heroState === 'active' && actionCardCount === 0 && (
-          <div className="hero-all-clear">
-            <span className="hero-check">&#10003;</span> You're all caught up. Your next match time will appear here once it's confirmed.
+          <div className="b-card-attention-row">
+            <span className="b-status-dot b-status-dot--blue" />
+            <span>You're all caught up</span>
           </div>
         )}
 
         {heroState === 'active' && actionCardCount > 0 && (
-          <div className="hero-action-summary">
-            {actionCardCount} match{actionCardCount !== 1 ? 'es' : ''} need{actionCardCount === 1 ? 's' : ''} your attention
+          <div className="b-card-attention-row">
+            <span className="b-status-dot b-status-dot--blue" />
+            <span>{actionCardCount} match{actionCardCount !== 1 ? 'es' : ''} need{actionCardCount === 1 ? 's' : ''} your attention</span>
           </div>
         )}
 
