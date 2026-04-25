@@ -297,14 +297,14 @@ export default function HomeHeroCard({
     switch (heroState) {
       case 'active':
       case 'active-needs-availability':
-        return { label: 'Your Tournament', color: 'slate', chip: 'In Progress' }
+        return { label: 'Your tournament', color: 'slate', chip: 'In progress' }
       case 'countdown-ready':
       case 'countdown-needs-availability':
-        return { label: 'Starting Soon', color: 'green', chip: `${setupPlayers.length}/${maxPlayers}` }
+        return { label: 'Starting soon', color: 'green', chip: `${setupPlayers.length}/${maxPlayers}` }
       case 'returning':
-        return { label: 'Next Tournament', color: 'blue', chip: `${totalJoined}/${targetPlayers}` }
+        return { label: 'Next tournament', color: 'blue', chip: `${totalJoined}/${targetPlayers}` }
       default:
-        return { label: 'Tournament Forming', color: 'blue', chip: `${totalJoined}/${targetPlayers}` }
+        return { label: 'Tournament forming', color: 'blue', chip: `${totalJoined}/${targetPlayers}` }
     }
   }
 
@@ -348,10 +348,10 @@ export default function HomeHeroCard({
           <>
             <div className="b-card-attention-row">
               <span className="b-status-dot b-status-dot--amber" />
-              <span>Set your availability to get matches scheduled</span>
+              <span>Add your availability so we can schedule matches.</span>
             </div>
             <button className="b-btn-block" style={{ marginTop: 14 }} onClick={onSetAvailability}>
-              Set Your Availability
+              Set your availability
             </button>
           </>
         )}
@@ -359,7 +359,7 @@ export default function HomeHeroCard({
         {heroState === 'active' && actionCardCount === 0 && (
           <div className="b-card-attention-row">
             <span className="b-status-dot b-status-dot--blue" />
-            <span>You're all caught up</span>
+            <span>All clear. Nothing needs you right now.</span>
           </div>
         )}
 
@@ -397,18 +397,18 @@ export default function HomeHeroCard({
           <div className="card-meta-chip">{badge.chip}</div>
         </div>
         <div className="card-summary-main">
-          <div className="card-title">{titleCase(profile.county)} Tournament{tournamentReady ? ' Starting' : ' Forming'}</div>
+          <div className="card-title">{titleCase(profile.county)} tournament{tournamentReady ? ' starting' : ' forming'}</div>
           <div className="card-supporting">
-            {heroState === 'new' && '6\u20138 players compete in a local round-robin tournament.'}
+            {heroState === 'new' && '6\u20138 local players. Round-robin format.'}
             {heroState === 'returning' && 'Join the next season.'}
             {heroState === 'joined-needs-availability' && (
-              <>You're in! {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Waiting for more players.'}</>
+              <>You're in. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Waiting on more players.'}</>
             )}
             {heroState === 'joined-ready' && (
-              <>You're all set. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Waiting for more players.'}</>
+              <>You're set. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Waiting on more players.'}</>
             )}
-            {heroState === 'countdown-needs-availability' && 'Tournament starts when the countdown ends. Set your availability now!'}
-            {heroState === 'countdown-ready' && "You're ready! Tournament starts when the countdown ends."}
+            {heroState === 'countdown-needs-availability' && 'Tournament starts when the countdown ends. Add your availability now.'}
+            {heroState === 'countdown-ready' && "You're set. Tournament starts when the countdown ends."}
           </div>
         </div>
 
@@ -430,11 +430,11 @@ export default function HomeHeroCard({
         </div>
 
         {tournamentReady && spotsLeft > 0 && (
-          <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} remaining before the tournament is full</p>
+          <p className="formation-logic">{spotsLeft} spot{spotsLeft === 1 ? '' : 's'} left.</p>
         )}
 
         {!tournamentReady && heroState === 'new' && (
-          <p className="formation-logic">At {targetPlayers} players, a 48-hour countdown begins. The tournament starts when it ends or {maxPlayers} players join.</p>
+          <p className="formation-logic">At {targetPlayers} players, a 48-hour countdown starts. Tournament begins when it ends or {maxPlayers} players join.</p>
         )}
 
         {(heroState === 'joined-needs-availability' || heroState === 'countdown-needs-availability') && (
@@ -442,7 +442,7 @@ export default function HomeHeroCard({
             <span className="hero-step-icon">&#9675;</span>
             <div className="hero-step-text">
               <strong>Set your availability</strong>
-              <span>So matches auto-schedule when the tournament starts</span>
+              <span>So your matches auto-schedule when the tournament starts.</span>
             </div>
           </div>
         )}
@@ -463,11 +463,11 @@ export default function HomeHeroCard({
           {(heroState === 'joined-needs-availability' || heroState === 'countdown-needs-availability') && (
             <>
               <button className="btn btn-primary btn-large formation-cta-primary" onClick={onSetAvailability}>
-                Set Your Availability
+                Set your availability
               </button>
               {isUserInvolved && (
                 <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
-                  Invite Friends
+                  Invite friends
                 </button>
               )}
             </>
@@ -476,19 +476,19 @@ export default function HomeHeroCard({
           {(heroState === 'new' || heroState === 'returning') && (
             <div className="formation-choice-options">
               <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleJoin}>
-                <span className="formation-choice-label">Join Tournament</span>
-                <span className="formation-choice-desc">Matched by skill level and location</span>
+                <span className="formation-choice-label">Join tournament</span>
+                <span className="formation-choice-desc">Matched by skill level and location.</span>
               </button>
               <button className="btn btn-large formation-cta-secondary" onClick={handleShareInvite}>
-                <span className="formation-choice-label">Create Free Tournament</span>
-                <span className="formation-choice-desc">Invite 5+ friends and play together</span>
+                <span className="formation-choice-label">Start one with friends</span>
+                <span className="formation-choice-desc">Invite 5+ players and play together.</span>
               </button>
             </div>
           )}
 
           {heroState === 'joined-ready' && (
             <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>
-              Invite Friends
+              Invite friends
             </button>
           )}
 
@@ -496,10 +496,10 @@ export default function HomeHeroCard({
             <>
               {spotsLeft > 0 ? (
                 <button className="btn btn-primary btn-large formation-cta-primary" onClick={handleShareInvite}>
-                  {spotsLeft === 1 ? 'Invite One More Player' : `Invite ${spotsLeft} More Players`}
+                  {spotsLeft === 1 ? 'Invite one more player' : `Invite ${spotsLeft} more players`}
                 </button>
               ) : (
-                <p className="formation-logic">Tournament is full — starts when the countdown ends.</p>
+                <p className="formation-logic">Tournament is full. Starts when the countdown ends.</p>
               )}
             </>
           )}
@@ -525,12 +525,12 @@ export default function HomeHeroCard({
         return (
           <div className="card scheduling-confidence">
             <div className="card-status-row">
-              <div className="card-status-label card-status-label--slate">Scheduling Confidence</div>
+              <div className="card-status-label card-status-label--slate">Scheduling confidence</div>
               <div className="card-meta-chip">{confidence.score}%</div>
             </div>
             <div className="card-summary-main">
-              <div className="card-title">How likely your matches will auto-schedule</div>
-              <div className="card-supporting">{confidence.playersWithAvailability} players have set their availability. Add more time slots to improve this.</div>
+              <div className="card-title">How likely your matches auto-schedule</div>
+              <div className="card-supporting">{confidence.playersWithAvailability} players have set their times. Add more slots to boost this.</div>
             </div>
             <div className="confidence-bar">
               <div
@@ -546,9 +546,9 @@ export default function HomeHeroCard({
               {confidence.score}%
             </div>
             <div className="confidence-label">
-              {confidence.label === 'high' ? 'High -- most matches can be auto-scheduled' :
-               confidence.label === 'medium' ? 'Medium -- some matches may need manual scheduling' :
-               'Low -- many matches will need manual scheduling'}
+              {confidence.label === 'high' ? 'High. Most matches will auto-schedule.' :
+               confidence.label === 'medium' ? 'Medium. Some matches may need manual scheduling.' :
+               'Low. Many matches will need manual scheduling.'}
             </div>
           </div>
         )
@@ -563,12 +563,12 @@ export default function HomeHeroCard({
       {showShareSheet && (
         <div className="modal-overlay" onClick={() => setShowShareSheet(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Invite Players</h2>
+            <h2>Invite players</h2>
             <div className="share-options">
-              <button className="btn btn-large" onClick={handleSMS}>Text Message</button>
+              <button className="btn btn-large" onClick={handleSMS}>Text message</button>
               <button className="btn btn-large" onClick={handleWhatsApp}>WhatsApp</button>
               <button className="btn btn-large" onClick={() => { handleCopyLink(); setShowShareSheet(false) }}>
-                {copied ? 'Copied!' : 'Copy Invite Link'}
+                {copied ? 'Copied!' : 'Copy invite link'}
               </button>
             </div>
             <div className="share-close">

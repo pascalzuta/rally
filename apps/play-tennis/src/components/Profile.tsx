@@ -133,7 +133,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
     const result = await updateMyAvailability(slots)
     if (result.ok) {
       setEditing(false)
-      showSuccess('Changes saved')
+      showSuccess('Saved.')
     } else {
       // Toast already shown by mutations layer — just don't close edit mode
       console.warn('[Rally] Save availability failed:', result.error)
@@ -284,8 +284,8 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
           <div className="availability-current">
             {slots.length === 0 ? (
               <div>
-                <p className="subtle">No availability set</p>
-                <p className="profile-avail-warning">Set your availability to get better match times</p>
+                <p className="subtle">No times set yet.</p>
+                <p className="profile-avail-warning">Add a few times so Rally can auto-schedule your matches.</p>
               </div>
             ) : (
               <>
@@ -319,19 +319,19 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
                 className={`avail-mode-btn ${availMode === 'custom' ? 'active' : ''}`}
                 onClick={() => setAvailMode('custom')}
               >
-                Custom times
+                Custom
               </button>
               <button
                 className={`avail-mode-btn ${availMode === 'quick' ? 'active' : ''}`}
                 onClick={() => setAvailMode('quick')}
               >
-                Quick presets
+                Presets
               </button>
             </div>
 
             {availMode === 'quick' && (
               <div className="quick-slots-v2">
-                <p className="quick-presets-hint">Tap to add common time blocks</p>
+                <p className="quick-presets-hint">Tap to add common windows.</p>
                 {QUICK_SLOTS.map(qs => (
                   <button
                     key={qs.label}
@@ -390,11 +390,11 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
 
       {/* Help & How Rally Works */}
       {onViewHelp && (
-        <button className="btn btn-large help-link-btn" onClick={onViewHelp}>How Rally Works</button>
+        <button className="btn btn-large help-link-btn" onClick={onViewHelp}>How Rally works</button>
       )}
 
       {/* Sign Out */}
-      <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
+      <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign out</button>
     </div>
   )
 }
