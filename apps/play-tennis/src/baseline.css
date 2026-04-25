@@ -346,13 +346,19 @@ em.bg-em,
   display: inline-block; width: 6px; height: 6px; border-radius: 999px;
   background: currentColor; flex-shrink: 0;
 }
-.card-status-label--blue, .card-status-label--green {
+.card-status-label--blue, .card-status-label--green,
+.action-card .card-status-label--blue, .action-card .card-status-label--green,
+.action-card-status-row .card-status-label--blue, .action-card-status-row .card-status-label--green {
   background: var(--blue-soft) !important; color: var(--blue) !important;
 }
-.card-status-label--amber, .card-status-label--red {
+.card-status-label--amber, .card-status-label--red,
+.action-card .card-status-label--amber, .action-card .card-status-label--red,
+.action-card-status-row .card-status-label--amber, .action-card-status-row .card-status-label--red {
   background: var(--amber-soft) !important; color: var(--amber) !important;
 }
-.card-status-label--slate {
+.card-status-label--slate,
+.action-card .card-status-label--slate,
+.action-card-status-row .card-status-label--slate {
   background: var(--bg-2) !important; color: var(--ink-2) !important;
 }
 
@@ -2232,3 +2238,495 @@ input:focus, textarea:focus, select:focus,
   margin: 6px 0 0;
 }
 
+
+/* ================================================================
+   === match-card states additions ===
+   Production overrides for the match-card expansion family
+   (MatchActionCard + ScoreConfirmationPanel + InlineScoreEntry +
+   PostMatchFeedbackInline + UpcomingMatchPanel + MatchSchedulePanel).
+
+   Mirrors dev/css/baseline-cards.css so the live components on Home
+   render the Baseline pattern shown in screens 06–11. baseline.css
+   loads in production; baseline-cards.css does NOT.
+   ================================================================ */
+
+/* 1. WORKFLOW MODULES — kill uppercase eyebrow + dividers inside expansion */
+.action-card-expansion .workflow-status,
+.action-card-expansion .workflow-divider {
+  display: none !important;
+}
+.action-card-expansion .workflow-header {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin: 4px 0 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+.action-card-expansion .workflow-header .schedule-panel-title,
+.action-card-expansion .schedule-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+}
+.action-card-expansion .workflow-header .schedule-panel-copy,
+.action-card-expansion .schedule-panel-copy {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  color: var(--ink-2) !important;
+  margin: 0 !important;
+}
+.action-card-expansion .workflow-module {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Re-establish the divider above the expansion (baseline.css zeroed it) */
+.action-card .action-card-expansion {
+  border-top: 1px solid var(--line) !important;
+  margin: 16px -18px 0 !important;
+  padding: 16px 18px 0 !important;
+  background: var(--bg) !important;
+}
+
+/* 2. SCORE GRID — flat in card */
+.action-card-expansion .score-grid,
+.b-score-grid {
+  display: grid !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+.action-card-expansion .score-header,
+.b-score-grid .score-header {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--ink-2) !important;
+  text-align: center !important;
+}
+.action-card-expansion .score-row-label,
+.action-card-expansion .score-player-name,
+.b-score-grid .score-row-label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+.action-card-expansion .score-row-label--you .b-em,
+.b-score-grid .score-row-label--you .b-em {
+  color: var(--blue) !important;
+  font-style: normal !important;
+  font-weight: 500 !important;
+}
+.action-card-expansion .score-input,
+.b-score-grid .score-input {
+  width: 60px !important;
+  height: 44px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: var(--bg-2) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.02em !important;
+  text-align: center !important;
+}
+.action-card-expansion .score-input:focus,
+.b-score-grid .score-input:focus {
+  border-color: var(--blue) !important;
+  background: var(--bg) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,255,0.15) !important;
+  outline: none !important;
+}
+
+/* "Report Score" CTA inside the expansion → soft-blue pill */
+.action-card-expansion .inline-score-entry .workflow-actions .btn,
+.action-card-expansion .inline-score-entry .workflow-actions .btn-primary,
+.action-card-expansion .workflow-actions .btn-primary {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  width: 100% !important;
+  padding: 13px 18px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+.action-card-expansion .workflow-actions .btn-primary:disabled {
+  opacity: 0.55 !important;
+}
+
+/* 3. FEEDBACK SENTIMENT (rate-match) — 3-up grid of soft cards */
+.action-card-expansion .feedback-sentiment-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 16px !important;
+}
+.action-card-expansion .feedback-sentiment-btn {
+  background: var(--bg-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  color: var(--ink-2) !important;
+  padding: 18px 10px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 92px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+.action-card-expansion .feedback-sentiment-btn:hover,
+.action-card-expansion .feedback-sentiment-btn.selected {
+  border-color: var(--blue) !important;
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+}
+.action-card-expansion .feedback-sentiment-icon {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 20px !important;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--ink-2) !important;
+}
+.action-card-expansion .feedback-sentiment-btn.selected .feedback-sentiment-icon,
+.action-card-expansion .feedback-sentiment-btn:hover .feedback-sentiment-icon {
+  color: var(--blue) !important;
+}
+
+/* 4. FEEDBACK SAVED (screen 08) — checkmark circle + italic-blue title */
+.b-feedback-saved {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 4px;
+}
+.b-feedback-saved-check {
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px; font-weight: 700;
+  margin-top: 2px;
+}
+.b-feedback-saved-body {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.b-feedback-saved-title {
+  font-size: 16px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.015em; line-height: 1.3;
+}
+.b-feedback-saved-title .bg-em { font-style: italic; color: var(--blue); }
+.b-feedback-saved-copy {
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* 5. SCHEDULE PANEL — Baseline title + supporting copy
+   MatchSchedulePanel renders renderPanelHeader → workflow-header /
+   schedule-panel-title / schedule-panel-copy. The expansion-scoped
+   rules above already restyle these. Now also kill .schedule-panel
+   container chrome and the legacy escalation timeline visuals. */
+.action-card-expansion .schedule-panel,
+.action-card-expansion .upcoming-match-panel {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Title for the Review Rally's time options block */
+.action-card-expansion .schedule-panel .schedule-panel-title,
+.action-card-expansion .upcoming-match-panel .schedule-panel-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ink) !important;
+  margin: 0 0 4px !important;
+}
+
+/* 6. PROPOSAL ROW (replaces legacy .proposal-card chrome) */
+.action-card-expansion .proposal-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  margin: 8px 0 0 !important;
+  padding: 0 !important;
+}
+.action-card-expansion .proposal-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 14px 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.action-card-expansion .proposal-card:last-child {
+  border-bottom: 1px solid var(--line) !important;
+}
+.action-card-expansion .proposal-card.proposal-mine {
+  background: transparent !important;
+}
+.action-card-expansion .proposal-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+.action-card-expansion .proposal-time {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.015em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.action-card-expansion .proposal-from {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  letter-spacing: -0.005em !important;
+}
+.action-card-expansion .proposal-card .btn,
+.action-card-expansion .proposal-card .btn-primary,
+.action-card-expansion .proposal-card .btn-small {
+  background: var(--blue) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 9px 22px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  width: auto !important;
+}
+.action-card-expansion .proposal-card .btn:hover,
+.action-card-expansion .proposal-card .btn-primary:hover {
+  background: #1f56e0 !important;
+}
+
+/* "Suggest a different time instead" link */
+.action-card-expansion .propose-link,
+.action-card-expansion .btn-link.propose-link {
+  display: block !important;
+  width: 100% !important;
+  background: none !important;
+  border: none !important;
+  color: var(--blue) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  text-align: center !important;
+  padding: 14px 0 4px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+.action-card-expansion .propose-link:hover {
+  opacity: 0.8 !important;
+}
+
+/* 7. PROPOSE FORM — inline day/start/end + Send/Cancel */
+.action-card-expansion .propose-form {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 14px 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+.action-card-expansion .propose-row {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+.action-card-expansion .propose-row > span {
+  display: none !important;
+}
+.action-card-expansion .propose-form select {
+  flex: 1 !important;
+  height: 44px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  cursor: pointer !important;
+}
+.action-card-expansion .propose-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+.action-card-expansion .propose-actions .btn,
+.action-card-expansion .propose-actions .btn-primary,
+.action-card-expansion .propose-actions .btn-small {
+  width: 100% !important;
+  border-radius: 999px !important;
+  padding: 13px 18px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  cursor: pointer !important;
+}
+.action-card-expansion .propose-actions .btn-primary {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border: none !important;
+}
+.action-card-expansion .propose-actions .btn:not(.btn-primary) {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* Hide the legacy schedule-workflow-card outer wrapper inside expansion */
+.action-card-expansion .schedule-workflow-card,
+.action-card-expansion .schedule-panel.schedule-confirmed,
+.action-card-expansion .schedule-panel.schedule-escalated {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 8. CONFIRMED SLOT block — keep typography but remove inner card chrome */
+.action-card-expansion .confirmed-slot {
+  background: transparent !important;
+  border: none !important;
+  padding: 12px 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 10px !important;
+}
+.action-card-expansion .confirmed-day {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.015em !important;
+}
+.action-card-expansion .confirmed-time {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Cancel-match link → Baseline danger ghost */
+.action-card-expansion .cancel-match-link {
+  background: none !important;
+  border: none !important;
+  color: var(--ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 8px 0 !important;
+  text-decoration: none !important;
+}
+
+/* 9. POST-MATCH FEEDBACK MODULE — same flat treatment */
+.action-card-expansion .post-match-feedback {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 10. SCORE CONFIRMATION REVIEW — keep stat rows readable */
+.action-card-expansion .score-confirmation-panel {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.action-card-expansion .score-confirm-meta,
+.action-card-expansion .score-confirm-summary-card {
+  background: transparent !important;
+  border: none !important;
+  padding: 12px 0 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+.action-card-expansion .score-confirm-stat-row,
+.action-card-expansion .score-confirm-summary-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  gap: 12px !important;
+}
+.action-card-expansion .score-confirm-summary-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--ink-2) !important;
+}
+.action-card-expansion .score-confirm-summary-value,
+.action-card-expansion .score-confirm-deadline-value {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.015em !important;
+}
+.action-card-expansion .score-confirm-primary-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+.action-card-expansion .score-confirm-primary-actions .btn {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 13px 18px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  width: 100% !important;
+}
+.action-card-expansion .score-confirm-primary-actions .btn-primary {
+  background: var(--blue-soft) !important;
+  color: var(--blue) !important;
+  border: none !important;
+}
