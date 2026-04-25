@@ -301,12 +301,123 @@ em.bg-em,
 .action-cards > .action-card,
 .card-stack > .card { margin-top: 0 !important; margin-bottom: 10px !important; }
 
-/* Kill all colored left-rail variants */
+/* Kill all colored left-rail variants — including action-{tone} states
+   that render the rail via background or border-left without the highlight modifier. */
 [class*="--highlight-"], [class*="--accent-"],
 .action-card--highlight-blue, .action-card--highlight-green,
 .action-card--highlight-orange, .action-card--highlight-red,
-.action-card--highlight-purple, .action-card--highlight-yellow {
+.action-card--highlight-purple, .action-card--highlight-yellow,
+.action-card,
+.action-confirmed, .action-card.action-confirmed,
+.action-respond, .action-card.action-respond,
+.action-confirm-score, .action-card.action-confirm-score,
+.action-escalated, .action-card.action-escalated,
+.action-schedule, .action-card.action-schedule,
+.action-completed, .action-card.action-completed,
+.action-message, .action-card.action-message {
   border-left: 1px solid var(--line) !important;
+  border-top: 1px solid var(--line) !important;
+  border-right: 1px solid var(--line) !important;
+  border-bottom: 1px solid var(--line) !important;
+  background: var(--bg) !important;
+  box-shadow: none !important;
+}
+/* Some action-card variants apply the rail via ::before or ::after */
+.action-card::before, .action-card::after { display: none !important; }
+
+/* Kill uppercase eyebrow text inside cards — convert to Baseline dot+pill flavor */
+.card-status-label,
+.action-card .card-status-label,
+.action-card-status-row .card-status-label {
+  text-transform: none !important;
+  letter-spacing: -0.005em !important;
+  font-size: var(--font-micro) !important;
+  font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  background: var(--bg-2) !important;
+  padding: 4px 9px !important;
+  border-radius: 999px !important;
+  border: none !important;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+/* Render a leading dot via ::before so Baseline status pattern emerges */
+.card-status-label::before {
+  content: '';
+  display: inline-block; width: 6px; height: 6px; border-radius: 999px;
+  background: currentColor; flex-shrink: 0;
+}
+.card-status-label--blue, .card-status-label--green {
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+}
+.card-status-label--amber, .card-status-label--red {
+  background: var(--amber-soft) !important; color: var(--amber) !important;
+}
+.card-status-label--slate {
+  background: var(--bg-2) !important; color: var(--ink-2) !important;
+}
+
+/* Action-card meta chip (e.g. "Sat, Apr 25 9am") — keep pill, ensure Baseline tone */
+.card-meta-chip,
+.action-card .card-meta-chip {
+  background: var(--bg-2) !important; color: var(--ink-2) !important;
+  text-transform: none !important;
+  font-size: var(--font-micro) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  padding: 4px 9px !important;
+  border-radius: 999px !important;
+  border: none !important;
+}
+.card-meta-chip--blue, .card-meta-chip--green {
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+}
+.card-meta-chip--amber, .card-meta-chip--red {
+  background: var(--amber-soft) !important; color: var(--amber) !important;
+}
+
+/* Action-card opponent / title — should look like b-card-title (h3) */
+.action-card-opponent {
+  font-size: 18px !important; font-weight: 700 !important;
+  line-height: 1.2 !important; letter-spacing: -0.02em !important;
+  color: var(--ink) !important; margin: 8px 0 4px;
+}
+.action-card-supporting {
+  font-size: 14px !important; font-weight: 500 !important;
+  line-height: 1.5 !important; color: var(--ink-2) !important;
+  margin: 0 0 12px;
+}
+.action-card-supporting--danger { color: var(--amber) !important; }
+
+/* Action-card buttons row */
+.action-card-buttons {
+  display: flex; align-items: center; gap: 8px;
+}
+.action-card-btn {
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+  border: none !important; border-radius: 999px !important;
+  padding: 9px 16px !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  cursor: pointer;
+}
+.action-card-btn:hover { background: #dde7ff !important; }
+
+.match-card-msg-btn {
+  background: var(--bg) !important; color: var(--ink-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+}
+
+/* Info tooltip "i" trigger — rounded square circle pattern */
+.card-info-tooltip-trigger {
+  width: 22px; height: 22px; border-radius: 999px;
+  background: var(--bg) !important; color: var(--ink-2) !important;
+  border: 1px solid var(--line) !important;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 
 /* No box-in-box: nested bordered containers go transparent */
