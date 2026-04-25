@@ -15,6 +15,15 @@ import { MockProviders } from './MockProviders'
 import { MOCK_PROFILE, MOCK_TOURNAMENT } from './mockData'
 import WelcomeCard, { ActivationStep } from '../components/WelcomeCard'
 
+// Batch-2 screen registries — each module side-effect imports its own
+// dev/css/baseline-*.css, so we just import the array and spread it.
+import { CARDS_SCREENS } from './screens-cards'
+import { RATING_SCREENS } from './screens-rating'
+import { MESSAGES_SCREENS } from './screens-messages'
+import { TOURNAMENT_SCREENS } from './screens-tournament'
+import { PROFILE_SCREENS } from './screens-profile'
+import { INFO_SCREENS } from './screens-info'
+
 // Lazy-load larger surfaces so the dev page itself stays light.
 const HomeHeroCard = lazy(() => import('../components/HomeHeroCard'))
 
@@ -102,6 +111,12 @@ const SCREENS: ScreenDef[] = [
       </PhoneFrame>
     ),
   },
+  ...CARDS_SCREENS,
+  ...RATING_SCREENS,
+  ...MESSAGES_SCREENS,
+  ...TOURNAMENT_SCREENS,
+  ...PROFILE_SCREENS,
+  ...INFO_SCREENS,
 ]
 
 export default function MockScreens() {
