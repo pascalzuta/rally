@@ -251,7 +251,7 @@ function FeedbackSavedScreen() {
   )
 }
 
-/* ---------- 09. Needs response (collapsed) ---------- */
+/* ---------- 09. Needs response (expanded with time options) ---------- */
 
 function NeedsResponseScreen() {
   return (
@@ -265,6 +265,7 @@ function NeedsResponseScreen() {
             supporting="Review the proposed time and confirm if it works."
             primary={{ label: 'Confirm Time' }}
           />
+          <TimeOptionsBody withSuggest={false} />
         </ActionCard>
       </PageBg>
     </PhoneFrame>

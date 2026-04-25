@@ -29,6 +29,7 @@ export interface ScreenDef {
 function PhoneFrame({ children }: { children: ReactNode }) {
   return (
     <div style={{
+      position: 'relative',
       width: 375, minHeight: 600, margin: '0 auto',
       background: 'var(--bg-2)', border: '1px solid var(--line)',
       borderRadius: 24, overflow: 'hidden',

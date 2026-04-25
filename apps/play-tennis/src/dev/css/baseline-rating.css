@@ -77,12 +77,13 @@
   max-width: 80px;
 }
 .b-rating .b-rating-rank-pill {
-  display: inline-flex; align-items: center; flex-direction: column;
-  background: var(--blue-soft); color: var(--blue);
-  font-size: 11px; font-weight: 500;
-  line-height: 1.15;
-  padding: 6px 12px;
-  border-radius: 999px;
+  display: inline-flex !important; align-items: center; flex-direction: column;
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  font-style: italic !important;
+  line-height: 1.15 !important;
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
   text-align: center;
 }
 .b-rating .b-rating-card-title {

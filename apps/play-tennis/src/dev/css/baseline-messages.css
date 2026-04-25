@@ -78,9 +78,13 @@
  * Messages list (screen 20)
  * ============================================================ */
 
-/* Restyle the existing fullscreen overlay structure. */
+/* Restyle the existing fullscreen overlay structure. In the dev preview
+   we contain it within the PhoneFrame instead of letting it fill the
+   viewport — the production overlay behavior is unchanged. */
 .chat-fullscreen {
   background: var(--bg) !important;
+  position: absolute !important;
+  z-index: 1 !important;
 }
 
 .chat-list-header {

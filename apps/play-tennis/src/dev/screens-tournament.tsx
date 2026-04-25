@@ -149,10 +149,33 @@ function Screen24AllMatches() {
   return (
     <PhoneFrame>
       <div className="bt-shell">
+        {/* Top nav: logo + msg/notif/avatar (matches screen 04/25) */}
+        <nav className="top-nav">
+          <div className="top-nav-logo">
+            <img src="/rally-logo.svg" alt="Rally" />
+          </div>
+          <div className="top-nav-actions">
+            <button className="top-nav-icon" aria-label="Messages">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M22 7l-10 7L2 7" />
+              </svg>
+            </button>
+            <button className="top-nav-icon" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <span className="notif-badge">5</span>
+            </button>
+            <button className="top-nav-icon user-avatar-btn" aria-label="Account">PR</button>
+          </div>
+        </nav>
+
         <div className="bt-content">
-          {/* Needs-response card (top) */}
+          {/* Needs-response card (top) — target uses blue tone for the dot/pill */}
           <div className="bt-card">
-            <StatusRow tone="amber" label="Needs response" />
+            <StatusRow tone="blue" label="Needs response" />
             <h3 className="bt-card-title">vs <em>Casey Brooks</em></h3>
             <div className="bt-card-actions">
               <button className="bt-btn-soft">Confirm Time</button>

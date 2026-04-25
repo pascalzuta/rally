@@ -32,7 +32,7 @@
   background: transparent; border: none; cursor: pointer;
   color: var(--ink-2);
 }
-.bp-topnav-icon svg { width: 20px; height: 20px; stroke-width: 1.8; }
+.bp-topnav-icon svg { width: 20px; height: 20px; stroke-width: 1.8; flex-shrink: 0; }
 .bp-topnav-badge {
   position: absolute; top: -2px; right: -2px;
   background: var(--blue); color: #fff;
