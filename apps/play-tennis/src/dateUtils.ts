@@ -47,7 +47,10 @@ export function formatTimeRange(startHour: number, endHour: number): string {
   return `${formatTimeFull(startHour)} – ${formatTimeFull(endHour)}`;
 }
 
-/** "marin county" → "Marin County" — title-case for display */
+/** "marin county, ca" → "Marin County, CA" — title-case with state-abbr ALL CAPS.
+ *  Two-letter trailing tokens after a comma are treated as US state abbreviations
+ *  and rendered uppercase. */
 export function titleCase(str: string): string {
-  return str.replace(/\b\w/g, c => c.toUpperCase());
+  const titled = str.replace(/\b\w/g, c => c.toUpperCase());
+  return titled.replace(/,\s*([A-Za-z]{2})\b/g, (_, abbr) => `, ${abbr.toUpperCase()}`);
 }

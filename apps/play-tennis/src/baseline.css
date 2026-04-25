@@ -178,8 +178,17 @@ em.bg-em,
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 10;
 }
-.top-nav-logo img.rally-logo { height: 22px !important; width: auto; }
+.top-nav-logo img.rally-logo { height: 36px !important; width: auto !important; }
+.top-nav-logo                { display: flex !important; align-items: center !important; }
 .top-nav-actions             { display: flex; align-items: center; gap: 8px; }
+
+/* Bottom nav tab icons — prevent flex collapse so every tab shows its icon */
+.bottom-tab .tab-icon, .tab-icon {
+  width: 22px !important; height: 22px !important; flex-shrink: 0 !important;
+  stroke-width: 1.8 !important;
+}
+.bottom-tab { display: inline-flex !important; flex-direction: column !important; align-items: center !important; gap: 2px !important; }
+.bottom-tab .tab-text { font-size: 11px !important; font-weight: 500 !important; }
 
 .top-nav-icon, .icon-btn-circle {
   width: 38px; height: 38px; border-radius: 999px;
@@ -294,10 +303,10 @@ em.bg-em,
   border-radius: var(--radius-card) !important;
   box-shadow: none !important;
   padding: 20px 18px !important;
-  margin: 10px 10px !important;
+  margin: 8px 6px !important;
 }
-/* Tighter side gutters on logged-in screens — cards span more of the phone width */
-.screen { padding: 0 4px !important; }
+/* Tighter side gutters on logged-in screens — cards nearly fill the phone width */
+.screen { padding: 0 2px !important; }
 /* Direct children of .screen / list containers stack with consistent gap */
 .screen > .card, .screen > .action-card,
 .action-cards > .action-card,
@@ -3017,4 +3026,21 @@ input:focus, textarea:focus, select:focus,
   padding: 13px 18px !important; font-weight: 500 !important;
   font-family: 'Inter', system-ui, sans-serif !important;
   text-align: center !important;
+}
+
+/* === BRACKET TAB title — match the Home tournament card style === */
+.bracket-tab-header {
+  padding: 18px 14px 6px !important;
+}
+.bracket-title {
+  font-size: 22px !important; font-weight: 700 !important;
+  line-height: 1.1 !important; letter-spacing: -0.025em !important;
+  color: var(--ink) !important; margin: 0 0 6px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+.bracket-title .bg-em { font-style: italic !important; color: var(--blue) !important; font-weight: 700 !important; }
+.bracket-tab-meta {
+  font-size: 14px !important; font-weight: 500 !important;
+  color: var(--ink-2) !important; line-height: 1.5 !important;
+  margin: 0 !important;
 }
