@@ -299,6 +299,17 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
           </div>
         </div>
 
+        {/* Diagnostic snapshot — shows profile id + tournament/players state */}
+        <div className="devbar-group">
+          <span className="devbar-group-label">Diag</span>
+          <div className="devbar-row">
+            <button className="devbar-btn" onClick={() => {
+              const diag = (window as unknown as { __rallyDiag?: unknown }).__rallyDiag
+              alert(JSON.stringify(diag, null, 2))
+            }}>Show snapshot</button>
+          </div>
+        </div>
+
         {/* Tournament setup */}
         {setupTournament && (() => {
           const remaining = getCountdownRemaining(setupTournament)
