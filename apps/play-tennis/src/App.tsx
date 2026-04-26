@@ -35,7 +35,9 @@ const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 const isNativeApp = !!import.meta.env.VITE_CAPACITOR_BUILD
 
 // DevTools: loaded in development, staging, and native app builds
-const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
+const isStaging = typeof window !== 'undefined'
+  && (window.location.hostname === 'staging.play-rally.com'
+    || window.location.hostname.endsWith('.vercel.app'))
 const DevTools = (import.meta.env.DEV || isStaging || isNativeApp)
   ? lazy(() => import('./components/DevTools'))
   : () => null
