@@ -161,6 +161,19 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
 
   async function doForceStart() {
     if (!setupTournament) return
+    // If the tournament we're about to start doesn't include the current
+    // user, they'd land on an empty bracket (App.tsx filters activeTournament
+    // by membership). Switch into a tournament player first so the bracket
+    // is actually viewable.
+    if (!setupIsMine) {
+      const switchTarget = testProfiles.find(tp =>
+        setupTournament.players.some(p => p.id === tp.id)
+      )
+      if (switchTarget) {
+        switchProfile(switchTarget)
+        onProfileSwitch(switchTarget)
+      }
+    }
     const result = await forceStartTournament(setupTournament.id)
     if (result && result.status === 'in-progress') {
       flash(`Started with ${result.players.length} players`)
