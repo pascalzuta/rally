@@ -256,6 +256,20 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
       setTrophies(trophiesData)
       setBadges(badgesData)
       setRatingHistory(prev => ({ ...prev, [profile.id]: historyData }))
+
+      // One-time backfill: replay completed matches to fix ratings/history
+      // for users whose matches completed via simulation/auto-confirm paths
+      // that historically didn't apply ELO updates.
+      try {
+        const { backfillRatingsFromMatches } = await import('../store')
+        const result = await backfillRatingsFromMatches({ tournaments: tournamentsData })
+        if (result) {
+          setRatings(result.ratings)
+          setRatingHistory(result.history)
+        }
+      } catch (err) {
+        console.warn('[Rally] Rating backfill skipped:', err)
+      }
     } catch (err) {
       console.error('[Rally] Failed to hydrate data from Supabase:', err)
       setHydrationFailed(true)
