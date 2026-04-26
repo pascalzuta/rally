@@ -310,14 +310,29 @@ em.bg-em,
    auth/registration flow. Override both so Bracket/Home/Play/Availability widen. */
 .screen { padding: 0 2px !important; }
 .content { padding-left: 4px !important; padding-right: 4px !important; }
-/* Drop card horizontal margin so cards span nearly the full phone width */
+/* Drop card horizontal margin so cards span nearly the full phone width.
+   Covers every top-level card variant rendered directly inside a tab wrapper
+   (.content, .bracket-tab, .playnow-tab, .profile-content, .home-section). */
 .card, .b-card, .action-card, .auth-card, .activation-card,
 .welcome-card, .home-hero-card, .match-card, .calendar-match,
 .notif-dropdown, .availability-card, .availability-slots-card,
 .availability-custom-card, .broadcast-card, .offer-card,
 .chat-card, .schedule-summary, .standings-card, .leaderboard-card,
 .profile-card, .rating-card, .help-card, .faq-card, .lobby-card,
-.tournament-card, .friend-card { margin-left: 0 !important; margin-right: 0 !important; }
+.tournament-card, .friend-card, .friend-tournament-card,
+.formation-hero, .leaderboard-teaser, .onboarding-card,
+.profile-edit-card, .profile-section, .profile-hero-card,
+.rating-hero, .recent-activity, .scheduling-confidence,
+.pn-my-broadcast, .pn-info-banner, .analytics-metric-card,
+.proposal-card, .schedule-workflow-card, .schedule-header-card,
+.score-confirm-summary-card, .upnext-card,
+.h2h-card, .history-card, .victory-card,
+.feedback-issue-note-card, .feedback-issue-summary-card,
+.completed-final-card, .completed-trophy-card,
+.court-card, .court-conflict-card,
+.empty-state, .leave-modal {
+  margin-left: 0 !important; margin-right: 0 !important;
+}
 /* Direct children of .screen / list containers stack with consistent gap */
 .screen > .card, .screen > .action-card,
 .action-cards > .action-card,
@@ -1660,7 +1675,7 @@ input:focus, textarea:focus, select:focus,
 
 /* ---------- Profile content wrapper ---------- */
 .profile-content {
-  padding: 14px !important;
+  padding: 14px 0 !important;
   display: flex; flex-direction: column; gap: 12px;
   background: var(--bg-2);
 }
@@ -2025,7 +2040,7 @@ input:focus, textarea:focus, select:focus,
 
 /* ---------- Quick Play tab ---------- */
 .playnow-tab {
-  padding: 14px !important;
+  padding: 14px 0 !important;
   display: flex; flex-direction: column; gap: 12px;
   background: var(--bg-2);
 }
