@@ -2418,8 +2418,8 @@ function saveRatingHistory(history: Record<string, RatingSnapshot[]>): void {
   bridgeSetRatingHistory(history)
 }
 
-function recordRatingSnapshot(playerId: string, rating: number): void {
-  const timestamp = new Date().toISOString()
+function recordRatingSnapshot(playerId: string, rating: number, at?: string): void {
+  const timestamp = at ?? new Date().toISOString()
   const history = loadRatingHistory()
   if (!history[playerId]) history[playerId] = []
   history[playerId].push({ rating, timestamp })
@@ -2449,6 +2449,106 @@ export function getRatingTrend(playerId: string): number {
   }
   const currentRating = history[history.length - 1].rating
   return Math.round(currentRating - baseRating)
+}
+
+/**
+ * Recompute every player's ELO + rating history from scratch by replaying
+ * every completed, non-walkover match in chronological order. This fixes
+ * historical data where matches completed via simulation/auto-confirm paths
+ * never moved ratings.
+ *
+ * Idempotent. Run-gated by a localStorage flag — bump the version to re-run.
+ */
+const RATING_BACKFILL_VERSION_KEY = 'rally:rating-backfill-version'
+const RATING_BACKFILL_CURRENT_VERSION = '2026-04-26-v1'
+
+export async function backfillRatingsFromMatches(opts?: { force?: boolean; tournaments?: Tournament[] }): Promise<{ ratings: Record<string, PlayerRating>; history: Record<string, RatingSnapshot[]> } | null> {
+  if (!opts?.force) {
+    try {
+      if (localStorage.getItem(RATING_BACKFILL_VERSION_KEY) === RATING_BACKFILL_CURRENT_VERSION) return null
+    } catch { /* ignore */ }
+  }
+
+  const tournaments = opts?.tournaments ?? load()
+
+  // Collect all rated matches with a sortable timestamp + player references.
+  type RatedMatch = {
+    timestamp: string
+    p1: { id: string; name: string }
+    p2: { id: string; name: string }
+    winnerId: string
+  }
+  const rated: RatedMatch[] = []
+
+  for (const t of tournaments) {
+    for (const match of t.matches) {
+      if (!match.completed || !match.winnerId) continue
+      // Skip non-rated outcomes: walkovers, double-losses, split decisions
+      if (match.resolution && match.resolution.type !== 'forced-match') continue
+      if (match.splitDecision) continue
+      if (!match.player1Id || !match.player2Id) continue
+      const p1 = t.players.find(p => p.id === match.player1Id)
+      const p2 = t.players.find(p => p.id === match.player2Id)
+      if (!p1 || !p2) continue
+      const ts = match.scoreConfirmedAt ?? match.scoreReportedAt ?? t.date
+      rated.push({ timestamp: ts, p1: { id: p1.id, name: p1.name }, p2: { id: p2.id, name: p2.name }, winnerId: match.winnerId })
+    }
+  }
+
+  rated.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+
+  // Reset rating + history state to a clean slate
+  const ratings: Record<string, PlayerRating> = {}
+  const history: Record<string, RatingSnapshot[]> = {}
+
+  for (const m of rated) {
+    const a = ratings[m.p1.id] ?? { name: m.p1.name, rating: 1000, matchesPlayed: 0 }
+    const b = ratings[m.p2.id] ?? { name: m.p2.name, rating: 1000, matchesPlayed: 0 }
+    a.name = m.p1.name
+    b.name = m.p2.name
+
+    const pA = winProbability(a.rating, b.rating)
+    const kA = kFactor(a.matchesPlayed)
+    const kB = kFactor(b.matchesPlayed)
+    const sA = m.winnerId === m.p1.id ? 1 : 0
+    const sB = 1 - sA
+
+    a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
+    b.rating = Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10
+    a.matchesPlayed += 1
+    b.matchesPlayed += 1
+
+    ratings[m.p1.id] = a
+    ratings[m.p2.id] = b
+
+    if (!history[m.p1.id]) history[m.p1.id] = []
+    if (!history[m.p2.id]) history[m.p2.id] = []
+    history[m.p1.id].push({ rating: a.rating, timestamp: m.timestamp })
+    history[m.p2.id].push({ rating: b.rating, timestamp: m.timestamp })
+  }
+
+  // Persist locally first
+  bridgeSetRatings({ ...ratings })
+  bridgeSetRatingHistory({ ...history })
+
+  // Sync each touched player's rating + last snapshot to Supabase
+  const touched = new Set<string>([...Object.keys(ratings)])
+  for (const id of touched) {
+    const rating = ratings[id]
+    if (!rating) continue
+    syncRatingsForPlayer(id, rating).catch(err => console.warn('[Rally] backfill rating sync failed', id, err))
+    const snaps = history[id] ?? []
+    const latest = snaps[snaps.length - 1]
+    if (latest) {
+      syncRatingSnapshot(id, latest.rating, latest.timestamp).catch(err => console.warn('[Rally] backfill snapshot sync failed', id, err))
+    }
+  }
+
+  try {
+    localStorage.setItem(RATING_BACKFILL_VERSION_KEY, RATING_BACKFILL_CURRENT_VERSION)
+  } catch { /* ignore */ }
+  console.info('[Rally] Rating backfill complete:', rated.length, 'matches replayed across', touched.size, 'players')
+  return { ratings, history }
 }
 
 export function getRatingLabel(rating: number, matchesPlayed?: number): string {
@@ -3144,7 +3244,7 @@ export async function autoConfirmAllSchedules(tournamentId: string): Promise<Tou
 }
 
 /** Directly complete a match for dev simulation — bypasses RPC and two-phase confirmation */
-function devCompleteMatch(
+async function devCompleteMatch(
   tournament: Tournament, matchId: string,
   s1: number[], s2: number[], winnerId: string
 ) {
@@ -3158,6 +3258,13 @@ function devCompleteMatch(
   match.scoreReportedAt = new Date().toISOString()
   match.scoreConfirmedBy = match.player1Id === winnerId ? match.player2Id! : match.player1Id!
   match.scoreConfirmedAt = new Date().toISOString()
+
+  // Update ELO ratings — without this, simulated tournaments awarded trophies but never moved ratings.
+  const p1 = tournament.players.find(p => p.id === match.player1Id)
+  const p2 = tournament.players.find(p => p.id === match.player2Id)
+  if (p1 && p2 && winnerId) {
+    await updateRatings(p1, p2, winnerId)
+  }
 
   // Advance winner in single-elimination or knockout phase
   if ((tournament.format === 'single-elimination' || match.phase === 'knockout') && winnerId) {
@@ -3215,7 +3322,7 @@ export async function simulateRoundScores(tournamentId: string): Promise<Tournam
   for (const match of roundMatches) {
     const pick = SCORES[Math.floor(Math.random() * SCORES.length)]
     const winnerId = pick.w === 1 ? match.player1Id! : match.player2Id!
-    devCompleteMatch(t, match.id, pick.s1, pick.s2, winnerId)
+    await devCompleteMatch(t, match.id, pick.s1, pick.s2, winnerId)
   }
 
   // Check if tournament is done
@@ -3275,23 +3382,23 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
   const t = tournament // const binding for closure narrowing
 
   /** Score a match: player always wins their matches, player1 wins others */
-  function simScore(match: Match) {
+  async function simScore(match: Match) {
     if (match.completed || !match.player1Id || !match.player2Id) return
     const isMyMatch = match.player1Id === playerId || match.player2Id === playerId
     const winnerId = isMyMatch ? playerId : match.player1Id!
     const s1 = winnerId === match.player1Id ? [6, 6] : [3, 4]
     const s2 = winnerId === match.player1Id ? [3, 4] : [6, 6]
-    devCompleteMatch(t, match.id, s1, s2, winnerId)
+    await devCompleteMatch(t, match.id, s1, s2, winnerId)
   }
 
   // For group-knockout: score all group matches, ensuring player wins enough
   if (t.format === 'group-knockout') {
     for (const match of t.matches.filter(m => m.phase === 'group')) {
-      simScore(match)
+      await simScore(match)
     }
     // Score semifinals, ensuring our player wins
     for (const semi of t.matches.filter(m => m.phase === 'knockout' && m.round === 2)) {
-      simScore(semi)
+      await simScore(semi)
     }
     await saveAndSync(all, t)
     return { tournamentId }
@@ -3303,7 +3410,7 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
     for (let round = 1; round < maxRound; round++) {
       const roundMatches = t.matches.filter(m => m.round === round && !m.completed && m.player1Id && m.player2Id)
       for (const match of roundMatches) {
-        simScore(match)
+        await simScore(match)
       }
     }
     await saveAndSync(all, t)
@@ -3312,12 +3419,12 @@ async function simulateToFinalInner(tournamentId: string, playerId: string): Pro
 
   // Round-robin with playoffs: score all group matches, then semis, leave final
   for (const match of t.matches.filter(m => m.phase === 'group')) {
-    simScore(match)
+    await simScore(match)
   }
   // Score semifinals, ensuring our player wins
   const semis = t.matches.filter(m => m.phase === 'knockout' && m.round === 2)
   for (const semi of semis) {
-    simScore(semi)
+    await simScore(semi)
   }
   await saveAndSync(all, t)
   return { tournamentId }
@@ -4482,6 +4589,13 @@ export async function checkAutoAcceptScores(): Promise<void> {
         match.scoreConfirmedBy = 'auto'
         match.scoreConfirmedAt = new Date().toISOString()
         changed = true
+
+        // Update ELO ratings for the auto-confirmed result
+        const p1 = t.players.find(p => p.id === match.player1Id)
+        const p2 = t.players.find(p => p.id === match.player2Id)
+        if (p1 && p2 && match.winnerId) {
+          await updateRatings(p1, p2, match.winnerId)
+        }
 
         // Notify the reporter
         if (match.scoreReportedBy) {
