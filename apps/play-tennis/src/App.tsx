@@ -231,6 +231,25 @@ export default function App() {
     t.status === 'setup' && t.players.some(p => p.id === profile?.id)
   ) ?? null
 
+  // [Rally diag] Skip-Countdown disappearance tracing
+  if (typeof window !== 'undefined') {
+    ;(window as unknown as { __rallyDiag?: unknown }).__rallyDiag = {
+      profileId: profile?.id,
+      profileName: profile?.name,
+      profileCounty: profile?.county,
+      tournamentCount: tournaments.length,
+      tournaments: tournaments.map(t => ({
+        id: t.id,
+        county: t.county,
+        status: t.status,
+        playerIds: t.players.map(p => p.id),
+        playerNames: t.players.map(p => p.name),
+      })),
+      activeTournamentId: activeTournament?.id ?? null,
+      activeTournamentStatus: activeTournament?.status ?? null,
+    }
+  }
+
   // Most recent completed tournament — used as a Bracket-tab fallback so a
   // finished tournament stays visible (with trophies + final score) instead of
   // disappearing into "No tournament yet" the moment the final is scored.
