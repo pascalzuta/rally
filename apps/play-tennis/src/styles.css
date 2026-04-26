@@ -3950,7 +3950,7 @@ select:focus {
   border-color: var(--color-divider);
 }
 
-/* Profile Sections */
+/* Profile Sections (legacy — kept for backwards compatibility) */
 .profile-section {
   background: var(--color-bg-surface);
   border-radius: var(--radius-card);
@@ -3973,6 +3973,31 @@ select:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* Rating panel sections — coherent with the rest of the app's card system.
+   Uses the standard .card with card-status-row + card-status-label inside,
+   matching ScheduleSummary, BracketTab, and other modern surfaces. */
+.rating-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  cursor: default;
+}
+.rating-section:hover {
+  border-color: var(--color-divider);
+  box-shadow: var(--shadow);
+  transform: none;
+}
+
+.rating-section-note {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.rating-explainer-section {
+  gap: 0;
 }
 
 .availability-current {

@@ -314,8 +314,10 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
           </div>
 
           {/* Your Record */}
-          <div className="card profile-section">
-            <h3 className="profile-section-title"><span>Your Record</span></h3>
+          <section className="card rating-section">
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Your Record</div>
+            </div>
             <div className="performance-grid">
               <div className="performance-item">
                 <div className="performance-value">{totalMatches}</div>
@@ -334,11 +336,16 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 <div className="performance-label">Win Rate</div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Trophy Cabinet */}
-          <div className="card profile-section">
-            <h3 className="profile-section-title"><span>Trophies</span></h3>
+          <section className="card rating-section">
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Trophies</div>
+              {trophies.length > 0 && (
+                <div className="card-meta-chip card-meta-chip--amber">{trophies.length}</div>
+              )}
+            </div>
             {trophies.length > 0 ? (
               <div className="trophy-grid">
                 {trophies.map(trophy => (
@@ -355,12 +362,15 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 <p className="trophy-empty-desc">Win tournaments to earn trophies and climb the leaderboard</p>
               </div>
             )}
-          </div>
+          </section>
 
           {/* Badges */}
           {badges.length > 0 && (
-            <div className="card profile-section">
-              <h3 className="profile-section-title"><span>Badges</span></h3>
+            <section className="card rating-section">
+              <div className="card-status-row">
+                <div className="card-status-label card-status-label--slate">Badges</div>
+                <div className="card-meta-chip">{badges.length}</div>
+              </div>
               <div className="badge-grid">
                 {badges.map(badge => (
                   <div key={badge.id} className="badge-cell" title={badge.description}>
@@ -369,14 +379,21 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
           {/* Rating Over Time */}
-          <div className="card profile-section">
-            <h3 className="profile-section-title"><span>Your Rating Over Time</span></h3>
+          <section className="card rating-section">
+            <div className="card-status-row">
+              <div className="card-status-label card-status-label--slate">Rating Over Time</div>
+              {weeklyTrend !== 0 && (
+                <div className={`card-meta-chip ${weeklyTrend > 0 ? 'card-meta-chip--green' : 'card-meta-chip--red'}`}>
+                  {weeklyTrend > 0 ? '+' : ''}{weeklyTrend} this week
+                </div>
+              )}
+            </div>
             <RatingChart history={ratingHistory} currentRating={rating.rating} />
-            <p style={{ fontSize: 'var(--font-body-sm)', color: 'var(--color-text-secondary)', marginTop: 8 }}>Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
+            <p className="rating-section-note">Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
             {completedTournaments.length > 0 && (
               <div className="tournament-history">
                 {completedTournaments.map(t => {
@@ -393,12 +410,15 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 })}
               </div>
             )}
-          </div>
+          </section>
 
           {/* Match History */}
           {matchHistory.length > 0 && (
-            <div className="card profile-section">
-              <h3 className="profile-section-title"><span>Match History</span></h3>
+            <section className="card rating-section">
+              <div className="card-status-row">
+                <div className="card-status-label card-status-label--slate">Match History</div>
+                <div className="card-meta-chip">{matchHistory.length}</div>
+              </div>
 
               {h2hOpponent && (() => {
                 const h2h = getHeadToHead(profile.id, h2hOpponent)
@@ -452,11 +472,11 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                   {showAllMatches ? 'Show less' : `Show all ${matchHistory.length} matches`}
                 </button>
               )}
-            </div>
+            </section>
           )}
 
           {/* Rating Explanation */}
-          <div className="card profile-section">
+          <section className="card rating-section rating-explainer-section">
             <button className="rating-explainer-toggle" aria-expanded={showRatingInfo} onClick={() => setShowRatingInfo(!showRatingInfo)}>
               <span className="rating-explainer-toggle-text">How ratings work</span>
               <span className="rating-explainer-toggle-chevron">›</span>
@@ -477,7 +497,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 <p className="rating-explainer-footnote">Ratings shift more in your first few matches, then stabilise.</p>
               </div>
             )}
-          </div>
+          </section>
       </>
     )
   }
