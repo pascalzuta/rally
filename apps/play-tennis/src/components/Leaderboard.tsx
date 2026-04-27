@@ -1,5 +1,4 @@
 import { getCountyLeaderboard, isDefendingChampion, getRecentResults } from '../store'
-import { titleCase } from '../dateUtils'
 import type { LeaderboardEntry } from '../store'
 
 interface Props {
@@ -53,7 +52,7 @@ export default function Leaderboard({ county, currentPlayerId, currentPlayerName
     <div className="leaderboard-screen">
       <header className="lb-header">
         <button className="btn-back" onClick={onBack}>← Back</button>
-        <h2 className="lb-title">{titleCase(county)} Leaderboard</h2>
+        <h2 className="lb-title"><em className="bg-em">Leaderboard</em></h2>
       </header>
 
       <div className="lb-list">
@@ -82,7 +81,7 @@ export default function Leaderboard({ county, currentPlayerId, currentPlayerName
 
       <div className="lb-total">
         {myEntry
-          ? `Rank #${myEntry.rank} of ${leaderboard.length} players in ${titleCase(county)}`
+          ? `Rank #${myEntry.rank} of ${leaderboard.length} players`
           : `${leaderboard.length} players ranked`
         }
       </div>

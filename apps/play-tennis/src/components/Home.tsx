@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { titleCase } from '../dateUtils'
 import { getPlayerRating, getCountyLeaderboard, getIncomingOffers, getConversationList, getPendingFeedback, clearPendingFeedback, getPlayerName } from '../store'
 import { getMatchCardView } from '../matchCardModel'
 import { PlayerProfile, Tournament, Match } from '../types'
@@ -228,48 +227,54 @@ export default function Home({
   )
   const myRating = getPlayerRating(profile.id, profile.name)
 
-  const renderLeaderboardTeaser = (title: string, supporting: string) => {
+  const renderLeaderboardTeaser = (_title: string, supporting: string) => {
     if (topPlayers.length <= 1) return null
     return (
       <div className="card leaderboard-teaser" onClick={onViewLeaderboard}>
         <div className="card-status-row">
-          <div className="card-status-label card-status-label--blue">Leaderboard</div>
-          <div className="card-meta-chip">{titleCase(profile.county)}</div>
+          <h2 className="lb-title"><em className="bg-em">Leaderboard</em></h2>
         </div>
-        <div className="card-summary-main">
-          <div className="card-title">{title}</div>
-          <div className="card-supporting">{supporting}</div>
-        </div>
-        <div className="leaderboard-teaser-list">
-          {topPlayers.map(entry => (
-            <div key={entry.name} className={`leaderboard-teaser-row ${entry.name.toLowerCase() === profile.name.toLowerCase() ? 'is-me' : ''}`}>
-              <span className="leaderboard-rank">#{entry.rank}</span>
-              <span className="leaderboard-name">{entry.name}{entry.name.toLowerCase() === profile.name.toLowerCase() ? ' (You)' : ''}</span>
-              <span className="leaderboard-rating">{Math.round(entry.rating)}</span>
-            </div>
-          ))}
+        <div className="card-supporting" style={{ marginBottom: 'var(--space-md)' }}>{supporting}</div>
+        <div className="lb-list">
+          {topPlayers.map(entry => {
+            const isMe = entry.name.toLowerCase() === profile.name.toLowerCase()
+            const record = entry.wins + entry.losses > 0 ? `${entry.wins}W–${entry.losses}L` : ''
+            return (
+              <div key={entry.name} className={`lb-row ${isMe ? 'lb-row-me' : ''}`}>
+                <span className="lb-row-rank">{entry.rank === 1 ? '🥇' : `#${entry.rank}`}</span>
+                <span className={`lb-row-avatar ${isMe ? 'lb-avatar-me' : ''}`}>{entry.name[0].toUpperCase()}</span>
+                <span className="lb-row-info">
+                  <span className="lb-row-name">{entry.name}{isMe ? ' (You)' : ''}</span>
+                  {record && <span className="lb-row-record">{record}</span>}
+                </span>
+                <span className="lb-row-rating">{Math.round(entry.rating)}</span>
+              </div>
+            )
+          })}
           {myLeaderboardEntry && !topPlayers.some(e => e.name.toLowerCase() === profile.name.toLowerCase()) && (
             <>
-              <div className="leaderboard-teaser-divider" />
-              <div className="leaderboard-teaser-row is-me">
-                <span className="leaderboard-rank">#{myLeaderboardEntry.rank}</span>
-                <span className="leaderboard-name">You</span>
-                <span className="leaderboard-rating">{Math.round(myLeaderboardEntry.rating)}</span>
+              <div className="lb-gap">···</div>
+              <div className="lb-row lb-row-me">
+                <span className="lb-row-rank">#{myLeaderboardEntry.rank}</span>
+                <span className="lb-row-avatar lb-avatar-me">{profile.name[0].toUpperCase()}</span>
+                <span className="lb-row-info"><span className="lb-row-name">You</span></span>
+                <span className="lb-row-rating">{Math.round(myLeaderboardEntry.rating)}</span>
               </div>
             </>
           )}
           {!myLeaderboardEntry && (
             <>
-              <div className="leaderboard-teaser-divider" />
-              <div className="leaderboard-teaser-row is-me">
-                <span className="leaderboard-rank">—</span>
-                <span className="leaderboard-name">You</span>
-                <span className="leaderboard-rating">{Math.round(myRating.rating)}</span>
+              <div className="lb-gap">···</div>
+              <div className="lb-row lb-row-me">
+                <span className="lb-row-rank">—</span>
+                <span className="lb-row-avatar lb-avatar-me">{profile.name[0].toUpperCase()}</span>
+                <span className="lb-row-info"><span className="lb-row-name">You</span></span>
+                <span className="lb-row-rating">{Math.round(myRating.rating)}</span>
               </div>
             </>
           )}
         </div>
-        <button className="btn-link leaderboard-see-all">See full leaderboard</button>
+        <button className="btn-link leaderboard-see-all" style={{ marginTop: 'var(--space-md)' }}>See full leaderboard →</button>
       </div>
     )
   }
@@ -298,7 +303,7 @@ export default function Home({
 
       {/* Leaderboard (pre-tournament states) */}
       {activeTournaments.length === 0 && renderLeaderboardTeaser(
-        `Top players in ${titleCase(profile.county)}`,
+        '',
         setupTournaments.length > 0
           ? 'Ratings update after each result, even while the bracket is forming.'
           : 'See where you stand before your next tournament.'
@@ -477,7 +482,7 @@ export default function Home({
       })()}
 
       {/* Leaderboard Teaser */}
-      {renderLeaderboardTeaser(`Top players in ${titleCase(profile.county)}`, 'Ratings update after each match.')}
+      {renderLeaderboardTeaser('', 'Ratings update after each match.')}
 
       {/* View All */}
       <div className="home-view-all">

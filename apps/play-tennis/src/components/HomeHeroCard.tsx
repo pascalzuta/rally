@@ -61,7 +61,7 @@ function getActivationSteps(
 
   return [
     { label: 'Set up your profile', completed: true },
-    { label: `Join the ${titleCase(profile.county)} lobby`, completed: inLobby || inTournament || hasPlayedMatch },
+    { label: 'Join the lobby', completed: inLobby || inTournament || hasPlayedMatch },
     { label: 'Set your availability', completed: hasAvailability },
     { label: 'Play your first match', completed: hasPlayedMatch },
   ]
@@ -382,7 +382,7 @@ export default function HomeHeroCard({
           <div className="card-meta-chip">{badge.chip}</div>
         </div>
         <div className="card-summary-main">
-          <div className="card-title">{titleCase(profile.county)} Tournament{tournamentReady ? ' Starting' : ' Forming'}</div>
+          <div className="card-title">Tournament{tournamentReady ? ' Starting' : ' Forming'}</div>
           <div className="card-supporting">
             {heroState === 'new' && '6\u20138 players compete in a local round-robin tournament.'}
             {heroState === 'returning' && 'Join the next season.'}
