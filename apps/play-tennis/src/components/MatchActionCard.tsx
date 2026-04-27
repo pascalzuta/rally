@@ -24,6 +24,31 @@ interface Props {
   onScoreSaved?: () => void
 }
 
+/** Italicise the opponent name(s) inside titles like "vs Alex Rivera" or "Alex vs Sam".
+ *  Pure presentational — keeps matchCardModel free of JSX. */
+function renderTitleWithEmphasis(title: string) {
+  // "vs <Name>" — emphasise everything after the literal "vs "
+  if (title.startsWith('vs ')) {
+    return (
+      <>
+        vs <em className="bg-em">{title.slice(3)}</em>
+      </>
+    )
+  }
+  // "<A> vs <B>" — emphasise both names
+  const idx = title.indexOf(' vs ')
+  if (idx > 0) {
+    return (
+      <>
+        <em className="bg-em">{title.slice(0, idx)}</em>
+        {' vs '}
+        <em className="bg-em">{title.slice(idx + 4)}</em>
+      </>
+    )
+  }
+  return title
+}
+
 const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCard(
   {
     tournament,
@@ -114,7 +139,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
       </div>
 
       <div className="action-card-main">
-        <div className="action-card-opponent">{view.title}</div>
+        <div className="action-card-opponent">{renderTitleWithEmphasis(view.title)}</div>
         {view.supporting && (
           <div className={`action-card-supporting ${view.supportingTone === 'danger' ? 'action-card-supporting--danger' : ''}`}>
             {view.supporting}

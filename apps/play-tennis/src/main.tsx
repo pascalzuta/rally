@@ -34,14 +34,37 @@ if (Capacitor.isNativePlatform()) {
   }, 4000)
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <RallyDataProvider>
-          <App />
-        </RallyDataProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </React.StrictMode>
-)
+// Dev-only design preview: bypasses Supabase / providers entirely so design
+// fidelity work can iterate without a live login. Enabled only in local dev
+// and on the reskin-staging Vercel preview — never in production / staging.
+const isDevScreensRoute = window.location.pathname.startsWith('/dev/screens')
+const devScreensAllowed =
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' && /reskin-staging/.test(window.location.hostname))
+
+if (isDevScreensRoute && devScreensAllowed) {
+  // Lazy import so the bundle for this entry never reaches normal users.
+  import('./baseline.css').then(() => import('./styles.css')).then(() => {
+    import('./dev/MockScreens').then(({ default: MockScreens }) => {
+      ReactDOM.createRoot(document.getElementById('root')!).render(
+        <React.StrictMode>
+          <BrowserRouter>
+            <MockScreens />
+          </BrowserRouter>
+        </React.StrictMode>
+      )
+    })
+  })
+} else {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <AuthProvider>
+          <RallyDataProvider>
+            <App />
+          </RallyDataProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  )
+}

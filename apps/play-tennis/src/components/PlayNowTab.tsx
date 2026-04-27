@@ -155,7 +155,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
           </div>
           <div className="empty-state-title">No tournament yet</div>
-          <div className="empty-state-message">Head to the Home tab and join your county — we'll take it from there</div>
+          <div className="empty-state-message">Join your county lobby on Home. We'll take it from there.</div>
         </div>
       </div>
     )
@@ -188,13 +188,13 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }
 
   function handleCreate() {
-    if (!location.trim()) { setFeedback('Please enter a location'); setTimeout(() => setFeedback(''), 2000); return }
+    if (!location.trim()) { setFeedback('Add a court so players know where to meet.'); setTimeout(() => setFeedback(''), 2000); return }
     const result = createBroadcast(currentPlayerId, currentPlayerName, tournament!.id, date, startTime, endTime, location.trim(), message.trim() || undefined)
     if (result) {
       setShowForm(false); setLocation(''); setMessage('')
-      showSuccess("You're now visible to other players!")
+      showSuccess("You're visible to nearby players.")
     } else {
-      setFeedback('You already have an active broadcast'); setTimeout(() => setFeedback(''), 2000)
+      setFeedback("You're already broadcasting one time."); setTimeout(() => setFeedback(''), 2000)
     }
     setTick(t => t + 1)
   }
@@ -206,8 +206,8 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       setTimeout(() => setFeedback(''), 2500)
       return
     }
-    setFeedback(`Match request sent to ${row.playerName}`)
-    showSuccess(`Match request sent to ${row.playerName}`)
+    setFeedback(`Request sent to ${row.playerName}.`)
+    showSuccess(`Request sent to ${row.playerName}.`)
     setAskingRow(row)
     setTimeout(() => setFeedback(''), 2500)
     setTick(t => t + 1)
@@ -215,23 +215,23 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
   async function handleAcceptOffer(offer: MatchOffer) {
     const result = await acceptMatchOffer(offer.offerId, currentPlayerId)
-    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Match scheduled'); if (result.matchConfirmed) onMatchConfirmed() }
+    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Match scheduled.'); if (result.matchConfirmed) onMatchConfirmed() }
     setTimeout(() => setFeedback(''), 2500); setTick(t => t + 1)
   }
 
   function handleDeclineOffer(offer: MatchOffer) {
     const result = declineMatchOffer(offer.offerId, currentPlayerId)
-    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Offer declined') }
+    if ('error' in result) { setFeedback(result.error) } else { setFeedback('Request declined.') }
     setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1)
   }
 
   function handleCancelOffer(offer: MatchOffer) {
     cancelMatchOffer(offer.offerId, currentPlayerId)
-    setFeedback('Offer cancelled'); setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1)
+    setFeedback('Request withdrawn.'); setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1)
   }
 
   function handleCancel() {
-    if (myBroadcast) { cancelBroadcast(myBroadcast.id, currentPlayerId); setFeedback('Broadcast cancelled'); setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1) }
+    if (myBroadcast) { cancelBroadcast(myBroadcast.id, currentPlayerId); setFeedback('No longer broadcasting.'); setTimeout(() => setFeedback(''), 2000); setTick(t => t + 1) }
   }
 
   function handleStartTimeChange(val: string) { setStartTime(val); setEndTime(defaultEndTime(val)) }
@@ -244,13 +244,13 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
       <div className="pn-info-banner">
         <div className="pn-info-banner-content">
           <span className="pn-info-banner-icon" onClick={() => setShowInfoTooltip(!showInfoTooltip)} role="button" tabIndex={0} aria-label="More info">&#9432;</span>
-          <span className="pn-info-banner-text">See who's available and start a match — Rally handles the scheduling</span>
+          <span className="pn-info-banner-text">See who's available and start a match. Rally handles the scheduling.</span>
         </div>
         {showInfoTooltip && (
           <div className="pn-info-tooltip">
-            <strong>Tournament Matches</strong> are part of your tournament bracket and count toward standings.
-            <br /><strong>Casual Play</strong> lets you find pickup games with other players in your tournament.
-            <br />Use &quot;Request Match&quot; below to propose a casual game.
+            <strong>Tournament matches</strong> count toward your bracket and standings.
+            <br /><strong>Quick Play</strong> is for pickup games with other players in your tournament.
+            <br />Tap &quot;Request match&quot; below to propose a casual game.
           </div>
         )}
       </div>
@@ -259,12 +259,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {incomingOffers.length > 0 && (
         <div className="pn-section">
-          <div className="section-header">Incoming Requests</div>
+          <div className="section-header">Incoming requests</div>
           <div className="offer-list">
             {incomingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-incoming">
                 <div className="offer-card-status-row">
-                  <span className="card-status-label card-status-label--purple">NEEDS RESPONSE</span>
+                  <span className="card-status-label card-status-label--purple">Needs response</span>
                   <span className="card-meta-chip">Expires in {timeRemaining(offer.expiresAt)}</span>
                 </div>
                 <div className="offer-card-main">
@@ -283,7 +283,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {standaloneOutgoingOffers.length > 0 && (
         <div className="pn-section">
-          <div className="section-header">Sent Requests</div>
+          <div className="section-header">Sent requests</div>
           <div className="offer-list">
             {standaloneOutgoingOffers.map(offer => (
               <div key={offer.offerId} className="card offer-card offer-card-outgoing">
@@ -295,7 +295,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                   <div className="card-title">to {offer.recipientName}</div>
                   <div className="offer-card-supporting">{offer.proposedTime} · {formatDate(offer.proposedDate)}</div>
                 </div>
-                <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel Offer</button>
+                <button className="btn btn-small offer-cancel-btn" onClick={() => handleCancelOffer(offer)}>Cancel request</button>
               </div>
             ))}
           </div>
@@ -307,21 +307,21 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <div className="card-status-row">
             <div className="broadcast-player-name">
               <span className="pn-active-indicator" />
-              <span className="card-status-label card-status-label--green">Available Now</span>
+              <span className="card-status-label card-status-label--green">Available now</span>
             </div>
             <div className="card-meta-chip card-meta-chip--green">Active</div>
           </div>
           <div className="card-summary-main">
-            <div className="card-title">You&apos;re available to play</div>
-            <div className="card-supporting">Players in your tournament can request this time slot.</div>
+            <div className="card-title">You&apos;re visible to nearby players.</div>
+            <div className="card-supporting">Anyone in your tournament can request this time.</div>
           </div>
           <div className="broadcast-card-details">
             <span className="broadcast-detail">{formatDate(myBroadcast.date)}</span>
             <span className="broadcast-detail">{formatTimeRange(myBroadcast.startTime, myBroadcast.endTime || defaultEndTime(myBroadcast.startTime))}</span>
             <span className="broadcast-detail">{myBroadcast.location}</span>
           </div>
-          <div className="pn-broadcast-expiry">Available for the next {timeRemaining(myBroadcast.expiresAt)}</div>
-          <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Cancel Broadcast</button>
+          <div className="pn-broadcast-expiry">Visible for {timeRemaining(myBroadcast.expiresAt)}</div>
+          <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Stop broadcasting</button>
         </div>
       ) : !showForm ? (
         <button className="card action-card action-confirmed broadcast-play-now-btn" onClick={() => setShowForm(true)}>
@@ -329,18 +329,18 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
             <span className="card-status-label card-status-label--green">Quick Play</span>
           </span>
           <span className="action-card-main">
-            <span className="action-card-opponent">I&apos;m Free to Play</span>
+            <span className="action-card-opponent">I&apos;m <span className="bg-em">free to play.</span></span>
             <span className="action-card-supporting">Broadcast your availability so nearby tournament players can send a request.</span>
           </span>
         </button>
       ) : (
         <div className="card action-card action-respond broadcast-create-card">
           <div className="action-card-status-row">
-            <div className="card-status-label card-status-label--blue">Create Broadcast</div>
+            <div className="card-status-label card-status-label--blue">New broadcast</div>
           </div>
           <div className="action-card-main">
-            <div className="action-card-opponent">I want to play</div>
-            <div className="action-card-supporting">Share one time and place so nearby players can send a match request.</div>
+            <div className="action-card-opponent">I want to play.</div>
+            <div className="action-card-supporting">Share a time and place. Nearby players can send a match request.</div>
           </div>
           <div className="action-card-expansion">
             <div className="broadcast-form-fields">
@@ -374,21 +374,21 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                 </div>
               </div>
               <div className="field">
-                <label className="field-label">Location</label>
+                <label className="field-label">Court</label>
                 <input
                   type="text"
                   value={location}
                   onChange={e => setLocation(e.target.value)}
-                  placeholder="e.g. Marin Tennis Club"
+                  placeholder="Marin Tennis Club"
                 />
               </div>
               <div className="field">
-                <label className="field-label">Message (optional)</label>
+                <label className="field-label">Note (optional)</label>
                 <input
                   type="text"
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  placeholder="Anyone free?"
+                  placeholder="Looking for a hitting partner"
                 />
               </div>
             </div>
@@ -402,12 +402,12 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
 
       {/* === CASUAL PLAY SECTION === */}
       <div className="pn-section">
-        <div className="section-header">Who's Free</div>
+        <div className="section-header">Who's free</div>
         {dateGroups.length === 0 ? (
           <div className="pn-empty-state">
-            <div className="pn-empty-title">Courts are quiet right now</div>
-            <div className="pn-empty-desc">Post when you're free — we'll rally the troops</div>
-            {!myBroadcast && !showForm && <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>Play Now</button>}
+            <div className="pn-empty-title">Quiet right now.</div>
+            <div className="pn-empty-desc">Post when you're free. Players nearby will see it.</div>
+            {!myBroadcast && !showForm && <button className="btn btn-primary pn-empty-cta" onClick={() => setShowForm(true)}>I'm free to play</button>}
           </div>
         ) : dateGroups.map(group => (
           <div key={group.date} className="pn-date-group">
@@ -433,7 +433,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                   >
                     <div className="action-card-status-row">
                       <div className={`card-status-label ${hasPendingRequest ? 'card-status-label--purple' : (row.isNow ? 'card-status-label--green' : 'card-status-label--slate')}`}>
-                        {hasPendingRequest ? 'Request Sent' : row.isNow ? 'Available Now' : 'Available'}
+                        {hasPendingRequest ? 'Request sent' : row.isNow ? 'Available now' : 'Available'}
                       </div>
                       <div className="card-meta-chip">
                         {hasPendingRequest && matchingOutgoingOffer
@@ -447,7 +447,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                         <div className="action-card-opponent">{row.playerName}<span className="seed-label">{playerSeedLabel(row.playerId)}</span></div>
                         <div className="action-card-supporting">
                           {hasPendingRequest
-                            ? 'Waiting on a response to your proposed match.'
+                            ? 'Waiting on their response.'
                             : row.location ? row.location : 'Tournament player available for a casual match.'}
                         </div>
                         {row.message && <div className="pn-opponent-message">&quot;{row.message}&quot;</div>}
@@ -458,7 +458,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                         className={`btn ${hasPendingRequest ? '' : 'btn-primary'} btn-small pn-ask-btn`}
                         onClick={e => { e.stopPropagation(); setMessagingPlayerId(null); setAskingRow(isAsking ? null : row) }}
                       >
-                        {hasPendingRequest ? 'View Request' : 'Request Match'}
+                        {hasPendingRequest ? 'View request' : 'Request match'}
                       </button>
                       <button className={`match-card-msg-btn ${messagingPlayerId === row.playerId ? 'active' : ''}`} onClick={e => { e.stopPropagation(); setAskingRow(null); setMessagingPlayerId(messagingPlayerId === row.playerId ? null : row.playerId) }} aria-label="Message player">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H4l-2 2V3z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
@@ -469,11 +469,11 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                       <div className="action-card-expansion" onClick={e => e.stopPropagation()}>
                         <div className="workflow-module quickplay-request-panel">
                           <div className="quickplay-request-header">
-                            <div className="workflow-status workflow-status--blue">{hasPendingRequest ? 'Request Sent' : 'Match Request'}</div>
+                            <div className="workflow-status workflow-status--blue">{hasPendingRequest ? 'Request sent' : 'Match request'}</div>
                             <div className="quickplay-request-copy">
                               {hasPendingRequest && matchingOutgoingOffer
-                                ? `${row.playerName} has ${timeRemaining(matchingOutgoingOffer.expiresAt)} left to accept or decline.`
-                                : 'Confirm the proposed time below before sending your request.'}
+                                ? `${row.playerName} has ${timeRemaining(matchingOutgoingOffer.expiresAt)} to respond.`
+                                : 'Confirm the time below to send your request.'}
                             </div>
                           </div>
                           <div className="quickplay-request-summary">
@@ -491,9 +491,9 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                           <div className="workflow-actions">
                             <button className="btn" onClick={() => setAskingRow(null)}>Close</button>
                             {hasPendingRequest && matchingOutgoingOffer ? (
-                              <button className="btn" onClick={() => handleCancelOffer(matchingOutgoingOffer)}>Withdraw Request</button>
+                              <button className="btn" onClick={() => handleCancelOffer(matchingOutgoingOffer)}>Withdraw request</button>
                             ) : (
-                              <button className="btn btn-primary" onClick={() => handleAskToPlay(row)}>Request Match</button>
+                              <button className="btn btn-primary" onClick={() => handleAskToPlay(row)}>Request match</button>
                             )}
                           </div>
                         </div>

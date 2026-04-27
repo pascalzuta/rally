@@ -10,6 +10,7 @@ import { ToastProvider } from './components/Toast'
 import { ROUTES, getLegacyHashRedirect } from './routes'
 import { setNavigateRef, consumePendingDeepLink, handleDeepLink, initNativeApp } from './native'
 import './styles.css'
+import './baseline.css'
 
 // Critical path: loaded eagerly (landing page + home + auth)
 import Register from './components/Register'
@@ -34,7 +35,9 @@ const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 const isNativeApp = !!import.meta.env.VITE_CAPACITOR_BUILD
 
 // DevTools: loaded in development, staging, and native app builds
-const isStaging = typeof window !== 'undefined' && window.location.hostname === 'staging.play-rally.com'
+const isStaging = typeof window !== 'undefined'
+  && (window.location.hostname === 'staging.play-rally.com'
+    || window.location.hostname.endsWith('.vercel.app'))
 const DevTools = (import.meta.env.DEV || isStaging || isNativeApp)
   ? lazy(() => import('./components/DevTools'))
   : () => null
@@ -347,28 +350,18 @@ export default function App() {
       />
     )
 
-    // /signup — registration flow
+    // /signup — registration flow (Register provides its own b-page-nav)
     if (location.pathname === ROUTES.SIGNUP) {
       return (
         <div className="app">
-          {nativeGuestNav || (
-            <nav className="top-nav top-nav-register" style={{ justifyContent: 'space-between' }}>
-              <div className="top-nav-logo top-nav-logo-large">
-                <img className="rally-logo" height="45" src="/rally-logo.svg" alt="Rally" />
-              </div>
-              <a href="/blog/" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-caption)', textDecoration: 'none', fontWeight: 500 }}>
-                Blog
-              </a>
-            </nav>
-          )}
+          {nativeGuestNav}
           <Register onRegistered={handleRegistered} inviteCounty={inviteCounty ?? inviteTournamentCounty} onCancel={() => navigate('/')} />
-          <Footer />
           {devTools}
         </div>
       )
     }
 
-    // /login — dedicated login page (Strava-style dual column)
+    // /login — dedicated login page (Login provides its own b-page-nav)
     if (location.pathname === ROUTES.LOGIN) {
       return (
         <div className="app app-desktop-guest">
@@ -684,7 +677,7 @@ export default function App() {
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
-            <span className="tab-text">Quick Play</span>
+            <span className="tab-text">Play</span>
           </button>
           <button className={`bottom-tab ${activeTab === 'rating' ? 'active' : ''}`} onClick={() => navigate(ROUTES.RATING)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

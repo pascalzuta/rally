@@ -96,7 +96,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
 
   function handleCreate() {
     if (!location.trim()) {
-      setFeedback('Please enter a location')
+      setFeedback('Add a court so players know where to meet.')
       setTimeout(() => setFeedback(''), 2000)
       return
     }
@@ -114,9 +114,9 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
       setShowForm(false)
       setLocation('')
       setMessage('')
-      setFeedback('Broadcast sent!')
+      setFeedback("You're visible to nearby players.")
     } else {
-      setFeedback('You already have an active broadcast')
+      setFeedback("You're already broadcasting one time.")
     }
     setTimeout(() => setFeedback(''), 2000)
     setTick(t => t + 1)
@@ -125,11 +125,11 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
   async function handleClaim(broadcast: MatchBroadcast) {
     const result = await claimBroadcast(broadcast.id, currentPlayerId)
     if (result) {
-      setFeedback('Match confirmed!')
+      setFeedback('Match confirmed.')
       setClaimingId(null)
       onMatchConfirmed()
     } else {
-      setFeedback('This player just matched with someone else. Try another slot.')
+      setFeedback('They just matched with someone else. Try another slot.')
     }
     setTimeout(() => setFeedback(''), 2000)
     setTick(t => t + 1)
@@ -138,7 +138,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
   function handleCancel() {
     if (myBroadcast) {
       cancelBroadcast(myBroadcast.id, currentPlayerId)
-      setFeedback('Broadcast cancelled')
+      setFeedback('No longer broadcasting.')
       setTimeout(() => setFeedback(''), 2000)
       setTick(t => t + 1)
     }
@@ -160,8 +160,8 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
       {!myBroadcast && !showForm && (
         <button className="broadcast-play-now-btn" onClick={() => setShowForm(true)}>
           <span className="play-now-icon">&#9889;</span>
-          <span className="play-now-text">Play Now</span>
-          <span className="play-now-sub">Notify opponents you're available to play</span>
+          <span className="play-now-text">I'm free to play</span>
+          <span className="play-now-sub">Tell nearby players you're available</span>
         </button>
       )}
 
@@ -171,7 +171,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
           className="availability-toggle-btn"
           onClick={() => setShowAvailability(!showAvailability)}
         >
-          {showAvailability ? 'Hide availability' : `See who's available (next 3 days)`}
+          {showAvailability ? 'Hide availability' : `See who's free (next 3 days)`}
           <span className="availability-toggle-count">{upcomingSlots.length} slots</span>
         </button>
       )}
@@ -180,7 +180,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
       {showAvailability && !showForm && (
         <div className="availability-overview">
           {upcomingGroups.length === 0 ? (
-            <div className="availability-empty">No availability set for the next 3 days</div>
+            <div className="availability-empty">Nobody's set times for the next 3 days.</div>
           ) : (
             upcomingGroups.map(group => (
               <div key={group.date} className="availability-day-group">
@@ -202,7 +202,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
       {/* Broadcast creation form */}
       {showForm && (
         <div className="broadcast-form">
-          <h3 className="broadcast-form-title">I Want To Play</h3>
+          <h3 className="broadcast-form-title">I'm free to play</h3>
 
           <div className="field">
             <label className="field-label">Date</label>
@@ -236,29 +236,29 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
           </div>
 
           <div className="field">
-            <label className="field-label">Location</label>
+            <label className="field-label">Court</label>
             <input
               type="text"
               value={location}
               onChange={e => setLocation(e.target.value)}
-              placeholder="e.g. Marin Tennis Club"
+              placeholder="Marin Tennis Club"
             />
           </div>
 
           <div className="field">
-            <label className="field-label">Message (optional)</label>
+            <label className="field-label">Note (optional)</label>
             <input
               type="text"
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="Anyone free?"
+              placeholder="Looking for a hitting partner"
             />
           </div>
 
           <div className="broadcast-form-actions">
             <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
             <button className="btn btn-primary" onClick={handleCreate}>
-              <span>&#9889;</span> Broadcast Availability
+              <span>&#9889;</span> Broadcast
             </button>
           </div>
         </div>
@@ -269,7 +269,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
         <div className="broadcast-mine">
           <div className="broadcast-card broadcast-card-own">
             <div className="broadcast-card-header">
-              <span className="broadcast-player-name">Your Broadcast</span>
+              <span className="broadcast-player-name">Your broadcast</span>
               <span className="broadcast-badge broadcast-badge-own">Active</span>
             </div>
             <div className="broadcast-card-details">
@@ -278,7 +278,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
               <span className="broadcast-detail">{myBroadcast.location}</span>
             </div>
             <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>
-              Cancel Broadcast
+              Stop broadcasting
             </button>
           </div>
         </div>
@@ -291,9 +291,9 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
         return (
           <div className="broadcast-claim-overlay" onClick={() => setClaimingId(null)}>
             <div className="broadcast-claim-modal" onClick={e => e.stopPropagation()}>
-              <h3 className="broadcast-claim-title">Match Opportunity</h3>
+              <h3 className="broadcast-claim-title">Claim this match?</h3>
               <div className="broadcast-claim-info">
-                <div className="broadcast-claim-player">{b.playerName} is available</div>
+                <div className="broadcast-claim-player">{b.playerName} is free</div>
                 <div className="broadcast-claim-detail">{formatDate(b.date)}</div>
                 <div className="broadcast-claim-detail">{formatTimeRange(b.startTime, b.endTime || defaultEndTime(b.startTime))}</div>
                 <div className="broadcast-claim-detail">{b.location}</div>
@@ -301,7 +301,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
               </div>
               <div className="broadcast-claim-actions">
                 <button className="btn" onClick={() => setClaimingId(null)}>Cancel</button>
-                <button className="btn btn-primary" onClick={() => handleClaim(b)}>Claim Match</button>
+                <button className="btn btn-primary" onClick={() => handleClaim(b)}>Claim match</button>
               </div>
             </div>
           </div>
@@ -311,7 +311,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
       {/* Timeline view */}
       {timelineGroups.length > 0 && (
         <div className="broadcast-timeline">
-          <h3 className="broadcast-timeline-title">Players Available</h3>
+          <h3 className="broadcast-timeline-title">Players free</h3>
           {timelineGroups.map(group => (
             <div key={group.date} className="broadcast-timeline-group">
               <div className="broadcast-timeline-date">{formatDate(group.date)}</div>
@@ -330,7 +330,7 @@ export default function BroadcastPanel({ tournament, currentPlayerId, onMatchCon
                       className="btn btn-primary btn-small broadcast-timeline-claim"
                       onClick={e => { e.stopPropagation(); setClaimingId(b.id) }}
                     >
-                      Claim Match
+                      Claim match
                     </button>
                   </div>
                 ))}

@@ -1,0 +1,311 @@
+/* Rating-screen-only Baseline composition styles.
+   Scoped under .b-rating to avoid leaking into the live app.
+   Used by /dev/screens previews 13–15 (Rating overview, Trophies, How ratings work).
+*/
+
+/* ---- Top nav (mock) — match other screens ---- */
+.b-rating .b-mock-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+}
+.b-rating .b-mock-nav-logo {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.b-rating .b-mock-nav-logo sup { font-size: 10px; vertical-align: super; }
+.b-rating .b-mock-nav-actions {
+  display: flex; align-items: center; gap: 8px;
+}
+.b-rating .b-mock-nav-icon {
+  position: relative;
+  width: 36px; height: 36px; border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-2); cursor: pointer; padding: 0;
+}
+.b-rating .b-mock-nav-icon svg { width: 18px; height: 18px; stroke-width: 1.8; }
+.b-rating .b-mock-nav-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--blue); color: #fff;
+  font-size: 10px; font-weight: 700;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+  line-height: 1;
+}
+.b-rating .b-mock-avatar {
+  width: 32px; height: 32px; border-radius: 999px;
+  background: var(--ink); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; letter-spacing: -0.01em;
+}
+
+/* ---- Page body ---- */
+.b-rating .b-rating-body {
+  background: var(--bg-2);
+  padding: 14px 14px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+/* ---- Rating overview card (screen 13) ---- */
+.b-rating .b-rating-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 20px 18px;
+}
+.b-rating .b-rating-card-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.b-rating .b-rating-card-eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  max-width: 80px;
+}
+.b-rating .b-rating-rank-pill {
+  display: inline-flex !important; align-items: center; flex-direction: column;
+  background: var(--blue-soft) !important; color: var(--blue) !important;
+  font-size: 11px !important; font-weight: 500 !important;
+  font-style: italic !important;
+  line-height: 1.15 !important;
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  text-align: center;
+}
+.b-rating .b-rating-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.b-rating .b-rating-card-supporting {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+.b-rating .b-rating-hero {
+  text-align: center;
+  margin: 6px 0 4px;
+}
+.b-rating .b-rating-hero-num {
+  display: block;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 96px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--blue);
+  margin: 0 0 4px;
+}
+.b-rating .b-rating-hero-caption {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.b-rating .b-rating-progress {
+  height: 3px;
+  background: var(--bg-2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 14px 0 16px;
+}
+.b-rating .b-rating-progress-fill {
+  display: block;
+  width: 12%;
+  height: 100%;
+  background: var(--blue);
+  border-radius: 999px;
+}
+.b-rating .b-rating-rank-row {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  margin: 0 0 6px;
+}
+.b-rating .b-rating-rank-row em { font-style: italic; color: var(--blue); font-weight: 700; }
+.b-rating .b-rating-rank-blurb {
+  text-align: center;
+  font-size: 14px; font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin: 0 0 18px;
+  padding: 0 12px;
+}
+.b-rating .b-rating-link {
+  display: block;
+  text-align: center;
+  font-size: 14px; font-weight: 500;
+  color: var(--blue);
+  text-decoration: none;
+  padding: 6px 0;
+}
+
+/* ---- Trophies card (screen 14) ---- */
+.b-rating .b-trophies-card,
+.b-rating .b-chart-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 18px 18px 22px;
+}
+.b-rating .b-status-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.b-rating .b-status-row-dot {
+  width: 8px; height: 8px; border-radius: 999px; background: var(--blue);
+}
+.b-rating .b-status-row-label {
+  font-size: 13px; font-weight: 700; color: var(--blue);
+  letter-spacing: -0.005em;
+}
+.b-rating .b-trophies-empty {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  padding: 18px 12px 6px;
+}
+.b-rating .b-trophy-icon {
+  width: 44px; height: 44px;
+  color: var(--ink-2);
+  margin-bottom: 12px;
+}
+.b-rating .b-trophy-icon svg { width: 100%; height: 100%; stroke-width: 1.5; }
+.b-rating .b-trophies-title {
+  font-size: 18px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+.b-rating .b-trophies-body {
+  font-size: 14px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 260px;
+}
+
+/* ---- Chart card ---- */
+.b-rating .b-chart-y-axis {
+  display: flex; flex-direction: column; gap: 32px;
+  position: relative;
+  padding: 8px 0 0;
+}
+.b-rating .b-chart-row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.b-rating .b-chart-y-label {
+  font-size: 12px; font-weight: 500; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.b-rating .b-chart-line-cell {
+  position: relative;
+  height: 1px;
+  background: var(--line);
+}
+.b-rating .b-chart-svg-wrap {
+  position: relative;
+  margin-left: 48px;
+  margin-top: -56px;
+  height: 96px;
+}
+.b-rating .b-chart-svg-wrap svg {
+  display: block; width: 100%; height: 100%;
+  overflow: visible;
+}
+
+/* ---- How ratings work (screen 15) ---- */
+.b-rating .b-how-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 18px 18px 8px;
+}
+.b-rating .b-how-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.b-rating .b-how-title {
+  font-size: 15px; font-weight: 700; color: var(--blue);
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+.b-rating .b-how-chevron {
+  color: var(--blue);
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.b-rating .b-how-body {
+  font-size: 14px; font-weight: 500; color: var(--ink);
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+.b-rating .b-how-body strong { font-weight: 700; color: var(--ink); }
+.b-rating .b-how-body-muted {
+  font-size: 14px; font-weight: 500; color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0 0 4px;
+}
+.b-rating .b-how-body-muted em { font-style: italic; color: var(--blue); font-weight: 500; }
+
+.b-rating .b-tier-table {
+  margin: 14px -18px 0;
+  border-top: 1px solid var(--line);
+}
+.b-rating .b-tier-row {
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.b-rating .b-tier-row:last-child { border-bottom: none; }
+.b-rating .b-tier-rail {
+  align-self: stretch;
+  width: 4px;
+  border-radius: 2px;
+}
+.b-rating .b-tier-rail--pro    { background: #6b3fa0; }
+.b-rating .b-tier-rail--semi   { background: #2563ff; }
+.b-rating .b-tier-rail--elite  { background: #128a5d; }
+.b-rating .b-tier-rail--strong { background: #6ea83a; }
+.b-rating .b-tier-range {
+  font-size: 15px; font-weight: 500; color: var(--ink);
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.b-rating .b-tier-name {
+  font-size: 12px; font-weight: 700; color: var(--ink);
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: uppercase;
+}

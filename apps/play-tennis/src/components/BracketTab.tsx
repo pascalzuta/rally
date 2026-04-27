@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { titleCase } from '../dateUtils'
+
+/** Render a tournament name with the trailing suffix (e.g. "Open #2") in italic blue
+ *  to match the home tournament card and the design spec. State abbreviations
+ *  in the city portion are uppercased via titleCase(). */
+function renderTournamentName(name: string): React.ReactNode {
+  const titled = titleCase(name)
+  const m = titled.match(/^(.*?)(\s)(Open\s+#?\d+|Tournament|League|Season.*|Cup.*|Championship.*)$/i)
+  if (!m) return titled
+  return <>{m[1]} <em className="bg-em">{m[3]}</em></>
+}
 import { Tournament, Match } from '../types'
 import { getPlayerName, getSeeds, getGroupStandings, leaveTournament, getTournament, getPlayerTrophies, hasUnreadFrom, checkAutoAcceptScores, getPendingFeedback, clearPendingFeedback, getPlayerFeedbackForMatch } from '../store'
 import { getMatchCardView } from '../matchCardModel'
@@ -226,7 +236,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     return (
       <div className="bracket-tab">
         <div className="bracket-tab-header">
-          <h2>{titleCase(tournament.name)}</h2>
+          <h2 className="bracket-title">{renderTournamentName(tournament.name)}</h2>
           <div className="bracket-tab-meta">
             {tournament.status === 'scheduling' ? 'Generating your schedule...' : `Setting up · ${tournament.players.length} players`}
           </div>
@@ -526,14 +536,14 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
           {match.resolution && (
             <div className={`resolution-indicator resolution-${match.resolution.type}`}>
               {match.resolution.type === 'walkover' ? 'Walkover' :
-               match.resolution.type === 'forced-match' ? 'Final Match Assigned' :
-               'Match Canceled'}
+               match.resolution.type === 'forced-match' ? 'Final match assigned' :
+               'Match canceled'}
             </div>
           )}
 
           {/* Action row: action button + message button */}
           <div className="match-card-actions-row">
-            {(cardView.primaryActionLabel === 'Confirm Score' || cardView.primaryActionLabel === 'Review Dispute') ? (
+            {(cardView.primaryActionLabel === 'Confirm score' || cardView.primaryActionLabel === 'Review dispute') ? (
               <button className="match-card-action-btn" onClick={e => {
                 e.stopPropagation()
                 setMessagingMatchId(null)
@@ -653,7 +663,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
   return (
     <div className="bracket-tab">
       <div className="bracket-tab-header">
-        <h2>{titleCase(tournament.name)}</h2>
+        <h2 className="bracket-title">{renderTournamentName(tournament.name)}</h2>
         <div className="bracket-tab-meta">
           {tournament.players.length} players · {tournament.format === 'single-elimination' ? 'Elimination' : tournament.format === 'group-knockout' ? 'Group stage + Playoffs' : 'Round robin'}
         </div>

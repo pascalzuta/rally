@@ -37,17 +37,6 @@ function findMatchContext(
   return null
 }
 
-/** Generate a consistent color from a player name using Rally palette tones */
-function avatarColor(name: string): string {
-  const colors = [
-    '#2A5BD7', '#1F9D55', '#D97706', '#D64545', '#7c3aed',
-    '#0891b2', '#374151', '#c026d3', '#059669', '#ea580c'
-  ]
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return colors[Math.abs(hash) % colors.length]
-}
-
 export default function Inbox({ currentPlayerId, currentPlayerName, county, tournaments, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<'current' | 'past'>('current')
   const [openConversation, setOpenConversation] = useState<{ playerId: string; playerName: string } | null>(null)
@@ -108,10 +97,7 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
               <path d="M13 4L7 10l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <div
-            className="chat-conv-avatar"
-            style={{ background: avatarColor(openConversation.playerName) }}
-          >
+          <div className="chat-conv-avatar">
             {openConversation.playerName[0]?.toUpperCase() ?? '?'}
           </div>
           <div className="chat-conv-header-info">
@@ -219,10 +205,7 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
                       </svg>
                     </div>
                   ) : (
-                    <div
-                      className="chat-card-avatar"
-                      style={{ background: avatarColor(conv.otherPlayerName) }}
-                    >
+                    <div className="chat-card-avatar">
                       {conv.otherPlayerName[0]?.toUpperCase() ?? '?'}
                     </div>
                   )}

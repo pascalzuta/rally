@@ -40,55 +40,46 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
   }
 
   return (
-    <div className="dgh">
-      {/* Nav */}
-      <nav className="dgh-nav" aria-label="Main navigation">
-        <div className="dgh-nav-inner">
-          <img className="rally-logo" height="38" src="/rally-logo.svg" alt="Rally" />
-          <div className="dgh-nav-actions">
-            <a href="/blog/" className="dgh-btn-link">Blog</a>
-            <a href="/support/" className="dgh-btn-link">Help</a>
-            <button className="dgh-btn-text" onClick={handleLogin}>Log in</button>
-            <button className="dgh-btn-primary" onClick={onGetStarted}>Sign up free</button>
-          </div>
+    <div className="dgh b-page" style={{ background: 'var(--bg)' }}>
+      {/* Nav — Baseline (target: logo left, single Sign up CTA right) */}
+      <nav className="b-page-nav" aria-label="Main navigation">
+        <div className="b-page-nav-logo">
+          <img src="/rally-logo.svg" alt="Rally" />
+        </div>
+        <div className="b-page-nav-right">
+          <button
+            onClick={onGetStarted}
+            style={{
+              background: 'var(--blue)', color: '#fff', border: 'none',
+              borderRadius: 999, padding: '10px 18px',
+              fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500,
+              cursor: 'pointer', letterSpacing: '-0.005em'
+            }}
+          >
+            Sign up
+          </button>
         </div>
       </nav>
 
-      {/* Hero — left-aligned, asymmetric */}
-      <section className="dgh-hero">
-        <div className="dgh-hero-inner">
-          <div className="dgh-hero-content">
-            <p className="dgh-hero-eyebrow">Local tennis, zero hassle</p>
-            <h1 className="dgh-hero-title">
-              Stop texting.<br />Start playing.
-            </h1>
-            <p className="dgh-hero-subtitle">
-              Rally auto-schedules local tennis matches based on your availability.
-              No group chats, no back-and-forth — just show up and play.
-            </p>
-            <div className="dgh-hero-cta">
-              <button className="dgh-btn-primary dgh-btn-large" onClick={onGetStarted}>
-                Get started — it's free
-              </button>
-              <button className="dgh-btn-text dgh-btn-large" onClick={handleLogin}>
-                I already have an account
-              </button>
-            </div>
-          </div>
-          <div className="dgh-hero-aside">
-            <div className="dgh-hero-stat">
-              <span className="dgh-hero-stat-number">2,400+</span>
-              <span className="dgh-hero-stat-label">players on Rally</span>
-            </div>
-            <div className="dgh-hero-stat">
-              <span className="dgh-hero-stat-number">50</span>
-              <span className="dgh-hero-stat-label">states covered</span>
-            </div>
-            <div className="dgh-hero-stat">
-              <span className="dgh-hero-stat-number">100%</span>
-              <span className="dgh-hero-stat-label">free to play</span>
-            </div>
-          </div>
+      {/* Hero — Baseline (left-aligned, single-column) */}
+      <section className="dgh-hero" style={{ background: 'var(--bg)', padding: '36px 22px 32px' }}>
+        <div className="dgh-hero-inner" style={{ display: 'block', maxWidth: 480, margin: '0 auto' }}>
+          <p className="b-hero-eyebrow">
+            <span className="b-status-dot b-status-dot--blue" /> Local tennis, zero hassle
+          </p>
+          <h1 className="b-hero-title">
+            Stop texting.<br /><em className="bg-em">Start playing.</em>
+          </h1>
+          <p className="b-hero-body">
+            Rally auto-schedules local tennis matches based on your availability.
+            No group chats, no back-and-forth — just show up and play.
+          </p>
+          <button className="b-btn-block" onClick={onGetStarted}>
+            Get started — it's free
+          </button>
+          <button className="b-btn-text" onClick={handleLogin}>
+            I already have an account
+          </button>
         </div>
       </section>
 
@@ -98,7 +89,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
           <div className="dgh-problem-text">
             <span className="dgh-section-number">01</span>
             <h2 className="dgh-section-heading">Scheduling tennis shouldn't take 20 messages</h2>
-            <p className="dgh-section-desc">You want to play. Not manage calendars. Rally eliminates the back-and-forth.</p>
+            <p className="dgh-section-desc">You want to play, not manage calendars. Rally cuts the back-and-forth.</p>
           </div>
           <div className="dgh-problem-chat dgh-anim-chat">
             <div className="dgh-story-bubble dgh-story-bubble-out" style={{'--i': 0} as React.CSSProperties}>Can you play Tuesday?</div>
@@ -184,7 +175,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
         <div className="dgh-final-cta-inner dgh-anim-cta">
           <h2 className="dgh-cta-title">Ready to play?</h2>
           <p className="dgh-cta-subtitle">
-            Join Rally today and never waste time scheduling again.
+            Join Rally and never waste another night texting about tennis.
           </p>
           <div className="dgh-cta-actions">
             <button className="dgh-cta-btn-primary" onClick={onGetStarted}>

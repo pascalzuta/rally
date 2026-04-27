@@ -251,7 +251,9 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
           <div key={i} className="score-header">Set {i + 1}</div>
         ))}
 
-        <div className="score-player-name score-row-label score-row-label--you">You ({youName})</div>
+        <div className="score-player-name score-row-label score-row-label--you">
+          <span className="b-em">You</span> <span className="b-ink-2">({youName})</span>
+        </div>
         {sets.slice(0, visibleSets).map((set, i) => (
           <input
             key={`you-${i}`}

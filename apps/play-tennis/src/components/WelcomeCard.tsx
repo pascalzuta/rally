@@ -13,6 +13,8 @@ interface Props {
   onSetAvailability: () => void
   onFindMatch: () => void
   hideAction?: boolean
+  /** Pre-expand the "How does Rally work?" section. Used by /dev/screens preview. */
+  initialHiwExpanded?: boolean
 }
 
 type HiwSection = 'overview' | 'scheduling' | 'scoring' | 'deadlines' | 'faq'
@@ -25,57 +27,63 @@ const HIW_TABS: { id: HiwSection; label: string }[] = [
   { id: 'faq', label: 'FAQ' },
 ]
 
-export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSetAvailability, onFindMatch, hideAction }: Props) {
-  const [hiwExpanded, setHiwExpanded] = useState(false)
+export default function WelcomeCard({ activationSteps, county, onJoinLobby, onSetAvailability, onFindMatch, hideAction, initialHiwExpanded }: Props) {
+  const [hiwExpanded, setHiwExpanded] = useState(!!initialHiwExpanded)
   const [hiwTab, setHiwTab] = useState<HiwSection>('overview')
 
   const completed = activationSteps.filter(s => s.completed).length
 
   // CTA matches the first incomplete step
   const nextAction = !activationSteps[1].completed
-    ? { label: 'Join the Lobby', action: onJoinLobby }
+    ? { label: 'Join the lobby', action: onJoinLobby }
     : !activationSteps[2].completed
-    ? { label: 'Set Your Availability', action: onSetAvailability }
+    ? { label: 'Set your availability', action: onSetAvailability }
     : !activationSteps[3].completed
-    ? { label: 'Find a Match', action: onFindMatch }
+    ? { label: 'Find a match', action: onFindMatch }
     : null
 
+  const total = activationSteps.length
+  const progressPct = (completed / total) * 100
+
   return (
-    <div className="card onboarding-card">
-      <div className="card-status-row">
-        <div className="card-status-label card-status-label--green">Getting Started</div>
-        <div className="card-meta-chip">{completed}/{activationSteps.length} complete</div>
-      </div>
-      <div className="card-summary-main">
-        <div className="card-title">Welcome to Rally</div>
-        <div className="card-supporting">
-          Your matches, auto-scheduled.<br />
-          Your skills, accurately rated.
+    <div className="b-card" style={{ margin: '0 14px 10px' }}>
+      {/* Top row: eyebrow + progress (matches screenshot 04) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, fontStyle: 'italic', color: 'var(--blue)', letterSpacing: '-0.005em' }}>
+          Getting started
+        </span>
+        <div className="b-progress-row">
+          <span className="b-progress-track">
+            <span className="b-progress-fill" style={{ width: `${progressPct}%` }} />
+          </span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{completed} / {total}</span>
         </div>
       </div>
 
-      <div className="onboarding-steps">
+      <h3 style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.025em', margin: '0 0 8px', color: 'var(--ink)' }}>
+        Welcome to <em className="bg-em">Rally.</em>
+      </h3>
+      <p style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 18px' }}>
+        Your matches, auto-scheduled. Your skills, accurately rated.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {activationSteps.map((step, i) => (
-          <div key={i} className={`onboarding-step ${step.completed ? 'completed' : ''}`}>
-            <span className="onboarding-step-icon">
+          <div key={i} className={`b-step ${step.completed ? 'b-step--done' : 'b-step--pending'}`}>
+            <span className="b-step-icon">
               {step.completed ? (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="8" fill="var(--color-positive-primary)" />
-                  <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 6L5 8.5L9.5 4" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="7.5" stroke="var(--color-divider)" />
-                </svg>
-              )}
+              ) : null}
             </span>
-            <span className="onboarding-step-label">{step.label}</span>
+            <span>{step.label}</span>
           </div>
         ))}
       </div>
 
       {nextAction && !hideAction && (
-        <button className="btn btn-primary onboarding-cta" onClick={nextAction.action}>
+        <button className="b-btn-block" style={{ marginTop: 18 }} onClick={nextAction.action}>
           {nextAction.label}
         </button>
       )}
@@ -206,7 +214,7 @@ function SchedulingSection() {
       </div>
 
       <div className="help-tip">
-        Add 3+ availability slots across different days to maximize auto-scheduled matches.
+        Add 3+ time slots across different days to maximize auto-scheduled matches.
       </div>
     </div>
   )
@@ -327,13 +335,13 @@ function FAQSection() {
   }
 
   const items = [
-    { q: 'How do I join a tournament?', a: 'From the Home tab, tap "Join Lobby" to enter the waiting pool. Once enough players join (minimum 4), a tournament is automatically created.' },
-    { q: 'What tournament formats are available?', a: 'Rally supports Round Robin (everyone plays everyone), Elimination (single elimination), and Round Robin + Playoffs. The format is chosen based on player count.' },
-    { q: 'How are matches scheduled?', a: 'Rally uses your availability preferences to find overlapping times. The system proposes slots automatically. You can also use "Quick Play" to broadcast availability for an immediate match.' },
-    { q: 'Can I play someone from a different county?', a: 'Tournaments are organized by county to keep matches local. You can only join the lobby for your registered county.' },
-    { q: 'How do I change my availability?', a: 'Go to the Profile tab, find the availability section, and tap "Edit". You can choose quick presets or set specific time slots.' },
-    { q: 'Can I leave a tournament?', a: 'Yes. From the Tournament tab, tap the overflow menu and select "Leave". Your remaining matches will be forfeited.' },
-    { q: 'What happens if I can\'t make a match?', a: 'The scheduling system escalates with reminders, then a final deadline. If neither player responds, the match may be resolved as a walkover or cancellation.' },
+    { q: 'How do I join a tournament?', a: 'On Home, tap "Join the lobby" to enter your county pool. Once 6+ players join, a tournament starts automatically.' },
+    { q: 'What formats does Rally use?', a: 'Round-robin (everyone plays everyone), with the top players advancing to single-elimination playoffs. Format depends on player count.' },
+    { q: 'How are matches scheduled?', a: 'Rally finds overlapping availability and proposes times automatically. You can also use Quick Play to find a same-day pickup match.' },
+    { q: 'Can I play someone from a different county?', a: 'Tournaments are county-based to keep matches local. You can only join your registered county.' },
+    { q: 'How do I change my availability?', a: 'Go to the Availability tab and tap "Edit". Pick presets or add custom times.' },
+    { q: 'Can I leave a tournament?', a: 'Yes. On the Tournament tab, open the menu and tap "Leave". Remaining matches are forfeited.' },
+    { q: "What if I can't make a match?", a: "You'll get reminders before the deadline. If neither player responds, the match is recorded as a mutual no-show." },
   ]
 
   return (

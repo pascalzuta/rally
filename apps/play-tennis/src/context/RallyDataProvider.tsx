@@ -102,7 +102,7 @@ export interface RallyData {
   refresh: () => Promise<void>
 }
 
-const RallyDataContext = createContext<RallyData | null>(null)
+export const RallyDataContext = createContext<RallyData | null>(null)
 
 // ── Supabase fetch helpers ──
 
