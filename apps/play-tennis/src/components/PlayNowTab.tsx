@@ -324,15 +324,18 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
           <button className="btn btn-small broadcast-cancel-btn" onClick={handleCancel}>Stop broadcasting</button>
         </div>
       ) : !showForm ? (
-        <button className="card action-card action-confirmed broadcast-play-now-btn" onClick={() => setShowForm(true)}>
-          <span className="action-card-status-row">
+        <div className="card broadcast-play-now-card">
+          <div className="action-card-status-row">
             <span className="card-status-label card-status-label--green">Quick Play</span>
-          </span>
-          <span className="action-card-main">
-            <span className="action-card-opponent">I&apos;m <span className="bg-em">free to play.</span></span>
-            <span className="action-card-supporting">Broadcast your availability so nearby tournament players can send a request.</span>
-          </span>
-        </button>
+          </div>
+          <div className="action-card-main">
+            <div className="action-card-opponent">I&apos;m <span className="bg-em">free to play.</span></div>
+            <div className="action-card-supporting">Broadcast your availability so nearby tournament players can send a request.</div>
+          </div>
+          <button className="btn btn-primary broadcast-post-btn" onClick={() => setShowForm(true)}>
+            Post Availability
+          </button>
+        </div>
       ) : (
         <div className="card action-card action-respond broadcast-create-card">
           <div className="action-card-status-row">

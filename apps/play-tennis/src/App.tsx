@@ -663,8 +663,11 @@ export default function App() {
               : 'Tournament'}
           >
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="7"/>
-              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+              <path d="M6 9H3V4h3"/>
+              <path d="M18 9h3V4h-3"/>
+              <path d="M6 4h12v6c0 3.31-2.69 6-6 6s-6-2.69-6-6V4z"/>
+              <path d="M12 16v2"/>
+              <path d="M8 22h8"/>
             </svg>
             <span className="tab-text">Tournament</span>
             {pendingActions.bracketBadgeCount > 0 && (
@@ -681,13 +684,7 @@ export default function App() {
           </button>
           <button className={`bottom-tab ${activeTab === 'rating' ? 'active' : ''}`} onClick={() => navigate(ROUTES.RATING)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 9H3V4h3"/>
-              <path d="M18 9h3V4h-3"/>
-              <path d="M6 4h12v6c0 3.31-2.69 6-6 6s-6-2.69-6-6V4z"/>
-              <path d="M12 16v2"/>
-              <path d="M8 22h8"/>
-              <path d="M8 22v-4"/>
-              <path d="M16 22v-4"/>
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
             <span className="tab-text">Rating</span>
           </button>
