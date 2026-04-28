@@ -172,10 +172,11 @@ export async function getSession(): Promise<{ userId: string; email: string } | 
 }
 
 /**
- * Sign in with Google OAuth.
- * On web: redirects in-page to Google, then back to the current origin.
- * On native (Capacitor): opens SFSafariViewController via @capacitor/browser,
- * then redirects back to the app via Universal Links (play-rally.com/auth/callback).
+ * Sign in with Google.
+ * On web: standard Supabase OAuth redirect.
+ * On native iOS: native Google Sign-In SDK (no browser). Returns an ID token
+ * directly to the app, then exchanged for a Supabase session via
+ * signInWithIdToken. See src/native/social-auth.ts.
  */
 export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string }> {
   if (!client) return { ok: false, error: 'supabase_not_initialized' }
@@ -183,30 +184,13 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
   const { Capacitor } = await import('@capacitor/core')
 
   if (Capacitor.isNativePlatform()) {
-    // Native: open OAuth in SFSafariViewController, redirect back via Universal Links.
-    // Uses PKCE flow (Supabase v2 default) — the code_verifier is stored in the app's
-    // localStorage by signInWithOAuth(), then used by exchangeCodeForSession() in the callback.
-    const { data, error } = await client.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        // Point at staging while the bridge + Universal Link fixes are still in
-        // development. staging.play-rally.com serves the new /auth/callback page
-        // with a visible "Open Rally" fallback button, and is in the entitlement's
-        // applinks list. Switch to https://www.play-rally.com/auth/callback once
-        // main is updated.
-        redirectTo: 'https://staging.play-rally.com/auth/callback',
-        skipBrowserRedirect: true,
-      },
-    })
-    if (error) {
-      console.warn('[Rally] Google sign-in failed:', error.message)
-      return { ok: false, error: error.message }
+    const { nativeGoogleSignIn, isNativeGoogleConfigured } = await import('./native/social-auth')
+    if (isNativeGoogleConfigured()) {
+      return nativeGoogleSignIn()
     }
-    if (data?.url) {
-      const { Browser } = await import('@capacitor/browser')
-      await Browser.open({ url: data.url, presentationStyle: 'popover' })
-    }
-    return { ok: true }
+    // Fallback: VITE_GOOGLE_IOS_CLIENT_ID not set — surface a clear error
+    // rather than falling back to the browser flow that broke onboarding before.
+    return { ok: false, error: 'ios_google_client_id_missing' }
   }
 
   // Web: standard redirect flow
@@ -222,6 +206,20 @@ export async function signInWithGoogle(): Promise<{ ok: boolean; error?: string 
     return { ok: false, error: error.message }
   }
   return { ok: true }
+}
+
+/**
+ * Sign in with Apple. iOS-only (uses the native ASAuthorizationController sheet).
+ * Required alongside Google on iOS per App Store guideline 4.8.
+ */
+export async function signInWithApple(): Promise<{ ok: boolean; error?: string }> {
+  if (!client) return { ok: false, error: 'supabase_not_initialized' }
+  const { Capacitor } = await import('@capacitor/core')
+  if (!Capacitor.isNativePlatform()) {
+    return { ok: false, error: 'native_only' }
+  }
+  const { nativeAppleSignIn } = await import('./native/social-auth')
+  return nativeAppleSignIn()
 }
 
 
