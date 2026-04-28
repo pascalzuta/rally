@@ -13,6 +13,13 @@ interface Props {
   onViewHelp?: () => void
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  const first = parts[0]?.[0] ?? ''
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  return (first + last).toUpperCase()
+}
+
 const DAYS: { key: DayOfWeek; label: string; short: string }[] = [
   { key: 'monday', label: 'Monday', short: 'Mon' },
   { key: 'tuesday', label: 'Tuesday', short: 'Tue' },
@@ -228,7 +235,7 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
           {photoUrl ? (
             <img src={photoUrl} alt={profile.name} className="profile-hero-photo-img" />
           ) : (
-            <div className="profile-hero-avatar">{profile.name[0].toUpperCase()}</div>
+            <div className="profile-hero-avatar">{getInitials(profile.name)}</div>
           )}
           <input
             ref={fileInputRef}
