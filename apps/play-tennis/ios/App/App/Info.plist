@@ -57,6 +57,14 @@
 				<string>com.playrally.app</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.83968558734-slm88eb8v7hk1r03qv69k7sbacccg6du</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>
