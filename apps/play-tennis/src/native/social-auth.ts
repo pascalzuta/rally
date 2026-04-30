@@ -81,9 +81,19 @@ export async function nativeGoogleSignIn(): Promise<{ ok: boolean; error?: strin
     if (result.result.responseType !== 'online' || !result.result.idToken) {
       return { ok: false, error: 'no_id_token' }
     }
+    // The capgo plugin's GoogleSignIn SDK embeds a nonce claim into the ID
+    // token automatically. Supabase requires "both or neither" — so we must
+    // extract that nonce from the JWT and pass it back through, otherwise
+    // signInWithIdToken rejects with:
+    //   "Passed nonce and nonce in id_token should either both exist or not."
+    // For Google (unlike Apple) Supabase does plain string comparison rather
+    // than SHA256 hashing, so the raw nonce from the JWT is the correct value.
+    const idToken = result.result.idToken
+    const tokenNonce = decodeJwtNonce(idToken)
     const { error } = await client.auth.signInWithIdToken({
       provider: 'google',
-      token: result.result.idToken,
+      token: idToken,
+      ...(tokenNonce ? { nonce: tokenNonce } : {}),
     })
     if (error) {
       console.warn('[Rally] Supabase signInWithIdToken (google) failed:', error.message)
@@ -146,4 +156,24 @@ function generateNonce(): string {
   const arr = new Uint8Array(16)
   crypto.getRandomValues(arr)
   return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Decode the `nonce` claim from a JWT's payload without verifying the
+ * signature (verification is Supabase's job). Returns undefined if the JWT
+ * is malformed or has no nonce claim.
+ */
+function decodeJwtNonce(jwt: string): string | undefined {
+  try {
+    const parts = jwt.split('.')
+    if (parts.length !== 3) return undefined
+    const b64url = parts[1]
+    const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4)
+    const json = atob(padded)
+    const payload = JSON.parse(json) as { nonce?: unknown }
+    return typeof payload.nonce === 'string' ? payload.nonce : undefined
+  } catch {
+    return undefined
+  }
 }
