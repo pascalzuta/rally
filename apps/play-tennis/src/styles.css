@@ -15132,35 +15132,71 @@ main {
    Native App (Capacitor/iOS) Overrides
    Scoped to .native-app on <html> — does not affect web
    ================================================ */
-/* Logged-in: top nav clears Dynamic Island with generous breathing room */
+/* Logged-in: top nav clears Dynamic Island with generous breathing room.
+   The notch / Dynamic Island sits inside the safe-area inset; we add 20px on
+   top of that so logo + icons have visible space below the island, never
+   crowding it. */
 .native-app .top-nav {
-  padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
-  padding-bottom: 16px;
-  min-height: 64px;
+  padding-top: calc(env(safe-area-inset-top, 20px) + 20px);
+  padding-bottom: 14px;
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+  min-height: 76px;
+}
+
+/* Bigger logo on native — feels intentional, not lost in the bar */
+.native-app .top-nav .rally-logo {
+  height: 38px !important;
+}
+
+/* 44x44 hit targets per Apple HIG, with slightly larger glyphs */
+.native-app .top-nav-icon {
+  width: 44px;
+  height: 44px;
+  font-size: var(--font-body-lg);
+}
+
+.native-app .top-nav-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.native-app .top-nav-actions {
+  gap: 6px;
+}
+
+.native-app .user-avatar-btn {
+  font-size: var(--font-body-md);
 }
 
 /* Logged-out: registration/signup top nav */
 .native-app .top-nav-register {
-  padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
-  padding-bottom: 16px;
+  padding-top: calc(env(safe-area-inset-top, 20px) + 20px);
+  padding-bottom: 14px;
 }
 
-/* Bottom tabs: clear home indicator with extra room */
+/* Bottom tabs: clear home indicator, more vertical room, bigger touch targets */
 .native-app .bottom-tabs {
   height: auto;
-  min-height: 72px;
-  padding-top: 8px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 8px);
+  min-height: 80px;
+  padding-top: 10px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 10px);
 }
 
 .native-app .bottom-tab {
-  gap: 5px;
-  padding: 8px 0;
+  gap: 6px;
+  padding: 6px 0;
+  min-height: 56px;
 }
 
 .native-app .tab-icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+}
+
+.native-app .tab-text {
+  font-size: 11px;
+  letter-spacing: 0.01em;
 }
 
 /* Hide web-only guest nav in native app */
@@ -15169,12 +15205,14 @@ main {
 }
 
 
-/* Native guest nav — only rendered in Capacitor, never on web */
+/* Native guest nav — only rendered in Capacitor, never on web.
+   Matches the logged-in top-nav rhythm so the bar doesn't shift on sign-in. */
 .native-guest-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(env(safe-area-inset-top, 20px) + 16px) var(--space-lg) 16px;
+  padding: calc(env(safe-area-inset-top, 20px) + 20px) var(--space-lg) 14px;
+  min-height: 76px;
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -15186,23 +15224,28 @@ main {
 
 .native-guest-nav .rally-logo {
   cursor: pointer;
+  height: 38px !important;
 }
 
 .native-guest-nav-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 8px;
 }
 
 .native-guest-nav-btn {
-  padding: 8px 16px;
+  height: 40px;
+  padding: 0 18px;
   border-radius: var(--radius-button);
-  font-size: var(--font-body-sm);
+  font-size: var(--font-body-md);
   font-weight: var(--weight-semibold);
   cursor: pointer;
   border: 1px solid var(--color-divider);
   background: none;
   color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .native-guest-nav-btn-primary {
