@@ -81,19 +81,9 @@ export async function nativeGoogleSignIn(): Promise<{ ok: boolean; error?: strin
     if (result.result.responseType !== 'online' || !result.result.idToken) {
       return { ok: false, error: 'no_id_token' }
     }
-    // The capgo plugin's GoogleSignIn SDK embeds a nonce claim into the ID
-    // token automatically. Supabase requires "both or neither" — so we must
-    // extract that nonce from the JWT and pass it back through, otherwise
-    // signInWithIdToken rejects with:
-    //   "Passed nonce and nonce in id_token should either both exist or not."
-    // For Google (unlike Apple) Supabase does plain string comparison rather
-    // than SHA256 hashing, so the raw nonce from the JWT is the correct value.
-    const idToken = result.result.idToken
-    const tokenNonce = decodeJwtNonce(idToken)
     const { error } = await client.auth.signInWithIdToken({
       provider: 'google',
-      token: idToken,
-      ...(tokenNonce ? { nonce: tokenNonce } : {}),
+      token: result.result.idToken,
     })
     if (error) {
       console.warn('[Rally] Supabase signInWithIdToken (google) failed:', error.message)
@@ -123,13 +113,24 @@ export async function nativeAppleSignIn(): Promise<{ ok: boolean; error?: string
     return { ok: false, error: 'social_login_init_failed' }
   }
 
-  // Generate a random nonce; Apple signs it into the JWT, Supabase verifies it.
-  const nonce = generateNonce()
+  // Nonce contract for Apple sign-in via capgo + Supabase:
+  //   1. Generate a random `rawNonce`.
+  //   2. SHA256-hash it and pass the HASH to capgo, which forwards it
+  //      verbatim to ASAuthorizationAppleIDRequest.nonce. Capgo does NOT
+  //      hash for us (verified in AppleProvider.swift). Apple echoes
+  //      whatever it receives into the JWT's `nonce` claim as-is.
+  //   3. Pass the RAW nonce to Supabase. Supabase SHA256-hashes the raw
+  //      value and compares it to the JWT claim. Match.
+  // Passing the raw nonce to both sides (the obvious-looking pattern)
+  // produces "Passed nonce and nonce in id_token should either both exist
+  // or not" because Supabase's hashed-vs-raw comparison fails.
+  const rawNonce = generateNonce()
+  const hashedNonce = await sha256Hex(rawNonce)
 
   try {
     const result = await SocialLogin.login({
       provider: 'apple',
-      options: { scopes: ['name', 'email'], nonce },
+      options: { scopes: ['name', 'email'], nonce: hashedNonce },
     })
     if (result.provider !== 'apple' || !result.result.idToken) {
       return { ok: false, error: 'no_id_token' }
@@ -137,7 +138,7 @@ export async function nativeAppleSignIn(): Promise<{ ok: boolean; error?: string
     const { error } = await client.auth.signInWithIdToken({
       provider: 'apple',
       token: result.result.idToken,
-      nonce,
+      nonce: rawNonce,
     })
     if (error) {
       console.warn('[Rally] Supabase signInWithIdToken (apple) failed:', error.message)
@@ -159,21 +160,13 @@ function generateNonce(): string {
 }
 
 /**
- * Decode the `nonce` claim from a JWT's payload without verifying the
- * signature (verification is Supabase's job). Returns undefined if the JWT
- * is malformed or has no nonce claim.
+ * SHA-256 hash of a string, returned as lowercase hex. Used for the Apple
+ * sign-in nonce contract (see nativeAppleSignIn for details).
  */
-function decodeJwtNonce(jwt: string): string | undefined {
-  try {
-    const parts = jwt.split('.')
-    if (parts.length !== 3) return undefined
-    const b64url = parts[1]
-    const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4)
-    const json = atob(padded)
-    const payload = JSON.parse(json) as { nonce?: unknown }
-    return typeof payload.nonce === 'string' ? payload.nonce : undefined
-  } catch {
-    return undefined
-  }
+async function sha256Hex(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input)
+  const hash = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
 }
