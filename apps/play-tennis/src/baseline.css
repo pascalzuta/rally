@@ -25,6 +25,10 @@
   --blue-soft: #eaf0ff;
   --amber:     #a86a0a;
   --amber-soft:#fbf1de;
+  --green:     #1f8a4c;
+  --green-soft:#e6f4ec;
+  --red:       #c0392b;
+  --red-soft:  #fbeae7;
   --danger:    #c0392b;
 
   /* Override the legacy color tokens so every component already
@@ -444,6 +448,30 @@ em.bg-em,
   cursor: pointer;
 }
 .action-card-btn:hover { background: #dde7ff !important; }
+
+/* ---------- Per-tone color coding for match cards ----------
+   Color travels through the italic name (.bg-em) and the primary
+   button (.action-card-btn). Card body, border, padding unchanged.
+   Broadcast cards have higher specificity so they keep their own treatment. */
+.action-card.action-confirmed .bg-em      { color: var(--green) !important; }
+.action-card.action-confirmed .action-card-btn {
+  background: var(--green-soft) !important; color: var(--green) !important;
+}
+.action-card.action-confirmed .action-card-btn:hover { background: #d3ebde !important; }
+
+.action-card.action-schedule .bg-em       { color: var(--amber) !important; }
+.action-card.action-schedule .action-card-btn {
+  background: var(--amber-soft) !important; color: var(--amber) !important;
+}
+.action-card.action-schedule .action-card-btn:hover { background: #f5e3c3 !important; }
+
+.action-card.action-escalated .bg-em      { color: var(--red) !important; }
+.action-card.action-escalated .action-card-btn {
+  background: var(--red-soft) !important; color: var(--red) !important;
+}
+.action-card.action-escalated .action-card-btn:hover { background: #f5d4cf !important; }
+
+.action-card.action-completed .bg-em      { color: var(--ink-2) !important; font-weight: 600; }
 
 .match-card-msg-btn {
   background: var(--bg) !important; color: var(--ink-2) !important;

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rally — Match card color coding mockup</title>
+<style>
+  :root {
+    --bg:        #ffffff;
+    --bg-2:      #f6f7f9;
+    --ink:       #0b0d10;
+    --ink-2:     #6a7079;
+    --line:      #e7e9ec;
+    --blue:      #2563ff;
+    --blue-soft: #eaf0ff;
+    --amber:     #a86a0a;
+    --amber-soft:#fbf1de;
+    --green:     #1f8a4c;
+    --green-soft:#e6f4ec;
+    --red:       #c0392b;
+    --red-soft:  #fbeae7;
+    --radius-md: 12px;
+    --shadow-sm: 0 1px 2px rgba(11,13,16,.04), 0 1px 1px rgba(11,13,16,.03);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg-2); color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 480px; margin: 0 auto; padding: 28px 16px 64px; }
+  h1 { font-size: 22px; letter-spacing: -0.02em; margin: 0 0 4px; font-weight: 700; }
+  .lede { color: var(--ink-2); font-size: 14px; line-height: 1.5; margin: 0 0 24px; }
+  h2 {
+    font-size: 13px; color: var(--ink-2); margin: 28px 0 10px;
+    font-weight: 600; letter-spacing: -0.005em;
+  }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ---------- Card — matches the live app exactly ---------- */
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+
+  /* Title row: "vs <Name>" — name is italic + accent color (.bg-em today is blue) */
+  .title {
+    font-size: 18px; font-weight: 700;
+    line-height: 1.2; letter-spacing: -0.02em;
+    color: var(--ink); margin: 0 0 4px;
+  }
+  .title em {
+    font-style: italic; font-weight: 700;
+    color: var(--blue); /* default — overridden per tone below */
+  }
+
+  /* Supporting line */
+  .body {
+    font-size: 14px; font-weight: 500;
+    line-height: 1.5; color: var(--ink-2);
+    margin: 0 0 12px;
+  }
+  .body .when {
+    color: var(--ink); font-weight: 600;
+  }
+
+  /* Button row — exactly the existing .action-card-btn shape */
+  .actions { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    background: var(--blue-soft); color: var(--blue);
+    border: none; border-radius: 999px;
+    padding: 9px 16px;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-msg {
+    background: var(--bg); color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .btn-msg svg { width: 16px; height: 16px; }
+
+  /* ---------- The color coding — only fonts and buttons change ---------- */
+
+  /* confirmed → green: italic name green, "View match" button green */
+  .card.confirmed .title em      { color: var(--green); }
+  .card.confirmed .btn           { background: var(--green-soft); color: var(--green); }
+
+  /* respond → blue (default) — italic name + button already blue */
+
+  /* schedule → amber: italic name amber, "Pick time" button amber */
+  .card.schedule .title em       { color: var(--amber); }
+  .card.schedule .btn            { background: var(--amber-soft); color: var(--amber); }
+
+  /* confirm-score → blue (shares with respond — same "your turn" meaning) */
+
+  /* escalated → red: italic name red, "Respond now" button red */
+  .card.escalated .title em      { color: var(--red); }
+  .card.escalated .btn           { background: var(--red-soft); color: var(--red); }
+
+  /* completed → slate: italic name desaturated, no primary button */
+  .card.completed .title         { color: var(--ink-2); }
+  .card.completed .title em      { color: var(--ink-2); font-weight: 600; }
+  .card.completed .body          { color: var(--ink-2); }
+  .card.completed .body .when    { color: var(--ink-2); font-weight: 500; }
+
+  /* Inline meta line (replaces the meta chip — date/time as plain text) */
+  .meta { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Match cards — color coding via fonts &amp; buttons</h1>
+  <p class="lede">Same card, same layout. The italic name and the primary button take a tone color. No eyebrow pill, no left rail, no extra elements.</p>
+
+  <h2>All six tones</h2>
+  <div class="stack">
+
+    <!-- confirmed -->
+    <div class="card confirmed">
+      <div class="title">vs <em>Marco T.</em></div>
+      <div class="body"><span class="when">Sat, Apr 25 · 9:00 AM</span> — locked in. See you on court.</div>
+      <div class="actions">
+        <button class="btn">View match</button>
+        <button class="btn-msg" aria-label="Message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- respond -->
+    <div class="card respond">
+      <div class="title">vs <em>Priya K.</em></div>
+      <div class="body">Review the proposed time and confirm if it works. <span class="meta">Sun · 11 AM</span></div>
+      <div class="actions">
+        <button class="btn">Confirm time</button>
+        <button class="btn-msg" aria-label="Message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- schedule -->
+    <div class="card schedule">
+      <div class="title">vs <em>Daniel R.</em></div>
+      <div class="body">Pick a time with your opponent.</div>
+      <div class="actions">
+        <button class="btn">Pick time</button>
+        <button class="btn-msg" aria-label="Message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- confirm-score -->
+    <div class="card respond">
+      <div class="title">vs <em>Lena M.</em></div>
+      <div class="body">Reported <span class="when">6-3, 6-4</span>. Confirm to record it. <span class="meta">36h left</span></div>
+      <div class="actions">
+        <button class="btn">Confirm score</button>
+      </div>
+    </div>
+
+    <!-- escalated -->
+    <div class="card escalated">
+      <div class="title">vs <em>Sam W.</em></div>
+      <div class="body">This match is stuck — needs your response.</div>
+      <div class="actions">
+        <button class="btn">Respond now</button>
+      </div>
+    </div>
+
+    <!-- completed -->
+    <div class="card completed">
+      <div class="title">vs <em>Jordan B.</em></div>
+      <div class="body"><span class="when">6-2, 4-6, 7-5</span> · Apr 18</div>
+    </div>
+
+  </div>
+
+  <h2>Before vs. after — same six matches</h2>
+  <p class="lede" style="margin-top:0;">Currently every card has a blue button regardless of state. The proposed version varies the accent so the eye knows where to land.</p>
+  <div class="stack">
+    <!-- before stack: everything blue -->
+    <div class="card">
+      <div class="title">vs <em>Marco T.</em></div>
+      <div class="body"><span class="when">Sat 9 AM</span> — locked in.</div>
+      <div class="actions"><button class="btn">View match</button></div>
+    </div>
+    <div class="card">
+      <div class="title">vs <em>Sam W.</em></div>
+      <div class="body">This match is stuck — needs your response.</div>
+      <div class="actions"><button class="btn">Respond now</button></div>
+    </div>
+    <p class="lede" style="margin:6px 0 0;">↑ today &nbsp;·&nbsp; ↓ proposed</p>
+    <div class="card confirmed">
+      <div class="title">vs <em>Marco T.</em></div>
+      <div class="body"><span class="when">Sat 9 AM</span> — locked in.</div>
+      <div class="actions"><button class="btn">View match</button></div>
+    </div>
+    <div class="card escalated">
+      <div class="title">vs <em>Sam W.</em></div>
+      <div class="body">This match is stuck — needs your response.</div>
+      <div class="actions"><button class="btn">Respond now</button></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
+</parameter>
+</invoke>

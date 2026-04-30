@@ -35,6 +35,9 @@ const SCORE_CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000
 export type MatchCardTone = 'confirmed' | 'respond' | 'schedule' | 'confirm-score' | 'escalated' | 'completed'
 export type MatchCardExpansionKind = 'schedule' | 'score-confirmation' | 'score-correction' | null
 
+const SCORE_DECAY_OVERDUE_MS = 24 * 60 * 60 * 1000
+const SCORE_DECAY_STUCK_MS = 72 * 60 * 60 * 1000
+
 export interface MatchCardView {
   key:
     | 'confirmed'
@@ -51,6 +54,9 @@ export interface MatchCardView {
     | 'completed'
     | 'resolved'
     | 'pending'
+    | 'score-needed'
+    | 'score-overdue'
+    | 'score-stuck'
   tone: MatchCardTone
   statusLabel: string
   title: string
@@ -103,6 +109,23 @@ function resolveNextDate(dayOfWeek: string): Date {
   const diff = (target - now.getDay() + 7) % 7
   const date = new Date(now)
   date.setDate(now.getDate() + diff)
+  return date
+}
+
+function slotToDate(
+  slot: Pick<MatchSlot, 'day' | 'startHour' | 'endHour'>,
+  weekOneMonday: Date | null
+): Date {
+  let date: Date
+  const slotWeek = 'week' in slot ? (slot as { week?: number }).week : undefined
+  if (weekOneMonday && slotWeek) {
+    const dayIdx = DAY_TO_INDEX[slot.day.toLowerCase()] ?? 0
+    date = new Date(weekOneMonday)
+    date.setDate(weekOneMonday.getDate() + ((slotWeek - 1) * 7) + dayIdx)
+  } else {
+    date = resolveNextDate(slot.day)
+  }
+  date.setHours(slot.endHour ?? slot.startHour, 0, 0, 0)
   return date
 }
 
@@ -379,6 +402,61 @@ export function getMatchCardView(
   }
 
   if (match.schedule?.status === 'confirmed' && match.schedule.confirmedSlot) {
+    const slotDate = slotToDate(match.schedule.confirmedSlot, weekOneMonday)
+    const elapsedMs = Date.now() - slotDate.getTime()
+
+    if (mine && elapsedMs > 0) {
+      if (elapsedMs >= SCORE_DECAY_STUCK_MS) {
+        return {
+          key: 'score-stuck',
+          tone: 'escalated',
+          statusLabel: 'Score missing',
+          title,
+          supporting: 'This match needs a score logged.',
+          metaLabel: confirmedSlotMeta,
+          primaryActionLabel: 'Enter score',
+          expansionKind: 'score-correction',
+          priority: 0.7,
+          isMyMatch: mine,
+          opponentId,
+          opponentName,
+          showOnHome: true,
+        }
+      }
+      if (elapsedMs >= SCORE_DECAY_OVERDUE_MS) {
+        return {
+          key: 'score-overdue',
+          tone: 'schedule',
+          statusLabel: 'Score overdue',
+          title,
+          supporting: 'Score still missing — please enter it.',
+          metaLabel: confirmedSlotMeta,
+          primaryActionLabel: 'Enter score',
+          expansionKind: 'score-correction',
+          priority: 1.2,
+          isMyMatch: mine,
+          opponentId,
+          opponentName,
+          showOnHome: true,
+        }
+      }
+      return {
+        key: 'score-needed',
+        tone: 'confirm-score',
+        statusLabel: 'Enter score',
+        title,
+        supporting: 'How did it go? Enter the score.',
+        metaLabel: confirmedSlotMeta,
+        primaryActionLabel: 'Enter score',
+        expansionKind: 'score-correction',
+        priority: 1.8,
+        isMyMatch: mine,
+        opponentId,
+        opponentName,
+        showOnHome: true,
+      }
+    }
+
     return {
       key: 'confirmed',
       tone: 'confirmed',
