@@ -74,8 +74,14 @@ cat <<'EOF'
    answer this, the build is stuck and testers see NOTHING in TestFlight.
    You'll also get an email from App Store Connect prompting you.
 
-6. Once compliance is set, external testers get a push notification
-   automatically (or in ~15 min if Apple is queued).
+6. ⚠️  "WHAT TO TEST" — also blocks distribution to external testers.
+   In the build's TestFlight detail page, fill the "What to Test" box
+   with at least one word longer than 4 letters (anything works, e.g.
+   "polish") and click Save / Submit. Without this, external testers
+   still see nothing.
+
+7. Once both 5 and 6 are done, external testers get a push notification
+   automatically (or within ~15 min if Apple is queued).
 
 === First-time only ===
 If this is your first ship, TestFlight will require a one-time Beta App Review
