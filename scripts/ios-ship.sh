@@ -65,9 +65,17 @@ cat <<'EOF'
    Choose: App Store Connect → Upload → (defaults for everything else) → Upload.
    Xcode signs and uploads the build. Takes ~3-5 min.
 
-4. Done. Go to https://appstoreconnect.apple.com → My Apps → Rally → TestFlight.
-   Build appears within ~15 min ("Processing"). Once processed, external
-   testers get a push notification automatically.
+4. App Store Connect → My Apps → Rally → TestFlight.
+   Build appears within ~15 min ("Processing"). Wait until it finishes.
+
+5. ⚠️  EXPORT COMPLIANCE — easy to forget, blocks distribution.
+   Once the build is processed, click into it and answer the encryption
+   question (Rally only uses standard HTTPS → "No" / exempt). Until you
+   answer this, the build is stuck and testers see NOTHING in TestFlight.
+   You'll also get an email from App Store Connect prompting you.
+
+6. Once compliance is set, external testers get a push notification
+   automatically (or in ~15 min if Apple is queued).
 
 === First-time only ===
 If this is your first ship, TestFlight will require a one-time Beta App Review
