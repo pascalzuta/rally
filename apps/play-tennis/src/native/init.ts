@@ -13,6 +13,7 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { handleDeepLink, parseUniversalLink } from './deep-link'
 import { handleOAuthCallback } from '../supabase'
+import { initSocialLogin } from './social-auth'
 
 let listenersInitialized = false
 
@@ -24,6 +25,10 @@ let listenersInitialized = false
 export function initNativeListeners(): void {
   if (!Capacitor.isNativePlatform() || listenersInitialized) return
   listenersInitialized = true
+
+  // Initialize native social login (Google + Apple) — fire-and-forget so the
+  // listener registration is not blocked by plugin init.
+  void initSocialLogin()
 
   // Listen for Universal Links (play-rally.com URLs opening the app)
   CapApp.addListener('appUrlOpen', async (event) => {
