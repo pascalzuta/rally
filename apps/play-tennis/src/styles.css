@@ -15221,9 +15221,12 @@ main {
   letter-spacing: 0.01em !important;
 }
 
-/* Hide web-only guest nav in native app */
-.native-app .dgh-nav {
-  display: none;
+/* Hide web-only guest navs in native app — the Capacitor build renders its
+   own .native-guest-nav above the page content, so Login/Register/marketing
+   pages would otherwise show two stacked headers. */
+.native-app .dgh-nav,
+.native-app .b-page-nav {
+  display: none !important;
 }
 
 
