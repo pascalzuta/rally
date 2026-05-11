@@ -34,7 +34,10 @@ const VictoryAnimation = lazy(() => import('./components/VictoryAnimation'))
 // Native app detection: baked in at build time via CAPACITOR_BUILD=1
 const isNativeApp = !!import.meta.env.VITE_CAPACITOR_BUILD
 
-// DevTools: loaded in development, staging, and native app builds
+// DevTools: loaded in development and on staging only. Native app (TestFlight)
+// builds gate at runtime by signed-in email — the admin sees the dev panel,
+// friends invited to beta do not. This stops testers from accidentally
+// seeding fake players into the shared production lobby.
 const isStaging = typeof window !== 'undefined'
   && (window.location.hostname === 'staging.play-rally.com'
     || window.location.hostname.endsWith('.vercel.app'))
@@ -341,14 +344,17 @@ export default function App() {
       </nav>
     ) : null
 
-    const devTools = (
+    // No profile = signed out. Only show dev panel on web (staging/dev) — never
+    // on native TestFlight builds where friends would see it during signup.
+    const showDevTools = !isNativeApp || isStaging
+    const devTools = showDevTools ? (
       <DevTools
         onProfileSwitch={p => setProfile(p)}
         activeTournamentId={null}
         onTournamentUpdated={() => setRefreshKey(r => r + 1)}
         onTournamentCreated={() => { rallyData.refresh(); navigate(ROUTES.HOME) }}
       />
-    )
+    ) : null
 
     // /signup — registration flow (Register provides its own b-page-nav)
     if (location.pathname === ROUTES.SIGNUP) {
@@ -825,15 +831,17 @@ export default function App() {
           </div>
         )
       })()}
-      <DevTools
-        onProfileSwitch={p => { setProfile(p); navigate(ROUTES.HOME) }}
-        activeTournamentId={activeTournament?.id ?? null}
-        onTournamentUpdated={() => setRefreshKey(r => r + 1)}
-        onTournamentCreated={id => {
-          rallyData.refresh()
-          navigate(ROUTES.BRACKET)
-        }}
-      />
+      {(!isNativeApp || isStaging || profile?.email === ADMIN_EMAIL) && (
+        <DevTools
+          onProfileSwitch={p => { setProfile(p); navigate(ROUTES.HOME) }}
+          activeTournamentId={activeTournament?.id ?? null}
+          onTournamentUpdated={() => setRefreshKey(r => r + 1)}
+          onTournamentCreated={id => {
+            rallyData.refresh()
+            navigate(ROUTES.BRACKET)
+          }}
+        />
+      )}
       {victoryAnim && (
         <Suspense fallback={null}>
         <VictoryAnimation

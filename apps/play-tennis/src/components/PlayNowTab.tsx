@@ -1,6 +1,6 @@
 import { formatHourCompact } from '../dateUtils'
 import { useState, useEffect } from 'react'
-import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom } from '../store'
+import { createBroadcast, getActiveBroadcasts, getPlayerActiveBroadcast, cancelBroadcast, getUpcomingAvailability, getSeeds, UpcomingSlot, createMatchOffer, getIncomingOffers, getOutgoingOffers, acceptMatchOffer, declineMatchOffer, cancelMatchOffer, cleanExpiredOffers, hasUnreadFrom, isInLobby as isPlayerInLobby } from '../store'
 import { Tournament, MatchBroadcast, MatchOffer } from '../types'
 import MessagePanel from './MessagePanel'
 import { useToast } from './Toast'
@@ -148,14 +148,21 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
   }, [])
 
   if (!tournament || !['in-progress', 'setup'].includes(tournament.status)) {
+    const inForminigLobby = isPlayerInLobby(currentPlayerId)
     return (
       <div className="playnow-tab">
         <div className="empty-state">
           <div className="empty-state-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
           </div>
-          <div className="empty-state-title">No tournament yet</div>
-          <div className="empty-state-message">Join your county lobby on Home. We'll take it from there.</div>
+          <div className="empty-state-title">
+            {inForminigLobby ? 'Waiting for tournament to start' : 'No tournament yet'}
+          </div>
+          <div className="empty-state-message">
+            {inForminigLobby
+              ? "You're in the lobby. Match invites will appear here once the tournament starts."
+              : "Join your county lobby on Home. We'll take it from there."}
+          </div>
         </div>
       </div>
     )

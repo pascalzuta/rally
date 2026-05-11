@@ -172,25 +172,40 @@ export async function joinLobby(profile: PlayerProfile): Promise<LobbyEntry[]> {
   // Save to bridge FIRST so UI updates immediately
   saveLobby(lobby)
 
+  // Track whether the remote write actually succeeded so we can roll the local
+  // optimistic insert back on failure. Without this rollback the UI shows the
+  // user "in the lobby" while Supabase has no row — other clients don't see
+  // them, the player isn't counted toward 6, and re-joining is a no-op because
+  // the local cache says they're already in.
+  let remoteOk = false
+
   // Try backend API first (validates + writes with service role key)
   if (isApiConfigured()) {
     const apiOk = await apiJoinLobby(entry)
-    if (!apiOk) {
+    if (apiOk) {
+      remoteOk = true
+    } else {
       // API failed — fall back to direct Supabase write
       const result = await syncLobbyEntry(entry)
-      if (!result.success) {
-        console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
-        bridgeShowError('Could not join lobby — check your connection')
-      }
+      remoteOk = result.success
     }
   } else {
     // No API configured — direct Supabase write (legacy path)
     const result = await syncLobbyEntry(entry)
-    if (!result.success) {
-      console.warn('[Rally] Failed to sync lobby entry to Supabase', entry)
-      bridgeShowError('Could not join lobby — check your connection')
-    }
+    remoteOk = result.success
   }
+
+  if (!remoteOk) {
+    // Roll back the optimistic local insert so the UI matches Supabase. The
+    // user sees the error and can retry from a clean state instead of being
+    // stuck with a ghost lobby presence.
+    const rolledBack = loadLobby().filter(e => e.playerId !== profile.id)
+    saveLobby(rolledBack)
+    console.warn('[Rally] Lobby join failed remotely — rolled back local entry', entry)
+    bridgeShowError('Could not join lobby — check your connection and try again')
+    return getLobbyByCounty(profile.county)
+  }
+
   // Refresh from Supabase to get ALL players' entries (not just local)
   await refreshLobbyFromRemote(countyKey)
   return getLobbyByCounty(profile.county)

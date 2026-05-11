@@ -402,10 +402,10 @@ export default function HomeHeroCard({
             {heroState === 'new' && '6\u20138 local players. Round-robin format.'}
             {heroState === 'returning' && 'Join the next season.'}
             {heroState === 'joined-needs-availability' && (
-              <>You're in. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Waiting on more players.'}</>
+              <>You're in. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Tournament forming — the countdown begins as soon as your bracket is built.'}</>
             )}
             {heroState === 'joined-ready' && (
-              <>You're set. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Waiting on more players.'}</>
+              <>You're set. {playersNeeded > 0 ? `${playersNeeded} more player${playersNeeded !== 1 ? 's' : ''} needed to start the countdown.` : 'Tournament forming — the countdown begins as soon as your bracket is built.'}</>
             )}
             {heroState === 'countdown-needs-availability' && 'Tournament starts when the countdown ends. Add your availability now.'}
             {heroState === 'countdown-ready' && "You're set. Tournament starts when the countdown ends."}
