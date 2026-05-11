@@ -15141,14 +15141,18 @@ main {
    that are unaware of .native-app scope. Without !important here, the web
    baseline crushes our notch-clearing values and tap targets stay tiny. */
 .native-app .top-nav {
-  /* max() guards against iOS WebKit returning 0 for env() before
-     viewport-fit=cover is honored — ensures we always clear the status
-     bar / Dynamic Island even in degenerate cases. */
-  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px)) !important;
-  padding-bottom: 14px !important;
+  /* Generous breathing room on both sides of the icon row:
+     - padding-top: safe-area + 24px so icons clear the Dynamic Island AND
+       have visible space above them.
+     - padding-bottom: 22px so icons don't hug the bottom border and feel
+       like they're spilling into the content area.
+     - max() guards against iOS WebKit returning 0 for env() before
+       viewport-fit=cover is honored. */
+  padding-top: max(72px, calc(env(safe-area-inset-top, 20px) + 24px)) !important;
+  padding-bottom: 22px !important;
   padding-left: var(--space-lg) !important;
   padding-right: var(--space-lg) !important;
-  min-height: 76px !important;
+  min-height: 96px !important;
 }
 
 /* Bigger logo on native — feels intentional, not lost in the bar */
@@ -15180,10 +15184,10 @@ main {
   height: 40px !important;
 }
 
-/* Logged-out: registration/signup top nav */
+/* Logged-out: registration/signup top nav — matches logged-in rhythm. */
 .native-app .top-nav-register {
-  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px)) !important;
-  padding-bottom: 14px !important;
+  padding-top: max(72px, calc(env(safe-area-inset-top, 20px) + 24px)) !important;
+  padding-bottom: 22px !important;
 }
 
 /* Bottom tabs: clear home indicator, more vertical room, bigger touch targets */
@@ -15229,11 +15233,11 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px));
+  padding-top: max(72px, calc(env(safe-area-inset-top, 20px) + 24px));
   padding-right: var(--space-lg);
-  padding-bottom: 14px;
+  padding-bottom: 22px;
   padding-left: var(--space-lg);
-  min-height: 76px;
+  min-height: 96px;
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
