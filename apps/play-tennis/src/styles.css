@@ -15136,70 +15136,85 @@ main {
    The notch / Dynamic Island sits inside the safe-area inset; we add 20px on
    top of that so logo + icons have visible space below the island, never
    crowding it. */
+/* NOTE: !important is required throughout — baseline.css overrides .top-nav,
+   .bottom-tabs, .tab-icon, .top-nav-icon, .bottom-tab with !important rules
+   that are unaware of .native-app scope. Without !important here, the web
+   baseline crushes our notch-clearing values and tap targets stay tiny. */
 .native-app .top-nav {
   /* max() guards against iOS WebKit returning 0 for env() before
      viewport-fit=cover is honored — ensures we always clear the status
      bar / Dynamic Island even in degenerate cases. */
-  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px));
-  padding-bottom: 14px;
-  padding-left: var(--space-lg);
-  padding-right: var(--space-lg);
-  min-height: 76px;
+  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px)) !important;
+  padding-bottom: 14px !important;
+  padding-left: var(--space-lg) !important;
+  padding-right: var(--space-lg) !important;
+  min-height: 76px !important;
 }
 
 /* Bigger logo on native — feels intentional, not lost in the bar */
-.native-app .top-nav .rally-logo {
+.native-app .top-nav .rally-logo,
+.native-app .top-nav-logo img.rally-logo {
   height: 38px !important;
 }
 
 /* 44x44 hit targets per Apple HIG, with slightly larger glyphs */
 .native-app .top-nav-icon {
-  width: 44px;
-  height: 44px;
-  font-size: var(--font-body-lg);
+  width: 44px !important;
+  height: 44px !important;
+  font-size: var(--font-body-lg) !important;
 }
 
 .native-app .top-nav-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 24px !important;
+  height: 24px !important;
 }
 
 .native-app .top-nav-actions {
-  gap: 6px;
+  gap: 6px !important;
 }
 
-.native-app .user-avatar-btn {
-  font-size: var(--font-body-md);
+.native-app .user-avatar-btn,
+.native-app .top-nav-icon.user-avatar-btn {
+  font-size: var(--font-body-md) !important;
+  width: 40px !important;
+  height: 40px !important;
 }
 
 /* Logged-out: registration/signup top nav */
 .native-app .top-nav-register {
-  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px));
-  padding-bottom: 14px;
+  padding-top: max(64px, calc(env(safe-area-inset-top, 20px) + 20px)) !important;
+  padding-bottom: 14px !important;
 }
 
 /* Bottom tabs: clear home indicator, more vertical room, bigger touch targets */
 .native-app .bottom-tabs {
-  height: auto;
-  min-height: 80px;
-  padding-top: 10px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 10px);
+  height: auto !important;
+  min-height: 80px !important;
+  padding-top: 10px !important;
+  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 10px) !important;
 }
 
 .native-app .bottom-tab {
-  gap: 6px;
-  padding: 6px 0;
-  min-height: 56px;
+  gap: 6px !important;
+  padding: 6px 0 !important;
+  min-height: 56px !important;
 }
 
+.native-app .bottom-tab .tab-icon,
 .native-app .tab-icon {
-  width: 26px;
-  height: 26px;
+  width: 26px !important;
+  height: 26px !important;
 }
 
-.native-app .tab-text {
-  font-size: 11px;
-  letter-spacing: 0.01em;
+.native-app .bottom-tab svg {
+  width: 26px !important;
+  height: 26px !important;
+}
+
+.native-app .tab-text,
+.native-app .bottom-tab .tab-text {
+  font-size: 11px !important;
+  letter-spacing: 0.01em !important;
 }
 
 /* Hide web-only guest nav in native app */
