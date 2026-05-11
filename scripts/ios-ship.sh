@@ -41,6 +41,17 @@ if [ ! -d "$REPO_ROOT/node_modules" ]; then
   npm install
 fi
 
+# Auto-bump CURRENT_PROJECT_VERSION so App Store Connect accepts the upload.
+# Apple silently rejects builds that reuse a (CFBundleShortVersionString,
+# CFBundleVersion) combo from a prior upload — the result is "build never
+# appears in TestFlight" with no error in Xcode.
+PBXPROJ="$IOS_PROJECT/project.pbxproj"
+CURRENT_BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION = ' "$PBXPROJ" | sed -E 's/.*= ([0-9]+);.*/\1/')"
+NEXT_BUILD=$((CURRENT_BUILD + 1))
+echo "--> Bumping iOS build number: $CURRENT_BUILD -> $NEXT_BUILD"
+sed -i.bak "s/CURRENT_PROJECT_VERSION = $CURRENT_BUILD;/CURRENT_PROJECT_VERSION = $NEXT_BUILD;/g" "$PBXPROJ"
+rm -f "$PBXPROJ.bak"
+
 echo "--> Building web assets (CAPACITOR_BUILD=1)..."
 CAPACITOR_BUILD=1 npm run build:play-tennis
 
