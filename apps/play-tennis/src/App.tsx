@@ -77,6 +77,14 @@ function tabFromPath(pathname: string): string {
 
 const ADMIN_EMAIL = 'pascal.zuta@gmail.com'
 
+// Treat Gmail "+alias" variants of the admin email as admin too, so test
+// accounts like pascal.zuta+test72@gmail.com keep the dev panel on native.
+function isAdminEmail(email: string | undefined | null): boolean {
+  if (!email) return false
+  const normalized = email.toLowerCase().replace(/\+[^@]*@/, '@')
+  return normalized === ADMIN_EMAIL
+}
+
 export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -639,7 +647,7 @@ export default function App() {
               <Help onBack={() => navigate(ROUTES.PROFILE)} />
             } />
 
-            {profile.email === ADMIN_EMAIL && (
+            {isAdminEmail(profile.email) && (
               <Route path={ROUTES.ANALYTICS} element={
                 <AnalyticsDashboard onBack={() => navigate(ROUTES.HOME)} />
               } />
@@ -831,7 +839,7 @@ export default function App() {
           </div>
         )
       })()}
-      {(!isNativeApp || isStaging || profile?.email === ADMIN_EMAIL) && (
+      {(!isNativeApp || isStaging || isAdminEmail(profile?.email)) && (
         <DevTools
           onProfileSwitch={p => { setProfile(p); navigate(ROUTES.HOME) }}
           activeTournamentId={activeTournament?.id ?? null}
