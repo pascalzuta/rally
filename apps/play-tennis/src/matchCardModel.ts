@@ -63,6 +63,17 @@ export interface MatchCardView {
   supporting: string | null
   supportingTone?: 'default' | 'danger'
   metaLabel: string | null
+  /**
+   * 'time'      — metaLabel is a slot like "Sat Apr 25 9am"; render as the body's
+   *               data hero so the player can see the answer at a glance.
+   * 'countdown' — metaLabel is a remaining-time string like "12h left"; keep it
+   *               as a chip in the status row to signal urgency.
+   * null        — no meta or unspecified.
+   */
+  metaKind?: 'time' | 'countdown' | null
+  /** When true, this is the top-priority action for the player — render the
+   *  primary button as a filled solid CTA, not a tonal pill. */
+  primaryActionIsHero?: boolean
   infoTooltipLabel?: string
   infoTooltipText?: string
   primaryActionLabel: string | null
@@ -248,6 +259,8 @@ export function getMatchCardView(
         supporting: 'Your opponent requested a score correction.',
         supportingTone: 'danger',
         metaLabel: countdownMeta,
+        metaKind: 'countdown',
+        primaryActionIsHero: true,
         primaryActionLabel: 'Review dispute',
         expansionKind: 'score-confirmation',
         priority: 0,
@@ -263,8 +276,9 @@ export function getMatchCardView(
       tone: 'confirm-score',
       statusLabel: 'Correction sent',
       title,
-      supporting: 'Waiting on your opponent to review.',
+      supporting: 'Awaiting opponent.',
       metaLabel: countdownMeta,
+      metaKind: 'countdown',
       primaryActionLabel: null,
       expansionKind: null,
       priority: 1,
@@ -301,6 +315,8 @@ export function getMatchCardView(
       title,
       supporting: scoreSummary ? `Reported ${scoreSummary}. Confirm to record it.` : 'Review the score and confirm.',
       metaLabel: countdownMeta,
+      metaKind: 'countdown',
+      primaryActionIsHero: true,
       primaryActionLabel: 'Confirm score',
       expansionKind: 'score-confirmation',
       priority: 0.5,
@@ -317,8 +333,9 @@ export function getMatchCardView(
       tone: 'confirm-score',
       statusLabel: 'Score reported',
       title,
-      supporting: scoreSummary ? `Reported ${scoreSummary}. Waiting on your opponent.` : 'Waiting on your opponent to confirm.',
+      supporting: scoreSummary ? `Reported ${scoreSummary}. Awaiting opponent.` : 'Awaiting opponent.',
       metaLabel: countdownMeta,
+      metaKind: 'countdown',
       primaryActionLabel: 'Correct score',
       expansionKind: 'score-correction' as MatchCardExpansionKind,
       priority: 2,
@@ -336,8 +353,9 @@ export function getMatchCardView(
         tone: 'respond',
         statusLabel: 'Reschedule sent',
         title,
-        supporting: 'Waiting on your opponent to respond.',
+        supporting: 'Awaiting opponent.',
         metaLabel: confirmedSlotMeta,
+        metaKind: 'time',
         primaryActionLabel: 'View match',
         expansionKind: 'schedule',
         priority: 1.5,
@@ -356,6 +374,8 @@ export function getMatchCardView(
         title,
         supporting: 'Your opponent wants to move the time.',
         metaLabel: pendingProposalMeta ?? confirmedSlotMeta,
+        metaKind: 'time',
+        primaryActionIsHero: true,
         primaryActionLabel: 'Change time',
         expansionKind: 'schedule',
         priority: 1,
@@ -373,6 +393,8 @@ export function getMatchCardView(
       title,
       supporting: 'Pick a new time to confirm.',
       metaLabel: pendingProposalMeta,
+      metaKind: 'time',
+      primaryActionIsHero: true,
       primaryActionLabel: 'Pick time',
       expansionKind: 'schedule',
       priority: rescheduleUiState === 'hard_request_sent' ? 1.5 : 1,
@@ -391,6 +413,8 @@ export function getMatchCardView(
       title,
       supporting: mine ? 'This match needs your response.' : 'Needs organizer help.',
       metaLabel: pendingProposalMeta,
+      metaKind: 'time',
+      primaryActionIsHero: true,
       primaryActionLabel: mine ? 'Respond now' : null,
       expansionKind: mine ? 'schedule' : null,
       priority: 0,
@@ -412,9 +436,11 @@ export function getMatchCardView(
           tone: 'escalated',
           statusLabel: 'Score missing',
           title,
-          supporting: 'This match needs a score logged.',
+          supporting: 'Log the score so ratings can update.',
           metaLabel: confirmedSlotMeta,
-          primaryActionLabel: 'Enter score',
+          metaKind: 'time',
+          primaryActionIsHero: true,
+          primaryActionLabel: 'Log score',
           expansionKind: 'score-correction',
           priority: 0.7,
           isMyMatch: mine,
@@ -429,9 +455,11 @@ export function getMatchCardView(
           tone: 'schedule',
           statusLabel: 'Score overdue',
           title,
-          supporting: 'Score still missing — please enter it.',
+          supporting: 'Score still missing.',
           metaLabel: confirmedSlotMeta,
-          primaryActionLabel: 'Enter score',
+          metaKind: 'time',
+          primaryActionIsHero: true,
+          primaryActionLabel: 'Log score',
           expansionKind: 'score-correction',
           priority: 1.2,
           isMyMatch: mine,
@@ -443,11 +471,13 @@ export function getMatchCardView(
       return {
         key: 'score-needed',
         tone: 'confirm-score',
-        statusLabel: 'Enter score',
+        statusLabel: 'Log score',
         title,
-        supporting: 'How did it go? Enter the score.',
+        supporting: 'How did it go?',
         metaLabel: confirmedSlotMeta,
-        primaryActionLabel: 'Enter score',
+        metaKind: 'time',
+        primaryActionIsHero: true,
+        primaryActionLabel: 'Log score',
         expansionKind: 'score-correction',
         priority: 1.8,
         isMyMatch: mine,
@@ -464,6 +494,7 @@ export function getMatchCardView(
       title,
       supporting: mine ? 'Locked in. See you on court.' : 'Time confirmed.',
       metaLabel: confirmedSlotMeta,
+      metaKind: 'time',
       infoTooltipLabel: hasAutoMatchedOverlap(match) ? 'How Rally matched this' : undefined,
       infoTooltipText: hasAutoMatchedOverlap(match)
         ? 'You and your opponent both had this time open, so Rally booked it.'
@@ -484,8 +515,10 @@ export function getMatchCardView(
       tone: 'respond',
       statusLabel: 'Needs response',
       title,
-      supporting: 'Review the proposed time and confirm if it works.',
+      supporting: 'Confirm if this time works.',
       metaLabel: pendingProposalMeta,
+      metaKind: 'time',
+      primaryActionIsHero: true,
       primaryActionLabel: 'Confirm time',
       expansionKind: 'schedule',
       priority: 2,
@@ -514,6 +547,7 @@ export function getMatchCardView(
       title,
       supporting: 'Pick a time with your opponent.',
       metaLabel: null,
+      primaryActionIsHero: true,
       primaryActionLabel: 'Pick time',
       expansionKind: 'schedule',
       priority: 4,

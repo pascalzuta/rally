@@ -442,12 +442,113 @@ em.bg-em,
 .action-card-btn {
   background: var(--blue-soft) !important; color: var(--blue) !important;
   border: none !important; border-radius: 999px !important;
-  padding: 9px 16px !important;
-  font-size: 14px !important; font-weight: 500 !important;
+  padding: 10px 18px !important;
+  font-size: 14px !important; font-weight: 600 !important;
   font-family: 'Inter', system-ui, sans-serif !important;
   cursor: pointer;
+  transition: background 150ms var(--ease-out-quart, ease), transform 100ms var(--ease-out-quart, ease) !important;
 }
 .action-card-btn:hover { background: #dde7ff !important; }
+.action-card-btn:active { transform: scale(0.97); }
+
+/* Solid CTA variant for top-priority states (Respond now / Confirm score /
+   Log score / Pick time). Filled blue, white text — pulls these out of the
+   tonal-pill noise so the player's eye lands on them.
+   Selector mirrors the per-tone overrides' specificity so the solid variant
+   wins inside .action-respond / .action-escalated / .action-schedule cards. */
+.action-card .action-card-btn.action-card-btn--solid,
+.action-card.action-respond .action-card-btn.action-card-btn--solid,
+.action-card.action-escalated .action-card-btn.action-card-btn--solid,
+.action-card.action-schedule .action-card-btn.action-card-btn--solid,
+.action-card.action-confirm-score .action-card-btn.action-card-btn--solid {
+  background: var(--blue) !important;
+  color: #fff !important;
+}
+.action-card .action-card-btn.action-card-btn--solid:hover,
+.action-card.action-respond .action-card-btn.action-card-btn--solid:hover,
+.action-card.action-escalated .action-card-btn.action-card-btn--solid:hover,
+.action-card.action-schedule .action-card-btn.action-card-btn--solid:hover,
+.action-card.action-confirm-score .action-card-btn.action-card-btn--solid:hover {
+  background: #1f56e0 !important;
+}
+/* Escalated tone uses red — its solid CTA stays red, not blue, so the urgency
+   color travels into the button. */
+.action-card.action-escalated .action-card-btn.action-card-btn--solid {
+  background: var(--red) !important;
+}
+.action-card.action-escalated .action-card-btn.action-card-btn--solid:hover {
+  background: #a83423 !important;
+}
+
+/* Match card body data line — the slot time, promoted out of the chip into
+   the body where it earns its pixels for confirmed and scheduled states. */
+.action-card-time {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 6px;
+}
+.action-card.action-confirmed .action-card-time { color: var(--green); }
+.action-card.action-escalated .action-card-time { color: var(--red); }
+.action-card.action-schedule  .action-card-time { color: var(--amber); }
+.action-card.action-respond   .action-card-time,
+.action-card.action-confirm-score .action-card-time { color: var(--blue); }
+
+/* Subtle check glyph inside the status pill for confirmed-tone cards. */
+.card-status-check {
+  display: inline-block;
+  flex-shrink: 0;
+  margin-right: -2px;
+}
+
+/* Up Next eyebrow — small italic-blue eyebrow above the status row, only
+   on the Home "Up Next" instance. Signals that this card is THE moment,
+   not just another item in a queue. */
+.action-card-upnext-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  color: var(--ink-2);
+  margin-bottom: 10px;
+}
+.action-card-upnext-eyebrow .bg-em {
+  font-style: italic;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* Up Next card itself: subtle blue inset so it lifts off the page without
+   re-introducing colored side-stripes. Keep border 1px, swap fill. */
+.action-card.upnext-card {
+  background: linear-gradient(180deg, #f3f7ff 0%, var(--bg) 60%) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 1px 2px rgba(11,13,16,0.04) !important;
+  padding: 22px 20px !important;
+}
+.action-card.upnext-card .action-card-opponent {
+  font-size: 22px !important;
+  letter-spacing: -0.025em !important;
+  margin-top: 4px;
+}
+.action-card.upnext-card .action-card-time {
+  font-size: 17px;
+  margin-top: 2px;
+}
+/* Up Next primary CTA is always the data hero — full-width, filled blue. */
+.action-card.upnext-card .action-card-btn {
+  flex: 1;
+  padding: 12px 20px !important;
+  background: var(--blue) !important;
+  color: #fff !important;
+  font-size: 15px !important;
+}
+.action-card.upnext-card .action-card-btn:hover {
+  background: #1f56e0 !important;
+}
 
 /* ---------- Per-tone color coding for match cards ----------
    Color travels through the italic name (.bg-em) and the primary

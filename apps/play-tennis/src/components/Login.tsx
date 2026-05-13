@@ -94,8 +94,8 @@ export default function Login({ onSignUp }: Props) {
 
       <div className="b-page-content">
         <div className="b-page-title-block">
-          <h1 className="b-page-title">Log <em className="bg-em">in.</em></h1>
-          <p className="b-page-subtitle">Good to see you again.</p>
+          <h1 className="b-page-title">Welcome <em className="bg-em">back.</em></h1>
+          <p className="b-page-subtitle">Sign in to pick up your matches.</p>
         </div>
 
         {/* iOS: Apple Sign In first per Apple HIG */}
@@ -188,10 +188,10 @@ export default function Login({ onSignUp }: Props) {
               {verifying ? 'Verifying…' : 'Log in'}
             </button>
 
-            <button type="button" className="b-btn-text" style={{ color: 'var(--blue)', marginTop: 8 }} onClick={handleResend} disabled={resendCountdown > 0}>
+            <button type="button" className="b-btn-text b-btn-text--blue" style={{ marginTop: 8 }} onClick={handleResend} disabled={resendCountdown > 0}>
               {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
             </button>
-            <button type="button" className="b-btn-text" style={{ color: 'var(--blue)' }} onClick={() => { setStep('email'); setOtpCode(''); setError(null) }}>
+            <button type="button" className="b-btn-text" onClick={() => { setStep('email'); setOtpCode(''); setError(null) }}>
               Use a different email
             </button>
           </form>

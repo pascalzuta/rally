@@ -22,6 +22,7 @@ interface Props {
   onJoinLobby?: () => void
   onSetAvailability?: () => void
   onFindMatch?: () => void
+  /** Kept for back-compat — sign out is in the top-right user menu now. */
   onLogout?: () => void
   onGoToBracket?: (focusMatchId?: string) => void
   onOpenMessages?: () => void
@@ -69,7 +70,6 @@ export default function Home({
   onJoinLobby,
   onSetAvailability,
   onFindMatch,
-  onLogout,
   onViewLeaderboard,
   onGoToBracket,
   onOpenMessages,
@@ -77,10 +77,9 @@ export default function Home({
   const [expandedCardKey, setExpandedCardKey] = useState<string | null>(null)
   const [messagingCardKey, setMessagingCardKey] = useState<string | null>(null)
 
-  async function handleLogout() {
-    onLogout?.()
-  }
-
+  // Sign out lives in the top-right user menu (App.tsx). Keeping a second
+  // full-width destructive button at the bottom of Home was disproportionate
+  // weight for a rarely-used action and pulled the eye away from match cards.
   const activeTournaments = useMemo(
     () => tournaments.filter(
       t => t.status === 'in-progress' && isPlayerInTournament(t, profile.id)
@@ -274,7 +273,6 @@ export default function Home({
         </>
       )}
 
-      <button className="btn btn-large logout-btn" onClick={handleLogout}>Sign Out</button>
     </div>
   )
 }

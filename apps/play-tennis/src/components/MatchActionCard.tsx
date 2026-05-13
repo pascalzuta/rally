@@ -92,6 +92,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
   const canToggleExpanded = Boolean(view.primaryActionLabel && view.expansionKind)
   const hasUnread = view.opponentId ? hasUnreadFrom(currentPlayerId, view.opponentId) : false
   const highlightClass = highlightTone ? `action-card--highlight-${highlightTone}` : ''
+  const isUpNext = className?.includes('upnext-card') ?? false
   const classes = ['action-card', `action-${view.tone}`, highlightClass, className].filter(Boolean).join(' ')
   const toneClass = view.tone === 'completed'
     ? 'slate'
@@ -105,6 +106,17 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             ? 'amber'
             : 'slate'
 
+  // metaKind drives where the meta string renders:
+  //   'time'      — promote into the body as the data hero (the answer)
+  //   'countdown' — keep as a chip in the status row (urgency signal)
+  //   null/undefined — back-compat, render as chip if string present
+  const metaInBody = view.metaKind === 'time' && view.metaLabel
+  const metaInChip = view.metaLabel && view.metaKind !== 'time'
+
+  const primaryBtnClass = view.primaryActionIsHero
+    ? 'action-card-btn action-card-btn--solid'
+    : 'action-card-btn'
+
   return (
     <div
       ref={ref}
@@ -112,13 +124,30 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
       style={style}
       onClick={canToggleExpanded ? onToggleExpanded : undefined}
       >
+      {isUpNext && (
+        <div className="action-card-upnext-eyebrow">
+          Up <em className="bg-em">next.</em>
+        </div>
+      )}
       <div className="action-card-status-row">
         <div className={`card-status-label card-status-label--${toneClass}`}>
+          {view.tone === 'confirmed' && (
+            <svg
+              className="card-status-check"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M2 5.2 4 7.2 8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
           {view.statusLabel}
         </div>
-        {(view.metaLabel || view.infoTooltipText) && (
+        {(metaInChip || view.infoTooltipText) && (
           <div className="action-card-status-meta">
-            {view.metaLabel && <div className={`card-meta-chip card-meta-chip--${toneClass}`}>{view.metaLabel}</div>}
+            {metaInChip && <div className={`card-meta-chip card-meta-chip--${toneClass}`}>{view.metaLabel}</div>}
             {view.infoTooltipText && (
               <div className="card-info-tooltip">
                 <button
@@ -140,6 +169,9 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
 
       <div className="action-card-main">
         <div className="action-card-opponent">{renderTitleWithEmphasis(view.title)}</div>
+        {metaInBody && (
+          <div className="action-card-time">{view.metaLabel}</div>
+        )}
         {view.supporting && (
           <div className={`action-card-supporting ${view.supportingTone === 'danger' ? 'action-card-supporting--danger' : ''}`}>
             {view.supporting}
@@ -151,7 +183,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
         <div className="action-card-buttons">
           {view.primaryActionLabel && (
             <button
-              className="action-card-btn"
+              className={primaryBtnClass}
               onClick={event => {
                 event.stopPropagation()
                 onToggleExpanded()

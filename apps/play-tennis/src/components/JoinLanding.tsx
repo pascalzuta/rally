@@ -20,7 +20,7 @@ export default function JoinLanding({ onSignUp }: Props) {
 
         {/* Hero */}
         <div className="join-hero">
-          <h1 className="join-title">Stop texting.<br />Start playing.</h1>
+          <h1 className="join-title">Stop texting.<br /><em className="bg-em">Start playing.</em></h1>
           <p className="join-subtitle">
             Rally auto-schedules local tennis matches based on your availability.
             Join 2,400+ players for free.
