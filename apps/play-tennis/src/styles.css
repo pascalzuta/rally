@@ -2723,7 +2723,7 @@ select:focus {
 .signup-title {
   font-size: var(--font-title-lg);
   font-weight: var(--weight-bold);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.1;
   color: var(--color-text-primary);
 }
@@ -7717,7 +7717,10 @@ select:focus {
 }
 
 .confirmed-circle {
-  animation: greenPulse 2s ease-in-out infinite;
+  /* Single pulse on entry — the green glow celebrates the moment, then
+     stops. Looping infinitely was distracting on the screen the user
+     actually stays on for a beat. */
+  animation: greenPulse 1.4s ease-in-out 1 forwards;
 }
 
 .confirmed-path {

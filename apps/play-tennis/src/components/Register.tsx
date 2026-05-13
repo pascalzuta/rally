@@ -548,17 +548,15 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
         <div className="b-page-content">
           <div className="b-page-title-block">
             <h1 className="b-page-title">Check your <em className="bg-em">email.</em></h1>
-            <p className="b-page-subtitle">We sent a sign-in link to</p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', margin: '6px 0 0' }}>{email}</p>
-            <p className="b-page-subtitle" style={{ marginTop: 18 }}>
-              If you got a numeric code instead, enter it below.
+            <p className="b-page-subtitle">
+              Sign-in link sent to <strong style={{ color: 'var(--ink)', fontWeight: 700 }}>{email}</strong>. Have a code instead? Enter it below.
             </p>
           </div>
 
           <div className="b-card" style={{ margin: '8px 0 0' }}>
             <form onSubmit={handleVerifyOtp}>
               <div className="b-field">
-                <label className="b-field-label" htmlFor="otp-code">Code (optional)</label>
+                <label className="b-field-label" htmlFor="otp-code">Verification code</label>
                 <input
                   id="otp-code"
                   className="b-input"
@@ -593,17 +591,16 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
 
             <button
               type="button"
-              className="b-btn-text"
+              className="b-btn-text b-btn-text--blue"
               onClick={handleResend}
               disabled={resendCountdown > 0}
-              style={{ color: 'var(--blue)', marginTop: 8 }}
+              style={{ marginTop: 8 }}
             >
               {resendCountdown > 0 ? `Resend code (${resendCountdown}s)` : 'Resend code'}
             </button>
             <button
               type="button"
               className="b-btn-text"
-              style={{ color: 'var(--blue)' }}
               onClick={async () => {
                 try {
                   const client = getClient()
@@ -819,7 +816,7 @@ export default function Register({ onRegistered, inviteCounty, onCancel }: Props
             </svg>
           </div>
           <h1 className="onboard-title">You're in.</h1>
-          <p className="onboard-subtitle">Join your county's tournament — we'll handle the scheduling.</p>
+          <p className="onboard-subtitle">Join your county's tournament. We'll handle the scheduling.</p>
           <div className="confirmed-ball">🎾</div>
         </div>
       </div>

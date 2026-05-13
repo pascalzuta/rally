@@ -90,7 +90,7 @@ export default function JoinLanding({ onSignUp }: Props) {
 
         {/* Bottom CTA */}
         <button className="sh-btn-cta sh-btn-cta-large join-bottom-cta" onClick={onSignUp}>
-          Join Rally — it's free
+          Join Rally. It's free.
         </button>
 
         <p className="auth-switch" style={{ marginTop: 16 }}>

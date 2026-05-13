@@ -72,7 +72,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
           </h1>
           <p className="b-hero-body">
             Rally auto-schedules local tennis matches based on your availability.
-            No group chats, no back-and-forth — just show up and play.
+            No group chats, no back-and-forth. Just show up and play.
           </p>
           <button className="b-btn-block" onClick={onGetStarted}>
             Get started — it's free
@@ -147,7 +147,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
         <div className="dgh-matchmaking-inner">
           <span className="dgh-section-number">03</span>
           <h2 className="dgh-section-heading dgh-section-heading--center">Every match, a fair fight</h2>
-          <p className="dgh-section-desc dgh-section-desc--center">Rally rates your real game — so every opponent is a genuine challenge.</p>
+          <p className="dgh-section-desc dgh-section-desc--center">Rally rates your real game. Every opponent is a genuine challenge.</p>
           <div className="dgh-matchmaking-visual dgh-anim-matchup">
             <div className="dgh-story-matchup-player dgh-anim-player-left">
               <div className="dgh-story-matchup-avatar">You</div>
@@ -179,7 +179,7 @@ export default function DesktopGuestHomepage({ onGetStarted, onLogin }: Props) {
           </p>
           <div className="dgh-cta-actions">
             <button className="dgh-cta-btn-primary" onClick={onGetStarted}>
-              Get started — it's free
+              Get started. It's free.
             </button>
             <button className="dgh-cta-btn-secondary" onClick={handleLogin}>
               Log in
