@@ -266,13 +266,13 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
         {showLeaveConfirm && (
           <div className="leave-overlay" onClick={() => setShowLeaveConfirm(false)}>
             <div className="leave-modal" onClick={e => e.stopPropagation()}>
-              <h3 className="leave-title">Leave Tournament?</h3>
+              <h3 className="leave-title">Leave tournament?</h3>
               <p className="leave-message">
                 You will be removed from this tournament. This cannot be undone.
               </p>
               <div className="leave-actions">
                 <button className="btn" onClick={() => setShowLeaveConfirm(false)}>Cancel</button>
-                <button className="btn btn-danger" onClick={handleSetupLeave}>Leave Tournament</button>
+                <button className="btn btn-danger" onClick={handleSetupLeave}>Leave tournament</button>
               </div>
             </div>
           </div>
@@ -705,11 +705,11 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
               <button
                 className={`bracket-view-toggle-btn ${viewMode === 'mine' ? 'selected' : ''}`}
                 onClick={() => setViewMode('mine')}
-              >My Matches</button>
+              >My matches</button>
               <button
                 className={`bracket-view-toggle-btn ${viewMode === 'all' ? 'selected' : ''}`}
                 onClick={() => setViewMode('all')}
-              >All Matches</button>
+              >All matches</button>
             </div>
           </div>
 
