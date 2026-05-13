@@ -7286,15 +7286,9 @@ select:focus {
   background: var(--color-surface-hover);
 }
 
-.lb-row-me::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--color-accent-primary);
-}
+/* "Me" indication travels through the row background + blue name/rank/
+   rating color set below. No pseudo-element side-stripe (impeccable ban
+   applies to the visual effect too, not just border-left properties). */
 
 .lb-row-me .lb-row-name {
   font-weight: var(--weight-bold);

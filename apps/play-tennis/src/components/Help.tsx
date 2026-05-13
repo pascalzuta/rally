@@ -29,7 +29,7 @@ export default function Help({ onBack }: { onBack: () => void }) {
         </div>
         <div className="bi-marketing-nav-right">
           <a href="/blog/" className="bi-marketing-nav-link">Blog</a>
-          <button className="bi-marketing-cta" onClick={onBack}>Play Rally</button>
+          <button className="bi-marketing-cta" onClick={onBack}>Open Rally</button>
         </div>
       </nav>
 
@@ -39,7 +39,7 @@ export default function Help({ onBack }: { onBack: () => void }) {
             How can we <em className="bg-em">help?</em>
           </h1>
           <p className="bi-help-sub">
-            Find answers below or send us a message — we'll get back within 24 hours.
+            Find answers below, or send us a message. We respond within 24 hours.
           </p>
         </header>
 
