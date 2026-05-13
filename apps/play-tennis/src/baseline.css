@@ -807,22 +807,36 @@ input:focus, textarea:focus, select:focus,
   background: var(--bg) !important;
 }
 .notif-list { padding: 6px 0 !important; }
+/* Notification items: no colored side-stripe (impeccable absolute ban for
+   list items too). Unread state reads through a leading blue dot rendered
+   by ::before on the unread/urgent/high/medium modifiers, plus a slightly
+   warmer background tint. Stays Baseline. */
 .notif-item {
   display: flex; gap: 12px; align-items: flex-start;
   padding: 12px 18px !important;
-  border-left: 3px solid transparent !important;
   background: var(--bg) !important;
+  border: none !important;
   border-bottom: 1px solid var(--line) !important;
-  border-top: none !important; border-right: none !important;
+  position: relative;
 }
 .notif-item:last-child { border-bottom: none !important; }
 .notif-item.notif-unread,
 .notif-item.urgent, .notif-item.high, .notif-item.medium {
-  border-left-color: var(--blue) !important;
-  background: var(--bg) !important;
+  background: var(--blue-soft) !important;
+}
+.notif-item.notif-unread::before,
+.notif-item.urgent::before, .notif-item.high::before, .notif-item.medium::before {
+  content: '';
+  position: absolute;
+  top: 18px; left: 8px;
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--blue);
+}
+.notif-item.warn::before, .notif-item.amber::before {
+  background: var(--amber);
 }
 .notif-item.warn, .notif-item.amber {
-  border-left-color: var(--amber) !important;
+  background: var(--amber-soft) !important;
 }
 .notif-icon {
   width: 36px; height: 36px; border-radius: 999px;
@@ -840,10 +854,12 @@ input:focus, textarea:focus, select:focus,
 
 /* ---------- 9. TOAST ---------- */
 
+/* Toast: no colored side-stripe. The tone color travels via the icon
+   inside (.rally-toast-confirm--green / blue / amber / red) which is
+   defined elsewhere. The container itself stays clean. */
 .toast, .toast-container, .toast-message {
   background: var(--bg) !important;
   border: 1px solid var(--line) !important;
-  border-left: 3px solid var(--blue) !important;
   border-radius: 12px !important;
   box-shadow: 0 6px 24px rgba(11,13,16,0.08) !important;
   color: var(--ink) !important;

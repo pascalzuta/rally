@@ -107,7 +107,7 @@ export default function MessagePanel({ currentPlayerId, currentPlayerName, other
               {otherPlayerName[0]?.toUpperCase() ?? '?'}
             </div>
             <p className="chat-messages-empty-name">{otherPlayerName}</p>
-            <p className="chat-messages-empty-hint">Send a message to start the conversation</p>
+            <p className="chat-messages-empty-hint">Send a message to start the conversation.</p>
           </div>
         )}
         {grouped.map(({ msg, isFirst, isLast }) => {
