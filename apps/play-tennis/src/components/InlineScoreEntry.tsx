@@ -148,10 +148,10 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
       // the tournament state update (which would unmount this component).
       // React 18 batches both state updates in the same microtask.
       if (onActionComplete) {
-        onActionComplete('Score reported — waiting for opponent to confirm', 'blue')
+        onActionComplete('Score reported. Awaiting opponent.', 'blue')
       }
       setSaveState('success')
-      showSuccess('Score reported — waiting for opponent to confirm')
+      showSuccess('Score reported. Awaiting opponent.')
     } catch {
       setSaveState('error')
       showError('Failed to save score')

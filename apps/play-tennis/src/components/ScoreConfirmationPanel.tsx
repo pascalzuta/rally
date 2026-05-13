@@ -199,7 +199,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     } catch (err) {
       console.warn('[Rally] Score correction failed:', err)
       if (onActionComplete) {
-        onActionComplete('Connection error — check your internet and try again', 'red')
+        onActionComplete('Connection error. Check your internet and try again.', 'red')
       }
     } finally {
       setSaving(false)
@@ -219,7 +219,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     } catch (err) {
       console.warn('[Rally] Issue report failed:', err)
       if (onActionComplete) {
-        onActionComplete('Connection error — check your internet and try again', 'red')
+        onActionComplete('Connection error. Check your internet and try again.', 'red')
       }
     } finally {
       setSaving(false)
@@ -234,7 +234,7 @@ export default function ScoreConfirmationPanel({ tournament, match, currentPlaye
     } catch (err) {
       console.warn('[Rally] Dispute resolution failed:', err)
       if (onActionComplete) {
-        onActionComplete('Connection error — check your internet and try again', 'red')
+        onActionComplete('Connection error. Check your internet and try again.', 'red')
       }
     } finally {
       setSaving(false)

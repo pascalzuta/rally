@@ -76,7 +76,7 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
         <div className="workflow-header">
           <div className="workflow-status workflow-status--red">Report Issue</div>
           <div className="schedule-panel-title">What happened?</div>
-          <div className="schedule-panel-copy">Choose the issue that best describes the match. Your report stays private while Rally reviews the match feedback.</div>
+          <div className="schedule-panel-copy">Choose what applies. Your report stays private.</div>
         </div>
         <div className="feedback-issue-summary-card">
           <div className="feedback-issue-summary-label">Choose all that apply</div>
@@ -129,7 +129,7 @@ export default function PostMatchFeedbackInline({ matchId, tournamentId, playerI
       <div className="workflow-header">
         <div className="workflow-status workflow-status--slate">Rate Match</div>
         <div className="schedule-panel-title">How was the match with {opponentName}?</div>
-        <div className="schedule-panel-copy">Your feedback is only visible to Play Rally.</div>
+        <div className="schedule-panel-copy">Only visible to Rally.</div>
       </div>
       <div className="feedback-sentiment-row">
         <button

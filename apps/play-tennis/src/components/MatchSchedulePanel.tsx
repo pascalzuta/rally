@@ -168,7 +168,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
       await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
       if (onActionComplete && proposal) {
         const label = proposalLabel(proposal)
-        onActionComplete(`Time confirmed \u2014 ${label}.`, 'green')
+        onActionComplete(`Time confirmed: ${label}.`, 'green')
       } else {
         onUpdated()
       }
@@ -863,7 +863,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <div className="escalation-bar">
             <div className="escalation-fill" style={{ width: `${Math.min(100, (escalationDay / 4) * 100)}%` }} />
           </div>
-          <div className="escalation-days">Day {escalationDay} of 4 {'\u2014'} respond to avoid auto-resolution</div>
+          <div className="escalation-days">Day {escalationDay} of 4. Respond to avoid auto-resolution.</div>
         </div>
       )}
 
@@ -899,7 +899,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             <div key={p.id} className="proposal-card proposal-mine">
               <div className="proposal-info">
                 <span className="proposal-time">{proposalLabel(p)}</span>
-                <span className="proposal-from">Your suggestion {'\u2014'} waiting for response</span>
+                <span className="proposal-from">Your suggestion. Waiting for response.</span>
               </div>
             </div>
           ))}
