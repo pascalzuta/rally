@@ -207,7 +207,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
   const engagementPrompt = lastRatingChange > 0 && nextRankUp
     ? `Win your next match to jump to #${nextRankUp}.`
     : lastRatingChange > 0
-      ? 'Keep the momentum — play another match.'
+      ? 'Keep the momentum. Play another match.'
       : totalMatches > 0
         ? 'Play another match to climb the rankings.'
         : null
@@ -269,7 +269,6 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
             </div>
             <div className="card-summary-main rating-hero-summary">
               <div className="card-title">Your current <em className="bg-em">rating.</em></div>
-              <div className="card-supporting">Ratings adjust after each match and help keep matchups fair.</div>
             </div>
             <div className="rating-hero-top">
               <div className="rating-hero-number">
@@ -301,7 +300,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
               )}
             </div>
             <div className="rating-hero-explanation" style={{ fontSize: 'var(--font-caption)', color: 'var(--color-text-secondary)', marginTop: 8 }}>
-              Ratings adjust after each match — win against stronger players for a bigger boost
+              Ratings adjust after each match. Beat stronger players for a bigger boost.
             </div>
             {engagementPrompt && (
               <div className="engagement-prompt">{engagementPrompt}</div>

@@ -119,7 +119,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
     nowMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7))
     nowMonday.setHours(0, 0, 0, 0)
     const isCurrentWeek = weekStart.getTime() === nowMonday.getTime()
-    if (isCurrentWeek) return 'This Week'
+    if (isCurrentWeek) return 'This week'
     const isPast = weekStart.getTime() < nowMonday.getTime()
     const weekLabel = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     return isPast ? `Week of ${weekLabel} (past)` : `Week of ${weekLabel}`
@@ -179,7 +179,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
           }
           return (
             <div className="schedule-todo-section">
-              <div className="schedule-todo-title">Your To-Do</div>
+              <div className="schedule-todo-title">Your matches</div>
               <div className="schedule-todo-rows">
                 <div className="schedule-todo-row">
                   <span className="schedule-todo-dot" style={{ background: 'var(--color-positive-primary)' }} />
@@ -222,7 +222,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
         return (
           <div className="card action-card action-completed">
             <div className="action-card-status-row">
-              <div className="card-status-label card-status-label--green">Score Confirmed</div>
+              <div className="card-status-label card-status-label--green">Score confirmed</div>
             </div>
             <div className="action-card-main">
               <div className="action-card-opponent">vs {opponentName}</div>
@@ -309,7 +309,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
 
       {/* View Full Bracket button */}
       <button className="btn btn-large schedule-view-bracket" onClick={onViewBracket}>
-        See All Matchups
+        See full bracket
       </button>
       </>}
     </div>
