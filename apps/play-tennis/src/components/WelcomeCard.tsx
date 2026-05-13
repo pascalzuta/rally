@@ -125,7 +125,7 @@ function OverviewSection({ county }: { county: string }) {
   return (
     <div className="help-section">
       <p className="help-intro">
-        Rally runs monthly tennis tournaments in {titleCase(county)} — and schedules every match automatically.
+        Rally runs monthly tennis tournaments in {titleCase(county)} and schedules every match automatically.
       </p>
 
       <div className="help-phases">
@@ -192,7 +192,7 @@ function SchedulingSection() {
           <div className="help-tier-badge help-tier-badge--auto">Auto</div>
           <div>
             <strong>Auto-Scheduled</strong>
-            <p>75+ minutes overlap — match is booked automatically.</p>
+            <p>75+ minutes overlap. Match is booked automatically.</p>
           </div>
         </div>
 
@@ -200,7 +200,7 @@ function SchedulingSection() {
           <div className="help-tier-badge help-tier-badge--flex">Flex</div>
           <div>
             <strong>Partially Flexible</strong>
-            <p>30&ndash;74 minutes overlap. Rally proposes a nearby time — one tap to confirm.</p>
+            <p>30&ndash;74 minutes overlap. Rally proposes a nearby time. One tap to confirm.</p>
           </div>
         </div>
 
@@ -317,7 +317,7 @@ function DeadlinesSection() {
         </div>
         <div className="help-forfeit">
           <strong>Mutual forfeit</strong>
-          <p>Neither player responds — no winner recorded.</p>
+          <p>Neither player responds. No winner recorded.</p>
         </div>
       </div>
     </div>

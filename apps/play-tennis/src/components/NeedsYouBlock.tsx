@@ -56,7 +56,7 @@ export default function NeedsYouBlock({ actions, onGoToBracket, onOpenMessages }
 
   return (
     <div className={`needs-you ${accentClass}`} role="region" aria-label="Pending actions">
-      <div className="needs-you-heading">NEEDS YOU</div>
+      <div className="needs-you-heading">Needs <em className="bg-em">you.</em></div>
       <ul className="needs-you-rows">
         {scoreConfirmPending.map((entry: ScoreConfirmEntry) => (
           <li key={`score-${entry.matchId}`}>

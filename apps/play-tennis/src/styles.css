@@ -15290,24 +15290,27 @@ main {
    ================================================ */
 .needs-you {
   margin: 12px 0;
-  padding: 10px 12px 12px;
+  padding: 12px 14px;
   background: var(--color-surface);
+  border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  border-left: 3px solid var(--color-accent-primary);
   transition: border-color var(--duration-fast) var(--ease-out-quart);
 }
 
 .needs-you--urgent {
-  border-left-color: var(--color-warning-primary);
+  /* Urgency reads through the count + meta color (set lower); border stays
+     neutral so cards remain visually consistent across states. */
+  border-color: rgba(168, 106, 10, 0.25);
 }
 
 .needs-you-heading {
-  font-size: 11px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  text-transform: none;
 }
 
 .needs-you-rows {
