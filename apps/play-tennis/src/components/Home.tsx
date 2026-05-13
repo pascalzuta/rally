@@ -150,7 +150,7 @@ export default function Home({
             const record = entry.wins + entry.losses > 0 ? `${entry.wins}W–${entry.losses}L` : ''
             return (
               <div key={entry.name} className={`lb-row ${isMe ? 'lb-row-me' : ''}`}>
-                <span className="lb-row-rank">{entry.rank === 1 ? '🥇' : `#${entry.rank}`}</span>
+                <span className={`lb-row-rank ${entry.rank <= 3 ? `lb-row-rank--medal lb-row-rank--medal-${entry.rank}` : ''}`}>{entry.rank <= 3 ? entry.rank : `#${entry.rank}`}</span>
                 <span className={`lb-row-avatar ${isMe ? 'lb-avatar-me' : ''}`}>{entry.name[0].toUpperCase()}</span>
                 <span className="lb-row-info">
                   <span className="lb-row-name">{entry.name}{isMe ? ' (You)' : ''}</span>

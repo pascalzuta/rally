@@ -391,7 +391,7 @@ export function getMatchCardView(
       tone: 'schedule',
       statusLabel: 'Needs new time',
       title,
-      supporting: 'Pick a new time to confirm.',
+      supporting: 'Pick a new time.',
       metaLabel: pendingProposalMeta,
       metaKind: 'time',
       primaryActionIsHero: true,
@@ -492,7 +492,9 @@ export function getMatchCardView(
       tone: 'confirmed',
       statusLabel: 'Confirmed',
       title,
-      supporting: mine ? 'Locked in. See you on court.' : 'Time confirmed.',
+      // Opponent view: the time line + green pill already say "confirmed".
+      // No need to repeat with "Time confirmed." — drop it.
+      supporting: mine ? 'See you on court.' : null,
       metaLabel: confirmedSlotMeta,
       metaKind: 'time',
       infoTooltipLabel: hasAutoMatchedOverlap(match) ? 'How Rally matched this' : undefined,

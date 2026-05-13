@@ -221,12 +221,12 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8m-4-4v4m-4.5-8a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 0 4.5 4.5M6.5 13A4.5 4.5 0 0 1 2 8.5" /><path d="M12 2v1m-7 3H4m16 0h-1m-2.64-3.36-.7.7M8.64 3.64l-.7-.7" /></svg>
           </div>
           <div className="empty-state-title">
-            {inForminigLobby ? 'Tournament forming' : 'No tournament yet'}
+            {inForminigLobby ? 'Tournament forming' : 'Your bracket lives here'}
           </div>
           <div className="empty-state-message">
             {inForminigLobby
-              ? "You're in the lobby. Your bracket appears here once the tournament starts."
-              : 'Join your county from the Home tab — your draw will show up here'}
+              ? "You're in the lobby. Your draw appears here as soon as the tournament starts."
+              : 'Join the lobby from the Home tab. Your draw, schedule, and standings will all show up here.'}
           </div>
         </div>
       </div>

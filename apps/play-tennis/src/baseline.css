@@ -443,13 +443,21 @@ em.bg-em,
   background: var(--blue-soft) !important; color: var(--blue) !important;
   border: none !important; border-radius: 999px !important;
   padding: 10px 18px !important;
-  font-size: 14px !important; font-weight: 600 !important;
+  font-size: 14px !important; font-weight: 700 !important;
   font-family: 'Inter', system-ui, sans-serif !important;
+  letter-spacing: -0.01em !important;
   cursor: pointer;
   transition: background 150ms var(--ease-out-quart, ease), transform 100ms var(--ease-out-quart, ease) !important;
 }
 .action-card-btn:hover { background: #dde7ff !important; }
 .action-card-btn:active { transform: scale(0.97); }
+.action-card-btn:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(37,99,255,0.30) !important;
+}
+.action-card-btn.action-card-btn--solid:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37,99,255,0.45) !important;
+}
 
 /* Solid CTA variant for top-priority states (Respond now / Confirm score /
    Log score / Pick time). Filled blue, white text — pulls these out of the
@@ -481,14 +489,16 @@ em.bg-em,
 }
 
 /* Match card body data line — the slot time, promoted out of the chip into
-   the body where it earns its pixels for confirmed and scheduled states. */
+   the body where it earns its pixels for confirmed and scheduled states.
+   Weight 700 follows the Baseline 500/700 scheme; tightened line-height and
+   letter-spacing read as confident, data-forward type. */
 .action-card-time {
   font-size: 15px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   color: var(--ink);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
   margin: 0 0 6px;
 }
 .action-card.action-confirmed .action-card-time { color: var(--green); }
@@ -497,11 +507,41 @@ em.bg-em,
 .action-card.action-respond   .action-card-time,
 .action-card.action-confirm-score .action-card-time { color: var(--blue); }
 
-/* Subtle check glyph inside the status pill for confirmed-tone cards. */
+/* Subtle check glyph inside the status pill for confirmed-tone cards.
+   Animates the stroke on first paint so locking in a match has a small
+   delight moment, not just a static glyph. */
 .card-status-check {
   display: inline-block;
   flex-shrink: 0;
   margin-right: -2px;
+}
+.card-status-check path {
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+  animation: confirmedCheckDraw 520ms cubic-bezier(0.16, 1, 0.3, 1) 80ms forwards;
+}
+@keyframes confirmedCheckDraw {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-status-check path { stroke-dashoffset: 0; animation: none; }
+}
+
+/* Match cards get a small lift on hover — satisfying feedback that ALSO
+   signals "this is interactive." Subtle enough to not interfere with read. */
+.action-card {
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+@media (hover: hover) {
+  .action-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(11,13,16,0.06) !important;
+  }
+}
+.action-card:active { transform: scale(0.992); }
+@media (prefers-reduced-motion: reduce) {
+  .action-card:hover, .action-card:active { transform: none; }
 }
 
 /* Up Next eyebrow — small italic-blue eyebrow above the status row, only
@@ -509,9 +549,9 @@ em.bg-em,
    not just another item in a queue. */
 .action-card-upnext-eyebrow {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
   color: var(--ink-2);
   margin-bottom: 10px;
 }
@@ -572,7 +612,7 @@ em.bg-em,
 }
 .action-card.action-escalated .action-card-btn:hover { background: #f5d4cf !important; }
 
-.action-card.action-completed .bg-em      { color: var(--ink-2) !important; font-weight: 600; }
+.action-card.action-completed .bg-em      { color: var(--ink-2) !important; font-weight: 700; }
 
 .match-card-msg-btn {
   background: var(--bg) !important; color: var(--ink-2) !important;
@@ -809,6 +849,36 @@ input:focus, textarea:focus, select:focus,
   color: var(--ink) !important;
   padding: 12px 16px !important;
 }
+
+/* Leaderboard top-3 medals — colored numeric rank pill in gold/silver/bronze.
+   Used inline in <span class="lb-row-rank lb-row-rank--medal lb-row-rank--medal-N">.
+   Restrained colorize: only the rank cell gets tinted; rest of the row stays
+   Baseline. Replaces the inconsistent emoji-for-#1, text-for-#2/#3 pattern. */
+/* Medal: draw the colored 26px disc with a pseudo-element behind the numeral
+   so the rank column keeps its 32px width and rows stay aligned. */
+.lb-row-rank.lb-row-rank--medal {
+  position: relative;
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 26px;
+  z-index: 0;
+}
+.lb-row-rank.lb-row-rank--medal::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 26px; height: 26px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  z-index: -1;
+}
+.lb-row-rank--medal-1 { color: #8a6300 !important; }
+.lb-row-rank--medal-1::before { background: #fff2c4; box-shadow: inset 0 0 0 1px #ecd089; }
+.lb-row-rank--medal-2 { color: #4a5566 !important; }
+.lb-row-rank--medal-2::before { background: #e9ecf2; box-shadow: inset 0 0 0 1px #cdd2dc; }
+.lb-row-rank--medal-3 { color: #7e4a1f !important; }
+.lb-row-rank--medal-3::before { background: #f3dfcb; box-shadow: inset 0 0 0 1px #d9b48d; }
 
 /* ---------- 10. PROFILE / LEADERBOARD specifics ---------- */
 

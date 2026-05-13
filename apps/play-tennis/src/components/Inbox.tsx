@@ -175,11 +175,11 @@ export default function Inbox({ currentPlayerId, currentPlayerName, county, tour
             </div>
             <p>
               {activeTab === 'current'
-                ? 'No messages in your current tournament yet'
-                : 'No messages from past tournaments'}
+                ? 'No messages yet.'
+                : 'No messages from past tournaments.'}
             </p>
             {activeTab === 'current' && (
-              <span className="chat-empty-hint">Tap the chat icon on a match to start a conversation</span>
+              <span className="chat-empty-hint">Tap the chat icon on any match card to message your opponent.</span>
             )}
           </div>
         ) : (
