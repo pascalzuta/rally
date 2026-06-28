@@ -168,7 +168,14 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   <div className="card action-card action-completed">
                     <div className="action-card-status-row">
                       <div className="card-status-label card-status-label--slate">Completed</div>
-                      {slot && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
+                      {/* Completed matches show day + time only. The calendar's
+                          week grouping is batch-derived, not the match's real
+                          scheduled week, so anchoring to week.weekStart can
+                          render a misleading past date (e.g. "Tue, Jun 23")
+                          that contradicts the next-occurrence dates the bracket
+                          cards show. Matches carry no real date, so for a
+                          finished match we drop the fabricated calendar date. */}
+                      {slot && <div className="card-meta-chip">{formatSlotTime(slot)}</div>}
                     </div>
                     <div className="action-card-main">
                       <div className="action-card-opponent">vs {opponentName}</div>
@@ -190,7 +197,14 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                   <div className="card action-card action-completed">
                     <div className="action-card-status-row">
                       <div className={`card-status-label card-status-label--${getTierTone(tier, true)}`}>Completed</div>
-                      {slot && <div className="card-meta-chip">{formatSlotTime(slot, week.weekStart)}</div>}
+                      {/* Completed matches show day + time only. The calendar's
+                          week grouping is batch-derived, not the match's real
+                          scheduled week, so anchoring to week.weekStart can
+                          render a misleading past date (e.g. "Tue, Jun 23")
+                          that contradicts the next-occurrence dates the bracket
+                          cards show. Matches carry no real date, so for a
+                          finished match we drop the fabricated calendar date. */}
+                      {slot && <div className="card-meta-chip">{formatSlotTime(slot)}</div>}
                     </div>
                     <div className="action-card-main">
                       <div className="action-card-opponent">vs {opponentName}</div>
