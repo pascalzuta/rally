@@ -2015,83 +2015,15 @@ export async function saveMatchScore(
   const match = t.matches.find(m => m.id === matchId)
   if (!match) return undefined
 
-  // Note: ratings are NOT applied here. The 2-phase offline flow applies them
-  // in confirmMatchScore when match.completed flips to true. The RPC atomic
-  // path applies them inside the success branch below (since RPC completes
-  // the match in one shot). Applying them here would double-count when both
-  // saveMatchScore and confirmMatchScore run.
-  const p1 = t.players.find(p => p.id === match.player1Id)
-  const p2 = t.players.find(p => p.id === match.player2Id)
-  const winner = t.players.find(p => p.id === winnerId)
+  // Score reporting is two-phase by design: a reported score must always be
+  // confirmed by the OTHER player before it counts. So this only records the
+  // result as PENDING — the match is NOT completed and ratings are NOT applied
+  // here. Completion, rating updates, and bracket advancement all happen in
+  // confirmMatchScore, after the opponent confirms (or a dispute resolves).
+  // We intentionally do not call an atomic submit RPC that would complete the
+  // match in one shot, which would skip opponent confirmation.
 
-  // Try RPC for atomic score submission + bracket advancement
-  {
-    const client = getClient()
-    if (client) {
-      try {
-        const { data, error } = await client.rpc('rpc_submit_score', {
-          p_tournament_id: tournamentId,
-          p_match_id: matchId,
-          p_score1: score1,
-          p_score2: score2,
-          p_winner_id: winnerId,
-        })
-        if (!error && data?.success) {
-          // Server handled score + advancement atomically — apply ratings now
-          if (p1 && p2 && winner) {
-            await updateRatings(p1, p2, winner.id)
-          }
-          const serverTournament = data.tournament as Tournament
-          if (data.updated_at) {
-            setTournamentTimestamp(tournamentId, data.updated_at)
-          }
-
-          // Handle phase transition: group → knockout (for group-knockout and round-robin)
-          if (serverTournament.format === 'group-knockout' || serverTournament.format === 'round-robin') {
-            const serverMatch = serverTournament.matches.find((m: Match) => m.id === matchId)
-            if (serverMatch?.phase === 'group') {
-              const groupMatches = serverTournament.matches.filter((m: Match) => m.phase === 'group')
-              const allGroupDone = groupMatches.every((m: Match) => m.completed)
-              if (allGroupDone && !serverTournament.groupPhaseComplete) {
-                generateKnockoutPhase(serverTournament)
-                // Re-sync the updated tournament with knockout phase
-                await syncTournament(serverTournament, data.updated_at)
-              }
-            }
-          }
-
-          // Award trophies/badges locally
-          const allDone = serverTournament.matches.every((m: Match) => m.completed)
-          if (allDone && serverTournament.status === 'completed') {
-            awardTournamentTrophies(serverTournament.id, serverTournament)
-            for (const p of serverTournament.players) {
-              checkAndAwardBadges(p.id, serverTournament.id, serverTournament)
-            }
-          }
-
-          // Persist pending feedback so the form shows after reporting
-          const rpcMatch = serverTournament.matches.find((m: Match) => m.id === matchId)
-          const reporter = reportedBy ?? winnerId
-          if (rpcMatch && reporter) {
-            const fbOpponentId = rpcMatch.player1Id === reporter ? rpcMatch.player2Id! : rpcMatch.player1Id!
-            const fbOpponentName = serverTournament.players.find(p => p.id === fbOpponentId)?.name ?? 'Opponent'
-            setPendingFeedback({ matchId, tournamentId, opponentId: fbOpponentId, opponentName: fbOpponentName })
-          }
-
-          // Update local cache
-          const idx = all.findIndex(x => x.id === tournamentId)
-          if (idx >= 0) all[idx] = serverTournament
-          else all.unshift(serverTournament)
-          save(all)
-          return serverTournament
-        }
-      } catch {
-        // RPC failed, fall through to local logic
-      }
-    }
-  }
-
-  // Phase 1 fallback: local score — mark as reported, not completed
+  // Phase 1: local score — mark as reported, not completed
   match.score1 = score1
   match.score2 = score2
   match.winnerId = winnerId
