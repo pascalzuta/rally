@@ -2399,9 +2399,6 @@ export async function updateRatings(
 
   const a = ratings[playerA.id] ?? { name: playerA.name, rating: 1000, matchesPlayed: 0 }
   const b = ratings[playerB.id] ?? { name: playerB.name, rating: 1000, matchesPlayed: 0 }
-  // Keep display name current
-  a.name = playerA.name
-  b.name = playerB.name
 
   const pA = winProbability(a.rating, b.rating)
 
@@ -2411,16 +2408,29 @@ export async function updateRatings(
   const sA = winnerId === playerA.id ? 1 : 0
   const sB = 1 - sA
 
-  a.rating = Math.round((a.rating + kA * (sA - pA)) * 10) / 10
-  b.rating = Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10
-  a.matchesPlayed += 1
-  b.matchesPlayed += 1
+  // Build NEW rating objects instead of mutating in place. Mutating the stored
+  // objects corrupts any reference a caller already holds (e.g. a "before"
+  // snapshot from getPlayerRating, which returns the live object) and keeps the
+  // object identity stable — so memoized UI can skip its re-render and the new
+  // rating never appears ("rating not updating"). New objects fix both.
+  const newA: PlayerRating = {
+    ...a,
+    name: playerA.name,
+    rating: Math.round((a.rating + kA * (sA - pA)) * 10) / 10,
+    matchesPlayed: a.matchesPlayed + 1,
+  }
+  const newB: PlayerRating = {
+    ...b,
+    name: playerB.name,
+    rating: Math.round((b.rating + kB * (sB - (1 - pA))) * 10) / 10,
+    matchesPlayed: b.matchesPlayed + 1,
+  }
 
-  ratings[playerA.id] = a
-  ratings[playerB.id] = b
+  ratings[playerA.id] = newA
+  ratings[playerB.id] = newB
   await saveRatingsAndSync(ratings, playerA.id, playerB.id)
-  recordRatingSnapshot(playerA.id, a.rating)
-  recordRatingSnapshot(playerB.id, b.rating)
+  recordRatingSnapshot(playerA.id, newA.rating)
+  recordRatingSnapshot(playerB.id, newB.rating)
 }
 
 // --- Rating History ---

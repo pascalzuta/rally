@@ -339,16 +339,14 @@ describe('Tournament execution — full lifecycle (Strategy A)', () => {
     expect(now?.id).toBe(other.id)
   })
 
-  // Strategy A verification of Finding #11 (rating not visibly updating).
-  // The Strategy B run drove scoring through devCompleteMatch which bypasses
-  // the real reportScore/confirmScore + updateRatings code path. This test
-  // exercises the REAL flow and asserts ratings actually change.
-  // SKIPPED: surfaces a SUSPECTED REAL BUG. The winner's rating updates but the
-  // loser's does not (observed: loser stays at 1562.5 through confirmMatchScore).
-  // Ratings should be roughly zero-sum, so this points at an asymmetric update in
-  // the saveMatchScore/confirmMatchScore -> updateRatings path. Needs a dedicated
-  // /investigate pass before un-skipping — do not delete this test.
-  it.skip('11. real reportScore + confirmScore flow updates both players ratings', async () => {
+  // Regression guard for the rating mutation-aliasing bug (Finding #11, "rating
+  // not visibly updating"). updateRatings() used to mutate the stored rating
+  // objects in place, which retroactively changed any reference a caller already
+  // held (the `before` snapshots below) and kept object identity stable so
+  // memoized UI skipped its re-render. Holding the `before` objects by reference
+  // here is intentional: it re-catches that bug if anyone reintroduces in-place
+  // mutation. updateRatings now builds new objects, so before/after differ.
+  it('11. real reportScore + confirmScore flow updates both players ratings', async () => {
     const profile = createProfile('Pascal Test', COUNTY, { gender: 'male', skillLevel: 'intermediate' })
     saveAvailability(profile.id, defaultAvail())
     await joinLobby(profile)
