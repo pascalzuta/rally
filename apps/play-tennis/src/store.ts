@@ -3131,6 +3131,12 @@ export function retroactivelyAwardTrophies(): void {
 
 // --- Dev Tools ---
 
+// The single canonical tournament we test against. All DevTools seeding and
+// profile-switching is pinned to this county so every test player lives in the
+// same tournament — switching into "Casey Brooks" always lands you in the Marin
+// tournament, regardless of which county your real account is registered in.
+export const TEST_COUNTY = 'Marin County, CA'
+
 const TEST_PLAYERS = [
   'Alex Rivera', 'Jordan Chen', 'Sam Patel', 'Taylor Kim',
   'Casey Brooks', 'Morgan Lee', 'Riley Davis', 'Quinn Adams',
@@ -3207,15 +3213,21 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
 }
 
 export function getTestProfiles(county: string): PlayerProfile[] {
-  // Look up real IDs from lobby and tournaments so switching profiles works correctly
+  // Look up real IDs from lobby and tournaments so switching profiles works
+  // correctly. Scope the lookup to the requested county — otherwise a test
+  // player seeded into multiple counties resolves to whichever id was written
+  // last, and switching into them lands you in the wrong tournament.
+  const normalizedCounty = county.toLowerCase()
   const lobby = loadLobby()
   const tournaments = load()
-  const allPlayers = new Map<string, string>() // name -> id
+  const allPlayers = new Map<string, string>() // name -> id (county-scoped)
 
   for (const entry of lobby) {
+    if (entry.county.toLowerCase() !== normalizedCounty) continue
     allPlayers.set(entry.playerName.toLowerCase(), entry.playerId)
   }
   for (const t of tournaments) {
+    if (t.county.toLowerCase() !== normalizedCounty) continue
     for (const p of t.players) {
       allPlayers.set(p.name.toLowerCase(), p.id)
     }

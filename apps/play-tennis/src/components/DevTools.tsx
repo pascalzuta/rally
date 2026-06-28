@@ -15,20 +15,16 @@ import {
   escalateMatch,
   getTournament,
   simulateToFinal,
+  TEST_COUNTY,
 } from '../store'
 import { getClient } from '../supabase'
 import { PlayerProfile } from '../types'
 
-const LAST_COUNTY_KEY = 'rally-dev-last-county'
-
-function readLastCounty(): string {
-  try { return localStorage.getItem(LAST_COUNTY_KEY) ?? '' } catch { return '' }
-}
-
-// When signed out, RallyDataProvider clears the in-memory lobby, so
-// getTestProfiles() comes back with placeholder IDs. Fetch the lobby directly
-// from Supabase for the last-known county so the profile switcher works
-// without requiring the user to sign back in.
+// The test bar is pinned to TEST_COUNTY (Marin), but the signed-in user may be
+// registered in a different county — so their local cache won't contain Marin's
+// lobby/tournament data and getTestProfiles() returns placeholder IDs. Fetch the
+// Marin lobby straight from Supabase so switching into a test player always
+// resolves to the real Marin account, whether signed in or out.
 async function fetchLobbyIds(county: string): Promise<Map<string, string>> {
   const result = new Map<string, string>()
   if (!county) return result
@@ -78,14 +74,17 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
   const panelRef = useRef<HTMLDivElement>(null)
 
   const profile = getProfile()
-  const lastCounty = useMemo(() => readLastCounty(), [expanded, profile?.county])
-  const county = profile?.county ?? lastCounty
+  // The test bar is pinned to a single canonical tournament (TEST_COUNTY) so
+  // every seeded player and profile-switch target lives in the same place,
+  // regardless of which county your real account is registered in.
+  const county = TEST_COUNTY
   const [remoteLobbyIds, setRemoteLobbyIds] = useState<Map<string, string>>(new Map())
 
-  // When signed out (no profile) but we know the county, fetch lobby IDs from
-  // Supabase so the profile switcher can list real seeded players.
+  // Always pull the Marin lobby IDs from Supabase while the panel is open —
+  // even when signed in — so the switcher resolves real Marin accounts no
+  // matter which county the current user belongs to.
   useEffect(() => {
-    if (profile || !county || !expanded) return
+    if (!county || !expanded) return
     let cancelled = false
     fetchLobbyIds(county).then(ids => { if (!cancelled) setRemoteLobbyIds(ids) })
     return () => { cancelled = true }
@@ -94,13 +93,15 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
   const testProfiles = useMemo<PlayerProfile[]>(() => {
     if (!county) return []
     const base = getTestProfiles(county)
-    if (profile) return base
-    // No profile → fill in real IDs from Supabase-fetched lobby so switching
-    // into a test player lands on the correct account.
+    // Prefer the real Supabase Marin id. Fall back to a local-cache id (only
+    // present when signed in and Marin data is cached). Drop players that
+    // resolve to neither — a placeholder id would land on a broken account.
     return base
       .map(p => {
         const realId = remoteLobbyIds.get(p.name.toLowerCase())
-        return realId ? { ...p, id: realId } : null
+        if (realId) return { ...p, id: realId }
+        if (p.id.startsWith('test-')) return null
+        return p
       })
       .filter((p): p is PlayerProfile => p !== null)
   }, [county, profile?.id, remoteLobbyIds])
