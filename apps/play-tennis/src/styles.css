@@ -5123,6 +5123,16 @@ select:focus {
   margin-bottom: var(--space-md);
 }
 
+.broadcast-form-feedback {
+  background: var(--color-warning-surface, rgba(234, 88, 12, 0.1));
+  color: var(--color-warning-primary, #c2410c);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-button);
+  font-size: var(--font-caption);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+}
+
 .broadcast-empty-state {
   text-align: center;
   padding: var(--space-3xl) 20px;

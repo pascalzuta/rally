@@ -402,6 +402,7 @@ export default function PlayNowTab({ tournament, currentPlayerId, currentPlayerN
                 />
               </div>
             </div>
+            {feedback && <div className="broadcast-form-feedback">{feedback}</div>}
             <div className="broadcast-form-actions">
               <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleCreate}>Broadcast</button>

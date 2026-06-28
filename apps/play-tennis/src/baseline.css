@@ -2469,6 +2469,16 @@ input:focus, textarea:focus, select:focus,
   border: 1px solid var(--line);
 }
 
+/* Inline validation feedback inside the broadcast form (next to the action buttons) */
+.broadcast-form-feedback {
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 13px; font-weight: 500;
+  padding: 10px 14px; border-radius: 12px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
 /* Avail social-proof / nudge text */
 .avail-social-proof {
   display: flex; align-items: baseline; gap: 6px;
