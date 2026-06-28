@@ -16,30 +16,53 @@ import {
   getTournament,
   simulateToFinal,
   TEST_COUNTY,
+  tournamentStatusRank,
 } from '../store'
 import { getClient } from '../supabase'
 import { PlayerProfile } from '../types'
 
 // The test bar is pinned to TEST_COUNTY (Marin), but the signed-in user may be
 // registered in a different county — so their local cache won't contain Marin's
-// lobby/tournament data and getTestProfiles() returns placeholder IDs. Fetch the
-// Marin lobby straight from Supabase so switching into a test player always
-// resolves to the real Marin account, whether signed in or out.
-async function fetchLobbyIds(county: string): Promise<Map<string, string>> {
+// data and getTestProfiles() returns placeholder IDs. Resolve the real IDs
+// straight from Supabase so switching into a test player always lands on the
+// real Marin account, whether signed in or out.
+//
+// Tournament membership is the source of truth: App.tsx decides who's "in" a
+// tournament by the id stored inside it, so we prefer the active tournament's
+// id (in-progress > scheduling > setup > completed) and fall back to the lobby
+// only for players not yet promoted into any tournament. A lobby placeholder id
+// must never win over a real tournament member id.
+async function fetchTestPlayerIds(county: string): Promise<Map<string, string>> {
   const result = new Map<string, string>()
   if (!county) return result
   const client = getClient()
   if (!client) return result
+  const normalized = county.toLowerCase()
   try {
-    const { data } = await client
+    // Lobby = lowest priority (pre-tournament / setup phase).
+    const { data: lobbyRows } = await client
       .from('lobby')
       .select('player_id, player_name')
-      .eq('county', county.toLowerCase())
-    if (data) {
-      for (const row of data) {
-        if (row.player_id && row.player_name) {
-          result.set(String(row.player_name).toLowerCase(), String(row.player_id))
-        }
+      .eq('county', normalized)
+    for (const row of lobbyRows ?? []) {
+      if (row.player_id && row.player_name) {
+        result.set(String(row.player_name).toLowerCase(), String(row.player_id))
+      }
+    }
+
+    // Tournaments override the lobby. Apply worst-status first so the active
+    // tournament is written last and wins (set() overwrites).
+    const { data: tournRows } = await client
+      .from('tournaments')
+      .select('data')
+      .eq('county', normalized)
+    const tournaments = (tournRows ?? [])
+      .map(r => r.data as { status?: string; players?: Array<{ id?: string; name?: string }> } | null)
+      .filter((d): d is { status?: string; players?: Array<{ id?: string; name?: string }> } => !!d)
+      .sort((a, b) => tournamentStatusRank(b.status ?? '') - tournamentStatusRank(a.status ?? ''))
+    for (const t of tournaments) {
+      for (const p of t.players ?? []) {
+        if (p?.id && p?.name) result.set(String(p.name).toLowerCase(), String(p.id))
       }
     }
   } catch { /* ignore */ }
@@ -78,33 +101,33 @@ export default function DevTools({ onProfileSwitch, activeTournamentId, onTourna
   // every seeded player and profile-switch target lives in the same place,
   // regardless of which county your real account is registered in.
   const county = TEST_COUNTY
-  const [remoteLobbyIds, setRemoteLobbyIds] = useState<Map<string, string>>(new Map())
+  const [remotePlayerIds, setRemotePlayerIds] = useState<Map<string, string>>(new Map())
 
-  // Always pull the Marin lobby IDs from Supabase while the panel is open —
+  // Always pull the Marin player IDs from Supabase while the panel is open —
   // even when signed in — so the switcher resolves real Marin accounts no
   // matter which county the current user belongs to.
   useEffect(() => {
     if (!county || !expanded) return
     let cancelled = false
-    fetchLobbyIds(county).then(ids => { if (!cancelled) setRemoteLobbyIds(ids) })
+    fetchTestPlayerIds(county).then(ids => { if (!cancelled) setRemotePlayerIds(ids) })
     return () => { cancelled = true }
   }, [profile?.id, county, expanded])
 
   const testProfiles = useMemo<PlayerProfile[]>(() => {
     if (!county) return []
     const base = getTestProfiles(county)
-    // Prefer the real Supabase Marin id. Fall back to a local-cache id (only
-    // present when signed in and Marin data is cached). Drop players that
-    // resolve to neither — a placeholder id would land on a broken account.
+    // Prefer the real Supabase id (tournament-membership aware). Fall back to a
+    // local-cache id, then drop players that resolve to neither — a placeholder
+    // id would land on an account that's in no tournament.
     return base
       .map(p => {
-        const realId = remoteLobbyIds.get(p.name.toLowerCase())
+        const realId = remotePlayerIds.get(p.name.toLowerCase())
         if (realId) return { ...p, id: realId }
         if (p.id.startsWith('test-')) return null
         return p
       })
       .filter((p): p is PlayerProfile => p !== null)
-  }, [county, profile?.id, remoteLobbyIds])
+  }, [county, profile?.id, remotePlayerIds])
 
   // Prefer the user's own partition tournament so Skip-countdown starts a
   // tournament the user is a member of (Bracket tab filters by membership).

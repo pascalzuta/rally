@@ -3212,29 +3212,43 @@ export async function seedLobby(county: string, count: number = 3): Promise<Lobb
   return getLobbyByCounty(normalizedCounty)
 }
 
+// Order tournaments so the one a player is actively playing in wins when
+// resolving their id. Membership (App.tsx) is keyed by the id stored INSIDE the
+// tournament, so switching must use that id — never a stale lobby placeholder.
+const TOURNAMENT_STATUS_RANK: Record<string, number> = {
+  'in-progress': 0, scheduling: 1, setup: 2, completed: 3,
+}
+export function tournamentStatusRank(status: string): number {
+  return TOURNAMENT_STATUS_RANK[status] ?? 4
+}
+
 export function getTestProfiles(county: string): PlayerProfile[] {
-  // Look up real IDs from lobby and tournaments so switching profiles works
-  // correctly. Scope the lookup to the requested county — otherwise a test
-  // player seeded into multiple counties resolves to whichever id was written
-  // last, and switching into them lands you in the wrong tournament.
+  // Resolve each test player's real id, scoped to the requested county.
+  // Tournament membership is the source of truth: once a tournament forms, its
+  // player ids — not the lobby — decide who's "in" it. So we prefer the active
+  // tournament's id (in-progress > scheduling > setup > completed) and fall back
+  // to the lobby only for players not yet promoted into any tournament.
   const normalizedCounty = county.toLowerCase()
   const lobby = loadLobby()
   const tournaments = load()
-  const allPlayers = new Map<string, string>() // name -> id (county-scoped)
+    .filter(t => t.county.toLowerCase() === normalizedCounty)
+    .sort((a, b) => tournamentStatusRank(a.status) - tournamentStatusRank(b.status))
 
+  const byName = new Map<string, string>() // name -> id, first (highest-priority) write wins
+  for (const t of tournaments) {
+    for (const p of t.players) {
+      const key = p.name.toLowerCase()
+      if (!byName.has(key)) byName.set(key, p.id)
+    }
+  }
   for (const entry of lobby) {
     if (entry.county.toLowerCase() !== normalizedCounty) continue
-    allPlayers.set(entry.playerName.toLowerCase(), entry.playerId)
-  }
-  for (const t of tournaments) {
-    if (t.county.toLowerCase() !== normalizedCounty) continue
-    for (const p of t.players) {
-      allPlayers.set(p.name.toLowerCase(), p.id)
-    }
+    const key = entry.playerName.toLowerCase()
+    if (!byName.has(key)) byName.set(key, entry.playerId)
   }
 
   return TEST_PLAYERS.map((name, i) => ({
-    id: allPlayers.get(name.toLowerCase()) ?? `test-${i}`,
+    id: byName.get(name.toLowerCase()) ?? `test-${i}`,
     name,
     county,
     createdAt: new Date().toISOString(),
