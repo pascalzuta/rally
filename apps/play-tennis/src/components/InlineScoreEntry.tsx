@@ -265,6 +265,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
             value={set[0]}
             onChange={e => updateSet(i, 0, e.target.value)}
             inputMode="numeric"
+            aria-label={`Your games (${youName}), set ${i + 1}`}
           />
         ))}
 
@@ -280,6 +281,7 @@ export default function InlineScoreEntry({ tournament, matchId, currentPlayerId,
             value={set[1]}
             onChange={e => updateSet(i, 1, e.target.value)}
             inputMode="numeric"
+            aria-label={`${opponentName} games, set ${i + 1}`}
           />
         ))}
       </div>
