@@ -7,6 +7,7 @@
     "dev": "vite --port 5180 --host",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "preview": "vite preview --port 5180",
     "build:native": "VITE_CAPACITOR_BUILD=1 vite build && npx cap sync",
     "cap:sync": "npx cap sync",
