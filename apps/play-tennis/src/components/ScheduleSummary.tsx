@@ -75,7 +75,10 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
 
   const summary = getSchedulingSummary(tournament)
   const totalMatches = tournament.matches.filter(m => m.player1Id && m.player2Id).length
-  const completedMatchCount = tournament.matches.filter(m => m.completed || m.scoreReportedBy).length
+  // Count only confirmed-complete matches, matching Home (HomeHeroCard) and
+  // Standings. A score that's reported but not yet opponent-confirmed isn't
+  // "played" for progress purposes — it can still be disputed/corrected.
+  const completedMatchCount = tournament.matches.filter(m => m.completed).length
   const playedPct = totalMatches > 0 ? Math.round((completedMatchCount / totalMatches) * 100) : 0
 
   // Phase data
