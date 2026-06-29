@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { useRallyData } from './context/RallyDataProvider'
-import { joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
+import { joinLobby, joinFriendTournament, getInviteTournamentCounty, retroactivelyAwardTrophies, getPendingVictory, clearPendingVictory, getIncomingOffers, getActiveBroadcasts, getNotifications, markNotificationsRead, getUnreadNotificationCount, getUnreadMessageCount, getMatchOffer, sendWelcomeMessage } from './store'
 import { usePendingActions } from './hooks/usePendingActions'
 import { PlayerProfile, TrophyTier } from './types'
 import { analytics } from './analytics'
@@ -241,6 +241,15 @@ export default function App() {
   ) ?? tournaments.find(t =>
     t.status === 'setup' && t.players.some(p => p.id === profile?.id)
   ) ?? null
+
+  // Play tab "live opportunity" signal — lights the Play icon green when there's
+  // something to act on right now: someone requested a match with you (incoming
+  // offer) or a player in your tournament broadcast open availability you could
+  // claim. Both surface on the Play Now tab, so the tab is where we draw the eye.
+  const availableBroadcastCount = (profile && activeTournament)
+    ? getActiveBroadcasts(activeTournament.id, profile.id).length
+    : 0
+  const playOpportunityCount = incomingOfferCount + availableBroadcastCount
 
   // [Rally diag] Skip-Countdown disappearance tracing
   if (typeof window !== 'undefined') {
@@ -690,11 +699,22 @@ export default function App() {
               </span>
             )}
           </button>
-          <button className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''}`} onClick={() => navigate(ROUTES.PLAYNOW)}>
+          <button
+            className={`bottom-tab ${activeTab === 'playnow' ? 'active' : ''} ${playOpportunityCount > 0 ? 'has-opportunity' : ''}`}
+            onClick={() => navigate(ROUTES.PLAYNOW)}
+            aria-label={playOpportunityCount > 0
+              ? `Play, ${playOpportunityCount} ${playOpportunityCount === 1 ? 'opportunity' : 'opportunities'} to play now`
+              : 'Play'}
+          >
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
             <span className="tab-text">Play</span>
+            {playOpportunityCount > 0 && (
+              <span className="tab-badge tab-badge--play" aria-hidden="true">
+                {playOpportunityCount > 99 ? '99+' : playOpportunityCount}
+              </span>
+            )}
           </button>
           <button className={`bottom-tab ${activeTab === 'rating' ? 'active' : ''}`} onClick={() => navigate(ROUTES.RATING)}>
             <svg className="tab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
