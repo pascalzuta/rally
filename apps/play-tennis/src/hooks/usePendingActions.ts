@@ -39,6 +39,10 @@ export interface ScoreConfirmEntry {
 export interface PendingActions {
   needsScheduling: number // matches with no time set, involving me
   needsAccept: number // proposed time from opponent, awaiting my response
+  /** Match id of the most urgent "needs a time" match (for focus-scroll on tap). */
+  needsSchedulingMatchId?: string
+  /** Match id of the most urgent "proposed time to accept" match (for focus-scroll on tap). */
+  needsAcceptMatchId?: string
   scoreConfirmPending: ScoreConfirmEntry[]
   unreadMessages: number
   /** Total count for tab badge. Excludes unread messages (those have their own top-icon badge). */
@@ -74,6 +78,10 @@ export function derivePendingActions(
   let needsScheduling = 0
   let needsAccept = 0
   const scoreConfirmPending: ScoreConfirmEntry[] = []
+  // Track the most-urgent (lowest view.priority) match per category so a tap
+  // on Home can focus-scroll straight to the card that needs input.
+  let schedulingFocus: { matchId: string; priority: number } | null = null
+  let acceptFocus: { matchId: string; priority: number } | null = null
 
   for (const tournament of tournaments) {
     if (tournament.status !== 'in-progress' && tournament.status !== 'setup') continue
@@ -87,6 +95,9 @@ export function derivePendingActions(
       // needsScheduling: no time set yet and I'm a player
       if (view.key === 'needs-scheduling' || view.key === 'needs-new-time') {
         needsScheduling++
+        if (!schedulingFocus || view.priority < schedulingFocus.priority) {
+          schedulingFocus = { matchId: match.id, priority: view.priority }
+        }
         continue
       }
 
@@ -99,6 +110,9 @@ export function derivePendingActions(
         view.key === 'reschedule-requested'
       ) {
         needsAccept++
+        if (!acceptFocus || view.priority < acceptFocus.priority) {
+          acceptFocus = { matchId: match.id, priority: view.priority }
+        }
         continue
       }
 
@@ -135,6 +149,8 @@ export function derivePendingActions(
   return {
     needsScheduling,
     needsAccept,
+    needsSchedulingMatchId: schedulingFocus?.matchId,
+    needsAcceptMatchId: acceptFocus?.matchId,
     scoreConfirmPending,
     unreadMessages,
     bracketBadgeCount,

@@ -181,6 +181,76 @@ describe('derivePendingActions', () => {
     })
   })
 
+  describe('focus match ids (tap-to-card on Home)', () => {
+    it('exposes the match id for a single "needs a time" match', () => {
+      const t = tournament([emptyMatch('m1', { schedule: undefined })])
+      const result = derivePendingActions([t], ME, 0, NOW_MS)
+      expect(result.needsScheduling).toBe(1)
+      expect(result.needsSchedulingMatchId).toBe('m1')
+    })
+
+    it('exposes the match id for a single "proposed time to accept" match', () => {
+      const t = tournament([
+        emptyMatch('m1', {
+          schedule: {
+            status: 'proposed',
+            proposals: [
+              { id: 'p1', proposedBy: OPP, day: 'mon', startHour: 18, endHour: 20, status: 'pending' },
+            ],
+            confirmedSlot: null,
+            createdAt: '2026-04-20T00:00:00Z',
+            escalationDay: 0,
+            lastEscalation: '2026-04-20T00:00:00Z',
+          },
+        }),
+      ])
+      const result = derivePendingActions([t], ME, 0, NOW_MS)
+      expect(result.needsAccept).toBe(1)
+      expect(result.needsAcceptMatchId).toBe('m1')
+    })
+
+    it('picks the MOST urgent match when several need accepting (escalated over proposed)', () => {
+      const proposed = emptyMatch('m-proposed', {
+        schedule: {
+          status: 'proposed',
+          proposals: [
+            { id: 'p1', proposedBy: OPP, day: 'mon', startHour: 18, endHour: 20, status: 'pending' },
+          ],
+          confirmedSlot: null,
+          createdAt: '2026-04-20T00:00:00Z',
+          escalationDay: 0,
+          lastEscalation: '2026-04-20T00:00:00Z',
+        },
+      })
+      const escalated = emptyMatch('m-escalated', {
+        player1Id: ME,
+        player2Id: 'player-third',
+        schedule: {
+          status: 'escalated',
+          proposals: [
+            { id: 'p2', proposedBy: 'player-third', day: 'tue', startHour: 19, endHour: 21, status: 'pending' },
+          ],
+          confirmedSlot: null,
+          createdAt: '2026-04-18T00:00:00Z',
+          escalationDay: 3,
+          lastEscalation: '2026-04-22T00:00:00Z',
+        },
+      })
+      const t = tournament([proposed, escalated])
+      t.players.push(player('player-third', 'Alex'))
+      const result = derivePendingActions([t], ME, 0, NOW_MS)
+      expect(result.needsAccept).toBe(2)
+      // escalated → respond-now (priority 0) beats proposed → needs-response (priority 2)
+      expect(result.needsAcceptMatchId).toBe('m-escalated')
+    })
+
+    it('leaves focus ids undefined when nothing needs input', () => {
+      const result = derivePendingActions([], ME, 0, NOW_MS)
+      expect(result.needsSchedulingMatchId).toBeUndefined()
+      expect(result.needsAcceptMatchId).toBeUndefined()
+    })
+  })
+
   describe('unreadMessages passthrough', () => {
     it('passes unreadMessages through to output', () => {
       const result = derivePendingActions([], ME, 7, NOW_MS)
