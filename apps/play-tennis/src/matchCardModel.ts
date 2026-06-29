@@ -440,7 +440,7 @@ export function getMatchCardView(
           metaLabel: confirmedSlotMeta,
           metaKind: 'time',
           primaryActionIsHero: true,
-          primaryActionLabel: 'Log score',
+          primaryActionLabel: 'Report score',
           expansionKind: 'score-correction',
           priority: 0.7,
           isMyMatch: mine,
@@ -459,7 +459,7 @@ export function getMatchCardView(
           metaLabel: confirmedSlotMeta,
           metaKind: 'time',
           primaryActionIsHero: true,
-          primaryActionLabel: 'Log score',
+          primaryActionLabel: 'Report score',
           expansionKind: 'score-correction',
           priority: 1.2,
           isMyMatch: mine,
@@ -477,7 +477,7 @@ export function getMatchCardView(
         metaLabel: confirmedSlotMeta,
         metaKind: 'time',
         primaryActionIsHero: true,
-        primaryActionLabel: 'Log score',
+        primaryActionLabel: 'Report score',
         expansionKind: 'score-correction',
         priority: 1.8,
         isMyMatch: mine,
@@ -501,7 +501,10 @@ export function getMatchCardView(
       infoTooltipText: hasAutoMatchedOverlap(match)
         ? 'You and your opponent both had this time open, so Rally booked it.'
         : undefined,
-      primaryActionLabel: mine ? 'View match' : 'View time',
+      // Before the match the only useful action is changing the time — name it
+      // directly instead of a vague "View match". Score reporting appears on this
+      // same card once the slot time has passed (the elapsedMs branch above).
+      primaryActionLabel: mine ? 'Change time' : 'View time',
       expansionKind: 'schedule',
       priority: 3,
       isMyMatch: mine,
