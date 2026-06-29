@@ -3295,3 +3295,15 @@ input:focus, textarea:focus, select:focus,
   color: var(--ink-2) !important; line-height: 1.5 !important;
   margin: 0 !important;
 }
+
+/* === HOME hero — un-carded active-tournament header ===
+   Mirrors the Bracket tab header (plain, no card). Cards on Home are
+   reserved for matches. The attention row sits below the header, aligned
+   to the same 14px gutter as .bracket-tab-header. */
+.home-hero-active .bracket-tab-header { padding: 18px 14px 0 !important; }
+.home-hero-active .home-hero-attention {
+  padding: 14px 14px 6px;
+}
+.home-hero-active .home-hero-attention .b-card-attention-row {
+  font-size: 14px; font-weight: 500; color: var(--ink);
+}

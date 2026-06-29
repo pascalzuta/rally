@@ -312,9 +312,6 @@ export default function HomeHeroCard({
 
   // --- Active tournament rendering ---
   if (activeTournament) {
-    const totalMatches = activeTournament.matches.filter(m => m.player1Id && m.player2Id).length
-    const completedMatches = activeTournament.matches.filter(m => m.completed).length
-
     // Split tournament name so "Open #N" (or trailing portion after the city) renders in italic blue
     // matching screenshot 04: "Mineral County, CO Open #2" → "Open #2" italic blue.
     const tName = activeTournament.name
@@ -328,24 +325,20 @@ export default function HomeHeroCard({
         : 'Round robin'
 
     return (
-      <div className="b-card" style={{ margin: '10px 14px' }}>
-        <div className="b-card-head">
-          <span className="b-card-head-left">Your tournament</span>
-          <span className="b-card-head-right">{completedMatches} / {totalMatches} matches</span>
+      <div className="home-hero-active">
+        {/* Plain tournament header — matches the Bracket tab header exactly.
+            No card: cards on Home/Bracket are reserved for matches. */}
+        <div className="bracket-tab-header">
+          <h2 className="bracket-title">
+            {tBase}{tEm ? <> <em className="bg-em">{tEm}</em></> : null}
+          </h2>
+          <div className="bracket-tab-meta">
+            {activeTournament.players.length} players · {formatLabel}
+          </div>
         </div>
-        <h3 className="b-card-title">
-          {tBase}{tEm ? <> <em className="bg-em">{tEm}</em></> : null}
-        </h3>
-        <p className="b-card-supporting">
-          {activeTournament.players.length} players · {formatLabel}
-        </p>
-
-        {(heroState === 'active-needs-availability' || (heroState === 'active' && actionCardCount > 0) || (heroState === 'active' && actionCardCount === 0)) && (
-          <hr className="b-card-divider" />
-        )}
 
         {heroState === 'active-needs-availability' && (
-          <>
+          <div className="home-hero-attention">
             <div className="b-card-attention-row">
               <span className="b-status-dot b-status-dot--amber" />
               <span>Add your availability so we can schedule matches.</span>
@@ -353,25 +346,29 @@ export default function HomeHeroCard({
             <button className="b-btn-block" style={{ marginTop: 14 }} onClick={onSetAvailability}>
               Set your availability
             </button>
-          </>
+          </div>
         )}
 
         {heroState === 'active' && actionCardCount === 0 && (
-          <div className="b-card-attention-row">
-            <span className="b-status-dot b-status-dot--blue" />
-            <span>All clear. Nothing needs you right now.</span>
+          <div className="home-hero-attention">
+            <div className="b-card-attention-row">
+              <span className="b-status-dot b-status-dot--blue" />
+              <span>All clear. Nothing needs you right now.</span>
+            </div>
           </div>
         )}
 
         {heroState === 'active' && actionCardCount > 0 && (
-          <div className="b-card-attention-row">
-            <span className="b-status-dot b-status-dot--blue" />
-            <span>{actionCardCount} match{actionCardCount !== 1 ? 'es' : ''} need{actionCardCount === 1 ? 's' : ''} your attention</span>
+          <div className="home-hero-attention">
+            <div className="b-card-attention-row">
+              <span className="b-status-dot b-status-dot--blue" />
+              <span>{actionCardCount} match{actionCardCount !== 1 ? 'es' : ''} need{actionCardCount === 1 ? 's' : ''} your attention</span>
+            </div>
           </div>
         )}
 
         {showOnboarding && !hideOnboarding && (
-          <div style={{ marginTop: 'var(--space-md)', borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-md)' }}>
+          <div style={{ marginTop: 'var(--space-md)' }}>
             <WelcomeCard
               activationSteps={activationSteps}
               county={profile.county}
