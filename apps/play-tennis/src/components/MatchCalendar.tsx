@@ -178,7 +178,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       {slot && <div className="card-meta-chip">{formatSlotTime(slot)}</div>}
                     </div>
                     <div className="action-card-main">
-                      <div className="action-card-opponent">vs {opponentName}</div>
+                      <div className="action-card-opponent">You vs <em className="match-opp match-opp--slate">{opponentName}</em></div>
                       <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
                     </div>
                     <PostMatchFeedbackInline
@@ -207,7 +207,7 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
                       {slot && <div className="card-meta-chip">{formatSlotTime(slot)}</div>}
                     </div>
                     <div className="action-card-main">
-                      <div className="action-card-opponent">vs {opponentName}</div>
+                      <div className="action-card-opponent">You vs <em className="match-opp match-opp--slate">{opponentName}</em></div>
                       <div className="action-card-supporting">{score || 'Final score recorded.'}</div>
                     </div>
                   </div>

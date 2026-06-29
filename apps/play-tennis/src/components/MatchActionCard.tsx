@@ -25,24 +25,27 @@ interface Props {
 }
 
 /** Italicise the opponent name(s) inside titles like "vs Alex Rivera" or "Alex vs Sam".
+ *  For the current player's own match ("vs <Name>") we prefix "You" so it reads as
+ *  *your* game, and colour the opponent name by the match's status tone.
  *  Pure presentational — keeps matchCardModel free of JSX. */
-function renderTitleWithEmphasis(title: string) {
-  // "vs <Name>" — emphasise everything after the literal "vs "
+function renderTitleWithEmphasis(title: string, toneClass = 'blue') {
+  const nameClass = `match-opp match-opp--${toneClass}`
+  // "vs <Name>" — the current player's match: read it as "You vs <Name>"
   if (title.startsWith('vs ')) {
     return (
       <>
-        vs <em className="bg-em">{title.slice(3)}</em>
+        You vs <em className={nameClass}>{title.slice(3)}</em>
       </>
     )
   }
-  // "<A> vs <B>" — emphasise both names
+  // "<A> vs <B>" — neutral all-matches view: emphasise both names
   const idx = title.indexOf(' vs ')
   if (idx > 0) {
     return (
       <>
-        <em className="bg-em">{title.slice(0, idx)}</em>
+        <em className="match-opp">{title.slice(0, idx)}</em>
         {' vs '}
-        <em className="bg-em">{title.slice(idx + 4)}</em>
+        <em className="match-opp">{title.slice(idx + 4)}</em>
       </>
     )
   }
@@ -168,7 +171,7 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
       </div>
 
       <div className="action-card-main">
-        <div className="action-card-opponent">{renderTitleWithEmphasis(view.title)}</div>
+        <div className="action-card-opponent">{renderTitleWithEmphasis(view.title, toneClass)}</div>
         {metaInBody && (
           <div className="action-card-time">{view.metaLabel}</div>
         )}

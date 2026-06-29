@@ -228,7 +228,7 @@ export default function ScheduleSummary({ tournament, currentPlayerId, currentPl
               <div className="card-status-label card-status-label--green">Score confirmed</div>
             </div>
             <div className="action-card-main">
-              <div className="action-card-opponent">vs {opponentName}</div>
+              <div className="action-card-opponent">You vs <em className="match-opp match-opp--green">{opponentName}</em></div>
               {score && <div className="action-card-supporting">{score}</div>}
             </div>
             <PostMatchFeedbackInline

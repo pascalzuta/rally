@@ -431,7 +431,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 return (
                   <div className="h2h-card">
                     <div className="h2h-header">
-                      <span className="h2h-title">vs {oppName}</span>
+                      <span className="h2h-title">You vs <em className="match-opp match-opp--slate">{oppName}</em></span>
                       <button className="btn-icon" onClick={() => setH2hOpponent(null)}>✕</button>
                     </div>
                     <div className="h2h-record">
@@ -465,7 +465,7 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                       </span>
                     </div>
                     <div className="match-history-info">
-                      <div className="match-history-opponent">vs {match.opponentName}</div>
+                      <div className="match-history-opponent">You vs <em className="match-opp match-opp--slate">{match.opponentName}</em></div>
                       <div className="match-history-meta">{match.tournamentName} · R{match.round}</div>
                     </div>
                     <div className="match-history-score">{match.score}</div>

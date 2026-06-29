@@ -363,6 +363,15 @@ em.bg-em,
   background: var(--bg) !important;
   box-shadow: none !important;
 }
+
+/* Redesign: colored status left-rail on match cards (per approved dummies).
+   The rail gives an at-a-glance status read alongside the pill + name colour. */
+.action-card.action-confirmed     { border-left: 4px solid var(--green) !important; }
+.action-card.action-respond,
+.action-card.action-confirm-score { border-left: 4px solid var(--blue) !important; }
+.action-card.action-escalated     { border-left: 4px solid var(--red) !important; }
+.action-card.action-schedule      { border-left: 4px solid var(--amber) !important; }
+.action-card.action-completed     { border-left: 4px solid var(--line-2, #e2e5ea) !important; }
 /* Some action-card variants apply the rail via ::before or ::after */
 .action-card::before, .action-card::after { display: none !important; }
 
@@ -428,6 +437,14 @@ em.bg-em,
   line-height: 1.2 !important; letter-spacing: -0.02em !important;
   color: var(--ink) !important; margin: 8px 0 4px;
 }
+/* Opponent-name highlight convention: italic, coloured by match status.
+   "You vs" stays ink; the name carries the status colour. */
+.match-opp { font-style: italic; font-weight: 700; color: var(--blue); }
+.match-opp--green { color: var(--green); }
+.match-opp--blue  { color: var(--blue); }
+.match-opp--amber { color: var(--amber); }
+.match-opp--red   { color: var(--red); }
+.match-opp--slate { color: var(--ink-2); }
 .action-card-supporting {
   font-size: 14px !important; font-weight: 500 !important;
   line-height: 1.5 !important; color: var(--ink-2) !important;
@@ -3295,3 +3312,52 @@ input:focus, textarea:focus, select:focus,
   color: var(--ink-2) !important; line-height: 1.5 !important;
   margin: 0 !important;
 }
+
+/* ============================================================
+   Redesign: confirmation as a bottom sheet ("are you sure").
+   Restyles the existing .leave-overlay markup — no JSX changes.
+   Destructive action on top (red), safe escape below (ghost).
+   ============================================================ */
+.leave-overlay {
+  position: fixed !important; inset: 0 !important; z-index: 1000 !important;
+  background: rgba(15,17,21,.42) !important;
+  display: flex !important; align-items: flex-end !important; justify-content: center !important;
+  padding: 0 !important; animation: rallyFade .2s ease;
+}
+.leave-modal {
+  width: 100% !important; max-width: 430px !important;
+  background: var(--bg) !important; border: 0 !important;
+  border-radius: 26px 26px 0 0 !important;
+  padding: 22px 22px calc(26px + env(safe-area-inset-bottom)) !important;
+  box-shadow: 0 -12px 44px rgba(0,0,0,.28) !important;
+  text-align: center; animation: rallyRise .26s cubic-bezier(.2,.8,.2,1);
+}
+.leave-modal::before {
+  content: ""; display: block; width: 38px; height: 4px; border-radius: 2px;
+  background: var(--line-2, #e2e5ea); margin: 2px auto 16px;
+}
+.leave-title {
+  font-size: 20px !important; font-weight: 800 !important; text-align: center !important;
+  letter-spacing: -0.02em !important; margin: 0 0 8px !important; color: var(--ink) !important;
+}
+.leave-message {
+  font-size: 14px !important; color: var(--ink-2) !important; text-align: center !important;
+  line-height: 1.5 !important; margin: 0 auto 4px !important; max-width: 340px;
+}
+.leave-actions {
+  display: flex !important; flex-direction: column-reverse !important; gap: 10px !important;
+  margin-top: 22px !important;
+}
+.leave-actions .btn {
+  width: 100% !important; border-radius: 14px !important; padding: 15px !important;
+  font-size: 16px !important; font-weight: 700 !important;
+}
+.leave-actions .btn:not(.btn-danger) {
+  background: var(--bg-2) !important; color: var(--ink) !important; border: 0 !important;
+}
+.leave-actions .btn.btn-danger {
+  background: var(--red) !important; color: #fff !important; border: 0 !important;
+  box-shadow: 0 6px 16px rgba(192,54,43,.24) !important;
+}
+@keyframes rallyFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rallyRise { from { transform: translateY(20px); } to { transform: translateY(0); } }
