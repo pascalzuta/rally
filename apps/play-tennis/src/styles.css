@@ -459,8 +459,9 @@ body {
    Someone broadcast availability or requested a match → light the Play icon
    green ("go play") so it stands out even when the tab isn't selected.
    Green signals opportunity, distinct from the red "action owed" Bracket badge. */
+/* !important needed: baseline.css resets `.bottom-tab` color with !important. */
 .bottom-tab.has-opportunity:not(.active) {
-  color: var(--green);
+  color: var(--green) !important;
 }
 .bottom-tab.has-opportunity:not(.active) .tab-text {
   font-weight: var(--weight-semibold);
@@ -15508,7 +15509,10 @@ main {
 }
 
 /* Play-tab opportunity badge: green = "go play", distinct from the red
-   "action owed" badge on the Bracket tab. */
-.tab-badge--play {
-  background: var(--green);
+   "action owed" badge on the Bracket tab. Higher specificity + !important
+   needed: the `badge-` substring matches a `[class*="badge-"]` reset in
+   baseline.css that forces `background: var(--bg-2) !important`. */
+.bottom-tab .tab-badge--play {
+  background: var(--green) !important;
+  color: #fff !important;
 }
