@@ -47,6 +47,23 @@ export function formatTimeRange(startHour: number, endHour: number): string {
   return `${formatTimeFull(startHour)} – ${formatTimeFull(endHour)}`;
 }
 
+/** "6:00–8:00 PM" — tight time range (AM/PM shown once when both ends share a
+ *  period, e.g. "11:00 AM–1:00 PM" when they cross). Matches the card style. */
+export function formatHourRange(startHour: number, endHour: number): string {
+  const part = (hour: number) => {
+    const h = Math.floor(hour);
+    const m = Math.round((hour - h) * 60);
+    const period = h >= 12 && h < 24 ? 'PM' : 'AM';
+    const display = h % 12 === 0 ? 12 : h % 12;
+    return { t: `${display}:${String(m).padStart(2, '0')}`, period };
+  };
+  const s = part(startHour);
+  const e = part(endHour);
+  return s.period === e.period
+    ? `${s.t}–${e.t} ${e.period}`
+    : `${s.t} ${s.period}–${e.t} ${e.period}`;
+}
+
 /** "marin county, ca" → "Marin County, CA" — title-case with state-abbr ALL CAPS.
  *  Two-letter trailing tokens after a comma are treated as US state abbreviations
  *  and rendered uppercase. */

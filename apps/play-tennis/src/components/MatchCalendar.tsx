@@ -35,10 +35,10 @@ function formatSlotTime(slot: { day: string; startHour: number; endHour: number 
   if (weekStart) {
     const date = resolveDate(weekStart, slot.day)
     const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    return `${dayLabel}, ${hour}:00 ${period}`
+    return `${dayLabel} · ${hour}:00 ${period}`
   }
   const dayLabel = (slot.day.charAt(0).toUpperCase() + slot.day.slice(1, 3))
-  return `${dayLabel}, ${hour}:00 ${period}`
+  return `${dayLabel} · ${hour}:00 ${period}`
 }
 
 function formatScoreDisplay(match: Match): string {

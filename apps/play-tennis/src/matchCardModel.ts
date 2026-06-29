@@ -1,4 +1,4 @@
-import { formatDateCompact, formatHourCompact } from './dateUtils'
+import { formatDateCompact, formatTimeFull } from './dateUtils'
 import { getPlayerName, getRescheduleUiState } from './store'
 import { Match, MatchProposal, MatchSlot, Tournament } from './types'
 
@@ -150,7 +150,7 @@ function formatSlotMeta(slot: Pick<MatchSlot, 'day' | 'startHour'> | Pick<MatchP
   } else {
     date = resolveNextDate(slot.day)
   }
-  return `${formatDateCompact(date)} ${formatHourCompact(slot.startHour)}`
+  return `${formatDateCompact(date)} · ${formatTimeFull(slot.startHour)}`
 }
 
 function formatScoreConfirmationTimeLeft(reportedAt: string | null | undefined): string | null {
