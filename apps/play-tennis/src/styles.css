@@ -459,9 +459,15 @@ body {
    Someone broadcast availability or requested a match → light the Play icon
    green ("go play") so it stands out even when the tab isn't selected.
    Green signals opportunity, distinct from the red "action owed" Bracket badge. */
-/* !important needed: baseline.css resets `.bottom-tab` color with !important. */
+/* !important needed: baseline.css resets `.bottom-tab` color with !important.
+   transition-property excludes `color`: the base `.bottom-tab` transitions
+   color over 150ms, and the app's frequent re-renders keep restarting that
+   transition so the green never settles (the icon fill + badge have no
+   transition, so only the text/stroke was stranded gray). Snapping color
+   instantly sidesteps it; the transform pulse still animates. */
 .bottom-tab.has-opportunity:not(.active) {
   color: var(--green) !important;
+  transition-property: transform;
 }
 .bottom-tab.has-opportunity:not(.active) .tab-text {
   font-weight: var(--weight-semibold);
