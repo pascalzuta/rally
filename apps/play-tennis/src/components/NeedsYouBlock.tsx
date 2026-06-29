@@ -37,6 +37,8 @@ export default function NeedsYouBlock({ actions, onGoToBracket, onOpenMessages }
   const {
     needsScheduling,
     needsAccept,
+    needsSchedulingMatchId,
+    needsAcceptMatchId,
     scoreConfirmPending,
     unreadMessages,
     hasUrgentScoreConfirm,
@@ -81,7 +83,7 @@ export default function NeedsYouBlock({ actions, onGoToBracket, onOpenMessages }
             <button
               type="button"
               className="needs-you-row"
-              onClick={() => onGoToBracket()}
+              onClick={() => onGoToBracket(needsSchedulingMatchId)}
               aria-label={`${needsScheduling} matches need a time. Opens Tournament tab.`}
             >
               <span className="needs-you-count">{needsScheduling}</span>
@@ -98,7 +100,7 @@ export default function NeedsYouBlock({ actions, onGoToBracket, onOpenMessages }
             <button
               type="button"
               className="needs-you-row"
-              onClick={() => onGoToBracket()}
+              onClick={() => onGoToBracket(needsAcceptMatchId)}
               aria-label={`${needsAccept} proposed times to accept. Opens Tournament tab.`}
             >
               <span className="needs-you-count">{needsAccept}</span>
