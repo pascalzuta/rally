@@ -15521,4 +15521,12 @@ main {
 .bottom-tab .tab-badge--play {
   background: var(--green) !important;
   color: #fff !important;
+  /* The `badge-` substring also pulls in the pill reset's padding/font/radius,
+     which makes this badge wider than the red Bracket badge. Restore the
+     `.tab-badge` circle sizing so the two tabs match. */
+  padding: 0 4px !important;
+  border-radius: 8px !important;
+  font-size: 10px !important;
+  font-weight: var(--weight-semibold) !important;
+  gap: 0 !important;
 }
