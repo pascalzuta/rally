@@ -455,6 +455,48 @@ body {
   font-weight: var(--weight-semibold);
 }
 
+/* ---- Play tab live-opportunity state ----
+   Someone broadcast availability or requested a match → light the Play icon
+   green ("go play") so it stands out even when the tab isn't selected.
+   Green signals opportunity, distinct from the red "action owed" Bracket badge. */
+/* !important needed: baseline.css resets `.bottom-tab` color with !important.
+   transition-property excludes `color`: the base `.bottom-tab` transitions
+   color over 150ms, and the app's frequent re-renders keep restarting that
+   transition so the green never settles (the icon fill + badge have no
+   transition, so only the text/stroke was stranded gray). Snapping color
+   instantly sidesteps it; the transform pulse still animates. */
+.bottom-tab.has-opportunity:not(.active) {
+  color: var(--green) !important;
+  transition-property: transform;
+}
+.bottom-tab.has-opportunity:not(.active) .tab-text {
+  font-weight: var(--weight-semibold);
+}
+/* Fill the lightning bolt (normally stroke-only) so it reads as "lit up". */
+.bottom-tab.has-opportunity .tab-icon polygon {
+  fill: var(--green);
+  fill-opacity: 0.16;
+}
+.bottom-tab.has-opportunity.active .tab-icon polygon {
+  fill: var(--color-accent-primary);
+  fill-opacity: 0.14;
+}
+/* Gentle attention pulse — slow enough to invite, not nag. */
+.bottom-tab.has-opportunity .tab-icon {
+  animation: play-tab-pulse 2.4s var(--ease-out-quart) infinite;
+  filter: drop-shadow(0 0 5px rgba(31, 138, 76, 0.35));
+}
+@keyframes play-tab-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bottom-tab.has-opportunity .tab-icon {
+    animation: none;
+    filter: none;
+  }
+}
+
 /* ================================================
    Buttons
    ================================================ */
@@ -15470,4 +15512,13 @@ main {
   height: 8px;
   padding: 0;
   transform: translateX(8px);
+}
+
+/* Play-tab opportunity badge: green = "go play", distinct from the red
+   "action owed" badge on the Bracket tab. Higher specificity + !important
+   needed: the `badge-` substring matches a `[class*="badge-"]` reset in
+   baseline.css that forces `background: var(--bg-2) !important`. */
+.bottom-tab .tab-badge--play {
+  background: var(--green) !important;
+  color: #fff !important;
 }
