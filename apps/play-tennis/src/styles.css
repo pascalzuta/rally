@@ -11502,6 +11502,50 @@ select:focus {
   background: var(--color-surface-alt); border-radius: var(--radius-sm);
 }
 
+/* --- Court booking negotiation (Marin V1) --- */
+.court-panel {
+  margin-top: var(--space-sm);
+  padding: 10px 12px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-accent-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--font-body-sm);
+}
+.court-panel--readonly { border-left-color: var(--color-divider); }
+
+.court-line, .court-captain-line { color: var(--color-text-primary); line-height: 1.4; }
+.court-captain-name, .court-captain-badge { font-weight: var(--weight-bold); }
+.court-secured-check { color: var(--color-positive-primary); font-weight: var(--weight-bold); }
+
+.court-venue-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.court-venue-label { font-size: var(--font-label); text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-secondary); }
+.court-venue-value { font-weight: var(--weight-bold); color: var(--color-text-primary); }
+.court-change { margin-left: auto; }
+
+.court-helper { font-size: var(--font-label); color: var(--color-text-secondary); line-height: 1.35; }
+
+.court-picker { display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--color-bg-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-sm); }
+.court-picker-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+.court-venue-option { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 8px 10px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); background: var(--color-bg-surface); cursor: pointer; }
+.court-venue-option.is-selected { border-color: var(--color-accent-primary); background: var(--color-accent-bg); }
+.cvo-name { font-weight: var(--weight-bold); color: var(--color-text-primary); }
+.cvo-city, .cvo-caption { font-size: var(--font-label); color: var(--color-text-secondary); }
+.court-showall { align-self: flex-start; }
+.court-other { display: flex; gap: 6px; }
+.court-other-input { flex: 1; padding: 6px 8px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); font-size: var(--font-body-sm); }
+
+.court-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 2px; }
+
+.court-empty { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.court-empty-title { font-weight: var(--weight-bold); color: var(--color-text-primary); }
+.court-empty-copy { font-size: var(--font-label); color: var(--color-text-secondary); }
+
+/* Home / Bracket one-line court summary */
+.action-card-court { margin-top: 4px; font-size: var(--font-body-sm); color: var(--color-text-secondary); }
+
 /* --- R-23: Post-Match Rating Card --- */
 .post-match-card { padding: 12px; border-radius: var(--radius-md); background: var(--color-bg-surface); border: 1px solid var(--color-divider); text-align: left; }
 .post-match-saved { text-align: center; color: var(--color-positive-primary); font-weight: 600; }

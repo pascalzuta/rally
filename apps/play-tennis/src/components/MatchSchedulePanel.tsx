@@ -5,7 +5,6 @@ import {
   acceptProposal,
   proposeNewSlots,
   cancelMatch,
-  getProfile,
   requestSoftReschedule,
   requestHardReschedule,
   counterReschedule,
@@ -16,6 +15,8 @@ import {
 import { Match, Tournament, DayOfWeek, MatchProposal, MatchSlot, RescheduleIntent, RescheduleReason } from '../types'
 import { ConfirmationTone } from './Toast'
 import InlineScoreEntry from './InlineScoreEntry'
+import CourtPanel from './CourtPanel'
+import { isMarinCounty } from '../marinVenues'
 
 interface Props {
   tournament: Tournament
@@ -80,24 +81,6 @@ function slotLabel(slot: MatchSlot): string {
   return `${dayLabelShort(slot.day)} \u00b7 ${formatHourRange(slot.startHour, slot.endHour)}`
 }
 
-function getVenueSuggestion(
-  tournament: Tournament,
-  match: Match,
-  currentPlayerId: string
-): string | null {
-  const profile = getProfile()
-  if (!profile) return null
-
-  const currentCourts = profile.preferredCourts ?? []
-
-  // We only have access to the current player's profile via localStorage.
-  // If the current player has preferred courts, show them as a suggestion.
-  if (currentCourts.length > 0) {
-    return `Venue: ${currentCourts.join(', ')}`
-  }
-
-  return null
-}
 
 export default function MatchSchedulePanel({ tournament, match, currentPlayerId, onUpdated, onScoreSaved, onActionComplete, onScoreActionComplete }: Props) {
   const [showPropose, setShowPropose] = useState(false)
@@ -136,6 +119,8 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   const hasCustomRescheduleSlot = Boolean(reschedDay) && reschedStart < reschedEnd
   const isScheduleLocked = Boolean(match.completed || match.scoreReportedBy || match.scoreConfirmedAt)
   const isScoreable = canEnterScore(match, currentPlayerId)
+  // Court booking negotiation: singles-only, Marin-only (V1). Gated on the tournament's county.
+  const showCourtPanel = isMarinCounty(tournament.county) && tournament.mode !== 'doubles'
 
   function renderPanelHeader(statusLabel: string, tone: 'slate' | 'blue' | 'green' | 'purple' | 'red', title: string, copy: string) {
     return (
@@ -452,7 +437,6 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   // Confirmed state
   if (schedule.status === 'confirmed' && schedule.confirmedSlot) {
     const s = schedule.confirmedSlot
-    const venue = getVenueSuggestion(tournament, match, currentPlayerId)
     const lastRescheduled = latestHistory?.type === 'rescheduled' && latestHistory.fromSlot
       ? `${dayLabel(latestHistory.fromSlot.day)} \u00b7 ${formatHourRange(latestHistory.fromSlot.startHour, latestHistory.fromSlot.endHour)}`
       : null
@@ -483,7 +467,15 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
           <span className="confirmed-day">{dayLabel(s.day)}</span>
           <span className="confirmed-time">{formatHourRange(s.startHour, s.endHour)}</span>
         </div>
-        {venue ? <div className="venue-suggestion">{venue}</div> : null}
+        {showCourtPanel ? (
+          <CourtPanel
+            tournament={tournament}
+            match={match}
+            currentPlayerId={currentPlayerId}
+            onUpdated={onUpdated}
+            onAction={onActionComplete}
+          />
+        ) : null}
         {lastRescheduled ? (
           <div className="reschedule-count-info">Rescheduled from {lastRescheduled}</div>
         ) : null}

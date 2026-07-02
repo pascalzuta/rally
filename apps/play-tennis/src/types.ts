@@ -104,6 +104,53 @@ export interface ScheduleHistoryEntry {
   toSlot?: MatchSlot
 }
 
+// --- Court booking negotiation (V1: Marin only) ---
+
+/** How a venue is obtained. Drives the captain-duty CTA copy. */
+export type ReservationMethod =
+  | 'walk-on'         // free, first-come-first-served
+  | 'reserve-online'  // reservable via a URL (may be free or paid)
+  | 'key-required'    // needs an annual physical key
+  | 'members-only'    // private club
+  | 'school-walk-on'  // public when not in class use
+
+export type VenueAccessType =
+  | 'public-free'
+  | 'public-reservable'
+  | 'private-club'
+  | 'school'
+
+/** Court lifecycle, distinct from schedule.status. */
+export type CourtStatus = 'assigned' | 'secured'
+
+/** Captain negotiation, cloned from RescheduleRequest. Only 'delegate' needs a round-trip. */
+export type CaptainNegotiationKind = 'delegate'
+export type CaptainNegotiationStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn'
+
+export interface CaptainNegotiation {
+  id: string
+  kind: CaptainNegotiationKind
+  requestedBy: string                   // playerId proposing the hand-off
+  requestedTo: string                   // playerId being asked to become captain
+  requestedAt: string                   // ISO
+  note?: string
+  status: CaptainNegotiationStatus
+  respondedBy?: string
+  respondedAt?: string
+}
+
+export interface MatchCourt {
+  venueId: string | null                // marinVenues slug, 'other', or null (not yet chosen)
+  venueLabel?: string                   // only when venueId === 'other'
+  captainId: string | null              // MUST be player1Id/player2Id or null. NEVER 'system'.
+  status: CourtStatus                   // 'assigned' (default) | 'secured'
+  assignedBy: string                    // playerId who set/last-changed the captain (audit)
+  assignedAt: string                    // ISO — when captainId last changed
+  securedAt?: string                    // ISO — set when status flips to 'secured'
+  handedOffAt?: string                  // ISO — set when a delegate negotiation is accepted
+  negotiation?: CaptainNegotiation      // present iff a delegate hand-off is pending
+}
+
 export interface MatchSchedule {
   status: SchedulingStatus
   proposals: MatchProposal[]
@@ -117,6 +164,7 @@ export interface MatchSchedule {
   rescheduleCount?: number
   activeRescheduleRequest?: RescheduleRequest
   scheduleHistory?: ScheduleHistoryEntry[]
+  court?: MatchCourt          // court booking negotiation (Marin V1) — optional; absent on legacy blobs
 }
 
 export type ResolutionType = 'walkover' | 'forced-match' | 'double-loss'
@@ -359,6 +407,8 @@ export interface DirectMessage {
 // --- Notifications ---
 
 export type NotificationType = 'match_offer' | 'offer_accepted' | 'offer_declined' | 'offer_expired' | 'match_reminder' | 'score_reported' | 'score_correction_proposed' | 'score_correction_resolved' | 'score_issue_reported' | 'feedback_requested' | 'reliability_nudge'
+  // Court captain events (device-local; cross-device signal is the synced court object)
+  | 'captain_assigned' | 'captain_delegation_suggested' | 'captain_handoff_accepted' | 'captain_handoff_declined' | 'court_secured' | 'court_unsecured_nudge'
 
 export interface RallyNotification {
   id: string

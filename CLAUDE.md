@@ -138,10 +138,22 @@ Full briefing: `apps/play-tennis/docs/scheduling-briefing.md` (18 sections)
 4. **P1**: Calendar/agenda view for scheduled matches
 5. **P2**: Weekly cap preference, waitlist experience
 
+## Court Booking Negotiation (Marin V1)
+Lets two matched players agree **who secures a court** (the "captain") and **which court**, once a time is confirmed. Rally does NOT book courts — most Marin courts are free walk-on; the captain either arrives first (walk-on) or clicks a deep-link to reserve. Full spec: `apps/play-tennis/docs/court-negotiation-spec.md`.
+
+- **Data model**: `court?` sub-object on `MatchSchedule` (`types.ts`) — `venueId`, `captainId`, `status: assigned|secured`, optional `negotiation`. Rides the synced `tournaments.data` JSONB (no new table). NEVER the in-memory `MatchBroadcast`/`MatchOffer` path.
+- **Captain**: provisional default = the human who proposed the time (acceptor if the proposal was `'system'`-generated), set in `acceptProposal`. One-tap "I'll be captain" claim (immediate, first-writer-wins via the `syncTournament` optimistic lock); "Can you take this one?" delegate requires the other player's acceptance. Per-match, singles-only.
+- **Venue**: static bundled directory `marinVenues.ts` (25 venues) with honest `reservationMethod`; defaults bias to free walk-on; paid/keyed/members-only stay out of defaults (selectable via "show all").
+- **Gate**: UI shows only when `isMarinCounty(tournament.county)` (matches full census form `'Marin County, CA'`) and `mode !== 'doubles'`.
+- **P0 invariant**: the "Court secured" toggle must NEVER be added to `canEnterScore` (`matchCapabilities.ts`) — it must not gate play/score entry.
+- **Key files**: `marinVenues.ts`, `components/CourtPanel.tsx`, court logic in `store.ts` (`claimCaptain`/`requestCaptainDelegation`/`respondCaptainDelegation`/`setCourtSecured`/`setCourtVenue`/`commitCourtMutation`/`commitCaptainClaim`), one-line summary via `matchCardModel.getCourtSummary`. Tests: `marinVenues.test.ts`, `matchCapabilities.test.ts`, `__tests__/courtNegotiation.test.ts`.
+- **Deferred to next version**: booking-API integration, payments/cost-splitting (paid venues assume captain pays), cross-device notification delivery, doubles, time-windowed nudges.
+
 ## Pending Tasks
 - Test multi-user sync end-to-end with real users
 - Implement availability sync to Supabase (PR 1 — critical path)
 - Build scheduling tier UI and "aha moment" screen (PR 2)
+- Court negotiation V1 shipped to staging (Marin-only). Verify cross-device (venue/captain/secured sync + first-writer-wins) on staging.play-rally.com; then consider payments + doubles for V2.
 
 ## Development
 ```bash

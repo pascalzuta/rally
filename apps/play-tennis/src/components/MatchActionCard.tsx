@@ -180,6 +180,9 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             {view.supporting}
           </div>
         )}
+        {view.courtSummary && (
+          <div className="action-card-court">{view.courtSummary}</div>
+        )}
       </div>
 
       {(view.primaryActionLabel || (view.isMyMatch && view.opponentId)) && (

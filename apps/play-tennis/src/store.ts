@@ -1,4 +1,4 @@
-import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, MatchResolution, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, RallyNotification, DirectMessage, SchedulingSummary, MatchReaction, MatchFeedback, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot } from './types'
+import { Tournament, Player, Match, MatchPhase, PlayerProfile, PlayerRating, LobbyEntry, AvailabilitySlot, MatchProposal, MatchSchedule, SkillLevel, Gender, DayOfWeek, MatchBroadcast, MatchResolution, Trophy, TrophyTier, Badge, BadgeType, MatchOffer, RallyNotification, DirectMessage, SchedulingSummary, MatchReaction, MatchFeedback, ReliabilityScore, EtiquetteScore, MatchSlot, RescheduleIntent, RescheduleReason, ScheduleHistoryEntry, RatingSnapshot, MatchCourt } from './types'
 import {
   syncTournament, syncLobbyEntry, syncRemoveLobbyEntry, syncRatingsForPlayer,
   syncAvailabilityToRemote, fetchAvailabilityForPlayers,
@@ -931,7 +931,9 @@ export async function acceptProposal(
   tournamentId: string,
   matchId: string,
   proposalId: string,
-  acceptedBy: string
+  acceptedBy: string,
+  pickedVenueId?: string,
+  pickedVenueLabel?: string
 ): Promise<Tournament | undefined> {
   const all = load()
   const t = all.find(x => x.id === tournamentId)
@@ -942,6 +944,11 @@ export async function acceptProposal(
 
   const proposal = match.schedule.proposals.find(p => p.id === proposalId)
   if (!proposal || proposal.status !== 'pending') return undefined
+
+  // Capture the reschedule reason before the active request is cleared below (used for court venue reset).
+  const acceptedRescheduleReason = match.schedule.activeRescheduleRequest?.status === 'pending'
+    ? match.schedule.activeRescheduleRequest.reason
+    : undefined
 
   // Prevent same-day conflicts: reject if either player already has a confirmed match on this day
   const player1 = match.player1Id
@@ -962,6 +969,48 @@ export async function acceptProposal(
     endHour: proposal.endHour,
   }
   match.schedule.confirmedSlot = nextSlot
+
+  // --- Court booking negotiation: provisional captain on first confirm; reset on reschedule ---
+  const courtNowIso = new Date().toISOString()
+  if (match.schedule.court === undefined) {
+    // FIRST CONFIRM — create the court. Provisional captain = the HUMAN who proposed the time;
+    // if the proposal was system-generated (bulk/needs-accept), the acceptor becomes captain.
+    // Never the literal 'system'.
+    const provisionalCaptain =
+      proposal.proposedBy && proposal.proposedBy !== 'system' ? proposal.proposedBy : acceptedBy
+    const captainId =
+      provisionalCaptain === match.player1Id || provisionalCaptain === match.player2Id
+        ? provisionalCaptain
+        : acceptedBy
+    match.schedule.court = {
+      venueId: pickedVenueId ?? null,
+      venueLabel: pickedVenueId === 'other' ? pickedVenueLabel : undefined,
+      captainId,
+      status: 'assigned',
+      assignedBy: acceptedBy,
+      assignedAt: courtNowIso,
+    }
+    addNotification({
+      type: 'captain_assigned',
+      recipientId: captainId,
+      senderId: acceptedBy,
+      message: "You're the court captain",
+      detail: "You're on the court by default. Tap to hand it off.",
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  } else {
+    // RESCHEDULE-ACCEPT / re-confirm — court already exists; do NOT recreate.
+    // Keep captainId; a new time means it must be re-secured.
+    const court = match.schedule.court
+    court.status = 'assigned'
+    delete court.securedAt
+    if (acceptedRescheduleReason === 'court_issue') {
+      // The venue itself was the problem — clear it so players re-pick.
+      court.venueId = null
+      court.venueLabel = undefined
+    }
+  }
 
   // Track participation: +4 for accepting
   if (!match.schedule.participationScores) match.schedule.participationScores = {}
@@ -988,6 +1037,312 @@ export async function acceptProposal(
 
   await saveAndSync(all, t)
   return t
+}
+
+// ============================================================================
+// Court booking negotiation (Marin V1) — see apps/play-tennis/docs/court-negotiation-spec.md
+// Court state rides match.schedule.court inside tournaments.data (synced + realtime).
+// NEVER touch MatchBroadcast/MatchOffer (localStorage-only, never cross devices).
+// ============================================================================
+
+/** Create a default court when absent, or repair an orphaned one (captainId not a participant). */
+function ensureCourt(match: Match, me: string): MatchCourt {
+  const nowIso = new Date().toISOString()
+  const existing = match.schedule?.court
+  const isParticipant = (id: string | null | undefined) =>
+    !!id && (id === match.player1Id || id === match.player2Id)
+  if (existing && isParticipant(existing.captainId)) return existing
+  const court: MatchCourt = existing
+    ? { ...existing, captainId: me, assignedBy: me, assignedAt: nowIso }
+    : { venueId: null, captainId: me, status: 'assigned', assignedBy: me, assignedAt: nowIso }
+  match.schedule!.court = court
+  return court
+}
+
+/**
+ * All NON-claim court writes (venue, secure/un-secure, delegate, decline, withdraw). Applies a
+ * mutator to match.schedule.court, syncs, and on conflict re-applies ONLY the court delta onto
+ * refreshed remote state — never re-pushing a stale whole-tournament blob (avoids clobber).
+ */
+async function commitCourtMutation(
+  tournamentId: string,
+  matchId: string,
+  mutate: (court: MatchCourt, match: Match) => void
+): Promise<{ ok: boolean }> {
+  const applyOnce = (arr: Tournament[]): { t: Tournament | undefined; skipped: boolean } => {
+    const t = arr.find(x => x.id === tournamentId)
+    const match = t?.matches.find(m => m.id === matchId)
+    if (!t || !match?.schedule?.court) return { t, skipped: true }
+    mutate(match.schedule.court, match)
+    return { t, skipped: false }
+  }
+
+  const all = load()
+  const first = applyOnce(all)
+  if (first.skipped || !first.t) return { ok: false }
+  const firstResult = await syncTournament(first.t, getTournamentTimestamp(tournamentId))
+  if (firstResult.success || !firstResult.conflict) {
+    bridgeSetTournaments([...all]) // success or offline: keep local
+    return { ok: true }
+  }
+
+  // Conflict: adopt fresh remote, re-apply ONLY our court delta, splice, retry once.
+  const fresh = await refreshTournamentById(tournamentId)
+  if (!fresh) { bridgeSetTournaments([...all]); return { ok: true } }
+  const merged = load().map(x => (x.id === tournamentId ? fresh : x))
+  const second = applyOnce(merged)
+  bridgeSetTournaments([...merged])
+  if (second.skipped || !second.t) return { ok: false }
+  const retry = await syncTournament(second.t, getTournamentTimestamp(tournamentId))
+  return { ok: retry.success }
+}
+
+/**
+ * Claim / accept-handoff / legacy-or-orphan init. First-writer-wins: on conflict, decide against
+ * the pre-write captain (not a proposer baseline); the loser adopts the winner's state.
+ */
+async function commitCaptainClaim(
+  tournamentId: string,
+  matchId: string,
+  me: string,
+  applyClaim: (court: MatchCourt, match: Match) => void
+): Promise<{ ok: true } | { ok: false; winnerId: string | null }> {
+  const all = load()
+  const t = all.find(x => x.id === tournamentId)
+  const match = t?.matches.find(m => m.id === matchId)
+  if (!t || !match?.schedule) return { ok: false, winnerId: null }
+  const expectedPrevCaptainId = match.schedule.court?.captainId ?? null
+  applyClaim(ensureCourt(match, me), match)
+
+  const firstResult = await syncTournament(t, getTournamentTimestamp(tournamentId))
+  if (firstResult.success) { bridgeSetTournaments([...all]); return { ok: true } }
+  if (!firstResult.conflict) { bridgeSetTournaments([...all]); return { ok: true } } // offline: keep local
+
+  // Conflict: refresh and decide against the pre-write captain.
+  const fresh = await refreshTournamentById(tournamentId)
+  const merged = load().map(x => (x.id === tournamentId ? (fresh ?? x) : x))
+  const freshCourt = fresh?.matches.find(m => m.id === matchId)?.schedule?.court ?? null
+  const remoteCaptain = freshCourt?.captainId ?? null
+  if (remoteCaptain && remoteCaptain !== expectedPrevCaptainId && remoteCaptain !== me) {
+    bridgeSetTournaments([...merged]) // loser adopts winner
+    return { ok: false, winnerId: remoteCaptain }
+  }
+
+  // No competing claim → re-apply our claim onto fresh state, retry once.
+  const mergedT = merged.find(x => x.id === tournamentId)
+  const mergedMatch = mergedT?.matches.find(m => m.id === matchId)
+  if (!mergedT || !mergedMatch?.schedule) { bridgeSetTournaments([...merged]); return { ok: true } }
+  applyClaim(ensureCourt(mergedMatch, me), mergedMatch)
+  bridgeSetTournaments([...merged])
+  const retry = await syncTournament(mergedT, getTournamentTimestamp(tournamentId))
+  return retry.success
+    ? { ok: true }
+    : { ok: false, winnerId: mergedMatch.schedule.court?.captainId ?? null }
+}
+
+/** T1 — "I'll be captain" (claim). Immediate, reversible; withdraws any pending delegation. */
+export async function claimCaptain(
+  tournamentId: string,
+  matchId: string,
+  me: string
+): Promise<{ ok: true } | { ok: false; winnerId: string | null }> {
+  const result = await commitCaptainClaim(tournamentId, matchId, me, (court) => {
+    court.captainId = me
+    court.assignedBy = me
+    court.assignedAt = new Date().toISOString()
+    if (court.negotiation?.status === 'pending') delete court.negotiation
+  })
+  if (result.ok) {
+    addNotification({
+      type: 'captain_assigned',
+      recipientId: me,
+      message: "You're the court captain",
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+  return result
+}
+
+/** T9 — set captain on a legacy/orphaned confirmed match (claimer becomes captain). */
+export async function initLegacyCourt(
+  tournamentId: string,
+  matchId: string,
+  me: string
+): Promise<{ ok: true } | { ok: false; winnerId: string | null }> {
+  return claimCaptain(tournamentId, matchId, me)
+}
+
+/** T2 — "Can you take this one?" (delegate). Requires the other player's acceptance. */
+export async function requestCaptainDelegation(
+  tournamentId: string,
+  matchId: string,
+  me: string,
+  note?: string
+): Promise<{ ok: boolean }> {
+  const match = load().find(x => x.id === tournamentId)?.matches.find(m => m.id === matchId)
+  const court = match?.schedule?.court
+  if (!match || !court || court.captainId !== me || court.negotiation?.status === 'pending') {
+    return { ok: false }
+  }
+  const other = match.player1Id === me ? match.player2Id : match.player1Id
+  if (!other) return { ok: false }
+  const result = await commitCourtMutation(tournamentId, matchId, (c) => {
+    if (c.captainId !== me || c.negotiation?.status === 'pending') return
+    c.negotiation = {
+      id: generateId(),
+      kind: 'delegate',
+      requestedBy: me,
+      requestedTo: other,
+      requestedAt: new Date().toISOString(),
+      note,
+      status: 'pending',
+    }
+  })
+  if (result.ok) {
+    addNotification({
+      type: 'captain_delegation_suggested',
+      recipientId: me,
+      message: 'You asked your opponent to secure the court',
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+  return result
+}
+
+/** T3/T4 — accept or decline a pending delegation (only requestedTo may respond). */
+export async function respondCaptainDelegation(
+  tournamentId: string,
+  matchId: string,
+  me: string,
+  response: 'accept' | 'decline'
+): Promise<{ ok: boolean }> {
+  const match = load().find(x => x.id === tournamentId)?.matches.find(m => m.id === matchId)
+  const neg = match?.schedule?.court?.negotiation
+  if (!neg || neg.status !== 'pending' || neg.requestedTo !== me) return { ok: false }
+
+  if (response === 'accept') {
+    const result = await commitCaptainClaim(tournamentId, matchId, me, (court) => {
+      if (court.negotiation?.status !== 'pending' || court.negotiation.requestedTo !== me) return
+      const now = new Date().toISOString()
+      court.captainId = me
+      court.assignedBy = me
+      court.assignedAt = now
+      court.handedOffAt = now
+      delete court.negotiation
+    })
+    if (result.ok) {
+      addNotification({
+        type: 'captain_handoff_accepted',
+        recipientId: me,
+        message: 'You took over as court captain',
+        relatedMatchId: matchId,
+        relatedTournamentId: tournamentId,
+      })
+    }
+    return { ok: result.ok }
+  }
+
+  const result = await commitCourtMutation(tournamentId, matchId, (court) => {
+    if (court.negotiation?.status === 'pending' && court.negotiation.requestedTo === me) {
+      delete court.negotiation
+    }
+  })
+  if (result.ok) {
+    addNotification({
+      type: 'captain_handoff_declined',
+      recipientId: me,
+      message: 'You declined captain duty',
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+  return result
+}
+
+/** T5 — withdraw a pending delegation (only requestedBy). Silent. */
+export async function withdrawCaptainDelegation(
+  tournamentId: string,
+  matchId: string,
+  me: string
+): Promise<{ ok: boolean }> {
+  return commitCourtMutation(tournamentId, matchId, (court) => {
+    if (court.negotiation?.status === 'pending' && court.negotiation.requestedBy === me) {
+      delete court.negotiation
+    }
+  })
+}
+
+/** T6/T7 — captain toggles "Court secured". Never gates score entry (see matchCapabilities.ts). */
+export async function setCourtSecured(
+  tournamentId: string,
+  matchId: string,
+  me: string,
+  secured: boolean
+): Promise<{ ok: boolean }> {
+  const result = await commitCourtMutation(tournamentId, matchId, (court) => {
+    if (court.captainId !== me) return
+    if (secured) {
+      court.status = 'secured'
+      court.securedAt = new Date().toISOString()
+      if (court.negotiation?.status === 'pending') delete court.negotiation // E4 auto-withdraw
+    } else {
+      court.status = 'assigned'
+      delete court.securedAt
+    }
+  })
+  if (result.ok && secured) {
+    addNotification({
+      type: 'court_secured',
+      recipientId: me,
+      message: 'You secured a court ✓',
+      relatedMatchId: matchId,
+      relatedTournamentId: tournamentId,
+    })
+  }
+  return result
+}
+
+/** T8 — set/change venue (either participant). A secured court resets to 'assigned'. */
+export async function setCourtVenue(
+  tournamentId: string,
+  matchId: string,
+  me: string,
+  venueId: string,
+  venueLabel?: string
+): Promise<{ ok: boolean }> {
+  const match = load().find(x => x.id === tournamentId)?.matches.find(m => m.id === matchId)
+  if (!match?.schedule) return { ok: false }
+  if (!match.schedule.court) {
+    // Legacy confirmed match, no court yet: create one (setter becomes captain) and set venue.
+    const claim = await commitCaptainClaim(tournamentId, matchId, me, (court) => {
+      court.venueId = venueId
+      court.venueLabel = venueId === 'other' ? venueLabel : undefined
+    })
+    return { ok: claim.ok }
+  }
+  return commitCourtMutation(tournamentId, matchId, (court) => {
+    court.venueId = venueId
+    court.venueLabel = venueId === 'other' ? venueLabel : undefined
+    if (court.status === 'secured') {
+      court.status = 'assigned'
+      delete court.securedAt
+    }
+  })
+}
+
+/** §8 — device-local "secure the court" nudge, deduped per match. Exported for out-of-store callers. */
+export function emitCourtNudge(matchId: string, tournamentId: string, captainId: string): void {
+  const existing = loadNotifications()
+  if (existing.some(n => n.type === 'court_unsecured_nudge' && n.relatedMatchId === matchId)) return
+  addNotification({
+    type: 'court_unsecured_nudge',
+    recipientId: captainId,
+    message: 'Your match is coming up — got a court?',
+    relatedMatchId: matchId,
+    relatedTournamentId: tournamentId,
+  })
 }
 
 async function requestRescheduleInternal(

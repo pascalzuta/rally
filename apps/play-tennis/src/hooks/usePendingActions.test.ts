@@ -195,7 +195,7 @@ describe('derivePendingActions', () => {
           schedule: {
             status: 'proposed',
             proposals: [
-              { id: 'p1', proposedBy: OPP, day: 'mon', startHour: 18, endHour: 20, status: 'pending' },
+              { id: 'p1', proposedBy: OPP, day: 'monday', startHour: 18, endHour: 20, status: 'pending' },
             ],
             confirmedSlot: null,
             createdAt: '2026-04-20T00:00:00Z',
@@ -214,7 +214,7 @@ describe('derivePendingActions', () => {
         schedule: {
           status: 'proposed',
           proposals: [
-            { id: 'p1', proposedBy: OPP, day: 'mon', startHour: 18, endHour: 20, status: 'pending' },
+            { id: 'p1', proposedBy: OPP, day: 'monday', startHour: 18, endHour: 20, status: 'pending' },
           ],
           confirmedSlot: null,
           createdAt: '2026-04-20T00:00:00Z',
@@ -228,7 +228,7 @@ describe('derivePendingActions', () => {
         schedule: {
           status: 'escalated',
           proposals: [
-            { id: 'p2', proposedBy: 'player-third', day: 'tue', startHour: 19, endHour: 21, status: 'pending' },
+            { id: 'p2', proposedBy: 'player-third', day: 'tuesday', startHour: 19, endHour: 21, status: 'pending' },
           ],
           confirmedSlot: null,
           createdAt: '2026-04-18T00:00:00Z',

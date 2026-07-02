@@ -1,6 +1,22 @@
 import { formatDateCompact, formatTimeFull } from './dateUtils'
 import { getPlayerName, getRescheduleUiState } from './store'
+import { getVenue, isMarinCounty } from './marinVenues'
 import { Match, MatchProposal, MatchSlot, Tournament } from './types'
+
+/** One-line court/captain summary for confirmed singles matches in Marin (V1). */
+function getCourtSummary(tournament: Tournament, match: Match): string | null {
+  if (tournament.mode === 'doubles') return null
+  if (!isMarinCounty(tournament.county)) return null
+  const court = match.schedule?.court
+  const captainId = court?.captainId ?? null
+  const captainIsParticipant = !!captainId && (captainId === match.player1Id || captainId === match.player2Id)
+  if (!court || !captainIsParticipant) return null
+  const captainName = getPlayerName(tournament, captainId).split(' ')[0]
+  const venue = getVenue(court.venueId)
+  const venueName = venue?.name ?? (court.venueId === 'other' ? court.venueLabel : undefined)
+  if (!venueName) return `${captainName} securing court`
+  return `${captainName} · ${venueName}${court.status === 'secured' ? ' ✓' : ''}`
+}
 
 const DAY_INDEX: Record<string, number> = {
   sunday: 0,
@@ -62,6 +78,8 @@ export interface MatchCardView {
   title: string
   supporting: string | null
   supportingTone?: 'default' | 'danger'
+  /** One-line court summary: "{captain} · {venue}{ ✓}" — court booking negotiation (Marin V1). */
+  courtSummary?: string | null
   metaLabel: string | null
   /**
    * 'time'      — metaLabel is a slot like "Sat Apr 25 9am"; render as the body's
@@ -495,6 +513,7 @@ export function getMatchCardView(
       // Opponent view: the time line + green pill already say "confirmed".
       // No need to repeat with "Time confirmed." — drop it.
       supporting: mine ? 'See you on court.' : null,
+      courtSummary: getCourtSummary(tournament, match),
       metaLabel: confirmedSlotMeta,
       metaKind: 'time',
       infoTooltipLabel: hasAutoMatchedOverlap(match) ? 'How Rally matched this' : undefined,
