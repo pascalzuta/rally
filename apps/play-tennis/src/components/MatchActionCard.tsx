@@ -118,7 +118,9 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
 
   const primaryBtnClass = view.primaryActionIsHero
     ? 'action-card-btn action-card-btn--solid'
-    : 'action-card-btn'
+    : view.courtNeeded
+      ? 'action-card-btn action-card-btn--court'
+      : 'action-card-btn'
 
   return (
     <div
@@ -214,6 +216,22 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
               {hasUnread && <span className="msg-unread-dot" />}
             </button>
           )}
+        </div>
+      )}
+
+      {/* Court-needed cards swap the primary to "Pick a court"; the mandated
+          Change-time affordance stays as a quiet text link (approved variant A). */}
+      {view.courtNeeded && !isExpanded && (
+        <div className="action-card-courtneeded-secondary">
+          <button
+            className="action-card-change-time-link"
+            onClick={event => {
+              event.stopPropagation()
+              onToggleExpanded()
+            }}
+          >
+            Change time
+          </button>
         </div>
       )}
 

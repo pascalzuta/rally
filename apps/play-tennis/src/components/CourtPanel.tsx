@@ -79,7 +79,12 @@ function secureLabel(v: MarinVenue | undefined): string {
 }
 
 export default function CourtPanel({ tournament, match, currentPlayerId, onUpdated, onAction }: Props) {
-  const [pickerOpen, setPickerOpen] = useState(false)
+  // Deep-link from "Pick a court" on the collapsed card: when the panel opens
+  // with a captain assigned but no venue chosen, start with the picker open.
+  const [pickerOpen, setPickerOpen] = useState(() => {
+    const c = match.schedule?.court
+    return Boolean(c && !c.venueId && (currentPlayerId === match.player1Id || currentPlayerId === match.player2Id))
+  })
   const [showAll, setShowAll] = useState(false)
   const [otherText, setOtherText] = useState('')
   const [busy, setBusy] = useState(false)

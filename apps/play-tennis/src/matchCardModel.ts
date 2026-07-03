@@ -80,6 +80,8 @@ export interface MatchCardView {
   supportingTone?: 'default' | 'danger'
   /** One-line court summary: "{captain} · {venue}{ ✓}" — court booking negotiation (Marin V1). */
   courtSummary?: string | null
+  /** Time confirmed but no court picked yet (Marin singles): primary swaps to "Pick a court". */
+  courtNeeded?: boolean
   metaLabel: string | null
   /**
    * 'time'      — metaLabel is a slot like "Sat Apr 25 9am"; render as the body's
@@ -505,6 +507,14 @@ export function getMatchCardView(
       }
     }
 
+    // Court entry from the collapsed card (approved variant A): with the time
+    // locked but no court picked, the one primary action becomes the court.
+    const courtNeeded =
+      mine &&
+      tournament.mode !== 'doubles' &&
+      isMarinCounty(tournament.county) &&
+      !match.schedule?.court?.venueId
+
     return {
       key: 'confirmed',
       tone: 'confirmed',
@@ -512,8 +522,11 @@ export function getMatchCardView(
       title,
       // Opponent view: the time line + green pill already say "confirmed".
       // No need to repeat with "Time confirmed." — drop it.
-      supporting: mine ? 'See you on court.' : null,
-      courtSummary: getCourtSummary(tournament, match),
+      supporting: courtNeeded
+        ? "Time's locked — now grab a court."
+        : mine ? 'See you on court.' : null,
+      courtSummary: courtNeeded ? null : getCourtSummary(tournament, match),
+      courtNeeded: courtNeeded || undefined,
       metaLabel: confirmedSlotMeta,
       metaKind: 'time',
       infoTooltipLabel: hasAutoMatchedOverlap(match) ? 'How Rally matched this' : undefined,
@@ -523,7 +536,7 @@ export function getMatchCardView(
       // Before the match the only useful action is changing the time — name it
       // directly instead of a vague "View match". Score reporting appears on this
       // same card once the slot time has passed (the elapsedMs branch above).
-      primaryActionLabel: mine ? 'Change time' : 'View time',
+      primaryActionLabel: courtNeeded ? 'Pick a court' : mine ? 'Change time' : 'View time',
       expansionKind: 'schedule',
       priority: 3,
       isMyMatch: mine,

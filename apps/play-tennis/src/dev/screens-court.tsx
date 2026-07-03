@@ -10,6 +10,8 @@
 
 import { ReactNode } from 'react'
 import CourtPanel from '../components/CourtPanel'
+import MatchActionCard from '../components/MatchActionCard'
+import { MockProviders } from './MockProviders'
 import type { Tournament, Match, MatchCourt } from '../types'
 
 export interface ScreenDef {
@@ -166,5 +168,59 @@ export const COURT_SCREENS: ScreenDef[] = [
     number: '47',
     label: 'Court — legacy match, no captain',
     render: () => <ConfirmedCardFrame court={undefined} />,
+  },
+  {
+    id: 'court-card-pick-court',
+    number: '48',
+    label: 'Collapsed card — "Pick a court" primary (variant A)',
+    render: () => {
+      const match = marinMatch(undefined)
+      const tournament = marinTournament(match)
+      return (
+        <MockProviders>
+          <PhoneFrame>
+            <MatchActionCard
+              tournament={tournament}
+              match={match}
+              currentPlayerId={ME}
+              currentPlayerName="Pascal R"
+              isExpanded={false}
+              isMessaging={false}
+              className="upnext-card"
+              onToggleExpanded={() => {}}
+              onToggleMessaging={() => {}}
+              onUpdated={() => {}}
+            />
+          </PhoneFrame>
+        </MockProviders>
+      )
+    },
+  },
+  {
+    id: 'court-card-court-set',
+    number: '49',
+    label: 'Collapsed card — court set (summary line back)',
+    render: () => {
+      const match = marinMatch({ venueId: 'boyle-park', captainId: ME, status: 'secured', assignedBy: ME, assignedAt: now, securedAt: now })
+      const tournament = marinTournament(match)
+      return (
+        <MockProviders>
+          <PhoneFrame>
+            <MatchActionCard
+              tournament={tournament}
+              match={match}
+              currentPlayerId={ME}
+              currentPlayerName="Pascal R"
+              isExpanded={false}
+              isMessaging={false}
+              className="upnext-card"
+              onToggleExpanded={() => {}}
+              onToggleMessaging={() => {}}
+              onUpdated={() => {}}
+            />
+          </PhoneFrame>
+        </MockProviders>
+      )
+    },
   },
 ]

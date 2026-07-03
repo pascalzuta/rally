@@ -11575,6 +11575,26 @@ select:focus {
 /* Home / Bracket one-line court summary */
 .action-card-court { margin-top: 4px; font-size: var(--font-body-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
 
+/* Court-needed collapsed card (variant A): amber primary + demoted Change time.
+   !important matches baseline.css's .action-card-btn specificity idiom. */
+.action-card .action-card-btn.action-card-btn--court,
+.action-card.action-confirmed .action-card-btn.action-card-btn--court {
+  background: var(--amber-soft, #FBF1DE) !important;
+  color: var(--amber, #A86A0A) !important;
+}
+.action-card .action-card-btn.action-card-btn--court:hover,
+.action-card.action-confirmed .action-card-btn.action-card-btn--court:hover { background: #f5e7c8 !important; }
+.action-card-courtneeded-secondary { text-align: center; margin-top: 2px; }
+.action-card-change-time-link {
+  background: none !important;
+  border: none !important;
+  color: var(--ink-2, var(--color-text-secondary)) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 8px 12px !important;
+  cursor: pointer;
+}
+
 /* --- R-23: Post-Match Rating Card --- */
 .post-match-card { padding: 12px; border-radius: var(--radius-md); background: var(--color-bg-surface); border: 1px solid var(--color-divider); text-align: left; }
 .post-match-saved { text-align: center; color: var(--color-positive-primary); font-weight: 600; }
