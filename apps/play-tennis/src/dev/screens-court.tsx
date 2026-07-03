@@ -11,6 +11,7 @@
 import { ReactNode } from 'react'
 import CourtPanel from '../components/CourtPanel'
 import MatchActionCard from '../components/MatchActionCard'
+import MatchSchedulePanel from '../components/MatchSchedulePanel'
 import { MockProviders } from './MockProviders'
 import type { Tournament, Match, MatchCourt } from '../types'
 
@@ -191,6 +192,52 @@ export const COURT_SCREENS: ScreenDef[] = [
               onToggleMessaging={() => {}}
               onUpdated={() => {}}
             />
+          </PhoneFrame>
+        </MockProviders>
+      )
+    },
+  },
+  {
+    id: 'court-expanded-no-court',
+    number: '50',
+    label: 'Expanded panel — TIME/COURT sections, court not set (A′)',
+    render: () => {
+      const match = marinMatch({ venueId: null, captainId: ME, status: 'assigned', assignedBy: ME, assignedAt: now })
+      const tournament = marinTournament(match)
+      return (
+        <MockProviders>
+          <PhoneFrame>
+            <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
+              <MatchSchedulePanel
+                tournament={tournament}
+                match={match}
+                currentPlayerId={ME}
+                onUpdated={() => {}}
+              />
+            </div>
+          </PhoneFrame>
+        </MockProviders>
+      )
+    },
+  },
+  {
+    id: 'court-expanded-secured',
+    number: '51',
+    label: 'Expanded panel — court set & secured (A′)',
+    render: () => {
+      const match = marinMatch({ venueId: 'boyle-park', captainId: ME, status: 'secured', assignedBy: ME, assignedAt: now, securedAt: now })
+      const tournament = marinTournament(match)
+      return (
+        <MockProviders>
+          <PhoneFrame>
+            <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
+              <MatchSchedulePanel
+                tournament={tournament}
+                match={match}
+                currentPlayerId={ME}
+                onUpdated={() => {}}
+              />
+            </div>
           </PhoneFrame>
         </MockProviders>
       )

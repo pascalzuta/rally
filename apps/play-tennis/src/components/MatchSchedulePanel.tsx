@@ -463,10 +463,107 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 : `${opponentName} asked to move this match. Review the new options below.`
           )
         ) : null}
-        <div className="confirmed-slot">
-          <span className="confirmed-day">{dayLabel(s.day)}</span>
-          <span className="confirmed-time">{formatHourRange(s.startHour, s.endHour)}</span>
+        {/* TIME section — the slot plus everything time-related (approved variant A′) */}
+        <div className="sched-sect sched-sect--first">
+          <div className="sched-sect-head">
+            <span className="sched-sect-title">Time</span>
+            {isParticipant && !isScheduleLocked && rescheduleUiState === 'none' && canReschedule && !showReschedule && !showCancel && !showScoreEntry && (
+              <button
+                className="sched-sect-action"
+                onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
+              >
+                Change time
+              </button>
+            )}
+          </div>
+          <div className="confirmed-slot">
+            <span className="confirmed-day">{dayLabel(s.day)}</span>
+            <span className="confirmed-time">{formatHourRange(s.startHour, s.endHour)}</span>
+          </div>
+          {lastRescheduled ? (
+            <div className="reschedule-count-info">Rescheduled from {lastRescheduled}</div>
+          ) : null}
+          {rescheduleCount > 0 && (
+            <div className="reschedule-count-info">
+              Rescheduled {rescheduleCount} of 2 times
+            </div>
+          )}
+          {!canReschedule && (
+            <div className="reschedule-limit-warning">Maximum reschedules reached</div>
+          )}
+
+          {rescheduleUiState === 'soft_request_sent' && (
+            <>
+              {pendingProposals.length > 0 && (
+                <div className="proposal-list">
+                  {pendingProposals.map(p => (
+                    <div key={p.id} className="proposal-card proposal-mine">
+                      <div className="proposal-info">
+                        <span className="proposal-time">{proposalLabel(p)}</span>
+                        <span className="proposal-from">Waiting for response</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!isScheduleLocked && !showReschedule && (
+                <div className="court-actions">
+                  <button
+                    className="btn btn-outline btn-small"
+                    onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
+                  >
+                    Withdraw Request
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {rescheduleUiState === 'soft_request_received' && (
+            <>
+              {pendingProposals.length > 0 && (
+                <div className="proposal-list">
+                  {pendingProposals.map(p => (
+                    <div key={p.id} className="proposal-card">
+                      <div className="proposal-info">
+                        <span className="proposal-time">{proposalLabel(p)}</span>
+                        <span className="proposal-from">New option from {opponentName}</span>
+                      </div>
+                      <button
+                        className="btn btn-primary btn-small"
+                        onClick={(e) => { e.stopPropagation(); handleAccept(p.id) }}
+                      >
+                        Accept New Time
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!isScheduleLocked && !showReschedule && (
+                <div className="court-actions">
+                  <button
+                    className="btn btn-outline btn-small"
+                    onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
+                  >
+                    Suggest Another
+                  </button>
+                  <button
+                    className="btn btn-primary btn-small"
+                    onClick={(e) => { e.stopPropagation(); handleDeclineSoftRequest() }}
+                  >
+                    Keep Current Time
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {isParticipant && !isScheduleLocked && showReschedule
+            ? renderRescheduleForm(activeRequest ? 'counter' : 'new')
+            : null}
         </div>
+
+        {/* COURT section — CourtPanel renders its own labeled section */}
         {showCourtPanel ? (
           <CourtPanel
             tournament={tournament}
@@ -476,59 +573,8 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             onAction={onActionComplete}
           />
         ) : null}
-        {lastRescheduled ? (
-          <div className="reschedule-count-info">Rescheduled from {lastRescheduled}</div>
-        ) : null}
 
-        {rescheduleCount > 0 && (
-          <div className="reschedule-count-info">
-            Rescheduled {rescheduleCount} of 2 times
-          </div>
-        )}
-        {!canReschedule && (
-          <div className="reschedule-limit-warning">Maximum reschedules reached</div>
-        )}
-
-        {rescheduleUiState === 'soft_request_sent' && (
-          <>
-            {pendingProposals.length > 0 && (
-              <div className="proposal-list">
-                {pendingProposals.map(p => (
-                  <div key={p.id} className="proposal-card proposal-mine">
-                    <div className="proposal-info">
-                      <span className="proposal-time">{proposalLabel(p)}</span>
-                      <span className="proposal-from">Waiting for response</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {rescheduleUiState === 'soft_request_received' && (
-          <>
-            {pendingProposals.length > 0 && (
-              <div className="proposal-list">
-                {pendingProposals.map(p => (
-                  <div key={p.id} className="proposal-card">
-                    <div className="proposal-info">
-                      <span className="proposal-time">{proposalLabel(p)}</span>
-                      <span className="proposal-from">New option from {opponentName}</span>
-                    </div>
-                    <button
-                      className="btn btn-primary btn-small"
-                      onClick={(e) => { e.stopPropagation(); handleAccept(p.id) }}
-                    >
-                      Accept New Time
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
+        {/* Rare actions: quiet rows. Sub-flows (score entry / cancel) replace them. */}
         {!isParticipant ? (
           <div className="proposal-from">
             This match time is view-only because you are not one of the two players.
@@ -573,64 +619,30 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               </button>
             )}
           </div>
-        ) : showReschedule ? renderRescheduleForm(activeRequest ? 'counter' : 'new') : showCancel ? renderCancelForm() : (
-          <div className="confirmed-actions-shell">
-            <div className="confirmed-actions">
-              {rescheduleUiState === 'soft_request_sent' && (
-                <button
-                  className="btn btn-small"
-                  onClick={(e) => { e.stopPropagation(); handleWithdrawSoftRequest() }}
-                >
-                  Withdraw Request
-                </button>
-              )}
-              {rescheduleUiState === 'soft_request_received' && (
-                <>
-                  <button
-                    className="btn btn-small"
-                    onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
-                  >
-                    Suggest Another
-                  </button>
-                  <button
-                    className="btn btn-primary btn-small"
-                    onClick={(e) => { e.stopPropagation(); handleDeclineSoftRequest() }}
-                  >
-                    Keep Current Time
-                  </button>
-                </>
-              )}
-              {rescheduleUiState === 'none' && isScoreable && (
-                <button
-                  className="btn btn-primary btn-small"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowCancel(false)
-                    setShowReschedule(false)
-                    setShowScoreEntry(true)
-                  }}
-                >
-                  Report Score
-                </button>
-              )}
-              {rescheduleUiState === 'none' && canReschedule && (
-                <button
-                  className="btn btn-small"
-                  onClick={(e) => { e.stopPropagation(); setShowReschedule(true) }}
-                >
-                  Change Time
-                </button>
-              )}
-            </div>
-            <div className="confirmed-actions-danger">
+        ) : showCancel ? renderCancelForm() : (
+          <>
+            {rescheduleUiState === 'none' && isScoreable && (
               <button
-                className="btn-link btn-small cancel-match-link"
-                onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
+                className="sched-row"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowCancel(false)
+                  setShowReschedule(false)
+                  setShowScoreEntry(true)
+                }}
               >
-                Cancel Match
+                <span className="sched-row-label">Report score</span>
+                <span className="sched-row-chev">›</span>
               </button>
-            </div>
-          </div>
+            )}
+            <button
+              className="sched-row sched-row--danger"
+              onClick={(e) => { e.stopPropagation(); setShowCancel(true) }}
+            >
+              <span className="sched-row-label">Cancel match</span>
+              <span className="sched-row-chev">›</span>
+            </button>
+          </>
         )}
       </div>
     )

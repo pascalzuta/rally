@@ -11502,36 +11502,57 @@ select:focus {
   background: var(--color-surface-alt); border-radius: var(--radius-sm);
 }
 
-/* --- Court booking negotiation (Marin V1) ---
-   Rally shell idiom: white surface + shadow-sm, status told by the left rail
-   (green = secured, orange = delegation pending, blue = action/informational). */
-.court-panel {
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-divider);
-  border-left: 3px solid var(--color-accent-primary);
-  box-shadow: var(--shadow-sm);
+/* --- Court booking negotiation (Marin V1) — expanded card sections (variant A′) ---
+   Flat labeled sections: the section is the group (no nested box). Status is
+   carried by text color (amber = not picked, green = secured), never a rail. */
+.sched-sect {
+  border-top: 1px solid var(--color-divider);
+  padding: var(--space-sm) 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   font-size: var(--font-body-md);
 }
-/* Status colors: baseline.css remaps --color-positive-primary to blue (reskin),
-   so pin the true semantic tokens with fallbacks. */
-.court-panel--secured { border-left-color: var(--green, #1F9D55); }
-.court-panel--negotiating { border-left-color: var(--amber, #D97706); }
-.court-panel--readonly { border-left-color: var(--color-divider); box-shadow: none; }
+.sched-sect--first { border-top: none; padding-top: 0; }
+.sched-sect-head { display: flex; align-items: baseline; justify-content: space-between; }
+.sched-sect-title { font-size: var(--font-micro); font-weight: var(--weight-bold); text-transform: uppercase; letter-spacing: .07em; color: var(--color-text-secondary); }
+.sched-sect-action {
+  background: none !important;
+  border: none !important;
+  font-family: inherit;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--blue, var(--color-accent-primary)) !important;
+  cursor: pointer;
+  padding: 0 !important;
+}
+
+/* Quiet rows for rare actions (report score / cancel match) */
+.sched-row {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; min-height: 44px;
+  background: none !important; border: none !important;
+  border-top: 1px solid var(--color-divider) !important;
+  border-radius: 0 !important;
+  font-family: inherit; text-align: left;
+  padding: 0 2px !important;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out-quart);
+}
+.sched-row:hover { background: var(--color-surface-hover) !important; }
+.sched-row:active { background: var(--color-surface-pressed) !important; }
+.sched-row-label { font-size: var(--font-body-md) !important; font-weight: 600; color: var(--color-text-primary); }
+.sched-row--danger .sched-row-label { color: var(--color-text-secondary); }
+.sched-row-chev { color: var(--color-text-secondary); font-size: var(--font-body-md); }
 
 .court-line, .court-captain-line { color: var(--color-text-primary); line-height: 1.4; }
 .court-captain-name, .court-captain-badge { font-weight: var(--weight-bold); }
 .court-secured-check { color: var(--green, #1F9D55); font-weight: var(--weight-bold); }
 
-.court-venue-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.court-venue-label { font-size: var(--font-micro); font-weight: var(--weight-bold); text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-secondary); }
-.court-venue-value { font-weight: var(--weight-bold); color: var(--color-text-primary); }
-.court-change { margin-left: auto; }
+.court-venue-line { font-size: var(--font-body-lg); color: var(--color-text-primary); }
+.court-venue-line b { font-weight: var(--weight-bold); }
+.court-venue-city { color: var(--color-text-secondary); }
+.court-status-unset { font-size: var(--font-body-md); font-weight: var(--weight-bold); color: var(--amber, #A86A0A); }
 
 .court-helper { font-size: var(--font-body-sm); color: var(--color-text-secondary); line-height: 1.4; }
 

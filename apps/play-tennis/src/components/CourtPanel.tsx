@@ -59,7 +59,7 @@ function captainHelper(v: MarinVenue | undefined): string | null {
 
 /** What the non-captain sees about the court (renders under "{name} is captain"). */
 function nonCaptainStatusLine(v: MarinVenue | undefined, venueLabel: string | undefined): string {
-  if (!v) return venueLabel ? `Custom court: ${venueLabel}.` : 'No court chosen yet.'
+  if (!v) return venueLabel ? `Custom court: ${venueLabel}.` : 'No court picked yet.'
   switch (v.reservationMethod) {
     case 'walk-on':
     case 'school-walk-on': return "They'll grab a court on arrival."
@@ -78,6 +78,11 @@ function secureLabel(v: MarinVenue | undefined): string {
   return 'Mark court secured'
 }
 
+/**
+ * The COURT section of the expanded confirmed card (approved variant A′):
+ * flat — the labeled section is the group, no nested box. Status is carried
+ * by text color (amber = not picked, green = secured), never a rail.
+ */
 export default function CourtPanel({ tournament, match, currentPlayerId, onUpdated, onAction }: Props) {
   // Deep-link from "Pick a court" on the collapsed card: when the panel opens
   // with a captain assigned but no venue chosen, start with the picker open.
@@ -191,11 +196,25 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
     if (venue?.reservationUrl) window.open(venue.reservationUrl, '_blank', 'noopener,noreferrer')
   }
 
+  function sectionHead(action?: { label: string; onClick: () => void }) {
+    return (
+      <div className="sched-sect-head">
+        <span className="sched-sect-title">Court</span>
+        {action && !isCompleted ? (
+          <button className="sched-sect-action" disabled={busy} onClick={(e) => { e.stopPropagation(); action.onClick() }}>
+            {action.label}
+          </button>
+        ) : null}
+      </div>
+    )
+  }
+
   // ---- Read-only summary for non-participants ----
   if (!isParticipant) {
     if (!court || !captainIsParticipant) return null
     return (
-      <div className="court-panel court-panel--readonly">
+      <div className="sched-sect court-sect">
+        {sectionHead()}
         <div className="court-line">
           <span className="court-captain-name">{captainName}</span> is securing the court
           {venueName ? <> · {venueName}</> : null}
@@ -208,7 +227,8 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
   // ---- Legacy / orphaned: no valid captain yet ----
   if (!court || !captainIsParticipant) {
     return (
-      <div className="court-panel">
+      <div className="sched-sect court-sect">
+        {sectionHead()}
         <div className="court-empty">
           <div className="court-empty-title">Who's securing the court?</div>
           <div className="court-empty-copy">Pick a court and take charge of getting it.</div>
@@ -221,20 +241,20 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
   }
 
   const helper = captainHelper(venue)
-  const panelStateClass = secured ? ' court-panel--secured' : neg ? ' court-panel--negotiating' : ''
 
   return (
-    <div className={`court-panel${panelStateClass}`}>
-      {/* Venue row */}
-      <div className="court-venue-row">
-        <span className="court-venue-label">Court</span>
-        <span className="court-venue-value">{venueName ?? 'Not chosen yet'}</span>
-        {!isCompleted && (
-          <button className="btn-link court-change" disabled={busy} onClick={(e) => { e.stopPropagation(); setPickerOpen(o => !o) }}>
-            {venueName ? 'Change' : 'Choose'}
-          </button>
-        )}
-      </div>
+    <div className="sched-sect court-sect">
+      {sectionHead(venueName ? { label: 'Change court', onClick: () => setPickerOpen(o => !o) } : undefined)}
+
+      {/* Venue line: settled fact once picked, amber status until then. */}
+      {venueName ? (
+        <div className="court-venue-line">
+          <b>{venueName}</b>
+          {venue?.city ? <span className="court-venue-city"> · {venue.city}</span> : null}
+        </div>
+      ) : (
+        <div className="court-status-unset">Not picked yet</div>
+      )}
 
       {pickerOpen && !isCompleted && (
         <div className="court-picker">
@@ -305,12 +325,16 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
               <span className="court-captain-badge">You're captain</span>
               {secured ? <span className="court-secured-check"> · Court secured ✓</span> : null}
             </div>
-            {helper && !secured ? <div className="court-helper">{helper}</div> : null}
+            {!venueName && !secured ? (
+              <div className="court-helper">Pick where you'll play.</div>
+            ) : helper && !secured ? (
+              <div className="court-helper">{helper}</div>
+            ) : null}
             {!isCompleted && (
               <div className="court-actions">
                 {!venue && !venueName ? (
                   !pickerOpen && (
-                    <button className="btn btn-primary btn-small" disabled={busy} onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}>Choose where you'll play</button>
+                    <button className="btn btn-primary btn-small" disabled={busy} onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}>Pick a court</button>
                   )
                 ) : secured ? (
                   <button className="btn btn-outline btn-small" disabled={busy} onClick={(e) => { e.stopPropagation(); handleSecure(false) }}>Undo</button>
