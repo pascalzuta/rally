@@ -18,20 +18,20 @@ export interface MarinVenue {
 }
 
 export const MARIN_VENUES: MarinVenue[] = [
-  { id: 'albert-park', name: 'Albert Park', city: 'San Rafael', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '4 courts · free first-come-first-served (key fee removed)', isPaid: false, inDefaults: true },
+  { id: 'albert-park', name: 'Albert Park', city: 'San Rafael', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '4 courts', isPaid: false, inDefaults: true },
   { id: 'freitas-park', name: 'Freitas Park', city: 'San Rafael', accessType: 'public-free', reservationMethod: 'walk-on', isPaid: false, inDefaults: true },
   { id: 'peacock-gap', name: 'Peacock Gap Park', city: 'San Rafael', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '2 courts', isPaid: false, inDefaults: true },
-  { id: 'mcinnis-park', name: 'McInnis Park', city: 'San Rafael', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://reserve.marincountyparks.org', feeNote: '$13/hr, 2hr min, up to 5mo ahead — captain pays', isPaid: true, inDefaults: false },
+  { id: 'mcinnis-park', name: 'McInnis Park', city: 'San Rafael', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://reserve.marincountyparks.org', feeNote: '$13/hr · 2hr min', isPaid: true, inDefaults: false },
   { id: 'marin-tennis-club', name: 'Marin Tennis Club', city: 'San Rafael', accessType: 'private-club', reservationMethod: 'members-only', isPaid: false, inDefaults: false },
-  { id: 'boyle-park', name: 'Boyle Park', city: 'Mill Valley', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '6 courts · popular drop-in', isPaid: false, inDefaults: true },
-  { id: 'eastwood-park', name: 'Eastwood Park', city: 'Mill Valley', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '2 tennis courts (pickleball overlay)', isPaid: false, inDefaults: true },
+  { id: 'boyle-park', name: 'Boyle Park', city: 'Mill Valley', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '6 courts', isPaid: false, inDefaults: true },
+  { id: 'eastwood-park', name: 'Eastwood Park', city: 'Mill Valley', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '2 courts · shared with pickleball', isPaid: false, inDefaults: true },
   { id: 'strawberry-rec', name: 'Strawberry Rec District', city: 'Mill Valley (Strawberry)', accessType: 'private-club', reservationMethod: 'members-only', isPaid: false, inDefaults: false },
   { id: 'pioneer-park', name: 'Pioneer Park', city: 'Novato', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: 'Open 6a–10p', isPaid: false, inDefaults: true },
   { id: 'bay-club-rolling-hills', name: 'Bay Club Rolling Hills', city: 'Novato', accessType: 'private-club', reservationMethod: 'members-only', isPaid: false, inDefaults: false },
-  { id: 'larkspur-courts', name: 'Larkspur Courts', city: 'Larkspur', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '8 courts · free drop-in', isPaid: false, inDefaults: true },
-  { id: 'corte-madera-town-park', name: 'Corte Madera Town Park', city: 'Corte Madera', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://rec.us/cortemadera', feeNote: 'Free reservable + open play 10a–1p', isPaid: false, inDefaults: true },
-  { id: 'granada-park', name: 'Granada Park', city: 'Corte Madera', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://rec.us/cortemadera', feeNote: 'Free', isPaid: false, inDefaults: true },
-  { id: 'marinship-park', name: 'Marinship Park', city: 'Sausalito', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://www.sausalito.gov/departments/parks-recreation', feeNote: 'Paid, up to 90 days ahead — captain pays', isPaid: true, inDefaults: false },
+  { id: 'larkspur-courts', name: 'Larkspur Courts', city: 'Larkspur', accessType: 'public-free', reservationMethod: 'walk-on', feeNote: '8 courts', isPaid: false, inDefaults: true },
+  { id: 'corte-madera-town-park', name: 'Corte Madera Town Park', city: 'Corte Madera', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://rec.us/cortemadera', feeNote: 'open play 10a–1p', isPaid: false, inDefaults: true },
+  { id: 'granada-park', name: 'Granada Park', city: 'Corte Madera', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://rec.us/cortemadera', isPaid: false, inDefaults: true },
+  { id: 'marinship-park', name: 'Marinship Park', city: 'Sausalito', accessType: 'public-reservable', reservationMethod: 'reserve-online', reservationUrl: 'https://www.sausalito.gov/departments/parks-recreation', feeNote: 'Paid · book up to 90 days ahead', isPaid: true, inDefaults: false },
   { id: 'the-ranch-tiburon', name: 'The Ranch', city: 'Tiburon', accessType: 'public-reservable', reservationMethod: 'key-required', keyNote: 'Annual key required to use online reservations', isPaid: false, inDefaults: false },
   { id: 'tiburon-linear-park', name: 'Tiburon Linear Park', city: 'Tiburon', accessType: 'public-free', reservationMethod: 'walk-on', isPaid: false, inDefaults: true },
   { id: 'tiburon-peninsula-club', name: 'Tiburon Peninsula Club', city: 'Tiburon', accessType: 'private-club', reservationMethod: 'members-only', isPaid: false, inDefaults: false },
@@ -42,7 +42,7 @@ export const MARIN_VENUES: MarinVenue[] = [
   { id: 'ross-commons', name: 'Ross Commons', city: 'Ross', accessType: 'public-free', reservationMethod: 'walk-on', isPaid: false, inDefaults: true },
   { id: 'lagunitas-cc', name: 'Lagunitas Country Club', city: 'Ross', accessType: 'private-club', reservationMethod: 'members-only', isPaid: false, inDefaults: false },
   { id: 'bay-club-ross-valley', name: 'Bay Club Ross Valley', city: 'San Anselmo', accessType: 'private-club', reservationMethod: 'members-only', isPaid: false, inDefaults: false },
-  { id: 'college-of-marin', name: 'College of Marin (Kentfield)', city: 'Kentfield', accessType: 'school', reservationMethod: 'school-walk-on', feeNote: 'Public sunrise–sunset when not in class use · 6 courts', isPaid: false, inDefaults: true },
+  { id: 'college-of-marin', name: 'College of Marin (Kentfield)', city: 'Kentfield', accessType: 'school', reservationMethod: 'school-walk-on', feeNote: '6 courts · sunrise–sunset', isPaid: false, inDefaults: true },
 ]
 
 /** Match the exact stored county form ('Marin County, CA') plus defensive short forms. */

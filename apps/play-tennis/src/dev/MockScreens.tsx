@@ -30,6 +30,7 @@ import { MESSAGES_SCREENS } from './screens-messages'
 import { TOURNAMENT_SCREENS } from './screens-tournament'
 import { PROFILE_SCREENS } from './screens-profile'
 import { INFO_SCREENS } from './screens-info'
+import { COURT_SCREENS } from './screens-court'
 
 // Lazy-load larger surfaces so the dev page itself stays light.
 const HomeHeroCard = lazy(() => import('../components/HomeHeroCard'))
@@ -119,6 +120,7 @@ const SCREENS: ScreenDef[] = [
   ...TOURNAMENT_SCREENS,
   ...PROFILE_SCREENS,
   ...INFO_SCREENS,
+  ...COURT_SCREENS,
 ]
 
 export default function MockScreens() {

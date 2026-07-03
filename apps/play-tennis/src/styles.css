@@ -11502,49 +11502,78 @@ select:focus {
   background: var(--color-surface-alt); border-radius: var(--radius-sm);
 }
 
-/* --- Court booking negotiation (Marin V1) --- */
+/* --- Court booking negotiation (Marin V1) ---
+   Rally shell idiom: white surface + shadow-sm, status told by the left rail
+   (green = secured, orange = delegation pending, blue = action/informational). */
 .court-panel {
   margin-top: var(--space-sm);
-  padding: 10px 12px;
-  background: var(--color-surface-alt);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-md);
+  border: 1px solid var(--color-divider);
   border-left: 3px solid var(--color-accent-primary);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: var(--font-body-sm);
+  font-size: var(--font-body-md);
 }
-.court-panel--readonly { border-left-color: var(--color-divider); }
+/* Status colors: baseline.css remaps --color-positive-primary to blue (reskin),
+   so pin the true semantic tokens with fallbacks. */
+.court-panel--secured { border-left-color: var(--green, #1F9D55); }
+.court-panel--negotiating { border-left-color: var(--amber, #D97706); }
+.court-panel--readonly { border-left-color: var(--color-divider); box-shadow: none; }
 
 .court-line, .court-captain-line { color: var(--color-text-primary); line-height: 1.4; }
 .court-captain-name, .court-captain-badge { font-weight: var(--weight-bold); }
-.court-secured-check { color: var(--color-positive-primary); font-weight: var(--weight-bold); }
+.court-secured-check { color: var(--green, #1F9D55); font-weight: var(--weight-bold); }
 
 .court-venue-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.court-venue-label { font-size: var(--font-label); text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-secondary); }
+.court-venue-label { font-size: var(--font-micro); font-weight: var(--weight-bold); text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-secondary); }
 .court-venue-value { font-weight: var(--weight-bold); color: var(--color-text-primary); }
 .court-change { margin-left: auto; }
 
-.court-helper { font-size: var(--font-label); color: var(--color-text-secondary); line-height: 1.35; }
+.court-helper { font-size: var(--font-body-sm); color: var(--color-text-secondary); line-height: 1.4; }
 
-.court-picker { display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--color-bg-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-sm); }
-.court-picker-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
-.court-venue-option { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 8px 10px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); background: var(--color-bg-surface); cursor: pointer; }
+.court-picker {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: var(--space-sm) 0 0;
+  border-top: 1px solid var(--color-divider);
+  animation: court-picker-in var(--duration-fast) var(--ease-out-quart);
+}
+@keyframes court-picker-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .court-picker { animation: none; }
+}
+.court-picker-list { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; }
+.court-venue-option {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  flex-shrink: 0; /* the scroll list is a flex column — don't let items compress */
+  text-align: left; padding: 10px 12px; height: auto; min-height: 44px;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-button);
+  background: var(--color-bg-surface); cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) ease;
+}
+.court-venue-option:hover { background: var(--color-surface-hover); }
+.court-venue-option:active { background: var(--color-surface-pressed); }
 .court-venue-option.is-selected { border-color: var(--color-accent-primary); background: var(--color-accent-bg); }
-.cvo-name { font-weight: var(--weight-bold); color: var(--color-text-primary); }
-.cvo-city, .cvo-caption { font-size: var(--font-label); color: var(--color-text-secondary); }
+.cvo-name { font-weight: var(--weight-bold); color: var(--color-text-primary); font-size: var(--font-body-md); }
+.cvo-city, .cvo-caption { font-size: var(--font-body-sm); color: var(--color-text-secondary); }
 .court-showall { align-self: flex-start; }
-.court-other { display: flex; gap: 6px; }
-.court-other-input { flex: 1; padding: 6px 8px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); font-size: var(--font-body-sm); }
+.court-other { display: flex; gap: 8px; align-items: center; }
+.court-other .court-other-input { flex: 1; min-width: 0; }
 
 .court-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 2px; }
 
-.court-empty { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.court-empty { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .court-empty-title { font-weight: var(--weight-bold); color: var(--color-text-primary); }
-.court-empty-copy { font-size: var(--font-label); color: var(--color-text-secondary); }
+.court-empty-copy { font-size: var(--font-body-sm); color: var(--color-text-secondary); }
 
 /* Home / Bracket one-line court summary */
-.action-card-court { margin-top: 4px; font-size: var(--font-body-sm); color: var(--color-text-secondary); }
+.action-card-court { margin-top: 4px; font-size: var(--font-body-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
 
 /* --- R-23: Post-Match Rating Card --- */
 .post-match-card { padding: 12px; border-radius: var(--radius-md); background: var(--color-bg-surface); border: 1px solid var(--color-divider); text-align: left; }
