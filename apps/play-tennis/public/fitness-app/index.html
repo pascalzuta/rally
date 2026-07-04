@@ -63,9 +63,10 @@
     position:relative;
   }
   .iv[data-type="rest"]{border-left-color:var(--rest)}
-  .iv .grip{color:var(--line);font-size:18px;cursor:grab;touch-action:none;user-select:none;padding:2px}
-  .iv.dragging{opacity:.4}
-  .iv.drag-over{outline:2px dashed var(--line);outline-offset:2px}
+  .iv .grip{color:var(--muted);font-size:18px;cursor:grab;touch-action:none;user-select:none;padding:6px 4px;margin:-6px -2px;align-self:stretch;display:flex;align-items:center}
+  .iv .grip:active{cursor:grabbing}
+  .iv.dragging{opacity:.97;box-shadow:0 14px 34px rgba(0,0,0,.55);transform:scale(1.02);position:relative;z-index:5}
+  .intervals.reordering{cursor:grabbing}
   .iv-main{flex:1;min-width:0}
   .iv-name{
     background:transparent;border:none;color:var(--text);font-size:16px;font-weight:600;
@@ -378,7 +379,6 @@
       el.className = "iv";
       el.setAttribute("data-type", iv.type);
       el.setAttribute("data-id", iv.id);
-      el.draggable = true;
       el.innerHTML =
         '<span class="grip">⋮⋮</span>' +
         '<div class="iv-main">' +
@@ -409,28 +409,59 @@
         renderIntervals(); updateSummary(); save();
       });
 
-      // drag reorder
-      el.addEventListener("dragstart", function(e){ dragId = iv.id; el.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; });
-      el.addEventListener("dragend", function(){ dragId=null; el.classList.remove("dragging"); clearDragOver(); });
-      el.addEventListener("dragover", function(e){ e.preventDefault(); el.classList.add("drag-over"); });
-      el.addEventListener("dragleave", function(){ el.classList.remove("drag-over"); });
-      el.addEventListener("drop", function(e){
-        e.preventDefault(); el.classList.remove("drag-over");
-        if(dragId && dragId !== iv.id) reorder(dragId, iv.id);
-      });
+      // drag reorder — pointer based so it works on touch (phone) AND mouse
+      var grip = el.querySelector(".grip");
+      grip.addEventListener("pointerdown", function(e){ startGripDrag(e, el, grip); });
 
       ivList.appendChild(el);
     });
   }
-  var dragId = null;
-  function clearDragOver(){ Array.prototype.forEach.call(document.querySelectorAll(".iv"), function(n){ n.classList.remove("drag-over"); }); }
-  function reorder(fromId, toId){
-    var from = state.intervals.findIndex(function(x){ return x.id===fromId; });
-    var to = state.intervals.findIndex(function(x){ return x.id===toId; });
-    if(from<0||to<0) return;
-    var item = state.intervals.splice(from,1)[0];
-    state.intervals.splice(to,0,item);
-    renderIntervals(); updateSummary(); save();
+
+  function startGripDrag(e, el, grip){
+    if(e.button && e.button !== 0) return;      // ignore right/middle click
+    e.preventDefault();
+    el.classList.add("dragging");
+    ivList.classList.add("reordering");
+
+    function onMove(ev){
+      if(ev.cancelable) ev.preventDefault();     // stop page scroll while dragging on touch
+      var y = ev.clientY != null ? ev.clientY : 0;
+      var after = getDragAfterElement(ivList, y);
+      if(after == null){ if(el !== ivList.lastElementChild) ivList.appendChild(el); }
+      else if(after !== el && after !== el.nextElementSibling){ ivList.insertBefore(el, after); }
+    }
+    function end(){
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", end);
+      document.removeEventListener("pointercancel", end);
+      el.classList.remove("dragging");
+      ivList.classList.remove("reordering");
+      commitOrder();
+    }
+    // document-level listeners fire reliably on mouse AND touch, regardless of
+    // which element ends up under the pointer when it is released.
+    document.addEventListener("pointermove", onMove, {passive:false});
+    document.addEventListener("pointerup", end);
+    document.addEventListener("pointercancel", end);
+  }
+
+  function getDragAfterElement(container, y){
+    var els = Array.prototype.slice.call(container.querySelectorAll(".iv:not(.dragging)"));
+    var closest = {offset:-Infinity, element:null};
+    els.forEach(function(child){
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height/2;
+      if(offset < 0 && offset > closest.offset){ closest = {offset:offset, element:child}; }
+    });
+    return closest.element;
+  }
+
+  function commitOrder(){
+    var ids = Array.prototype.slice.call(ivList.querySelectorAll(".iv")).map(function(n){ return n.getAttribute("data-id"); });
+    var changed = ids.some(function(id, i){ return !state.intervals[i] || state.intervals[i].id !== id; });
+    if(!changed) return;
+    state.intervals.sort(function(a,b){ return ids.indexOf(a.id) - ids.indexOf(b.id); });
+    updateSummary(); save(); renderIntervals();
   }
   function escapeAttr(s){ return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
 
