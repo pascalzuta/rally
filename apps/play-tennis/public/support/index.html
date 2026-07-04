@@ -18,7 +18,10 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <meta name="theme-color" content="#16a34a" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,500;0,700;1,500;1,700&display=swap" rel="stylesheet" />
 
   <script type="application/ld+json">
   {
@@ -62,15 +65,18 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #fafafa; --surface: #fff; --border: #e5e5e5;
-      --text: #1a1a1a; --text-muted: #6b7280; --text-dim: #9ca3af;
-      --accent: #16a34a; --accent-light: #22c55e;
-      --radius: 12px; --max-w: 680px;
+      /* Baseline tokens — keep in sync with src/baseline.css */
+      --bg: #ffffff; --surface: #ffffff; --bg-2: #f6f7f9; --border: #e7e9ec;
+      --text: #0b0d10; --text-muted: #6a7079; --text-dim: #6a7079;
+      --accent: #2563ff; --accent-light: #1f56e0; --accent-soft: #eaf0ff;
+      --green: #1f8a4c; --green-soft: #e6f4ec;
+      --red: #c0392b; --red-soft: #fbeae7;
+      --radius: 16px; --max-w: 680px;
     }
     html { font-size: 16px; scroll-behavior: smooth; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text); font-weight: 500;
       line-height: 1.6; -webkit-font-smoothing: antialiased;
     }
 
@@ -85,29 +91,32 @@
       padding: 12px 24px;
     }
     .support-nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .support-nav-logo img { height: 28px; }
+    .support-nav-logo img { height: 24px; }
     .support-nav-badge {
-      font-size: 12px; font-weight: 600; color: var(--text-muted);
-      background: var(--bg); padding: 2px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 500; color: var(--text-muted);
+      background: var(--bg-2); padding: 3px 10px; border-radius: 999px;
     }
     .support-nav-links { display: flex; gap: 16px; align-items: center; }
     .support-nav-links a {
-      font-size: 14px; color: var(--text-muted); text-decoration: none; font-weight: 500;
+      font-size: 14px; color: var(--text); text-decoration: none; font-weight: 500;
     }
-    .support-nav-links a:hover { color: var(--text); }
+    .support-nav-links a:hover { color: var(--text-muted); }
     .support-nav-cta {
       background: var(--accent) !important; color: #fff !important;
-      padding: 6px 14px; border-radius: 8px; font-weight: 600 !important;
+      padding: 8px 18px; border-radius: 999px; font-weight: 500 !important;
+      font-size: 14px; letter-spacing: -0.005em;
     }
+    .support-nav-cta:hover { background: var(--accent-light) !important; color: #fff !important; }
 
     /* Header */
     .support-header {
       text-align: center; padding: 48px 24px 40px;
     }
     .support-header h1 {
-      font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px;
+      font-size: 28px; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 8px;
     }
-    .support-header p { font-size: 15px; color: var(--text-muted); }
+    .support-header h1 em { font-style: italic; color: var(--accent); }
+    .support-header p { font-size: 14px; color: var(--text-muted); }
 
     /* Main */
     .support-main {
@@ -117,8 +126,12 @@
     /* Section */
     .support-section { margin-bottom: 48px; }
     .support-section-title {
-      font-size: 18px; font-weight: 700; margin-bottom: 16px;
-      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      font-size: 18px; font-weight: 700; letter-spacing: -0.015em; margin-bottom: 16px;
+    }
+    .support-section-title::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0;
     }
 
     /* FAQ */
@@ -129,10 +142,11 @@
     .faq-question {
       width: 100%; padding: 16px 20px; display: flex; align-items: center;
       justify-content: space-between; background: none; border: none;
-      font: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+      font: inherit; font-size: 15px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.01em;
       cursor: pointer; text-align: left; gap: 12px;
     }
-    .faq-question:hover { background: var(--bg); }
+    .faq-question:hover { background: var(--bg-2); }
     .faq-chevron {
       flex-shrink: 0; width: 20px; height: 20px;
       transition: transform 0.2s;
@@ -149,11 +163,11 @@
     .form-row { display: flex; gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
     .form-label {
-      font-size: 13px; font-weight: 600; color: var(--text);
+      font-size: 13px; font-weight: 500; color: var(--text);
     }
     .form-input, .form-select, .form-textarea {
-      padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
-      font: inherit; font-size: 14px; color: var(--text);
+      padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px;
+      font: inherit; font-size: 14px; font-weight: 500; color: var(--text);
       background: var(--surface); transition: border-color 0.15s;
     }
     .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -161,22 +175,23 @@
     }
     .form-textarea { resize: vertical; min-height: 120px; }
     .form-submit {
-      align-self: flex-start; padding: 10px 24px;
+      align-self: flex-start; padding: 13px 28px;
       background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; font: inherit; font-size: 14px;
-      font-weight: 600; cursor: pointer; transition: background 0.15s;
+      border-radius: 999px; font: inherit; font-size: 14px;
+      font-weight: 500; letter-spacing: -0.005em;
+      cursor: pointer; transition: background 0.15s;
     }
     .form-submit:hover { background: var(--accent-light); }
     .form-submit:disabled { opacity: 0.6; cursor: not-allowed; }
     .form-success {
-      display: none; padding: 16px 20px; background: #f0fdf4;
-      border: 1px solid #bbf7d0; border-radius: var(--radius);
-      color: #166534; font-size: 14px; font-weight: 500;
+      display: none; padding: 16px 20px; background: var(--green-soft);
+      border-radius: var(--radius);
+      color: var(--green); font-size: 14px; font-weight: 500;
     }
     .form-error {
-      display: none; padding: 16px 20px; background: #fef2f2;
-      border: 1px solid #fecaca; border-radius: var(--radius);
-      color: #991b1b; font-size: 14px; font-weight: 500;
+      display: none; padding: 16px 20px; background: var(--red-soft);
+      border-radius: var(--radius);
+      color: var(--red); font-size: 14px; font-weight: 500;
     }
 
     /* Quick links */
@@ -193,10 +208,16 @@
 
     /* Footer */
     .support-footer {
-      border-top: 1px solid var(--border); padding: 24px;
-      text-align: center; font-size: 13px; color: var(--text-dim);
+      border-top: 1px solid var(--border); padding: 32px 24px;
+      text-align: center; font-size: 13px; color: var(--text-muted);
     }
-    .support-footer a { color: var(--accent); text-decoration: none; }
+    .support-footer a { color: var(--text); text-decoration: none; }
+    .support-footer a:hover { color: var(--text-muted); }
+    .support-footer-social {
+      display: flex; justify-content: center; gap: 16px; margin-top: 12px;
+    }
+    .support-footer-social a { display: inline-flex; align-items: center; color: var(--text-muted); transition: color 0.15s; }
+    .support-footer-social a:hover { color: var(--text); }
 
     /* Response time */
     .response-note {
@@ -229,7 +250,7 @@
   </nav>
 
   <header class="support-header">
-    <h1>How can we help?</h1>
+    <h1>How can we <em>help</em>?</h1>
     <p>Find answers below or send us a message — we'll get back to you within 24 hours.</p>
   </header>
 
@@ -259,7 +280,7 @@
 
     <!-- FAQ -->
     <section class="support-section" id="faq">
-      <h2 class="support-section-title">Frequently Asked Questions</h2>
+      <h2 class="support-section-title">Common questions</h2>
 
       <div class="faq-item">
         <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
@@ -344,7 +365,7 @@
 
     <!-- Contact Form -->
     <section class="support-section" id="contact">
-      <h2 class="support-section-title">Contact Us</h2>
+      <h2 class="support-section-title">Contact us</h2>
       <div class="response-note">
         <span class="response-dot"></span>
         Typical response time: within 24 hours
@@ -396,7 +417,11 @@
   </main>
 
   <footer class="support-footer">
-    <p>&copy; 2026 <a href="/">Rally</a> &mdash; <a href="/blog/">The Baseline Blog</a></p>
+    <p>&copy; 2026 <a href="/">Rally</a> &mdash; Play tennis. Skip the texting. <a href="/">Play Rally</a> &middot; <a href="/blog/">The Baseline Blog</a> &middot; <a href="mailto:hello@play-rally.com">Contact</a></p>
+    <div class="support-footer-social">
+      <a href="https://www.instagram.com/playrally_us/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+      <a href="https://www.facebook.com/people/Rally-Tournaments/61577494419031/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+    </div>
   </footer>
 
   <script>
