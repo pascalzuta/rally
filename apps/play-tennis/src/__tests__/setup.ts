@@ -52,6 +52,15 @@ vi.mock('../sync', () => {
     syncRatingSnapshot: ok,
     syncTrophiesToRemote: ok,
     syncBadgesToRemote: ok,
+    // Dirty tracking (real logic tested separately in sync-dirty.test.ts)
+    markTournamentDirty: () => {},
+    clearTournamentDirty: () => {},
+    markRatingDirty: () => {},
+    clearRatingDirty: () => {},
+    hasDirtyData: () => false,
+    retryDirtySync: async () => {},
+    mergeTournamentsWithDirty: (remote: unknown) => remote,
+    mergeRatingsWithDirty: (remote: unknown) => remote,
   }
 })
 

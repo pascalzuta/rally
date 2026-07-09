@@ -150,7 +150,17 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
   async function handleAccept(proposalId: string) {
     const proposal = schedule?.proposals.find(p => p.id === proposalId)
     try {
-      await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
+      // acceptProposal returns undefined when it refuses the slot (e.g. a
+      // player already has a confirmed match that day) — that must not read
+      // as success or the user sees "confirmed" while nothing changed.
+      const result = await acceptProposal(tournament.id, match.id, proposalId, currentPlayerId)
+      if (!result) {
+        if (onActionComplete) {
+          onActionComplete("Couldn't confirm this time — it conflicts with a match already confirmed that day. Pick another slot.", 'red')
+        }
+        onUpdated()
+        return
+      }
       if (onActionComplete && proposal) {
         const label = proposalLabel(proposal)
         onActionComplete(`Time confirmed: ${label}.`, 'green')

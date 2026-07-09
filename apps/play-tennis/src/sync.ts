@@ -21,6 +21,62 @@ export function setTournamentTimestamp(id: string, ts: string): void {
   tournamentTimestamps.set(id, ts)
 }
 
+// --- Dirty tracking: local changes whose push failed (RLS denial, offline) ---
+// A remote pull must never clobber these — the pull merges them back in via
+// mergeTournamentsWithDirty / mergeRatingsWithDirty, and retryDirtySync()
+// re-pushes them before the next hydrate.
+
+const dirtyTournaments = new Map<string, Tournament>()
+const dirtyRatings = new Map<string, PlayerRating>()
+
+export function markTournamentDirty(t: Tournament): void {
+  dirtyTournaments.set(t.id, t)
+}
+
+export function clearTournamentDirty(id: string): void {
+  dirtyTournaments.delete(id)
+}
+
+export function markRatingDirty(playerId: string, rating: PlayerRating): void {
+  dirtyRatings.set(playerId, rating)
+}
+
+export function clearRatingDirty(playerId: string): void {
+  dirtyRatings.delete(playerId)
+}
+
+export function hasDirtyData(): boolean {
+  return dirtyTournaments.size > 0 || dirtyRatings.size > 0
+}
+
+/** Re-push everything dirty; entries that sync successfully are cleared. */
+export async function retryDirtySync(): Promise<void> {
+  for (const [id, t] of [...dirtyTournaments]) {
+    const result = await syncTournament(t, getTournamentTimestamp(id))
+    if (result.success) dirtyTournaments.delete(id)
+  }
+  for (const [playerId, rating] of [...dirtyRatings]) {
+    const result = await syncRatingsForPlayer(playerId, rating)
+    if (result.success) dirtyRatings.delete(playerId)
+  }
+}
+
+/** Remote list, with unsynced local tournaments layered back on top. */
+export function mergeTournamentsWithDirty(remote: Tournament[]): Tournament[] {
+  if (dirtyTournaments.size === 0) return remote
+  const byId = new Map(remote.map(t => [t.id, t]))
+  for (const [id, t] of dirtyTournaments) byId.set(id, t)
+  return [...byId.values()]
+}
+
+/** Remote ratings, with unsynced local ratings layered back on top. */
+export function mergeRatingsWithDirty(remote: Record<string, PlayerRating>): Record<string, PlayerRating> {
+  if (dirtyRatings.size === 0) return remote
+  const merged = { ...remote }
+  for (const [playerId, rating] of dirtyRatings) merged[playerId] = rating
+  return merged
+}
+
 // --- Supabase write helpers (used by store.ts) ---
 
 export async function syncTournament(tournament: Tournament, expectedUpdatedAt?: string): Promise<SyncResult> {

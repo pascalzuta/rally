@@ -5,6 +5,7 @@ import {
   getTournamentTimestamp, setTournamentTimestamp, refreshTournamentById,
   syncRatingSnapshot, syncTrophiesToRemote, syncBadgesToRemote,
   refreshLobbyFromRemote,
+  markTournamentDirty, clearTournamentDirty, markRatingDirty, clearRatingDirty,
   SyncResult,
 } from './sync'
 import { titleCase } from './dateUtils'
@@ -1781,18 +1782,23 @@ async function saveAndSync(all: Tournament[], changedTournament: Tournament): Pr
           return { success: true }
         }
       }
-      // Conflict couldn't be resolved remotely — still save locally so UI updates
+      // Conflict couldn't be resolved remotely — still save locally so UI updates.
+      // Mark dirty so the next remote pull merges this copy back instead of
+      // clobbering it, and retryDirtySync() re-pushes it.
+      markTournamentDirty(changedTournament)
       bridgeSetTournaments([...all])
       console.warn('[Rally] Tournament sync conflict could not be resolved', changedTournament.id)
       bridgeShowError('Changes saved locally but may not sync until you\'re back online')
       return { success: true }
     }
-    // Network error: save locally + log warning
+    // Network error: save locally + mark dirty so pulls don't clobber it
+    markTournamentDirty(changedTournament)
     bridgeSetTournaments([...all])
     console.warn('[Rally] Failed to sync tournament to Supabase', changedTournament.id)
     bridgeShowError('Changes saved locally but may not sync until you\'re back online')
     return { success: true }
   }
+  clearTournamentDirty(changedTournament.id)
   bridgeSetTournaments([...all])
   bridgeNotifyOtherTabs()
   return { success: true }
@@ -1812,6 +1818,9 @@ async function saveAndSyncBatch(all: Tournament[], tournaments: Tournament[]): P
       if (error) {
         console.warn('[Rally] Failed to batch sync tournaments to Supabase', error)
         bridgeShowError('Could not save tournaments — check your connection')
+        for (const t of tournaments) markTournamentDirty(t)
+      } else {
+        for (const t of tournaments) clearTournamentDirty(t.id)
       }
     }
   }
@@ -2274,7 +2283,40 @@ export function getGroupStandings(tournament: Tournament): { id: string; name: s
     return (b.gamesWon - b.gamesLost) - (a.gamesWon - a.gamesLost)
   })
 
+  // Head-to-head tiebreak: when exactly two players are tied on wins, their
+  // group match decides the order (standard tennis rule). Only applied to
+  // two-way ties — three-way H2H is circular, so set/game diff stands there.
+  for (let i = 0; i < stats.length - 1; i++) {
+    const a = stats[i]
+    const b = stats[i + 1]
+    if (a.wins !== b.wins) continue
+    if (stats.filter(s => s.wins === a.wins).length !== 2) continue
+    const h2h = groupMatches.find(m =>
+      m.completed && !m.splitDecision && m.winnerId &&
+      ((m.player1Id === a.id && m.player2Id === b.id) || (m.player1Id === b.id && m.player2Id === a.id))
+    )
+    if (h2h?.winnerId === b.id) {
+      stats[i] = b
+      stats[i + 1] = a
+    }
+  }
+
   return stats
+}
+
+/** The actual champion of a completed tournament: winner of the last-round
+ *  (final) match when a knockout/elimination phase exists, otherwise the
+ *  round-robin standings leader. Null while in progress or undecidable. */
+export function getTournamentChampionId(tournament: Tournament): string | null {
+  if (tournament.status !== 'completed') return null
+  const decided = tournament.matches.filter(m => m.completed && m.winnerId && !m.splitDecision)
+  if (decided.length === 0) return null
+  const maxRound = Math.max(...tournament.matches.map(m => m.round))
+  if (maxRound > 1) {
+    const final = decided.find(m => m.round === maxRound)
+    if (final?.winnerId) return final.winnerId
+  }
+  return getGroupStandings(tournament)[0]?.id ?? null
 }
 
 // Generate knockout phase matches for group-knockout format
@@ -2651,8 +2693,12 @@ async function saveRatingsAndSync(ratings: Record<string, PlayerRating>, ...play
     if (rating) {
       const result = await syncRatingsForPlayer(id, rating)
       if (!result.success) {
+        // Mark dirty so remote pulls don't clobber the locally-applied rating
+        markRatingDirty(id, rating)
         console.warn('[Rally] Failed to sync rating to Supabase', id)
         bridgeShowError('Could not update your rating — please try again')
+      } else {
+        clearRatingDirty(id)
       }
     }
   }
@@ -3666,6 +3712,13 @@ export async function simulateRoundScores(tournamentId: string): Promise<Tournam
   // Check if tournament is done
   if (t.matches.every(m => m.completed)) {
     t.status = 'completed'
+    // Award trophies/badges immediately — the confirm path does this at
+    // completion, but simulated finals used to leave the champion trophy-less
+    // until the next app launch (retroactivelyAwardTrophies on mount).
+    awardTournamentTrophies(t.id, t)
+    for (const p of t.players) {
+      checkAndAwardBadges(p.id, t.id, t)
+    }
   }
 
   await saveAndSync(all, t)
@@ -4410,7 +4463,11 @@ export async function resolveScoreDispute(
     dispute.resolvedAt = new Date().toISOString()
     dispute.resolvedBy = currentPlayerId
 
-    // Now complete the match (same logic as confirmMatchScore)
+    // Now complete the match (same logic as confirmMatchScore).
+    // scoreConfirmedBy is intentionally the disputer, not the accepter: the
+    // recorded score is the disputer's correction (their attestation), and the
+    // reporter's acceptance is captured in dispute.resolvedBy. This preserves
+    // the invariant that scoreReportedBy and scoreConfirmedBy are two players.
     match.completed = true
     match.scoreConfirmedBy = dispute.disputedBy
     match.scoreConfirmedAt = new Date().toISOString()

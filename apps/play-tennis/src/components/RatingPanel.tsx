@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { titleCase } from '../dateUtils'
-import { getPlayerRating, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead } from '../store'
+import { getPlayerRating, getRatingHistory, getRatingTrend, getPlayerTournaments, getPlayerRank, getPlayerTrophies, getPlayerBadges, getMatchHistory, getHeadToHead, getTournamentChampionId } from '../store'
 import type { RatingSnapshot } from '../types'
 import { PlayerProfile, Trophy, TrophyTier, Badge } from '../types'
 
@@ -213,15 +213,17 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
         : null
 
   function getTournamentResult(tournament: typeof tournaments[0]): string {
-    const playerMatches = tournament.matches.filter(m =>
-      m.completed && m.winnerId &&
-      (m.player1Id === profile.id || m.player2Id === profile.id)
-    )
-    const playerWins = playerMatches.filter(m => m.winnerId === profile.id).length
-    const playerLosses = playerMatches.length - playerWins
-    if (playerWins > playerLosses) return 'Won'
-    if (playerLosses > playerWins) return 'Lost'
-    return 'Draw'
+    // "Won" means champion — not merely a winning match record.
+    const championId = getTournamentChampionId(tournament)
+    if (championId === profile.id) return 'Won'
+    if (championId) {
+      const maxRound = Math.max(...tournament.matches.map(m => m.round))
+      const final = tournament.matches.find(m => m.round === maxRound && m.completed && m.winnerId)
+      if (maxRound > 1 && final && (final.player1Id === profile.id || final.player2Id === profile.id)) {
+        return 'Runner-up'
+      }
+    }
+    return 'Played'
   }
 
   if (embedded) {

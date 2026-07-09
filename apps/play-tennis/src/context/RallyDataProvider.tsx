@@ -20,6 +20,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode,
 import { useAuth } from './AuthContext'
 import { useToast } from '../components/Toast'
 import { getClient } from '../supabase'
+import { retryDirtySync, mergeTournamentsWithDirty, mergeRatingsWithDirty } from '../sync'
 import { registerBridge, unregisterBridge } from '../storeBridge'
 import {
   Tournament, LobbyEntry, PlayerRating, AvailabilitySlot,
@@ -106,10 +107,16 @@ export const RallyDataContext = createContext<RallyData | null>(null)
 
 // ── Supabase fetch helpers ──
 
+// All fetch helpers throw on a failed request instead of returning an empty
+// result. A denied/failed read must be distinguishable from "no rows" —
+// otherwise a transient error wipes local state when the caller setState()s
+// the empty array wholesale.
+
 async function fetchLobby(county: string): Promise<LobbyEntry[]> {
   const client = getClient()
   if (!client) return []
-  const { data } = await client.from('lobby').select('*').eq('county', county.toLowerCase())
+  const { data, error } = await client.from('lobby').select('*').eq('county', county.toLowerCase())
+  if (error) throw new Error(`lobby fetch failed: ${error.message}`)
   if (!data) return []
   return data.map(row => ({
     playerId: row.player_id,
@@ -124,7 +131,8 @@ async function fetchLobby(county: string): Promise<LobbyEntry[]> {
 async function fetchTournaments(county: string): Promise<Tournament[]> {
   const client = getClient()
   if (!client) return []
-  const { data } = await client.from('tournaments').select('*').eq('county', county.toLowerCase())
+  const { data, error } = await client.from('tournaments').select('*').eq('county', county.toLowerCase())
+  if (error) throw new Error(`tournaments fetch failed: ${error.message}`)
   if (!data) return []
   return data.map(row => row.data as Tournament)
 }
@@ -132,7 +140,8 @@ async function fetchTournaments(county: string): Promise<Tournament[]> {
 async function fetchRatings(): Promise<Record<string, PlayerRating>> {
   const client = getClient()
   if (!client) return {}
-  const { data } = await client.from('ratings').select('*')
+  const { data, error } = await client.from('ratings').select('*')
+  if (error) throw new Error(`ratings fetch failed: ${error.message}`)
   if (!data) return {}
   const result: Record<string, PlayerRating> = {}
   for (const row of data) result[row.player_id] = row.data as PlayerRating
@@ -142,7 +151,8 @@ async function fetchRatings(): Promise<Record<string, PlayerRating>> {
 async function fetchAvailability(county: string): Promise<Record<string, AvailabilitySlot[]>> {
   const client = getClient()
   if (!client) return {}
-  const { data } = await client.from('availability').select('*').eq('county', county.toLowerCase())
+  const { data, error } = await client.from('availability').select('*').eq('county', county.toLowerCase())
+  if (error) throw new Error(`availability fetch failed: ${error.message}`)
   if (!data) return {}
   const result: Record<string, AvailabilitySlot[]> = {}
   for (const row of data) result[row.player_id] = row.slots as AvailabilitySlot[]
@@ -152,7 +162,8 @@ async function fetchAvailability(county: string): Promise<Record<string, Availab
 async function fetchTrophies(playerId: string): Promise<Trophy[]> {
   const client = getClient()
   if (!client) return []
-  const { data } = await client.from('trophies').select('*').eq('player_id', playerId)
+  const { data, error } = await client.from('trophies').select('*').eq('player_id', playerId)
+  if (error) throw new Error(`trophies fetch failed: ${error.message}`)
   if (!data) return []
   return data.map(row => ({
     id: row.id,
@@ -171,7 +182,8 @@ async function fetchTrophies(playerId: string): Promise<Trophy[]> {
 async function fetchBadges(playerId: string): Promise<Badge[]> {
   const client = getClient()
   if (!client) return []
-  const { data } = await client.from('badges').select('*').eq('player_id', playerId)
+  const { data, error } = await client.from('badges').select('*').eq('player_id', playerId)
+  if (error) throw new Error(`badges fetch failed: ${error.message}`)
   if (!data) return []
   return data.map(row => ({
     id: row.id,
@@ -187,10 +199,21 @@ async function fetchBadges(playerId: string): Promise<Badge[]> {
 async function fetchRatingHistory(playerId: string): Promise<RatingSnapshot[]> {
   const client = getClient()
   if (!client) return []
-  const { data } = await client.from('rating_history').select('rating, recorded_at')
+  const { data, error } = await client.from('rating_history').select('rating, recorded_at')
     .eq('player_id', playerId).order('recorded_at', { ascending: true })
+  if (error) throw new Error(`rating_history fetch failed: ${error.message}`)
   if (!data) return []
   return data.map(row => ({ rating: Number(row.rating), timestamp: row.recorded_at }))
+}
+
+/** Union of local + remote snapshots, deduped by timestamp, oldest first.
+ *  Keeps locally-recorded snapshots whose sync failed. */
+function mergeSnapshots(local: RatingSnapshot[] | undefined, remote: RatingSnapshot[]): RatingSnapshot[] {
+  if (!local || local.length === 0) return remote
+  const byTs = new Map<string, RatingSnapshot>()
+  for (const s of remote) byTs.set(s.timestamp, s)
+  for (const s of local) if (!byTs.has(s.timestamp)) byTs.set(s.timestamp, s)
+  return [...byTs.values()].sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 }
 
 // ── Provider ──
@@ -237,6 +260,10 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
     setHydrationFailed(false)
 
     try {
+      // Re-push any local changes whose sync previously failed, so the fetch
+      // below returns them instead of stale server state.
+      await retryDirtySync().catch(() => {})
+
       // Fetch core data in parallel
       const [lobbyData, tournamentsData, ratingsData, availData, trophiesData, badgesData, historyData] =
         await Promise.all([
@@ -250,12 +277,19 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
         ])
 
       setLobby(lobbyData)
-      setTournaments(tournamentsData)
-      setRatings(ratingsData)
+      // Layer still-unsynced local changes back over the remote snapshot —
+      // a pull must never clobber a change the user already saw applied.
+      setTournaments(mergeTournamentsWithDirty(tournamentsData))
+      setRatings(mergeRatingsWithDirty(ratingsData))
       setAvailability(availData)
       setTrophies(trophiesData)
       setBadges(badgesData)
-      setRatingHistory(prev => ({ ...prev, [profile.id]: historyData }))
+      // Merge histories: local snapshots that failed to sync would be lost by
+      // a wholesale replace, making the chart/deltas contradict the rating.
+      setRatingHistory(prev => ({
+        ...prev,
+        [profile.id]: mergeSnapshots(prev[profile.id], historyData),
+      }))
 
       // One-time backfill: replay completed matches to fix ratings/history
       // for users whose matches completed via simulation/auto-confirm paths
@@ -288,18 +322,20 @@ export function RallyDataProvider({ children }: { children: ReactNode }) {
 
       if (channelRef.current) channelRef.current.unsubscribe()
 
+      // Realtime refreshes merge dirty local state and keep the previous
+      // state on fetch failure — never wipe or clobber on a bad read.
       const channel = client.channel(`rally-${county}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'lobby', filter: `county=eq.${county}` }, () => {
-          fetchLobby(county).then(setLobby)
+          fetchLobby(county).then(setLobby).catch(() => {})
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `county=eq.${county}` }, () => {
-          fetchTournaments(county).then(setTournaments)
+          fetchTournaments(county).then(remote => setTournaments(mergeTournamentsWithDirty(remote))).catch(() => {})
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'availability', filter: `county=eq.${county}` }, () => {
-          fetchAvailability(county).then(setAvailability)
+          fetchAvailability(county).then(setAvailability).catch(() => {})
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, () => {
-          fetchRatings().then(setRatings)
+          fetchRatings().then(remote => setRatings(mergeRatingsWithDirty(remote))).catch(() => {})
         })
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR') {
