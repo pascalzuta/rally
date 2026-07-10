@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Match, Tournament } from '../types'
+import { getItem, setItem } from '../memoryStore'
 import {
   claimCaptain,
   initLegacyCourt,
@@ -25,6 +26,9 @@ interface Props {
   onAction?: (message: string, tone: ConfirmationTone) => void
 }
 
+/** Shown once per device, the first time a player is getting the court. */
+const COURT_EXPLAINER_KEY = 'rally-court-getter-explainer-seen'
+
 function firstName(name: string | undefined): string {
   return name?.split(' ')[0] ?? 'Player'
 }
@@ -35,7 +39,7 @@ function methodCaption(v: MarinVenue): string {
   switch (v.reservationMethod) {
     case 'walk-on': return `Free · first-come${facts}`
     case 'reserve-online': return v.isPaid
-      ? `Paid · ${v.feeNote ?? 'captain pays'}`
+      ? `Paid · ${v.feeNote ?? 'whoever gets the court pays'}`
       : `Free · reservable online${facts}`
     case 'key-required': return `Annual key required — ${v.keyNote ?? 'key needed'}`
     case 'members-only': return 'Private club — members only'
@@ -43,7 +47,7 @@ function methodCaption(v: MarinVenue): string {
   }
 }
 
-/** Honest helper/barrier copy the captain sees for the chosen venue. */
+/** Honest helper/barrier copy the court-getter sees for the chosen venue. */
 function captainHelper(v: MarinVenue | undefined): string | null {
   if (!v) return null
   switch (v.reservationMethod) {
@@ -52,12 +56,12 @@ function captainHelper(v: MarinVenue | undefined): string | null {
     case 'reserve-online': return v.isPaid
       ? `Paid court — you'll cover it (${v.feeNote ?? 'fee applies'}). Rally doesn't handle payment yet.`
       : 'Reserve through the site, then mark it secured here.'
-    case 'key-required': return `This court needs an annual key (${v.keyNote ?? 'key required'}). Only pick it if the captain has a key.`
-    case 'members-only': return 'Members-only club. Only pick it if the captain is a member.'
+    case 'key-required': return `This court needs an annual key (${v.keyNote ?? 'key required'}). Only pick it if you have a key.`
+    case 'members-only': return "Members-only club. Only pick it if you're a member."
   }
 }
 
-/** What the non-captain sees about the court (renders under "{name} is captain"). */
+/** What the other player sees about the court (renders under "{name} is getting the court"). */
 function nonCaptainStatusLine(v: MarinVenue | undefined, venueLabel: string | undefined): string {
   if (!v) return venueLabel ? `Custom court: ${venueLabel}.` : 'No court picked yet.'
   switch (v.reservationMethod) {
@@ -93,6 +97,15 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
   const [showAll, setShowAll] = useState(false)
   const [otherText, setOtherText] = useState('')
   const [busy, setBusy] = useState(false)
+  // First-run explainer: shown once (ever, per device) the first time you're
+  // the one getting the court, so "You're getting the court" is never a mystery.
+  const [explainerDismissed, setExplainerDismissed] = useState(() => {
+    try { return getItem(COURT_EXPLAINER_KEY) === '1' } catch { return false }
+  })
+  function dismissExplainer() {
+    setExplainerDismissed(true)
+    try { setItem(COURT_EXPLAINER_KEY, '1') } catch { /* ignore */ }
+  }
 
   const schedule = match.schedule
   if (!schedule) return null
@@ -109,6 +122,7 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
   const captainId = court?.captainId ?? null
   const captainIsParticipant = !!captainId && (captainId === p1 || captainId === p2)
   const isCaptain = !!captainId && captainId === me
+  const showExplainer = isCaptain && !explainerDismissed
   const captainName = nameOf(captainId)
   const opponentName = nameOf(otherId)
   const neg = court?.negotiation?.status === 'pending' ? court.negotiation : undefined
@@ -153,9 +167,9 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
       const res = await claimCaptain(tournament.id, match.id, me)
       if (!res.ok) {
         const winner = nameOf(res.winnerId)
-        notify(`${winner} already volunteered to be captain.`, 'blue')
+        notify(`${winner} is already getting the court.`, 'blue')
       } else {
-        notify("You're the court captain.", 'green')
+        notify("You're getting the court.", 'green')
       }
     })
   }
@@ -163,21 +177,21 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
   async function handleInitLegacy() {
     await run(async () => {
       const res = await initLegacyCourt(tournament.id, match.id, me)
-      if (res.ok) notify("You're the court captain.", 'green')
+      if (res.ok) notify("You're getting the court.", 'green')
     })
   }
 
   async function handleDelegate() {
     await run(
       () => requestCaptainDelegation(tournament.id, match.id, me),
-      () => notify(`Asked ${opponentName} to secure the court.`, 'blue')
+      () => notify(`Asked ${opponentName} to get the court.`, 'blue')
     )
   }
 
   async function handleRespond(response: 'accept' | 'decline') {
     await run(
       () => respondCaptainDelegation(tournament.id, match.id, me, response),
-      () => notify(response === 'accept' ? 'You took over as court captain.' : 'You passed on captain duty.', response === 'accept' ? 'green' : 'blue')
+      () => notify(response === 'accept' ? "You're getting the court now." : 'You passed on getting the court.', response === 'accept' ? 'green' : 'blue')
     )
   }
 
@@ -216,7 +230,7 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
       <div className="sched-sect court-sect">
         {sectionHead()}
         <div className="court-line">
-          <span className="court-captain-name">{captainName}</span> is securing the court
+          <span className="court-captain-name">{captainName}</span> is getting the court
           {venueName ? <> · {venueName}</> : null}
           {secured ? <span className="court-secured-check"> · secured ✓</span> : null}
         </div>
@@ -230,10 +244,10 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
       <div className="sched-sect court-sect">
         {sectionHead()}
         <div className="court-empty">
-          <div className="court-empty-title">Who's securing the court?</div>
-          <div className="court-empty-copy">Pick a court and take charge of getting it.</div>
+          <div className="court-empty-title">Who's getting the court?</div>
+          <div className="court-empty-copy">One of you grabs a free walk-on court on arrival, or reserves one. Rally doesn't book it for you.</div>
           <button className="btn btn-primary btn-small" disabled={busy} onClick={(e) => { e.stopPropagation(); handleInitLegacy() }}>
-            I'll secure the court
+            I'll get the court
           </button>
         </div>
       </div>
@@ -303,7 +317,7 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
         {neg && neg.requestedTo === me ? (
           <>
             <div className="court-captain-line">
-              <span className="court-captain-name">{captainName}</span> asked you to secure the court.
+              <span className="court-captain-name">{captainName}</span> asked if you can get the court.
             </div>
             {!isCompleted && (
               <div className="court-actions">
@@ -314,7 +328,7 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
           </>
         ) : neg && neg.requestedBy === me ? (
           <>
-            <div className="court-captain-line">Waiting for {opponentName} to accept captain duty.</div>
+            <div className="court-captain-line">Waiting for {opponentName} to take it over.</div>
             {!isCompleted && (
               <button className="btn btn-outline btn-small" disabled={busy} onClick={(e) => { e.stopPropagation(); handleWithdraw() }}>Cancel request</button>
             )}
@@ -322,9 +336,24 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
         ) : isCaptain ? (
           <>
             <div className="court-captain-line">
-              <span className="court-captain-badge">You're captain</span>
+              <span className="court-captain-badge">You're getting the court</span>
               {secured ? <span className="court-secured-check"> · Court secured ✓</span> : null}
             </div>
+            {showExplainer && (
+              <div className="court-explainer">
+                <div className="court-explainer-body">
+                  That just means you'll make sure there's a court when you play — grab a free
+                  walk-on court when you arrive, or reserve one if the venue needs it. Rally
+                  doesn't book it for you. Not up for it? Hand it to {opponentName} in a tap.
+                </div>
+                <button
+                  className="btn-link court-explainer-dismiss"
+                  onClick={(e) => { e.stopPropagation(); dismissExplainer() }}
+                >
+                  Got it
+                </button>
+              </div>
+            )}
             {!venueName && !secured ? (
               <div className="court-helper">Pick where you'll play.</div>
             ) : helper && !secured ? (
@@ -349,19 +378,19 @@ export default function CourtPanel({ tournament, match, currentPlayerId, onUpdat
                 ) : (
                   <button className="btn btn-primary btn-small" disabled={busy} onClick={(e) => { e.stopPropagation(); handleSecure(true) }}>{secureLabel(venue)}</button>
                 )}
-                <button className="btn-link court-handoff" disabled={busy} onClick={(e) => { e.stopPropagation(); handleDelegate() }}>Ask {opponentName} to take it</button>
+                <button className="btn-link court-handoff" disabled={busy} onClick={(e) => { e.stopPropagation(); handleDelegate() }}>Ask {opponentName} to get it instead</button>
               </div>
             )}
           </>
         ) : (
           <>
             <div className="court-captain-line">
-              <span className="court-captain-name">{captainName}</span> is captain.
+              <span className="court-captain-name">{captainName}</span> is getting the court.
               {secured ? <span className="court-secured-check"> Court secured ✓</span> : null}
             </div>
             <div className="court-helper">{nonCaptainStatusLine(venue, court?.venueLabel)}</div>
             {!isCompleted && !secured && (
-              <button className="btn btn-secondary btn-small court-takeover" disabled={busy} onClick={(e) => { e.stopPropagation(); handleClaim() }}>I'll take it instead</button>
+              <button className="btn btn-secondary btn-small court-takeover" disabled={busy} onClick={(e) => { e.stopPropagation(); handleClaim() }}>I'll get it instead</button>
             )}
           </>
         )}

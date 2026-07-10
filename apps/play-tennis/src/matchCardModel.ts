@@ -14,7 +14,7 @@ function getCourtSummary(tournament: Tournament, match: Match): string | null {
   const captainName = getPlayerName(tournament, captainId).split(' ')[0]
   const venue = getVenue(court.venueId)
   const venueName = venue?.name ?? (court.venueId === 'other' ? court.venueLabel : undefined)
-  if (!venueName) return `${captainName} securing court`
+  if (!venueName) return `${captainName} getting court`
   return `${captainName} · ${venueName}${court.status === 'secured' ? ' ✓' : ''}`
 }
 

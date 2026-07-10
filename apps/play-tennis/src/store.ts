@@ -995,8 +995,8 @@ export async function acceptProposal(
       type: 'captain_assigned',
       recipientId: captainId,
       senderId: acceptedBy,
-      message: "You're the court captain",
-      detail: "You're on the court by default. Tap to hand it off.",
+      message: "You're getting the court",
+      detail: "You'll grab or reserve a court for this match. Tap to hand it off.",
       relatedMatchId: matchId,
       relatedTournamentId: tournamentId,
     })
@@ -1157,7 +1157,7 @@ export async function claimCaptain(
     addNotification({
       type: 'captain_assigned',
       recipientId: me,
-      message: "You're the court captain",
+      message: "You're getting the court",
       relatedMatchId: matchId,
       relatedTournamentId: tournamentId,
     })
@@ -1204,7 +1204,7 @@ export async function requestCaptainDelegation(
     addNotification({
       type: 'captain_delegation_suggested',
       recipientId: me,
-      message: 'You asked your opponent to secure the court',
+      message: 'You asked your opponent to get the court',
       relatedMatchId: matchId,
       relatedTournamentId: tournamentId,
     })
@@ -1237,7 +1237,7 @@ export async function respondCaptainDelegation(
       addNotification({
         type: 'captain_handoff_accepted',
         recipientId: me,
-        message: 'You took over as court captain',
+        message: "You're getting the court now",
         relatedMatchId: matchId,
         relatedTournamentId: tournamentId,
       })
@@ -1254,7 +1254,7 @@ export async function respondCaptainDelegation(
     addNotification({
       type: 'captain_handoff_declined',
       recipientId: me,
-      message: 'You declined captain duty',
+      message: 'You passed on getting the court',
       relatedMatchId: matchId,
       relatedTournamentId: tournamentId,
     })

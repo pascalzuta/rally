@@ -11556,6 +11556,17 @@ select:focus {
 
 .court-helper { font-size: var(--font-body-sm); color: var(--color-text-secondary); line-height: 1.4; }
 
+/* First-run explainer for "You're getting the court" — shown once per device. */
+.court-explainer {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  margin: 4px 0 2px;
+  padding: 10px 12px;
+  background: var(--color-accent-bg);
+  border-radius: var(--radius-button);
+}
+.court-explainer-body { font-size: var(--font-body-sm); color: var(--color-text-primary); line-height: 1.45; }
+.court-explainer-dismiss { align-self: flex-start; font-weight: var(--weight-bold); }
+
 .court-picker {
   display: flex; flex-direction: column; gap: 8px;
   padding: var(--space-sm) 0 0;
