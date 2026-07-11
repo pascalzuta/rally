@@ -122,6 +122,12 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
       ? 'action-card-btn action-card-btn--court'
       : 'action-card-btn'
 
+  // When the schedule panel is expanded it already carries its own "Change time"
+  // action (and full Court section), so the collapsed-summary primary pill would
+  // just duplicate it. Hide it while expanded — tapping the card header collapses.
+  const showPrimaryButton =
+    Boolean(view.primaryActionLabel) && !(isExpanded && view.expansionKind === 'schedule')
+
   return (
     <div
       ref={ref}
@@ -182,14 +188,14 @@ const MatchActionCard = forwardRef<HTMLDivElement, Props>(function MatchActionCa
             {view.supporting}
           </div>
         )}
-        {view.courtSummary && (
+        {view.courtSummary && !isExpanded && (
           <div className="action-card-court">{view.courtSummary}</div>
         )}
       </div>
 
-      {(view.primaryActionLabel || (view.isMyMatch && view.opponentId)) && (
+      {(showPrimaryButton || (view.isMyMatch && view.opponentId)) && (
         <div className="action-card-buttons">
-          {view.primaryActionLabel && (
+          {showPrimaryButton && (
             <button
               className={primaryBtnClass}
               onClick={event => {
