@@ -388,6 +388,42 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
     return true // 'all'
   }
 
+  // Shared inline group-standings table (used by both group-knockout and round-robin branches)
+  function renderGroupStandings() {
+    return (
+      <div className="group-standings-inline">
+        <h3 className="round-label">Standings</h3>
+        <table className="group-standings-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>W</th>
+              <th>L</th>
+              <th>Sets</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groupStandings.map((s, i) => {
+              const seed = seeds.get(s.id)
+              const qualifies = i < 4
+              return (
+                <tr key={s.id} className={qualifies ? 'qualifies' : ''}>
+                  <td className="rank">{i + 1}</td>
+                  <td className="player-cell">{s.name}{seed != null && <span className="seed-label"> ({seed})</span>}</td>
+                  <td className="stat-cell">{s.wins}</td>
+                  <td className="stat-cell">{s.losses}</td>
+                  <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {!groupComplete && <div className="qualification-hint">Top 4 advance to semifinals</div>}
+      </div>
+    )
+  }
+
   function renderMatchCard(match: Match, isFinal = false) {
     // R-05: Skip if this match was already rendered (prevents duplicates)
     if (renderedMatchIds.current.has(match.id)) return null
@@ -886,38 +922,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                 </div>
 
                 {/* Group standings inline */}
-                {groupMatches.some(m => m.completed) && (
-                  <div className="group-standings-inline">
-                    <h3 className="round-label">Standings</h3>
-                    <table className="group-standings-table">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Player</th>
-                          <th>W</th>
-                          <th>L</th>
-                          <th>Sets</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {groupStandings.map((s, i) => {
-                          const seed = seeds.get(s.id)
-                          const qualifies = i < 4
-                          return (
-                            <tr key={s.id} className={qualifies ? 'qualifies' : ''}>
-                              <td className="rank">{i + 1}</td>
-                              <td className="player-cell">{s.name}{seed != null && <span className="seed-label"> ({seed})</span>}</td>
-                              <td className="stat-cell">{s.wins}</td>
-                              <td className="stat-cell">{s.losses}</td>
-                              <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                    {!groupComplete && <div className="qualification-hint">Top 4 advance to semifinals</div>}
-                  </div>
-                )}
+                {groupMatches.some(m => m.completed) && renderGroupStandings()}
 
                 {/* Knockout phase */}
                 {groupComplete && knockoutMatches.length > 0 && (
@@ -958,38 +963,7 @@ export default function BracketTab({ tournament, currentPlayerId, currentPlayerN
                   })()}
                 </div>
 
-                {groupMatches.some(m => m.completed) && (
-                  <div className="group-standings-inline">
-                    <h3 className="round-label">Standings</h3>
-                    <table className="group-standings-table">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Player</th>
-                          <th>W</th>
-                          <th>L</th>
-                          <th>Sets</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {groupStandings.map((s, i) => {
-                          const seed = seeds.get(s.id)
-                          const qualifies = i < 4
-                          return (
-                            <tr key={s.id} className={qualifies ? 'qualifies' : ''}>
-                              <td className="rank">{i + 1}</td>
-                              <td className="player-cell">{s.name}{seed != null && <span className="seed-label"> ({seed})</span>}</td>
-                              <td className="stat-cell">{s.wins}</td>
-                              <td className="stat-cell">{s.losses}</td>
-                              <td className="stat-cell">{s.setsWon}-{s.setsLost}</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                    {!groupComplete && <div className="qualification-hint">Top 4 advance to semifinals</div>}
-                  </div>
-                )}
+                {groupMatches.some(m => m.completed) && renderGroupStandings()}
 
                 {groupComplete && knockoutMatches.length > 0 && (
                   <>

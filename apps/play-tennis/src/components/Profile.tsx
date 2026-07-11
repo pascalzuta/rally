@@ -291,7 +291,6 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             {slots.length === 0 ? (
               <div>
                 <p className="subtle">No times set yet.</p>
-                <p className="profile-avail-warning">Add a few times so Rally can auto-schedule your matches.</p>
               </div>
             ) : (
               <>

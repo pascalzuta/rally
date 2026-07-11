@@ -228,7 +228,6 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
             <div className={`card-status-label ${tournamentReady ? 'card-status-label--green' : 'card-status-label--blue'}`}>
               {tournamentReady ? 'Starting Soon' : 'Tournament Forming'}
             </div>
-            <div className="card-meta-chip">{tournamentReady ? `${setupPlayers.length}/${maxPlayers}` : `${totalJoined}/${targetPlayers}`}</div>
           </div>
           <div className="card-summary-main">
             <div className="card-title">{titleCase(profile.county)} Tournament {tournamentReady ? 'Starting' : 'Forming'}</div>
@@ -309,8 +308,7 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
         return (
           <div className="card scheduling-confidence">
             <div className="card-status-row">
-              <div className="card-status-label card-status-label--slate">Scheduling Confidence</div>
-              <div className="card-meta-chip">{confidence.score}%</div>
+              <div className="card-status-label card-status-label--slate">Scheduling confidence</div>
             </div>
             <div className="card-summary-main">
               <div className="card-title">How likely matches are to auto-schedule</div>
@@ -322,17 +320,10 @@ export default function Lobby({ profile, autoJoin, onAutoJoinConsumed, onTournam
                 style={{ width: `${confidence.score}%` }}
               />
             </div>
-            <div className="confidence-value" style={{
-              color: confidence.label === 'high' ? 'var(--color-positive-primary)' :
-                     confidence.label === 'medium' ? 'var(--color-accent-primary)' :
-                     'var(--color-warning-primary)'
-            }}>
-              {confidence.score}%
-            </div>
             <div className="confidence-label">
-              {confidence.label === 'high' ? 'High -- most matches can be auto-scheduled' :
-               confidence.label === 'medium' ? 'Medium -- some matches may need manual scheduling' :
-               'Low -- many matches will need manual scheduling'}
+              {confidence.label === 'high' ? 'High. Most matches will auto-schedule.' :
+               confidence.label === 'medium' ? 'Medium. Some matches may need manual scheduling.' :
+               'Low. Many matches will need manual scheduling.'}
             </div>
           </div>
         )

@@ -4070,12 +4070,6 @@ select:focus {
   transform: none;
 }
 
-.rating-section-note {
-  font-size: var(--font-body-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
 .rating-explainer-section {
   gap: 0;
 }
@@ -4481,12 +4475,6 @@ select:focus {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-}
-
-.profile-avail-warning {
-  color: var(--color-warning-primary);
-  font-size: var(--font-body-sm);
-  margin-top: 8px;
 }
 
 /* Social proof + nudge in Profile availability */
@@ -6874,14 +6862,6 @@ select:focus {
   line-height: 1;
 }
 
-.rating-hero-label {
-  font-size: var(--font-body-md);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: var(--space-xs);
-}
-
 .rating-hero-details {
   display: flex;
   flex-direction: column;
@@ -6911,18 +6891,6 @@ select:focus {
 }
 
 .rating-hero-change.negative {
-  color: var(--color-negative-primary);
-}
-
-.rating-hero-trend {
-  font-size: var(--font-body-sm);
-}
-
-.rating-hero-trend.positive {
-  color: var(--color-positive-primary);
-}
-
-.rating-hero-trend.negative {
   color: var(--color-negative-primary);
 }
 
@@ -9714,14 +9682,6 @@ select:focus {
 .confidence-fill--high { background: var(--color-positive-primary); }
 .confidence-fill--medium { background: var(--color-accent-primary); }
 .confidence-fill--low { background: var(--color-warning-primary); }
-
-.confidence-value {
-  font-size: var(--font-display-md);
-  font-weight: var(--weight-bold);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  color: var(--color-accent-primary);
-}
 
 .confidence-label {
   font-size: var(--font-body-sm);

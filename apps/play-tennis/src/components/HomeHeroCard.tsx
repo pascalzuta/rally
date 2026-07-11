@@ -523,7 +523,6 @@ export default function HomeHeroCard({
           <div className="card scheduling-confidence">
             <div className="card-status-row">
               <div className="card-status-label card-status-label--slate">Scheduling confidence</div>
-              <div className="card-meta-chip">{confidence.score}%</div>
             </div>
             <div className="card-summary-main">
               <div className="card-title">How likely your matches auto-schedule</div>
@@ -534,13 +533,6 @@ export default function HomeHeroCard({
                 className={`confidence-fill confidence-fill--${confidence.label}`}
                 style={{ width: `${confidence.score}%` }}
               />
-            </div>
-            <div className="confidence-value" style={{
-              color: confidence.label === 'high' ? 'var(--color-positive-primary)' :
-                     confidence.label === 'medium' ? 'var(--color-accent-primary)' :
-                     'var(--color-warning-primary)'
-            }}>
-              {confidence.score}%
             </div>
             <div className="confidence-label">
               {confidence.label === 'high' ? 'High. Most matches will auto-schedule.' :

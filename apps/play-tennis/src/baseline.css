@@ -2513,10 +2513,6 @@ input:focus, textarea:focus, select:focus,
   font-size: 13px; font-weight: 500; color: var(--ink-2);
   margin: 8px 0 0;
 }
-.profile-avail-warning {
-  font-size: 13px; font-weight: 500; color: var(--amber);
-  margin: 6px 0 0;
-}
 
 
 /* ================================================================
@@ -3025,12 +3021,6 @@ input:focus, textarea:focus, select:focus,
 }
 .baseline-rating .rating-hero-top {
   display: flex !important; justify-content: center !important;
-}
-.baseline-rating .rating-hero-label {
-  font-size: 11px !important; font-weight: 500 !important;
-  letter-spacing: 0.08em !important; text-transform: uppercase !important;
-  color: var(--ink-2) !important; text-align: center !important;
-  margin: 0 0 14px !important;
 }
 .baseline-rating .rating-level-bar {
   height: 3px !important; background: var(--bg-2) !important;

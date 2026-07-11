@@ -129,9 +129,9 @@ export default function MatchCalendar({ tournament, currentPlayerId, currentPlay
       {!hideSummaryStrip && (
         <div className="schedule-summary-strip">
           <div className="schedule-summary-stats">
-            <span className="schedule-stat schedule-stat--confirmed">{confirmed} <span className="schedule-stat-label">Scheduled</span></span>
+            <span className="schedule-stat schedule-stat--confirmed">{confirmed} <span className="schedule-stat-label">Confirmed</span></span>
             <span className="schedule-stat-sep">&middot;</span>
-            <span className="schedule-stat schedule-stat--pending">{pending} <span className="schedule-stat-label">In progress</span></span>
+            <span className="schedule-stat schedule-stat--pending">{pending} <span className="schedule-stat-label">Proposed</span></span>
             <span className="schedule-stat-sep">&middot;</span>
             <span className="schedule-stat schedule-stat--unscheduled">{unscheduled} <span className="schedule-stat-label">Unscheduled</span></span>
             {completed > 0 && (

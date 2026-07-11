@@ -265,9 +265,6 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
           <div className="card rating-hero baseline-rating">
             <div className="card-status-row">
               <div className="card-status-label card-status-label--slate">Rally rating</div>
-              {rankInfo.total > 1 && (
-                <div className="card-meta-chip card-meta-chip--blue"><em className="bg-em">Rank #{rankInfo.rank}</em></div>
-              )}
             </div>
             <div className="card-summary-main rating-hero-summary">
               <div className="card-title">Your current <em className="bg-em">rating.</em></div>
@@ -282,7 +279,6 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
                 )}
               </div>
             </div>
-            <div className="rating-hero-label">Your Rally rating</div>
             <div className="rating-level-bar">
               <div className="rating-level-fill" style={{ width: `${Math.min(100, Math.max(5, ((rating.rating - 800) / 1600) * 100))}%` }} />
             </div>
@@ -293,11 +289,6 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
               {lastRatingChange !== 0 && (
                 <span className={`rating-hero-change ${lastRatingChange > 0 ? 'positive' : 'negative'}`}>
                   {lastRatingChange > 0 ? '+' : ''}{lastRatingChange} last match
-                </span>
-              )}
-              {weeklyTrend !== 0 && (
-                <span className={`rating-hero-trend ${weeklyTrend > 0 ? 'positive' : 'negative'}`}>
-                  {weeklyTrend > 0 ? '+' : ''}{weeklyTrend} this week
                 </span>
               )}
             </div>
@@ -400,7 +391,6 @@ export default function RatingPanel({ profile, onClose, onViewLeaderboard, embed
               )}
             </div>
             <RatingChart history={ratingHistory} currentRating={rating.rating} />
-            <p className="rating-section-note">Each match result adjusts your rating. Decisive wins earn bigger jumps.</p>
             {completedTournaments.length > 0 && (
               <div className="tournament-history">
                 {completedTournaments.map(t => {
