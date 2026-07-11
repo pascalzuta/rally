@@ -5015,7 +5015,28 @@ select:focus {
 }
 
 .schedule-note-field {
-  min-height: 88px;
+  min-height: 72px;
+}
+
+.reschedule-release-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  cursor: pointer;
+}
+
+.reschedule-release-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-accent-primary);
+  cursor: pointer;
+}
+
+.reschedule-release-text {
+  font-size: var(--font-body-md);
+  color: var(--color-text-primary);
 }
 
 .schedule-locked-note {

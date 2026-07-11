@@ -44,13 +44,6 @@ const DAY_INDEX: Record<string, number> = {
 }
 
 const CANCEL_REASONS = ['Schedule conflict', 'Injury', 'Other'] as const
-const RESCHEDULE_REASON_OPTIONS: Array<{ value: RescheduleReason; label: string }> = [
-  { value: 'conflict', label: 'Schedule conflict' },
-  { value: 'weather', label: 'Weather' },
-  { value: 'court_issue', label: 'Court issue' },
-  { value: 'injury_illness', label: 'Injury / illness' },
-  { value: 'other', label: 'Other' },
-]
 
 function resolveNextDate(dayOfWeek: string): Date {
   const today = new Date()
@@ -278,64 +271,21 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
         ? true
         : hasCustomRescheduleSlot
 
+    const isHard = !isCounter && rescheduleIntent === 'hard'
+
     return (
       <div className="propose-form schedule-workflow-card" onClick={e => e.stopPropagation()}>
         <div className="workflow-module">
           {renderPanelHeader(
-            isCounter ? 'Counter Offer' : rescheduleIntent === 'hard' ? 'Needs New Time' : 'Change Time',
-            isCounter ? 'blue' : rescheduleIntent === 'hard' ? 'red' : 'blue',
+            isCounter ? 'Counter Offer' : 'Change Time',
+            'blue',
             isCounter ? 'Suggest another time' : 'Change match time',
             isCounter
-              ? 'Reply with a replacement slot that works better for you.'
-              : rescheduleIntent === 'hard'
-                ? 'Release the current slot and optionally include a replacement now.'
-                : 'Ask to move the match while the current confirmed time stays in place until a new one is accepted.'
+              ? `Reply to ${opponentName} with a time that works better for you.`
+              : isHard
+                ? 'This releases the current time right away. Add a replacement below if you have one.'
+                : `Pick a new time. Your current time holds until ${opponentName} accepts the new one.`
           )}
-
-          {!isCounter && (
-            <>
-              <div className="schedule-form-section">
-                <div className="schedule-form-label">Request type</div>
-                <div className="schedule-choice-grid">
-                  <button
-                    className={`schedule-choice-pill ${rescheduleIntent === 'soft' ? 'is-selected' : ''}`}
-                    onClick={() => setRescheduleIntent('soft')}
-                  >
-                    Ask to move it
-                  </button>
-                  <button
-                    className={`schedule-choice-pill ${rescheduleIntent === 'hard' ? 'is-selected' : ''}`}
-                    onClick={() => setRescheduleIntent('hard')}
-                  >
-                    I can&apos;t make this time
-                  </button>
-                </div>
-              </div>
-
-              <div className="schedule-form-section">
-                <div className="schedule-form-label">Reason</div>
-                <div className="schedule-choice-grid schedule-choice-grid--reasons">
-                  {RESCHEDULE_REASON_OPTIONS.map(option => (
-                    <button
-                      key={option.value}
-                      className={`schedule-choice-pill ${rescheduleReason === option.value ? 'is-selected' : ''}`}
-                      onClick={() => setRescheduleReason(option.value)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="schedule-form-note">
-            {isCounter
-              ? 'Send another option that works better for you.'
-              : rescheduleIntent === 'hard'
-                ? 'Leave blank to release the current time slot.'
-                : 'The current confirmed time stays on the books until a replacement is accepted.'}
-          </div>
 
           <div className="schedule-time-grid">
             <label className="schedule-form-field">
@@ -345,7 +295,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 value={reschedDay}
                 onChange={e => setReschedDay(e.target.value as DayOfWeek | '')}
               >
-                <option value="">{isCounter || rescheduleIntent === 'soft' ? 'New day...' : 'Optional day...'}</option>
+                <option value="">{isHard ? 'Optional…' : 'New day…'}</option>
                 {DAYS.map(d => <option key={d.key} value={d.key}>{dayLabelShort(d.key)}</option>)}
               </select>
             </label>
@@ -377,14 +327,25 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             </label>
           </div>
 
+          {!isCounter && (
+            <label className="reschedule-release-toggle">
+              <input
+                type="checkbox"
+                checked={rescheduleIntent === 'hard'}
+                onChange={e => setRescheduleIntent(e.target.checked ? 'hard' : 'soft')}
+              />
+              <span className="reschedule-release-text">I can&apos;t make the current time</span>
+            </label>
+          )}
+
           <label className="schedule-form-field">
-            <span className="schedule-form-label">Note</span>
+            <span className="schedule-form-label">Note (optional)</span>
             <textarea
               className="profile-bio-input schedule-note-field"
-              rows={3}
+              rows={2}
               value={rescheduleNote}
               onChange={e => setRescheduleNote(e.target.value)}
-              placeholder="Optional note"
+              placeholder={`Add a note for ${opponentName}`}
             />
           </label>
 
@@ -393,7 +354,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
               Back
             </button>
             <button className="btn btn-primary" onClick={handleReschedule} disabled={!canSubmit}>
-              {isCounter ? 'Send New Option' : rescheduleIntent === 'hard' ? 'Request New Time' : 'Change Time'}
+              {isHard ? 'Release & request new time' : 'Send new time'}
             </button>
           </div>
         </div>
