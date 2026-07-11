@@ -284,7 +284,18 @@ export default function Profile({ profile, onLogout, onNavigate, onViewHelp }: P
             <h3 className="profile-edit-title">Availability</h3>
             <p className="profile-edit-subtitle">More times = more auto-scheduled matches</p>
           </div>
-          {!editing && <button className="btn btn-small" onClick={() => setEditing(true)}>Edit</button>}
+          {!editing && (
+            <button
+              className={`btn avail-edit-btn${slots.length === 0 ? ' avail-edit-btn--empty' : ''}`}
+              onClick={() => setEditing(true)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+              </svg>
+              {slots.length === 0 ? 'Add times' : 'Edit times'}
+            </button>
+          )}
         </div>
         {!editing ? (
           <div className="availability-current">
