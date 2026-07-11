@@ -590,7 +590,10 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
             This match time is view-only because you are not one of the two players.
           </div>
         ) : showScoreEntry && (isScoreable || canCorrectScore(match, currentPlayerId)) ? (
-          <>
+          <div className="sched-sect sched-sect--score">
+            <div className="sched-sect-head">
+              <span className="sched-sect-title">Score</span>
+            </div>
             <InlineScoreEntry
               tournament={tournament}
               matchId={match.id}
@@ -610,7 +613,7 @@ export default function MatchSchedulePanel({ tournament, match, currentPlayerId,
                 Cancel
               </button>
             </div>
-          </>
+          </div>
         ) : isScheduleLocked ? (
           <div className="schedule-locked-note">
             {match.completed
