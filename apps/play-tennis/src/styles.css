@@ -4475,6 +4475,58 @@ select:focus {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: var(--space-md);
+}
+
+/* Prominent availability edit CTA — availability drives auto-scheduling,
+   so this is the most important interaction on the profile. */
+.avail-edit-btn {
+  height: 40px;
+  padding: 0 18px;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--color-accent-primary);
+  color: #fff;
+  border-color: transparent;
+  font-weight: var(--weight-semibold);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-accent-primary), transparent 62%);
+}
+
+.avail-edit-btn svg {
+  flex-shrink: 0;
+}
+
+.avail-edit-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-primary), #000 10%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-accent-primary), transparent 55%);
+}
+
+.avail-edit-btn:active {
+  background: color-mix(in srgb, var(--color-accent-primary), #000 15%);
+  transform: scale(0.975);
+}
+
+/* Extra pull toward the button when no times are set yet — the empty
+   state is where this interaction matters most. */
+.avail-edit-btn--empty {
+  animation: avail-edit-pulse 2.4s var(--ease-out-quart) infinite;
+}
+
+@keyframes avail-edit-pulse {
+  0%, 100% {
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--color-accent-primary), transparent 62%);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent-primary), transparent 82%),
+                0 2px 12px color-mix(in srgb, var(--color-accent-primary), transparent 50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avail-edit-btn--empty {
+    animation: none;
+  }
 }
 
 /* Social proof + nudge in Profile availability */
