@@ -4979,18 +4979,21 @@ select:focus {
   transform: scale(0.96);
 }
 
+/* !important + the extra .is-selected class are required to beat the
+   baseline.css [class*="-pill"] catch-all, which force-sets background,
+   color and `border: none` with !important on anything containing "-pill". */
 .schedule-choice-pill.is-selected {
-  border-color: var(--color-accent-primary);
-  background: var(--color-accent-bg);
-  color: var(--color-accent-primary);
-  font-weight: var(--weight-semibold);
+  border: 1px solid var(--color-accent-primary) !important;
+  background: var(--color-accent-bg) !important;
+  color: var(--color-accent-primary) !important;
+  font-weight: var(--weight-semibold) !important;
 }
 
 .schedule-choice-pill--danger.is-selected {
-  border-color: var(--color-negative-primary);
-  background: var(--color-negative-bg);
-  color: var(--color-negative-primary);
-  font-weight: var(--weight-semibold);
+  border: 1px solid var(--color-negative-primary) !important;
+  background: var(--color-negative-bg) !important;
+  color: var(--color-negative-primary) !important;
+  font-weight: var(--weight-semibold) !important;
 }
 
 .schedule-form-note {
